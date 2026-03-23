@@ -8,7 +8,6 @@ import {
   X,
   CheckCircle,
   FileIcon,
-  Calendar,
 } from "lucide-react";
 import { getDictionary, DIRECTION } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";

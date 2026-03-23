@@ -8,7 +8,6 @@ import {
   TrendingUp,
   Plus,
   ArrowRight,
-  Download,
   Eye,
   Share2,
   Calendar,
