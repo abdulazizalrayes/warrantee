@@ -27,15 +27,14 @@ export default function WarrantiesPage() {
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [searchTerm, setSearchTerm] = useState("");
-  const [viewMode2, setViewMode2] = useState<ViewMode>("grid");
 
   // Mock warranty data
   const warranties = [
     {
       id: 1,
       product: "iPhone 15 Pro",
-      seller: isRTL ? "متجر آبل" : "Apple Store",
-      buyer: isRTL ? "محمد أحمد" : "Muhammad Ahmed",
+      seller: isRTL ? "ÙØªØ¬Ø± Ø¢Ø¨Ù" : "Apple Store",
+      buyer: isRTL ? "ÙØ­ÙØ¯ Ø£Ø­ÙØ¯" : "Muhammad Ahmed",
       status: "active" as const,
       expiryDate: "2027-09-15",
       refNumber: "WC-2024-001",
@@ -44,8 +43,8 @@ export default function WarrantiesPage() {
     {
       id: 2,
       product: "Samsung 55\" TV",
-      seller: isRTL ? "متجر سامسونج" : "Samsung Store",
-      buyer: isRTL ? "فاطمة علي" : "Fatima Ali",
+      seller: isRTL ? "ÙØªØ¬Ø± Ø³Ø§ÙØ³ÙÙØ¬" : "Samsung Store",
+      buyer: isRTL ? "ÙØ§Ø·ÙØ© Ø¹ÙÙ" : "Fatima Ali",
       status: "pending" as const,
       expiryDate: "2026-12-20",
       refNumber: "WC-2024-002",
@@ -54,8 +53,8 @@ export default function WarrantiesPage() {
     {
       id: 3,
       product: "MacBook Pro 16\"",
-      seller: isRTL ? "متجر آبل" : "Apple Store",
-      buyer: isRTL ? "محمد أحمد" : "Muhammad Ahmed",
+      seller: isRTL ? "ÙØªØ¬Ø± Ø¢Ø¨Ù" : "Apple Store",
+      buyer: isRTL ? "ÙØ­ÙØ¯ Ø£Ø­ÙØ¯" : "Muhammad Ahmed",
       status: "active" as const,
       expiryDate: "2027-03-10",
       refNumber: "WC-2024-003",
@@ -64,8 +63,8 @@ export default function WarrantiesPage() {
     {
       id: 4,
       product: "Dell Monitor",
-      seller: isRTL ? "متجر الإلكترونيات" : "Electronics Store",
-      buyer: isRTL ? "أحمد محمود" : "Ahmed Mahmoud",
+      seller: isRTL ? "ÙØªØ¬Ø± Ø§ÙØ¥ÙÙØªØ±ÙÙÙØ§Øª" : "Electronics Store",
+      buyer: isRTL ? "Ø£Ø­ÙØ¯ ÙØ­ÙÙØ¯" : "Ahmed Mahmoud",
       status: "expired" as const,
       expiryDate: "2023-06-30",
       refNumber: "WC-2023-004",
@@ -74,8 +73,8 @@ export default function WarrantiesPage() {
     {
       id: 5,
       product: "Sony WH-1000XM5",
-      seller: isRTL ? "متجر سوني" : "Sony Store",
-      buyer: isRTL ? "محمد أحمد" : "Muhammad Ahmed",
+      seller: isRTL ? "ÙØªØ¬Ø± Ø³ÙÙÙ" : "Sony Store",
+      buyer: isRTL ? "ÙØ­ÙØ¯ Ø£Ø­ÙØ¯" : "Muhammad Ahmed",
       status: "claimed" as const,
       expiryDate: "2026-01-15",
       refNumber: "WC-2024-005",
@@ -84,8 +83,8 @@ export default function WarrantiesPage() {
     {
       id: 6,
       product: "iPad Air",
-      seller: isRTL ? "متجر آبل" : "Apple Store",
-      buyer: isRTL ? "سارة محمد" : "Sarah Mohamed",
+      seller: isRTL ? "ÙØªØ¬Ø± Ø¢Ø¨Ù" : "Apple Store",
+      buyer: isRTL ? "Ø³Ø§Ø±Ø© ÙØ­ÙØ¯" : "Sarah Mohamed",
       status: "draft" as const,
       expiryDate: "2027-05-20",
       refNumber: "WC-DRAFT-001",
@@ -141,7 +140,7 @@ export default function WarrantiesPage() {
             {dict.nav.warranties}
           </h1>
           <p className="text-gray-600">
-            {isRTL ? "إدارة جميع ضماناتك في مكان واحد" : "Manage all your warranties in one place"}
+            {isRTL ? "Ø¥Ø¯Ø§Ø±Ø© Ø¬ÙÙØ¹ Ø¶ÙØ§ÙØ§ØªÙ ÙÙ ÙÙØ§Ù ÙØ§Ø­Ø¯" : "Manage all your warranties in one place"}
           </p>
         </div>
         <a
@@ -164,7 +163,7 @@ export default function WarrantiesPage() {
             />
             <input
               type="text"
-              placeholder={isRTL ? "ابحث عن منتج..." : "Search product..."}
+              placeholder={isRTL ? "Ø§Ø¨Ø­Ø« Ø¹Ù ÙÙØªØ¬..." : "Search product..."}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold focus:border-transparent"
@@ -210,7 +209,7 @@ export default function WarrantiesPage() {
               >
                 {status === "all"
                   ? isRTL
-                    ? "الكل"
+                    ? "Ø§ÙÙÙ"
                     : "All"
                   : statusConfig[status].label}
               </button>
@@ -246,13 +245,13 @@ export default function WarrantiesPage() {
                   <div className="space-y-3 mb-4 text-sm">
                     <div>
                       <p className="text-gray-600">
-                        {isRTL ? "البائع" : "Seller"}
+                        {isRTL ? "Ø§ÙØ¨Ø§Ø¦Ø¹" : "Seller"}
                       </p>
                       <p className="font-medium text-navy">{warranty.seller}</p>
                     </div>
                     <div>
                       <p className="text-gray-600">
-                        {isRTL ? "المشتري" : "Buyer"}
+                        {isRTL ? "Ø§ÙÙØ´ØªØ±Ù" : "Buyer"}
                       </p>
                       <p className="font-medium text-navy">{warranty.buyer}</p>
                     </div>
@@ -278,7 +277,7 @@ export default function WarrantiesPage() {
                             : "bg-green-100 text-green-700"
                         }`}
                       >
-                        {warranty.daysLeft} {isRTL ? "يوم" : "days"}
+                        {warranty.daysLeft} {isRTL ? "ÙÙÙ" : "days"}
                       </span>
                     )}
                   </div>
@@ -293,19 +292,19 @@ export default function WarrantiesPage() {
                   <thead className="bg-gray-50 border-b border-gray-200">
                     <tr>
                       <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
-                        {isRTL ? "المنتج" : "Product"}
+                        {isRTL ? "Ø§ÙÙÙØªØ¬" : "Product"}
                       </th>
                       <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
-                        {isRTL ? "البائع" : "Seller"}
+                        {isRTL ? "Ø§ÙØ¨Ø§Ø¦Ø¹" : "Seller"}
                       </th>
                       <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
                         {dict.warranty.status.active}
                       </th>
                       <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
-                        {isRTL ? "تاريخ الانتهاء" : "Expiry Date"}
+                        {isRTL ? "ØªØ§Ø±ÙØ® Ø§ÙØ§ÙØªÙØ§Ø¡" : "Expiry Date"}
                       </th>
                       <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
-                        {isRTL ? "المرجع" : "Reference"}
+                        {isRTL ? "Ø§ÙÙØ±Ø¬Ø¹" : "Reference"}
                       </th>
                     </tr>
                   </thead>
@@ -362,11 +361,11 @@ export default function WarrantiesPage() {
             </div>
           </div>
           <h3 className="text-xl font-bold text-navy mb-2">
-            {isRTL ? "لا توجد ضمانات" : "No warranties found"}
+            {isRTL ? "ÙØ§ ØªÙØ¬Ø¯ Ø¶ÙØ§ÙØ§Øª" : "No warranties found"}
           </h3>
           <p className="text-gray-600 mb-6">
             {isRTL
-              ? "ابدأ بإنشاء ضمان جديد"
+              ? "Ø§Ø¨Ø¯Ø£ Ø¨Ø¥ÙØ´Ø§Ø¡ Ø¶ÙØ§Ù Ø¬Ø¯ÙØ¯"
               : "Start by creating your first warranty"}
           </p>
           <a
