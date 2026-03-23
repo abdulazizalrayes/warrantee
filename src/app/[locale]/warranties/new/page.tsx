@@ -53,11 +53,11 @@ export default function NewWarrantyPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const categories = [
-    { value: "standard", label: isRTL ? "\u0645\u0639\u064A\u0627\u0631\u064A" : "Standard" },
-    { value: "extended", label: isRTL ? "\u0645\u0645\u062A\u062F" : "Extended" },
-    { value: "accidental", label: isRTL ? "\u0639\u0631\u0636\u064A" : "Accidental" },
-    { value: "theft", label: isRTL ? "\u0627\u0644\u0633\u0631\u0642\u0629" : "Theft" },
-    { value: "water_damage", label: isRTL ? "\u062A\u0644\u0641 \u0627\u0644\u0645\u064A\u0627\u0647" : "Water Damage" },
+    { value: "standard", label: isRTL ? "معياري" : "Standard" },
+    { value: "extended", label: isRTL ? "ممتد" : "Extended" },
+    { value: "accidental", label: isRTL ? "عرضي" : "Accidental" },
+    { value: "theft", label: isRTL ? "السرقة" : "Theft" },
+    { value: "water_damage", label: isRTL ? "تلف المياه" : "Water Damage" },
   ];
 
   const handleInputChange = (
@@ -137,7 +137,7 @@ export default function NewWarrantyPage() {
       setSaving(false);
       setCurrentStep(3);
       // In production, redirect after success
-      // router.push(\`/\${locale}/warranties\`);
+      // router.push(`/${locale}/warranties`);
     }, 1500);
   };
 
@@ -155,7 +155,7 @@ export default function NewWarrantyPage() {
         </h1>
         <p className="text-gray-600">
           {isRTL
-            ? "\u0623\u0643\u0645\u0644 \u0627\u0644\u0646\u0645\u0648\u0630\u062C \u0644\u0625\u0646\u0634\u0627\u0621 \u0636\u0645\u0627\u0646 \u062C\u062F\u064A\u062F"
+            ? "أكمل النموذج لإنشاء ضمان جديد"
             : "Complete the form to create a new warranty"}
         </p>
       </div>
@@ -168,13 +168,13 @@ export default function NewWarrantyPage() {
               onClick={() => {
                 if (step < currentStep) setCurrentStep(step as Step);
               }}
-              className={\`flex items-center justify-center w-12 h-12 rounded-full font-bold transition \${
+              className={`flex items-center justify-center w-12 h-12 rounded-full font-bold transition ${
                 step === currentStep
                   ? "bg-gold text-navy scale-110"
                   : step < currentStep
                     ? "bg-green-500 text-white"
                     : "bg-gray-200 text-gray-600"
-              }\`}
+              }`}
             >
               {step < currentStep ? (
                 <CheckCircle size={24} />
@@ -185,9 +185,9 @@ export default function NewWarrantyPage() {
 
             {step < 3 && (
               <div
-                className={\`flex-1 h-1 \${
+                className={`flex-1 h-1 ${
                   step < currentStep ? "bg-green-500" : "bg-gray-300"
-                }\`}
+                }`}
               ></div>
             )}
           </div>
@@ -197,13 +197,13 @@ export default function NewWarrantyPage() {
       {/* Step Labels */}
       <div className="flex justify-between text-sm font-medium">
         <span className={currentStep >= 1 ? "text-navy" : "text-gray-500"}>
-          {isRTL ? "\u0627\u0644\u0645\u0639\u0644\u0648\u0645\u0627\u062A \u0627\u0644\u0623\u0633\u0627\u0633\u064A\u0629" : "Basic Info"}
+          {isRTL ? "المعلومات الأساسية" : "Basic Info"}
         </span>
         <span className={currentStep >= 2 ? "text-navy" : "text-gray-500"}>
-          {isRTL ? "\u0627\u0644\u0634\u0631\u0648\u0637" : "Terms"}
+          {isRTL ? "الشروط" : "Terms"}
         </span>
         <span className={currentStep >= 3 ? "text-navy" : "text-gray-500"}>
-          {isRTL ? "\u0627\u0644\u0645\u0633\u062A\u0646\u062F\u0627\u062A" : "Documents"}
+          {isRTL ? "المستندات" : "Documents"}
         </span>
       </div>
 
@@ -222,14 +222,14 @@ export default function NewWarrantyPage() {
                   name="productName"
                   value={formData.productName}
                   onChange={handleInputChange}
-                  placeholder={isRTL ? "\u0645\u062B\u0627\u0644: iPhone 15 Pro" : "e.g., iPhone 15 Pro"}
+                  placeholder={isRTL ? "مثال: iPhone 15 Pro" : "e.g., iPhone 15 Pro"}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold focus:border-transparent"
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-semibold text-navy mb-2">
-                  {isRTL ? "SKU / \u0627\u0644\u0631\u0642\u0645 \u0627\u0644\u062A\u0633\u0644\u0633\u0644\u064A" : "SKU / Serial Number"}
+                  {isRTL ? "SKU / الرقم التسلسلي" : "SKU / Serial Number"}
                 </label>
                 <input
                   type="text"
@@ -243,7 +243,7 @@ export default function NewWarrantyPage() {
 
               <div>
                 <label className="block text-sm font-semibold text-navy mb-2">
-                  {isRTL ? "\u0627\u0644\u0643\u0645\u064A\u0629" : "Quantity"}
+                  {isRTL ? "الكمية" : "Quantity"}
                 </label>
                 <input
                   type="number"
@@ -315,7 +315,7 @@ export default function NewWarrantyPage() {
                 name="terms"
                 value={formData.terms}
                 onChange={handleInputChange}
-                placeholder={isRTL ? "\u0623\u062F\u062E\u0644 \u0627\u0644\u0634\u0631\u0648\u0637 \u0648\u0627\u0644\u0623\u062D\u0643\u0627\u0645..." : "Enter terms and conditions..."}
+                placeholder={isRTL ? "أدخل الشروط والأحكام..." : "Enter terms and conditions..."}
                 rows={4}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold focus:border-transparent"
               ></textarea>
@@ -324,7 +324,7 @@ export default function NewWarrantyPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-semibold text-navy mb-2">
-                  {isRTL ? "\u0631\u0642\u0645 \u0627\u0644\u0645\u0631\u062C\u0639 (PO/Invoice)" : "Reference Number (PO/Invoice)"}
+                  {isRTL ? "رقم المرجع (PO/Invoice)" : "Reference Number (PO/Invoice)"}
                 </label>
                 <input
                   type="text"
@@ -359,7 +359,7 @@ export default function NewWarrantyPage() {
             {/* Upload Area */}
             <div>
               <label className="block text-sm font-semibold text-navy mb-3">
-                {isRTL ? "\u0627\u0644\u0645\u0633\u062A\u0646\u062F\u0627\u062A" : "Documents"}
+                {isRTL ? "المستندات" : "Documents"}
               </label>
 
               <div
@@ -370,10 +370,10 @@ export default function NewWarrantyPage() {
               >
                 <Upload size={32} className="mx-auto text-gray-400 mb-2" />
                 <p className="font-semibold text-navy mb-1">
-                  {isRTL ? "\u0627\u0633\u062D\u0628 \u0627\u0644\u0645\u0644\u0641\u0627\u062A \u0647\u0646\u0627" : "Drag files here"}
+                  {isRTL ? "اسحب الملفات هنا" : "Drag files here"}
                 </p>
                 <p className="text-sm text-gray-600">
-                  {isRTL ? "\u0623\u0648 \u0627\u0646\u0642\u0631 \u0644\u0644\u0627\u062E\u062A\u064A\u0627\u0631" : "or click to select"}
+                  {isRTL ? "أو انقر للاختيار" : "or click to select"}
                 </p>
                 <input
                   ref={fileInputRef}
@@ -389,7 +389,7 @@ export default function NewWarrantyPage() {
             {formData.documents.length > 0 && (
               <div>
                 <h3 className="font-semibold text-navy mb-3">
-                  {isRTL ? "\u0627\u0644\u0645\u0644\u0641\u0627\u062A \u0627\u0644\u0645\u0631\u0641\u0648\u0639\u0629" : "Uploaded Files"}
+                  {isRTL ? "الملفات المرفوعة" : "Uploaded Files"}
                 </h3>
                 <div className="space-y-2">
                   {formData.documents.map((file, index) => (
@@ -424,7 +424,7 @@ export default function NewWarrantyPage() {
             {/* Summary */}
             <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
               <h3 className="font-bold text-navy mb-4">
-                {isRTL ? "\u0645\u0644\u062E\u0635 \u0627\u0644\u0636\u0645\u0627\u0646" : "Warranty Summary"}
+                {isRTL ? "ملخص الضمان" : "Warranty Summary"}
               </h3>
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
@@ -441,7 +441,7 @@ export default function NewWarrantyPage() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">
-                    {isRTL ? "\u0627\u0644\u0643\u0645\u064A\u0629:" : "Quantity:"}
+                    {isRTL ? "الكمية:" : "Quantity:"}
                   </span>
                   <span className="font-medium text-navy">
                     {formData.quantity}
@@ -449,15 +449,15 @@ export default function NewWarrantyPage() {
                 </div>
                 <div className="flex justify-between border-t border-gray-300 pt-3 font-semibold">
                   <span className="text-gray-700">
-                    {isRTL ? "\u0627\u0644\u0641\u062A\u0631\u0629:" : "Period:"}
+                    {isRTL ? "الفترة:" : "Period:"}
                   </span>
                   <span className="text-navy">
                     {formData.startDate && formData.endDate
-                      ? \`\${new Date(formData.startDate).toLocaleDateString(
+                      ? `${new Date(formData.startDate).toLocaleDateString(
                           locale === "ar" ? "ar-SA" : "en-US"
-                        )} - \${new Date(formData.endDate).toLocaleDateString(
+                        )} - ${new Date(formData.endDate).toLocaleDateString(
                           locale === "ar" ? "ar-SA" : "en-US"
-                        )}\`
+                        )}`
                       : "N/A"}
                   </span>
                 </div>
@@ -474,7 +474,7 @@ export default function NewWarrantyPage() {
           onClick={handleSaveDraft}
           className="text-navy hover:text-gold font-semibold transition flex items-center gap-2"
         >
-          {isRTL ? "\u062D\u0641\u0638 \u0643\u0645\u0633\u0648\u062F\u0629" : "Save as Draft"}
+          {isRTL ? "حفظ كمسودة" : "Save as Draft"}
         </button>
 
         <div className="flex gap-4 w-full sm:w-auto">
