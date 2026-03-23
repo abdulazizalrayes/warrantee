@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { Mail, Apple, Chrome } from "lucide-react";
 import { getDictionary, DIRECTION } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
@@ -11,7 +11,6 @@ type AuthTab = "login" | "signup";
 export default function AuthPage() {
   const params = useParams();
   const locale = (params.locale as string) || "en";
-  const router = useRouter();
   const dict = getDictionary(locale);
   const isRTL = locale === "ar";
   const direction = DIRECTION[locale as Locale];
@@ -34,7 +33,7 @@ export default function AuthPage() {
     // Simulate magic link send - in production, connect to Supabase
     setTimeout(() => {
       setMessage(
-        isRTL ? "تم إرسال رابط سحري إلى بريدك الإلكتروني" : "Magic link sent to your email"
+        isRTL ? "ØªÙ Ø¥Ø±Ø³Ø§Ù Ø±Ø§Ø¨Ø· Ø³Ø­Ø±Ù Ø¥ÙÙ Ø¨Ø±ÙØ¯Ù Ø§ÙØ¥ÙÙØªØ±ÙÙÙ" : "Magic link sent to your email"
       );
       setLoading(false);
     }, 1000);
@@ -48,7 +47,7 @@ export default function AuthPage() {
     // Simulate signup - in production, connect to Supabase
     setTimeout(() => {
       setMessage(
-        isRTL ? "تم إنشاء حسابك بنجاح!" : "Account created successfully!"
+        isRTL ? "ØªÙ Ø¥ÙØ´Ø§Ø¡ Ø­Ø³Ø§Ø¨Ù Ø¨ÙØ¬Ø§Ø­!" : "Account created successfully!"
       );
       setLoading(false);
     }, 1000);
@@ -73,7 +72,7 @@ export default function AuthPage() {
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-navy mb-2">Warrantee</h1>
           <p className="text-gray-600">
-            {isRTL ? "مرحبا بك في Warrantee" : "Welcome to Warrantee"}
+            {isRTL ? "ÙØ±Ø­Ø¨Ø§ Ø¨Ù ÙÙ Warrantee" : "Welcome to Warrantee"}
           </p>
         </div>
 
@@ -144,7 +143,7 @@ export default function AuthPage() {
                   </div>
                   <div className="relative flex justify-center text-sm">
                     <span className="px-2 bg-white text-gray-600">
-                      {isRTL ? "أو" : "OR"}
+                      {isRTL ? "Ø£Ù" : "OR"}
                     </span>
                   </div>
                 </div>
@@ -175,13 +174,13 @@ export default function AuthPage() {
               <form onSubmit={handleSignUp} className="space-y-6">
                 <div>
                   <label className="block text-sm font-medium text-navy mb-2">
-                    {isRTL ? "الاسم الكامل" : "Full Name"}
+                    {isRTL ? "Ø§ÙØ§Ø³Ù Ø§ÙÙØ§ÙÙ" : "Full Name"}
                   </label>
                   <input
                     type="text"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    placeholder={isRTL ? "أحمد محمد" : "John Doe"}
+                    placeholder={isRTL ? "Ø£Ø­ÙØ¯ ÙØ­ÙØ¯" : "John Doe"}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold focus:border-transparent transition"
                     required
                   />
@@ -203,7 +202,7 @@ export default function AuthPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-navy mb-2">
-                    {isRTL ? "نوع الحساب" : "Account Type"}
+                    {isRTL ? "ÙÙØ¹ Ø§ÙØ­Ø³Ø§Ø¨" : "Account Type"}
                   </label>
                   <div className="flex gap-4">
                     <label className="flex items-center gap-2 cursor-pointer">
@@ -218,7 +217,7 @@ export default function AuthPage() {
                         className="w-4 h-4 accent-gold"
                       />
                       <span className="text-sm font-medium text-navy">
-                        {isRTL ? "مستهلك" : "Consumer"}
+                        {isRTL ? "ÙØ³ØªÙÙÙ" : "Consumer"}
                       </span>
                     </label>
                     <label className="flex items-center gap-2 cursor-pointer">
@@ -233,7 +232,7 @@ export default function AuthPage() {
                         className="w-4 h-4 accent-gold"
                       />
                       <span className="text-sm font-medium text-navy">
-                        {isRTL ? "شركة" : "Business"}
+                        {isRTL ? "Ø´Ø±ÙØ©" : "Business"}
                       </span>
                     </label>
                   </div>
@@ -242,13 +241,13 @@ export default function AuthPage() {
                 {accountType === "business" && (
                   <div>
                     <label className="block text-sm font-medium text-navy mb-2">
-                      {isRTL ? "اسم الشركة" : "Company Name"}
+                      {isRTL ? "Ø§Ø³Ù Ø§ÙØ´Ø±ÙØ©" : "Company Name"}
                     </label>
                     <input
                       type="text"
                       value={companyName}
                       onChange={(e) => setCompanyName(e.target.value)}
-                      placeholder={isRTL ? "شركتي" : "My Company"}
+                      placeholder={isRTL ? "Ø´Ø±ÙØªÙ" : "My Company"}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold focus:border-transparent transition"
                       required={accountType === "business"}
                     />
@@ -276,7 +275,7 @@ export default function AuthPage() {
                   </div>
                   <div className="relative flex justify-center text-sm">
                     <span className="px-2 bg-white text-gray-600">
-                      {isRTL ? "أو" : "OR"}
+                      {isRTL ? "Ø£Ù" : "OR"}
                     </span>
                   </div>
                 </div>
