@@ -62,30 +62,30 @@ export default function DashboardPage() {
   const recentActivity = [
     {
       id: 1,
-      action: isRTL ? "\u062A\u0645 \u0625\u0646\u0634\u0627\u0621 \u0636\u0645\u0627\u0646 \u062C\u062F\u064A\u062F" : "New warranty created",
+      action: isRTL ? "تم إنشاء ضمان جديد" : "New warranty created",
       product: "iPhone 15 Pro",
-      timestamp: isRTL ? "\u0645\u0646\u0630 \u0633\u0627\u0639\u0629" : "1 hour ago",
+      timestamp: isRTL ? "منذ ساعة" : "1 hour ago",
       type: "created",
     },
     {
       id: 2,
-      action: isRTL ? "\u062A\u0645\u062A \u0627\u0644\u0645\u0648\u0627\u0641\u0642\u0629 \u0639\u0644\u0649 \u0627\u0644\u0636\u0645\u0627\u0646" : "Warranty approved",
-      product: "Samsung TV 55\\"",
-      timestamp: isRTL ? "\u0645\u0646\u0630 3 \u0633\u0627\u0639\u0627\u062A" : "3 hours ago",
+      action: isRTL ? "تمت الموافقة على الضمان" : "Warranty approved",
+      product: "Samsung TV 55"",
+      timestamp: isRTL ? "منذ 3 ساعات" : "3 hours ago",
       type: "approved",
     },
     {
       id: 3,
-      action: isRTL ? "\u062A\u0645 \u0631\u0641\u0639 \u0645\u0633\u062A\u0646\u062F \u062C\u062F\u064A\u062F" : "Document uploaded",
+      action: isRTL ? "تم رفع مستند جديد" : "Document uploaded",
       product: "MacBook Pro",
-      timestamp: isRTL ? "\u0645\u0646\u0630 \u064A\u0648\u0645 \u0648\u0627\u062D\u062F" : "1 day ago",
+      timestamp: isRTL ? "منذ يوم واحد" : "1 day ago",
       type: "uploaded",
     },
     {
       id: 4,
-      action: isRTL ? "\u062A\u0645 \u0625\u0646\u0634\u0627\u0621 \u0645\u0637\u0627\u0644\u0628\u0629" : "Claim submitted",
+      action: isRTL ? "تم إنشاء مطالبة" : "Claim submitted",
       product: "iPad Air",
-      timestamp: isRTL ? "\u0645\u0646\u0630 \u064A\u0648\u0645\u064A\u0646" : "2 days ago",
+      timestamp: isRTL ? "منذ يومين" : "2 days ago",
       type: "claimed",
     },
   ];
@@ -96,39 +96,39 @@ export default function DashboardPage() {
       product: "Sony Headphones",
       expiryDate: "2026-04-15",
       daysLeft: 23,
-      seller: isRTL ? "\u0645\u062A\u062C\u0631 \u0627\u0644\u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A\u0627\u062A" : "Electronics Store",
+      seller: isRTL ? "متجر الإلكترونيات" : "Electronics Store",
     },
     {
       id: 2,
       product: "Dell Monitor",
       expiryDate: "2026-04-22",
       daysLeft: 30,
-      seller: isRTL ? "\u0645\u062A\u062C\u0631 \u0627\u0644\u062A\u0643\u0646\u0648\u0644\u0648\u062C\u064A\u0627" : "Tech Shop",
+      seller: isRTL ? "متجر التكنولوجيا" : "Tech Shop",
     },
     {
       id: 3,
       product: "Logitech Keyboard",
       expiryDate: "2026-05-05",
       daysLeft: 43,
-      seller: isRTL ? "\u0623\u0645\u0627\u0632\u0648\u0646" : "Amazon",
+      seller: isRTL ? "أمازون" : "Amazon",
     },
   ];
 
   const quickActions = [
     {
-      title: isRTL ? "\u0625\u0636\u0627\u0641\u0629 \u0636\u0645\u0627\u0646" : "Add Warranty",
+      title: isRTL ? "إضافة ضمان" : "Add Warranty",
       href: "/warranties/new",
       icon: Plus,
       color: "bg-gold hover:bg-yellow-500 text-navy",
     },
     {
-      title: isRTL ? "\u0639\u0631\u0636 \u062C\u0645\u064A\u0639 \u0627\u0644\u0636\u0645\u0627\u0646\u0627\u062A" : "View All Warranties",
+      title: isRTL ? "عرض جميع الضمانات" : "View All Warranties",
       href: "/warranties",
       icon: Eye,
       color: "bg-navy hover:bg-navy-dark text-white",
     },
     {
-      title: isRTL ? "\u062F\u0639\u0648\u0629 \u0627\u0644\u0628\u0627\u0626\u0639" : "Invite Seller",
+      title: isRTL ? "دعوة البائع" : "Invite Seller",
       href: "/settings/team",
       icon: Share2,
       color: "bg-gray-600 hover:bg-gray-700 text-white",
@@ -147,11 +147,11 @@ export default function DashboardPage() {
       <div>
         <h1 className="text-3xl sm:text-4xl font-bold text-navy mb-2">
           {dict.dashboard.welcome},{" "}
-          <span className="text-gold">{isRTL ? "\u0645\u062D\u0645\u062F" : "Muhammad"}</span>!
+          <span className="text-gold">{isRTL ? "محمد" : "Muhammad"}</span>!
         </h1>
         <p className="text-gray-600">
           {isRTL
-            ? "\u0625\u0644\u064A\u0643 \u0646\u0638\u0631\u0629 \u0639\u0627\u0645\u0629 \u0639\u0644\u0649 \u062C\u0645\u064A\u0639 \u0636\u0645\u0627\u0646\u0627\u062A\u0643"
+            ? "إليك نظرة عامة على جميع ضماناتك"
             : "Here's an overview of all your warranties"}
         </p>
       </div>
@@ -163,10 +163,10 @@ export default function DashboardPage() {
           return (
             <div
               key={index}
-              className={\`bg-gradient-to-br \${stat.color} border \${stat.borderColor} rounded-lg p-6 shadow-sm hover:shadow-md transition\`}
+              className={`bg-gradient-to-br ${stat.color} border ${stat.borderColor} rounded-lg p-6 shadow-sm hover:shadow-md transition`}
             >
               <div className="flex items-start justify-between mb-4">
-                <div className={\`p-3 rounded-lg bg-white/50 \${stat.textColor}\`}>
+                <div className={`p-3 rounded-lg bg-white/50 ${stat.textColor}`}>
                   <Icon size={24} />
                 </div>
               </div>
@@ -186,8 +186,8 @@ export default function DashboardPage() {
           return (
             <a
               key={index}
-              href={\`/\${locale}\${action.href}\`}
-              className={\`\${action.color} flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition transform hover:scale-105\`}
+              href={`/${locale}${action.href}`}
+              className={`${action.color} flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition transform hover:scale-105`}
             >
               <Icon size={18} />
               <span>{action.title}</span>
@@ -205,7 +205,7 @@ export default function DashboardPage() {
                 {dict.dashboard.recent_activity}
               </h2>
               <a
-                href={\`/\${locale}/dashboard\`}
+                href={`/${locale}/dashboard`}
                 className="text-gold hover:text-yellow-600 font-semibold text-sm flex items-center gap-1 transition"
               >
                 {dict.dashboard.view_all}
@@ -220,7 +220,7 @@ export default function DashboardPage() {
                   className="flex items-center gap-4 pb-4 border-b border-gray-100 last:border-b-0"
                 >
                   <div
-                    className={\`w-3 h-3 rounded-full \${
+                    className={`w-3 h-3 rounded-full ${
                       activity.type === "created"
                         ? "bg-blue-500"
                         : activity.type === "approved"
@@ -228,7 +228,7 @@ export default function DashboardPage() {
                           : activity.type === "uploaded"
                             ? "bg-purple-500"
                             : "bg-orange-500"
-                    }\`}
+                    }`}
                   ></div>
                   <div className="flex-1">
                     <p className="font-medium text-navy">{activity.action}</p>
@@ -261,9 +261,9 @@ export default function DashboardPage() {
                       {warranty.product}
                     </h3>
                     <span
-                      className={\`text-xs font-bold px-2 py-1 rounded \${getDaysLeftColor(warranty.daysLeft)}\`}
+                      className={`text-xs font-bold px-2 py-1 rounded ${getDaysLeftColor(warranty.daysLeft)}`}
                     >
-                      {warranty.daysLeft}{isRTL ? " \u064A\u0648\u0645" : " days"}
+                      {warranty.daysLeft}{isRTL ? " يوم" : " days"}
                     </span>
                   </div>
                   <p className="text-xs text-gray-600 mb-3">{warranty.seller}</p>
@@ -280,7 +280,7 @@ export default function DashboardPage() {
             </div>
 
             <a
-              href={\`/\${locale}/warranties\`}
+              href={`/${locale}/warranties`}
               className="block mt-6 w-full text-center bg-gray-100 hover:bg-gray-200 text-navy font-semibold py-2 rounded-lg transition"
             >
               {dict.dashboard.view_all}
