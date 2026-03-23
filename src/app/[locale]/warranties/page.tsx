@@ -43,7 +43,7 @@ export default function WarrantiesPage() {
     },
     {
       id: 2,
-      product: "Samsung 55" TV",
+      product: "Samsung 55\" TV",
       seller: isRTL ? "متجر سامسونج" : "Samsung Store",
       buyer: isRTL ? "فاطمة علي" : "Fatima Ali",
       status: "pending" as const,
@@ -53,7 +53,7 @@ export default function WarrantiesPage() {
     },
     {
       id: 3,
-      product: "MacBook Pro 16"",
+      product: "MacBook Pro 16\"",
       seller: isRTL ? "متجر آبل" : "Apple Store",
       buyer: isRTL ? "محمد أحمد" : "Muhammad Ahmed",
       status: "active" as const,

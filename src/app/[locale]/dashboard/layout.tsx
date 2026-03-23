@@ -130,14 +130,14 @@ export default function DashboardLayout({
               {langMenuOpen && (
                 <div className="absolute top-12 right-0 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden z-50">
                   <Link
-                    href={`/en${pathname.replace(/^/(en|ar)/, "")}`}
+                    href={`/en${pathname.replace(/^\/\(en|ar\)/, "")}`}
                     onClick={() => setLangMenuOpen(false)}
                     className="block px-4 py-2 hover:bg-gray-50 text-navy font-medium"
                   >
                     {dict.common.english}
                   </Link>
                   <Link
-                    href={`/ar${pathname.replace(/^/(en|ar)/, "")}`}
+                    href={`/ar${pathname.replace(/^\/\(en|ar\)/, "")}`}
                     onClick={() => setLangMenuOpen(false)}
                     className="block px-4 py-2 hover:bg-gray-50 text-navy font-medium"
                   >
@@ -190,7 +190,9 @@ export default function DashboardLayout({
       <div className="flex">
         {/* Sidebar */}
         <div
-          className={`fixed lg:static inset-0 z-30 bg-navy transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} w-64 pt-20 lg:pt-0 overflow-y-auto`}
+          className={`fixed lg:static inset-0 z-30 bg-navy transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${
+            sidebarOpen ? "translate-x-0" : "-translate-x-full"
+          } w-64 pt-20 lg:pt-0 overflow-y-auto`}
         >
           <nav className="p-4 space-y-2 pb-20 lg:pb-4">
             {navigationItems.map((item) => {

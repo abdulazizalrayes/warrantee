@@ -70,7 +70,7 @@ export default function DashboardPage() {
     {
       id: 2,
       action: isRTL ? "تمت الموافقة على الضمان" : "Warranty approved",
-      product: "Samsung TV 55"",
+      product: "Samsung TV 55\"",
       timestamp: isRTL ? "منذ 3 ساعات" : "3 hours ago",
       type: "approved",
     },
