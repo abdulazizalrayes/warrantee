@@ -38,7 +38,7 @@ export default function DashboardLayout({
   const [langMenuOpen, setLangMenuOpen] = useState(false);
 
   const isActive = (href: string) => {
-    const basePath = \`/\${locale}/dashboard\`;
+    const basePath = `/${locale}/dashboard`;
     if (href === "/dashboard") return pathname === basePath;
     return pathname.includes(href);
   };
@@ -56,27 +56,27 @@ export default function DashboardLayout({
     },
     {
       href: "/warranties/claims",
-      label: isRTL ? "\u0627\u0644\u0627\u062F\u0639\u0627\u0621\u0627\u062A" : "Claims",
+      label: isRTL ? "الادعاءات" : "Claims",
       icon: FileText,
     },
     {
       href: "/warranties/extensions",
-      label: isRTL ? "\u0627\u0644\u062A\u0645\u062F\u064A\u062F\u0627\u062A" : "Extensions",
+      label: isRTL ? "التمديدات" : "Extensions",
       icon: Clock,
     },
     {
       href: "/documents",
-      label: isRTL ? "\u0627\u0644\u0645\u0633\u062A\u0646\u062F\u0627\u062A" : "Documents",
+      label: isRTL ? "المستندات" : "Documents",
       icon: Boxes,
     },
     {
       href: "/chain-tracking",
-      label: isRTL ? "\u062A\u062A\u0628\u0639 \u0627\u0644\u0633\u0644\u0633\u0644\u0629" : "Chain Tracking",
+      label: isRTL ? "تتبع السلسلة" : "Chain Tracking",
       icon: PieChart,
     },
     {
       href: "/analytics",
-      label: isRTL ? "\u0627\u0644\u062A\u062D\u0644\u064A\u0644\u0627\u062A" : "Analytics",
+      label: isRTL ? "التحليلات" : "Analytics",
       icon: PieChart,
     },
     {
@@ -130,14 +130,14 @@ export default function DashboardLayout({
               {langMenuOpen && (
                 <div className="absolute top-12 right-0 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden z-50">
                   <Link
-                    href={\`/en\${pathname.replace(/^\\/(en|ar)/, "")}\`}
+                    href={`/en${pathname.replace(/^/(en|ar)/, "")}`}
                     onClick={() => setLangMenuOpen(false)}
                     className="block px-4 py-2 hover:bg-gray-50 text-navy font-medium"
                   >
                     {dict.common.english}
                   </Link>
                   <Link
-                    href={\`/ar\${pathname.replace(/^\\/(en|ar)/, "")}\`}
+                    href={`/ar${pathname.replace(/^/(en|ar)/, "")}`}
                     onClick={() => setLangMenuOpen(false)}
                     className="block px-4 py-2 hover:bg-gray-50 text-navy font-medium"
                   >
@@ -162,12 +162,12 @@ export default function DashboardLayout({
                 <div className="absolute top-12 right-0 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden z-50 min-w-48">
                   <div className="px-4 py-3 border-b border-gray-200">
                     <p className="font-semibold text-navy">
-                      {isRTL ? "\u0645\u062D\u0645\u062F \u0623\u062D\u0645\u062F" : "Muhammad Ahmed"}
+                      {isRTL ? "محمد أحمد" : "Muhammad Ahmed"}
                     </p>
                     <p className="text-xs text-gray-600">user@warrantee.app</p>
                   </div>
                   <Link
-                    href={\`/\${locale}/settings\`}
+                    href={`/${locale}/settings`}
                     onClick={() => setUserMenuOpen(false)}
                     className="block px-4 py-2 hover:bg-gray-50 text-navy text-sm"
                   >
@@ -190,9 +190,7 @@ export default function DashboardLayout({
       <div className="flex">
         {/* Sidebar */}
         <div
-          className={\`fixed lg:static inset-0 z-30 bg-navy transform transition-transform duration-300 ease-in-out lg:translate-x-0 \${
-            sidebarOpen ? "translate-x-0" : "-translate-x-full"
-          } w-64 pt-20 lg:pt-0 overflow-y-auto\`}
+          className={`fixed lg:static inset-0 z-30 bg-navy transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} w-64 pt-20 lg:pt-0 overflow-y-auto`}
         >
           <nav className="p-4 space-y-2 pb-20 lg:pb-4">
             {navigationItems.map((item) => {
@@ -201,13 +199,13 @@ export default function DashboardLayout({
               return (
                 <Link
                   key={item.href}
-                  href={\`/\${locale}\${item.href}\`}
+                  href={`/${locale}${item.href}`}
                   onClick={() => setSidebarOpen(false)}
-                  className={\`flex items-center gap-3 px-4 py-3 rounded-lg transition \${
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition ${
                     active
                       ? "bg-gold text-navy font-semibold"
                       : "text-gray-100 hover:bg-navy-light"
-                  }\`}
+                  }`}
                 >
                   <Icon size={20} />
                   <span>{item.label}</span>
@@ -221,7 +219,7 @@ export default function DashboardLayout({
             <div className="text-xs text-gray-300 text-center">
               <p className="font-semibold">Warrantee Pro</p>
               <p className="mt-1">
-                {isRTL ? "12 \u0636\u0645\u0627\u0646 \u0646\u0634\u0637" : "12 active warranties"}
+                {isRTL ? "12 ضمان نشط" : "12 active warranties"}
               </p>
             </div>
           </div>
