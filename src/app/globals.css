@@ -1,0 +1,84 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --navy: #1A1A2E;
+    --navy-light: #2D2D4E;
+    --gold: #D4A853;
+    --gold-light: #E8C97A;
+    --warm-white: #FAFAFA;
+    --warm-gray: #F5F7FA;
+  }
+}
+
+@layer utilities {
+  .text-navy {
+    @apply text-[#1A1A2E];
+  }
+
+  .bg-navy {
+    @apply bg-[#1A1A2E];
+  }
+
+  .border-navy {
+    @apply border-[#1A1A2E];
+  }
+
+  .text-gold {
+    @apply text-[#D4A853];
+  }
+
+  .bg-gold {
+    @apply bg-[#D4A853];
+  }
+
+  .border-gold {
+    @apply border-[#D4A853];
+  }
+
+  .shadow-gold {
+    @apply shadow-[#D4A853];
+  }
+
+  .text-warm-white {
+    @apply text-[#FAFAFA];
+  }
+
+  .bg-warm-white {
+    @apply bg-[#FAFAFA];
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+[dir="rtl"] {
+  font-family: "IBM Plex Sans Arabic", "Inter", system-ui, sans-serif;
+}
+
+body {
+  background-color: rgb(250, 250, 250);
+  color: rgb(26, 26, 46);
+}
+
+a {
+  transition: color 150ms ease-in-out;
+}
+
+button {
+  transition: all 150ms ease-in-out;
+}
+
+/* Smooth focus states for accessibility */
+:focus-visible {
+  outline: 2px solid rgb(212, 168, 83);
+  outline-offset: 2px;
+}
+
+/* Responsive typography */
+@media (max-width: 640px) {
+  html {
+    font-size: 14px;
+  }
+}
