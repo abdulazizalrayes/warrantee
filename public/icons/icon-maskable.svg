@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#4169E1"/>
+  <path d="M256 120c-60 0-104 20-104 20v128c0 68 44 112 104 128 60-16 104-60 104-128V140s-44-20-104-20z" fill="white" opacity="0.2"/>
+  <path d="M256 140c-50 0-84 16-84 16v108c0 58 36 96 84 108 48-12 84-50 84-108V156s-34-16-84-16z" fill="none" stroke="white" stroke-width="6"/>
+  <text x="256" y="290" text-anchor="middle" font-family="Arial,sans-serif" font-weight="bold" font-size="140" fill="white">W</text>
+</svg>
