@@ -4,15 +4,16 @@ import "../globals.css";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
 import JsonLd from "@/components/JsonLd";
 
+import CookieConsent from "@/components/CookieConsent";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: {
-    default: "Warrantee â Trust the Termsâ¢",
+    default: "Warrantee Ã¢ÂÂ Trust the TermsÃ¢ÂÂ¢",
     template: "%s | Warrantee",
   },
   description: "Digital warranty management platform. Track, manage, and claim your product warranties in one place. Bilingual support for Arabic and English.",
-  keywords: ["warranty", "warranty management", "product warranty", "digital warranty", "warranty tracking", "warranty claims", "Ø¶ÙØ§Ù", "Ø¥Ø¯Ø§Ø±Ø© Ø§ÙØ¶ÙØ§ÙØ§Øª", "Saudi Arabia", "Middle East"],
+  keywords: ["warranty", "warranty management", "product warranty", "digital warranty", "warranty tracking", "warranty claims", "ÃÂ¶ÃÂÃÂ§ÃÂ", "ÃÂ¥ÃÂ¯ÃÂ§ÃÂ±ÃÂ© ÃÂ§ÃÂÃÂ¶ÃÂÃÂ§ÃÂÃÂ§ÃÂª", "Saudi Arabia", "Middle East"],
   authors: [{ name: "Warrantee" }],
   creator: "Warrantee",
   publisher: "Warrantee",
@@ -27,7 +28,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     siteName: "Warrantee",
-    title: "Warrantee â Trust the Termsâ¢",
+    title: "Warrantee Ã¢ÂÂ Trust the TermsÃ¢ÂÂ¢",
     description: "Digital warranty management platform for the Middle East. Track, manage, and claim your warranties.",
     url: "https://warrantee.sa",
     locale: "en_US",
@@ -43,7 +44,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Warrantee â Trust the Termsâ¢",
+    title: "Warrantee Ã¢ÂÂ Trust the TermsÃ¢ÂÂ¢",
     description: "Digital warranty management platform for the Middle East.",
     images: ["/og-image.png"],
   },
@@ -89,6 +90,7 @@ export default async function LocaleLayout({
       </head>
       <body className={`${inter.className} bg-[#FAFAFA] text-[#1A1A2E] antialiased`}>
         {children}
+          <CookieConsent />
         <GoogleAnalytics measurementId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || ""} />
       </body>
     </html>
