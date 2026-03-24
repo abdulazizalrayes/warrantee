@@ -1,110 +1,77 @@
-'use client';
+"use client";
+import { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+import { Shield, CheckCircle2, XCircle, Calendar, Package, Hash, Download, QrCode } from "lucide-react";
 
-import { useState, useEffect } from 'react';
-import { usePathname, useParams } from 'next/navigation';
-import { createBrowserClient } from '@supabase/ssr';
+const t = {
+  en: { title: "Warranty Verification", loading: "Verifying...", verified: "Verified Warranty", expired: "Expired Warranty", notFound: "Warranty not found", product: "Product", reference: "Reference", serial: "Serial Number", category: "Category", startDate: "Start Date", endDate: "End Date", status: "Status", active: "Active", expiredLabel: "Expired", daysLeft: "days remaining", certificate: "Download Certificate", seller: "Seller", issuedBy: "Issued via Warrantee Platform", scan: "Scan QR code to verify this warranty" },
+  ar: { title: "\u0627\u0644\u062a\u062d\u0642\u0642 \u0645\u0646 \u0627\u0644\u0636\u0645\u0627\u0646", loading: "\u062c\u0627\u0631\u064a \u0627\u0644\u062a\u062d\u0642\u0642...", verified: "\u0636\u0645\u0627\u0646 \u0645\u0648\u062b\u0642", expired: "\u0636\u0645\u0627\u0646 \u0645\u0646\u062a\u0647\u064a", notFound: "\u0644\u0645 \u064a\u062a\u0645 \u0627\u0644\u0639\u062b\u0648\u0631 \u0639\u0644\u0649 \u0627\u0644\u0636\u0645\u0627\u0646", product: "\u0627\u0644\u0645\u0646\u062a\u062c", reference: "\u0627\u0644\u0645\u0631\u062c\u0639", serial: "\u0627\u0644\u0631\u0642\u0645 \u0627\u0644\u062a\u0633\u0644\u0633\u0644\u064a", category: "\u0627\u0644\u0641\u0626\u0629", startDate: "\u062a\u0627\u0631\u064a\u062e \u0627\u0644\u0628\u062f\u0627\u064a\u0629", endDate: "\u062a\u0627\u0631\u064a\u062e \u0627\u0644\u0627\u0646\u062a\u0647\u0627\u0621", status: "\u0627\u0644\u062d\u0627\u0644\u0629", active: "\u0646\u0634\u0637", expiredLabel: "\u0645\u0646\u062a\u0647\u064a", daysLeft: "\u064a\u0648\u0645 \u0645\u062a\u0628\u0642\u064a", certificate: "\u062a\u062d\u0645\u064a\u0644 \u0627\u0644\u0634\u0647\u0627\u062f\u0629", seller: "\u0627\u0644\u0628\u0627\u0626\u0639", issuedBy: "\u0635\u0627\u062f\u0631 \u0639\u0628\u0631 \u0645\u0646\u0635\u0629 \u0636\u0645\u0627\u0646\u062a\u064a", scan: "\u0627\u0645\u0633\u062d \u0631\u0645\u0632 QR \u0644\u0644\u062a\u062d\u0642\u0642" },
+};
 
-const supabase = createBrowserClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-
-export default function VerifyWarrantyPage() {
-  const pathname = usePathname();
+export default function VerifyPage() {
   const params = useParams();
-  const locale = pathname?.startsWith('/ar') ? 'ar' : 'en';
-  const isRTL = locale === 'ar';
-  const warrantyId = params?.id as string;
+  const locale = (params.locale as string) || "en";
+  const id = params.id as string;
+  const l = t[locale as keyof typeof t] || t.en;
+  const supabase = createClient();
   const [warranty, setWarranty] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [valid, setValid] = useState(false);
+  const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
-    if (warrantyId) verify();
-  }, [warrantyId]);
-
-  const verify = async () => {
-    const { data } = await supabase.from('warranties').select('*, companies(name)').eq('id', warrantyId).single();
-    if (data) {
-      setWarranty(data);
-      const now = new Date();
-      const expiry = new Date(data.expiry_date);
-      setValid(expiry > now && data.status === 'active');
+    async function load() {
+      const { data, error } = await supabase.from("warranties").select("*").eq("id", id).single();
+      if (error || !data) { setNotFound(true); } else { setWarranty(data); }
+      setLoading(false);
     }
-    setLoading(false);
-  };
+    load();
+  }, [id]);
 
-  const getDaysRemaining = () => {
-    if (!warranty?.expiry_date) return 0;
-    const diff = new Date(warranty.expiry_date).getTime() - Date.now();
-    return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
-  };
+  if (loading) return <div className="min-h-screen flex items-center justify-center bg-[#FAFAFA]"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#4169E1]" /></div>;
+  if (notFound) return <div className="min-h-screen flex flex-col items-center justify-center bg-[#FAFAFA]"><XCircle className="w-16 h-16 text-red-400 mb-4" /><p className="text-xl text-gray-600">{l.notFound}</p></div>;
 
-  const fmtDate = (d: string) => new Date(d).toLocaleDateString(locale === 'ar' ? 'ar-SA' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-
-  const t = locale === 'ar' ? {
-    title: '\u0627\u0644\u062a\u062d\u0642\u0642 \u0645\u0646 \u0627\u0644\u0636\u0645\u0627\u0646',
-    valid: '\u0636\u0645\u0627\u0646 \u0633\u0627\u0631\u064a',
-    expired: '\u0636\u0645\u0627\u0646 \u0645\u0646\u062a\u0647\u064a',
-    notFound: '\u0644\u0645 \u064a\u062a\u0645 \u0627\u0644\u0639\u062b\u0648\u0631 \u0639\u0644\u0649 \u0627\u0644\u0636\u0645\u0627\u0646',
-    product: '\u0627\u0644\u0645\u0646\u062a\u062c',
-    purchaseDate: '\u062a\u0627\u0631\u064a\u062e \u0627\u0644\u0634\u0631\u0627\u0621',
-    expiryDate: '\u062a\u0627\u0631\u064a\u062e \u0627\u0644\u0627\u0646\u062a\u0647\u0627\u0621',
-    status: '\u0627\u0644\u062d\u0627\u0644\u0629',
-    active: '\u0646\u0634\u0637',
-    expiredStatus: '\u0645\u0646\u062a\u0647\u064a',
-    daysLeft: '\u064a\u0648\u0645 \u0645\u062a\u0628\u0642\u064a',
-    verified: '\u062a\u0645 \u0627\u0644\u062a\u062d\u0642\u0642 \u0628\u0648\u0627\u0633\u0637\u0629 Warrantee',
-    issuedBy: '\u0635\u0627\u062f\u0631 \u0639\u0646',
-  } : {
-    title: 'Warranty Verification',
-    valid: 'Valid Warranty',
-    expired: 'Expired Warranty',
-    notFound: 'Warranty Not Found',
-    product: 'Product',
-    purchaseDate: 'Purchase Date',
-    expiryDate: 'Expiry Date',
-    status: 'Status',
-    active: 'Active',
-    expiredStatus: 'Expired',
-    daysLeft: 'days remaining',
-    verified: 'Verified by Warrantee',
-    issuedBy: 'Issued by',
-  };
-
-  if (loading) return <div className="min-h-screen flex items-center justify-center bg-gray-50"><div className="animate-spin w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full" /></div>;
-
-  if (!warranty) return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4" dir={isRTL ? 'rtl' : 'ltr'}>
-      <div className="text-center max-w-sm">
-        <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-        </div>
-        <h2 className="text-xl font-bold text-gray-900 mb-2">{t.notFound}</h2>
-      </div>
-    </div>
-  );
+  const now = new Date();
+  const endDate = new Date(warranty.end_date);
+  const isActive = endDate > now && (warranty.status === "active" || warranty.status === "renewed");
+  const daysRemaining = Math.max(0, Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+  const baseUrl = typeof window !== "undefined" ? window.location.origin : "https://warrantee.io";
+  const qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=" + encodeURIComponent(baseUrl + "/" + locale + "/verify/" + id);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4" dir={isRTL ? 'rtl' : 'ltr'}>
-      <div className="w-full max-w-md">
-        <div className={`rounded-2xl overflow-hidden shadow-xl border ${valid ? 'border-emerald-200' : 'border-red-200'}`}>
-          <div className={`p-6 text-center ${valid ? 'bg-gradient-to-br from-emerald-500 to-teal-600' : 'bg-gradient-to-br from-red-500 to-orange-600'}`}>
-            <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
-              {valid ? <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg> : <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
-            </div>
-            <h1 className="text-xl font-bold text-white">{valid ? t.valid : t.expired}</h1>
-            {valid && <p className="text-emerald-100 text-sm mt-1">{getDaysRemaining()} {t.daysLeft}</p>}
-          </div>
-          <div className="bg-white p-6 space-y-4">
-            <div className="flex justify-between py-2 border-b border-gray-100"><span className="text-sm text-gray-500">{t.product}</span><span className="text-sm font-medium text-gray-900">{warranty.product_name}</span></div>
-            <div className="flex justify-between py-2 border-b border-gray-100"><span className="text-sm text-gray-500">{t.purchaseDate}</span><span className="text-sm font-medium text-gray-900">{fmtDate(warranty.purchase_date)}</span></div>
-            <div className="flex justify-between py-2 border-b border-gray-100"><span className="text-sm text-gray-500">{t.expiryDate}</span><span className="text-sm font-medium text-gray-900">{fmtDate(warranty.expiry_date)}</span></div>
-            <div className="flex justify-between py-2 border-b border-gray-100"><span className="text-sm text-gray-500">{t.status}</span><span className={`text-sm font-medium px-2 py-0.5 rounded-full ${valid ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>{valid ? t.active : t.expiredStatus}</span></div>
-            {warranty.companies?.name && <div className="flex justify-between py-2"><span className="text-sm text-gray-500">{t.issuedBy}</span><span className="text-sm font-medium text-gray-900">{warranty.companies.name}</span></div>}
-          </div>
-          <div className="bg-gray-50 p-4 text-center border-t border-gray-100"><p className="text-xs text-gray-400">{t.verified}</p></div>
+    <div className="min-h-screen bg-[#FAFAFA] py-8 px-4">
+      <div className="max-w-lg mx-auto">
+        <div className="text-center mb-6">
+          <Shield className="w-10 h-10 text-[#4169E1] mx-auto mb-2" />
+          <h1 className="text-2xl font-bold text-[#1A1A2E]">{l.title}</h1>
         </div>
+        <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+          <div className={"px-6 py-5 text-center " + (isActive ? "bg-green-50" : "bg-red-50")}>
+            {isActive ? <CheckCircle2 className="w-12 h-12 text-green-500 mx-auto mb-2" /> : <XCircle className="w-12 h-12 text-red-500 mx-auto mb-2" />}
+            <h2 className={"text-xl font-bold " + (isActive ? "text-green-700" : "text-red-700")}>{isActive ? l.verified : l.expired}</h2>
+            {isActive && <p className="text-green-600 text-sm mt-1">{daysRemaining} {l.daysLeft}</p>}
+          </div>
+          <div className="p-6 space-y-4">
+            <div className="flex items-start gap-3"><Package className="w-5 h-5 text-gray-400 mt-0.5" /><div><p className="text-xs text-gray-400 uppercase">{l.product}</p><p className="font-medium">{warranty.product_name}</p></div></div>
+            <div className="flex items-start gap-3"><Hash className="w-5 h-5 text-gray-400 mt-0.5" /><div><p className="text-xs text-gray-400 uppercase">{l.reference}</p><p className="font-medium font-mono">{warranty.reference_number}</p></div></div>
+            {warranty.serial_number && <div className="flex items-start gap-3"><Hash className="w-5 h-5 text-gray-400 mt-0.5" /><div><p className="text-xs text-gray-400 uppercase">{l.serial}</p><p className="font-medium">{warranty.serial_number}</p></div></div>}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex items-start gap-2"><Calendar className="w-4 h-4 text-gray-400 mt-0.5" /><div><p className="text-xs text-gray-400">{l.startDate}</p><p className="text-sm font-medium">{warranty.start_date}</p></div></div>
+              <div className="flex items-start gap-2"><Calendar className="w-4 h-4 text-gray-400 mt-0.5" /><div><p className="text-xs text-gray-400">{l.endDate}</p><p className="text-sm font-medium">{warranty.end_date}</p></div></div>
+            </div>
+            {warranty.seller_name && <div><p className="text-xs text-gray-400 uppercase">{l.seller}</p><p className="text-sm">{warranty.seller_name}</p></div>}
+          </div>
+          <div className="border-t px-6 py-5 text-center bg-gray-50">
+            <img src={qrUrl} alt="QR Code" className="w-36 h-36 mx-auto mb-2" />
+            <p className="text-xs text-gray-400">{l.scan}</p>
+          </div>
+          <div className="px-6 pb-6">
+            <a href={"/api/warranties/" + id + "/certificate"} target="_blank" className="flex items-center justify-center gap-2 w-full bg-[#4169E1] text-white py-3 rounded-xl font-medium hover:bg-[#3457b5] transition-colors">
+              <Download className="w-4 h-4" /> {l.certificate}
+            </a>
+          </div>
+        </div>
+        <p className="text-center text-xs text-gray-400 mt-4">{l.issuedBy}</p>
       </div>
     </div>
   );

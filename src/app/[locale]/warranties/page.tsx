@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getWarranties, deleteWarranty } from "@/lib/warranties";
 import Link from "next/link";
-import { Shield, Plus, Search, Trash2, Eye, Package } from "lucide-react";
+import { Shield, Plus, Search, Trash2, Eye, Package, FileSpreadsheet } from "lucide-react";
 
 const t = {
   en: {
@@ -26,6 +26,7 @@ const t = {
     all: "All",
     back: "Dashboard",
     confirmDelete: "Are you sure you want to delete this warranty?",
+    importCSV: "Import CSV",
   },
   ar: {
     title: "\u0636\u0645\u0627\u0646\u0627\u062A\u064A",
@@ -44,7 +45,8 @@ const t = {
     view: "\u0639\u0631\u0636",
     all: "\u0627\u0644\u0643\u0644",
     back: "\u0644\u0648\u062D\u0629 \u0627\u0644\u062A\u062D\u0643\u0645",
-    confirmDelete: "\u0647\u0644 \u0623\u0646\u062A \u0645\u062A\u0623\u0643\u062F \u0645\u0646 \u062D\u0630\u0641 \u0647\u0630\u0627 \u0627\u0644\u0636\u0645\u0627\u0646\u061F",
+    confirmDelete: "\u0647\u0644 \u0623\u0646\u062a \u0645\u062a\u0623\u0643\u062f \u0645\u0646 \u062d\u0630\u0641 \u0647\u0630\u0627 \u0627\u0644\u0636\u0645\u0627\u0646\u061F",
+    importCSV: "\u0627\u0633\u062a\u064a\u0631\u0627\u062f CSV",
   },
 };
 
@@ -113,6 +115,9 @@ export default function WarrantiesPage() {
           </div>
           <div className="flex items-center gap-3">
             <Link href={"/" + locale + "/dashboard"} className="text-sm text-gray-500 hover:text-[#4169E1]">{labels.back}</Link>
+            <Link href={"/" + locale + "/warranties/import"} className="flex items-center gap-1 bg-white text-[#4169E1] border border-[#4169E1] px-4 py-2 rounded-lg text-sm hover:bg-blue-50">
+              <FileSpreadsheet className="w-4 h-4" /> {labels.importCSV}
+            </Link>
             <Link href={"/" + locale + "/warranties/new"} className="flex items-center gap-1 bg-[#4169E1] text-white px-4 py-2 rounded-lg text-sm hover:bg-[#3457b5]">
               <Plus className="w-4 h-4" /> {labels.addNew}
             </Link>

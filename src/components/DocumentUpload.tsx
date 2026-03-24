@@ -1,200 +1,77 @@
-'use client';
+"use client";
+import { useState, useEffect, useCallback } from "react";
+import { createClient } from "@/lib/supabase/client";
+import { Upload, File, Trash2, Download, AlertCircle } from "lucide-react";
 
-import { useState, useCallback } from 'react';
-import { usePathname } from 'next/navigation';
-import { createBrowserClient } from '@supabase/ssr';
+const t = {
+  en: { title: "Documents", dropzone: "Drag & drop files here", browse: "or click to browse", types: "PDF, JPEG, PNG, DOC, DOCX (max 250MB)", uploading: "Uploading...", noFiles: "No documents uploaded yet", delete: "Delete", download: "Download", error: "Upload failed" },
+  ar: { title: "\u0627\u0644\u0645\u0633\u062a\u0646\u062f\u0627\u062a", dropzone: "\u0627\u0633\u062d\u0628 \u0627\u0644\u0645\u0644\u0641\u0627\u062a \u0647\u0646\u0627", browse: "\u0623\u0648 \u0627\u0646\u0642\u0631 \u0644\u0644\u0627\u062e\u062a\u064a\u0627\u0631", types: "PDF, JPEG, PNG, DOC, DOCX (\u0623\u0642\u0635\u0649 250MB)", uploading: "\u062c\u0627\u0631\u064a \u0627\u0644\u0631\u0641\u0639...", noFiles: "\u0644\u0627 \u062a\u0648\u062c\u062f \u0645\u0633\u062a\u0646\u062f\u0627\u062a", delete: "\u062d\u0630\u0641", download: "\u062a\u062d\u0645\u064a\u0644", error: "\u0641\u0634\u0644 \u0627\u0644\u0631\u0641\u0639" },
+};
 
-const supabase = createBrowserClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+const ALLOWED = ["application/pdf", "image/jpeg", "image/png", "image/jpg", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"];
 
-interface UploadedFile {
-  id: string;
-  name: string;
-  size: number;
-  url: string;
-  type: string;
-}
+interface Props { warrantyId: string; locale?: string; }
 
-interface DocumentUploadProps {
-  warrantyId: string;
-  onUploadComplete?: (files: UploadedFile[]) => void;
-  maxFiles?: number;
-  maxSizeMB?: number;
-}
-
-export default function DocumentUpload({ warrantyId, onUploadComplete, maxFiles = 5, maxSizeMB = 10 }: DocumentUploadProps) {
-  const pathname = usePathname();
-  const locale = pathname?.startsWith('/ar') ? 'ar' : 'en';
-  const [files, setFiles] = useState<UploadedFile[]>([]);
+export default function DocumentUpload({ warrantyId, locale = "en" }: Props) {
+  const l = t[locale as keyof typeof t] || t.en;
+  const supabase = createClient();
+  const [docs, setDocs] = useState<any[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState("");
   const [dragOver, setDragOver] = useState(false);
-  const [error, setError] = useState('');
-  const [progress, setProgress] = useState(0);
 
-  const t = {
-    en: {
-      dropzone: 'Drop files here or click to browse',
-      formats: 'PDF, JPG, PNG up to ' + maxSizeMB + 'MB each',
-      uploading: 'Uploading...',
-      uploaded: 'Uploaded files',
-      remove: 'Remove',
-      maxFiles: `Maximum ${maxFiles} files allowed`,
-      tooLarge: `File exceeds ${maxSizeMB}MB limit`,
-      invalidType: 'Only PDF, JPG, and PNG files are accepted',
-    },
-    ar: {
-      dropzone: '\u0627\u0633\u062D\u0628 \u0627\u0644\u0645\u0644\u0641\u0627\u062A \u0647\u0646\u0627 \u0623\u0648 \u0627\u0646\u0642\u0631 \u0644\u0644\u062A\u0635\u0641\u062D',
-      formats: `PDF, JPG, PNG \u062D\u062A\u0649 ${maxSizeMB} \u0645\u064A\u062C\u0627\u0628\u0627\u064A\u062A \u0644\u0643\u0644 \u0645\u0644\u0641`,
-      uploading: '\u062C\u0627\u0631\u064A \u0627\u0644\u0631\u0641\u0639...',
-      uploaded: '\u0627\u0644\u0645\u0644\u0641\u0627\u062A \u0627\u0644\u0645\u0631\u0641\u0648\u0639\u0629',
-      remove: '\u0625\u0632\u0627\u0644\u0629',
-      maxFiles: `\u0627\u0644\u062D\u062F \u0627\u0644\u0623\u0642\u0635\u0649 ${maxFiles} \u0645\u0644\u0641\u0627\u062A`,
-      tooLarge: `\u0627\u0644\u0645\u0644\u0641 \u064A\u062A\u062C\u0627\u0648\u0632 ${maxSizeMB} \u0645\u064A\u062C\u0627\u0628\u0627\u064A\u062A`,
-      invalidType: '\u064A\u062A\u0645 \u0642\u0628\u0648\u0644 \u0645\u0644\u0641\u0627\u062A PDF \u0648 JPG \u0648 PNG \u0641\u0642\u0637',
-    },
-  };
+  const loadDocs = useCallback(async () => {
+    const { data } = await supabase.from("warranty_documents").select("*").eq("warranty_id", warrantyId).order("created_at", { ascending: false });
+    setDocs(data || []);
+  }, [warrantyId]);
 
-  const text = t[locale as keyof typeof t] || t.en;
-  const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png'];
+  useEffect(() => { loadDocs(); }, [loadDocs]);
 
-  const handleUpload = useCallback(async (fileList: FileList) => {
-    setError('');
-    const newFiles = Array.from(fileList);
+  async function handleUpload(file: globalThis.File) {
+    if (!ALLOWED.includes(file.type)) { setError("Invalid file type"); return; }
+    if (file.size > 250 * 1024 * 1024) { setError("File too large"); return; }
+    setUploading(true); setError("");
+    try {
+      const ext = file.name.split(".").pop() || "bin";
+      const path = warrantyId + "/" + Date.now() + "." + ext;
+      const { error: upErr } = await supabase.storage.from("warranty-documents").upload(path, file, { contentType: file.type });
+      if (upErr) throw upErr;
+      await supabase.from("warranty_documents").insert({ warranty_id: warrantyId, file_name: file.name, file_type: file.type, file_size: file.size, file_url: path });
+      loadDocs();
+    } catch (e: any) { setError(e.message || l.error); }
+    finally { setUploading(false); }
+  }
 
-    if (files.length + newFiles.length > maxFiles) {
-      setError(text.maxFiles);
-      return;
-    }
-
-    for (const file of newFiles) {
-      if (!allowedTypes.includes(file.type)) {
-        setError(text.invalidType);
-        return;
-      }
-      if (file.size > maxSizeMB * 1024 * 1024) {
-        setError(text.tooLarge);
-        return;
-      }
-    }
-
-    setUploading(true);
-    const uploaded: UploadedFile[] = [];
-
-    for (let i = 0; i < newFiles.length; i++) {
-      const file = newFiles[i];
-      const ext = file.name.split('.').pop();
-      const path = `${warrantyId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-
-      const { data, error: uploadError } = await supabase.storage
-        .from('warranty-documents')
-        .upload(path, file, { cacheControl: '3600', upsert: false });
-
-      if (uploadError) {
-        setError(uploadError.message);
-        break;
-      }
-
-      const { data: urlData } = supabase.storage
-        .from('warranty-documents')
-        .getPublicUrl(data.path);
-
-      uploaded.push({
-        id: data.path,
-        name: file.name,
-        size: file.size,
-        url: urlData.publicUrl,
-        type: file.type,
-      });
-
-      setProgress(Math.round(((i + 1) / newFiles.length) * 100));
-    }
-
-    const allFiles = [...files, ...uploaded];
-    setFiles(allFiles);
-    onUploadComplete?.(allFiles);
-    setUploading(false);
-    setProgress(0);
-  }, [files, warrantyId, maxFiles, maxSizeMB, text, onUploadComplete]);
-
-  const removeFile = async (fileId: string) => {
-    await supabase.storage.from('warranty-documents').remove([fileId]);
-    const updated = files.filter(f => f.id !== fileId);
-    setFiles(updated);
-    onUploadComplete?.(updated);
-  };
-
-  const formatSize = (bytes: number) => {
-    if (bytes < 1024) return bytes + ' B';
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
-  };
+  async function handleDelete(doc: any) {
+    await supabase.storage.from("warranty-documents").remove([doc.file_url]);
+    await supabase.from("warranty_documents").delete().eq("id", doc.id);
+    loadDocs();
+  }
 
   return (
-    <div className="space-y-4" dir={locale === 'ar' ? 'rtl' : 'ltr'}>
-      <div
-        onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-        onDragLeave={() => setDragOver(false)}
-        onDrop={(e) => { e.preventDefault(); setDragOver(false); handleUpload(e.dataTransfer.files); }}
-        onClick={() => document.getElementById('file-upload-input')?.click()}
-        className={`relative border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all ${
-          dragOver ? 'border-emerald-500 bg-emerald-50' : 'border-gray-300 hover:border-emerald-400 hover:bg-gray-50'
-        }`}
-      >
-        <input
-          id="file-upload-input"
-          type="file"
-          multiple
-          accept=".pdf,.jpg,.jpeg,.png"
-          className="hidden"
-          onChange={(e) => e.target.files && handleUpload(e.target.files)}
-        />
-        <svg className="mx-auto w-10 h-10 text-gray-400 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-        </svg>
-        <p className="text-sm font-medium text-gray-700">{uploading ? text.uploading : text.dropzone}</p>
-        <p className="text-xs text-gray-500 mt-1">{text.formats}</p>
-        {uploading && (
-          <div className="mt-3 w-full bg-gray-200 rounded-full h-2">
-            <div className="bg-emerald-500 h-2 rounded-full transition-all" style={{ width: progress + '%' }} />
-          </div>
-        )}
+    <div className="bg-white rounded-xl shadow-sm p-6">
+      <h3 className="font-bold text-lg mb-4">{l.title}</h3>
+      <div onDragOver={(e) => { e.preventDefault(); setDragOver(true); }} onDragLeave={() => setDragOver(false)}
+        onDrop={(e) => { e.preventDefault(); setDragOver(false); const f = e.dataTransfer.files[0]; if (f) handleUpload(f); }}
+        onClick={() => { const inp = document.createElement("input"); inp.type = "file"; inp.accept = ".pdf,.jpg,.jpeg,.png,.doc,.docx"; inp.onchange = (e: any) => { if (e.target.files[0]) handleUpload(e.target.files[0]); }; inp.click(); }}
+        className={"border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors " + (dragOver ? "border-[#4169E1] bg-blue-50" : "border-gray-300 hover:border-[#4169E1]")}>
+        <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+        <p className="text-sm text-gray-500">{uploading ? l.uploading : l.dropzone}</p>
+        <p className="text-xs text-gray-400 mt-1">{l.types}</p>
       </div>
-
-      {error && (
-        <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{error}</div>
-      )}
-
-      {files.length > 0 && (
-        <div className="space-y-2">
-          <p className="text-sm font-medium text-gray-700">{text.uploaded}</p>
-          {files.map((file) => (
-            <div key={file.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="flex-shrink-0 w-8 h-8 rounded bg-emerald-100 flex items-center justify-center">
-                  {file.type === 'application/pdf' ? (
-                    <svg className="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                    </svg>
-                  ) : (
-                    <svg className="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                  )}
-                </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">{file.name}</p>
-                  <p className="text-xs text-gray-500">{formatSize(file.size)}</p>
-                </div>
+      {error && <p className="text-red-500 text-sm mt-2 flex items-center gap-1"><AlertCircle className="w-4 h-4" />{error}</p>}
+      {docs.length > 0 ? (
+        <div className="mt-4 space-y-2">
+          {docs.map((doc) => (
+            <div key={doc.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div className="flex items-center gap-2"><File className="w-4 h-4 text-gray-500" /><span className="text-sm">{doc.file_name}</span><span className="text-xs text-gray-400">{(doc.file_size / 1024).toFixed(0)} KB</span></div>
+              <div className="flex gap-2">
+                <button onClick={(e) => { e.stopPropagation(); handleDelete(doc); }} className="text-red-500 hover:text-red-700"><Trash2 className="w-4 h-4" /></button>
               </div>
-              <button onClick={() => removeFile(file.id)} className="text-xs text-red-500 hover:text-red-700 font-medium flex-shrink-0">
-                {text.remove}
-              </button>
             </div>
           ))}
         </div>
-      )}
+      ) : <p className="text-sm text-gray-400 mt-4 text-center">{l.noFiles}</p>}
     </div>
   );
 }
