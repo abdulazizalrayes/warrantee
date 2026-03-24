@@ -1,382 +1,189 @@
 "use client";
 
-import { useState } from "react";
-import { useParams } from "next/navigation";
-import {
-  Plus,
-  Search,
-  Filter,
-  Calendar,
-  Grid3x3,
-  List,
-  Badge,
-} from "lucide-react";
-import { getDictionary, DIRECTION } from "@/lib/i18n";
-import type { Locale } from "@/lib/i18n";
+import { useState, useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+import { getWarranties, deleteWarranty } from "@/lib/warranties";
+import Link from "next/link";
+import { Shield, Plus, Search, Trash2, Eye, Package } from "lucide-react";
 
-type ViewMode = "grid" | "list";
-type StatusFilter = "all" | "active" | "pending" | "expired" | "claimed" | "draft";
+const t = {
+  en: {
+    title: "My Warranties",
+    search: "Search warranties...",
+    addNew: "Add New",
+    product: "Product",
+    brand: "Brand",
+    expires: "Expires",
+    status: "Status",
+    actions: "Actions",
+    active: "Active",
+    expired: "Expired",
+    claimed: "Claimed",
+    noWarranties: "No warranties yet. Add your first warranty!",
+    delete: "Delete",
+    view: "View",
+    all: "All",
+    back: "Dashboard",
+    confirmDelete: "Are you sure you want to delete this warranty?",
+  },
+  ar: {
+    title: "\u0636\u0645\u0627\u0646\u0627\u062A\u064A",
+    search: "\u0628\u062D\u062B \u0641\u064A \u0627\u0644\u0636\u0645\u0627\u0646\u0627\u062A...",
+    addNew: "\u0625\u0636\u0627\u0641\u0629 \u062C\u062F\u064A\u062F",
+    product: "\u0627\u0644\u0645\u0646\u062A\u062C",
+    brand: "\u0627\u0644\u0639\u0644\u0627\u0645\u0629",
+    expires: "\u064A\u0646\u062A\u0647\u064A",
+    status: "\u0627\u0644\u062D\u0627\u0644\u0629",
+    actions: "\u0625\u062C\u0631\u0627\u0621\u0627\u062A",
+    active: "\u0646\u0634\u0637",
+    expired: "\u0645\u0646\u062A\u0647\u064A",
+    claimed: "\u0645\u0637\u0627\u0644\u0628 \u0628\u0647",
+    noWarranties: "\u0644\u0627 \u062A\u0648\u062C\u062F \u0636\u0645\u0627\u0646\u0627\u062A \u0628\u0639\u062F. \u0623\u0636\u0641 \u0623\u0648\u0644 \u0636\u0645\u0627\u0646!",
+    delete: "\u062D\u0630\u0641",
+    view: "\u0639\u0631\u0636",
+    all: "\u0627\u0644\u0643\u0644",
+    back: "\u0644\u0648\u062D\u0629 \u0627\u0644\u062A\u062D\u0643\u0645",
+    confirmDelete: "\u0647\u0644 \u0623\u0646\u062A \u0645\u062A\u0623\u0643\u062F \u0645\u0646 \u062D\u0630\u0641 \u0647\u0630\u0627 \u0627\u0644\u0636\u0645\u0627\u0646\u061F",
+  },
+};
 
 export default function WarrantiesPage() {
   const params = useParams();
+  const router = useRouter();
   const locale = (params.locale as string) || "en";
-  const dict = getDictionary(locale);
-  const isRTL = locale === "ar";
-  const direction = DIRECTION[locale as Locale];
+  const labels = t[locale as keyof typeof t] || t.en;
+  const supabase = createClient();
 
-  const [viewMode, setViewMode] = useState<ViewMode>("grid");
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  const [searchTerm, setSearchTerm] = useState("");
+  const [warranties, setWarranties] = useState<any[]>([]);
+  const [filtered, setFiltered] = useState<any[]>([]);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [loading, setLoading] = useState(true);
 
-  // Mock warranty data
-  const warranties = [
-    {
-      id: 1,
-      product: "iPhone 15 Pro",
-      seller: isRTL ? "ÙØªØ¬Ø± Ø¢Ø¨Ù" : "Apple Store",
-      buyer: isRTL ? "ÙØ­ÙØ¯ Ø£Ø­ÙØ¯" : "Muhammad Ahmed",
-      status: "active" as const,
-      expiryDate: "2027-09-15",
-      refNumber: "WC-2024-001",
-      daysLeft: 532,
-    },
-    {
-      id: 2,
-      product: "Samsung 55\" TV",
-      seller: isRTL ? "ÙØªØ¬Ø± Ø³Ø§ÙØ³ÙÙØ¬" : "Samsung Store",
-      buyer: isRTL ? "ÙØ§Ø·ÙØ© Ø¹ÙÙ" : "Fatima Ali",
-      status: "pending" as const,
-      expiryDate: "2026-12-20",
-      refNumber: "WC-2024-002",
-      daysLeft: 272,
-    },
-    {
-      id: 3,
-      product: "MacBook Pro 16\"",
-      seller: isRTL ? "ÙØªØ¬Ø± Ø¢Ø¨Ù" : "Apple Store",
-      buyer: isRTL ? "ÙØ­ÙØ¯ Ø£Ø­ÙØ¯" : "Muhammad Ahmed",
-      status: "active" as const,
-      expiryDate: "2027-03-10",
-      refNumber: "WC-2024-003",
-      daysLeft: 348,
-    },
-    {
-      id: 4,
-      product: "Dell Monitor",
-      seller: isRTL ? "ÙØªØ¬Ø± Ø§ÙØ¥ÙÙØªØ±ÙÙÙØ§Øª" : "Electronics Store",
-      buyer: isRTL ? "Ø£Ø­ÙØ¯ ÙØ­ÙÙØ¯" : "Ahmed Mahmoud",
-      status: "expired" as const,
-      expiryDate: "2023-06-30",
-      refNumber: "WC-2023-004",
-      daysLeft: -633,
-    },
-    {
-      id: 5,
-      product: "Sony WH-1000XM5",
-      seller: isRTL ? "ÙØªØ¬Ø± Ø³ÙÙÙ" : "Sony Store",
-      buyer: isRTL ? "ÙØ­ÙØ¯ Ø£Ø­ÙØ¯" : "Muhammad Ahmed",
-      status: "claimed" as const,
-      expiryDate: "2026-01-15",
-      refNumber: "WC-2024-005",
-      daysLeft: 29,
-    },
-    {
-      id: 6,
-      product: "iPad Air",
-      seller: isRTL ? "ÙØªØ¬Ø± Ø¢Ø¨Ù" : "Apple Store",
-      buyer: isRTL ? "Ø³Ø§Ø±Ø© ÙØ­ÙØ¯" : "Sarah Mohamed",
-      status: "draft" as const,
-      expiryDate: "2027-05-20",
-      refNumber: "WC-DRAFT-001",
-      daysLeft: 419,
-    },
-  ];
+  useEffect(() => { loadWarranties(); }, []);
 
-  const statusConfig = {
-    active: {
-      label: dict.warranty.status.active,
-      color: "bg-green-100 text-green-800",
-      dotColor: "bg-green-500",
-    },
-    pending: {
-      label: dict.warranty.status.pending,
-      color: "bg-yellow-100 text-yellow-800",
-      dotColor: "bg-yellow-500",
-    },
-    expired: {
-      label: dict.warranty.status.expired,
-      color: "bg-red-100 text-red-800",
-      dotColor: "bg-red-500",
-    },
-    claimed: {
-      label: dict.warranty.status.claimed,
-      color: "bg-blue-100 text-blue-800",
-      dotColor: "bg-blue-500",
-    },
-    draft: {
-      label: dict.warranty.status.draft,
-      color: "bg-gray-100 text-gray-800",
-      dotColor: "bg-gray-500",
-    },
-  };
+  useEffect(() => {
+    let result = warranties;
+    if (search) {
+      const q = search.toLowerCase();
+      result = result.filter(w => w.product_name.toLowerCase().includes(q) || (w.brand || "").toLowerCase().includes(q));
+    }
+    if (statusFilter !== "all") {
+      const now = new Date();
+      if (statusFilter === "active") result = result.filter(w => new Date(w.warranty_end_date) > now);
+      else if (statusFilter === "expired") result = result.filter(w => new Date(w.warranty_end_date) <= now);
+    }
+    setFiltered(result);
+  }, [search, statusFilter, warranties]);
 
-  const filteredWarranties =
-    statusFilter === "all"
-      ? warranties
-      : warranties.filter((w) => w.status === statusFilter);
+  async function loadWarranties() {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { router.push("/" + locale + "/auth"); return; }
+      const data = await getWarranties();
+      setWarranties(data || []);
+      setFiltered(data || []);
+    } finally { setLoading(false); }
+  }
 
-  const searchedWarranties = filteredWarranties.filter((w) =>
-    w.product.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  async function handleDelete(id: string) {
+    if (!confirm(labels.confirmDelete)) return;
+    await deleteWarranty(id);
+    loadWarranties();
+  }
 
-  const hasWarranties = searchedWarranties.length > 0;
+  function getStatus(w: any) {
+    const now = new Date();
+    if (new Date(w.warranty_end_date) <= now) return { label: labels.expired, cls: "bg-red-100 text-red-700" };
+    return { label: labels.active, cls: "bg-green-100 text-green-700" };
+  }
+
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#4169E1]" /></div>;
+  }
 
   return (
-    <div dir={direction} className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl sm:text-4xl font-bold text-navy mb-1">
-            {dict.nav.warranties}
-          </h1>
-          <p className="text-gray-600">
-            {isRTL ? "Ø¥Ø¯Ø§Ø±Ø© Ø¬ÙÙØ¹ Ø¶ÙØ§ÙØ§ØªÙ ÙÙ ÙÙØ§Ù ÙØ§Ø­Ø¯" : "Manage all your warranties in one place"}
-          </p>
+    <div className="min-h-screen bg-[#FAFAFA]">
+      <header className="bg-white border-b border-gray-100 px-6 py-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Shield className="w-8 h-8 text-[#4169E1]" />
+            <span className="text-xl font-bold text-[#1A1A2E]">{labels.title}</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <Link href={"/" + locale + "/dashboard"} className="text-sm text-gray-500 hover:text-[#4169E1]">{labels.back}</Link>
+            <Link href={"/" + locale + "/warranties/new"} className="flex items-center gap-1 bg-[#4169E1] text-white px-4 py-2 rounded-lg text-sm hover:bg-[#3457b5]">
+              <Plus className="w-4 h-4" /> {labels.addNew}
+            </Link>
+          </div>
         </div>
-        <a
-          href={`/${locale}/warranties/new`}
-          className="flex items-center gap-2 bg-gold hover:bg-yellow-500 text-navy font-semibold px-6 py-3 rounded-lg transition w-full sm:w-auto justify-center sm:justify-start"
-        >
-          <Plus size={20} />
-          {dict.warranty.create}
-        </a>
-      </div>
+      </header>
 
-      {/* Filters Bar */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 space-y-4">
-        {/* Search and View Toggle */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
-          <div className="flex-1 relative">
-            <Search
-              size={18}
-              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-            />
+      <main className="max-w-7xl mx-auto px-6 py-8">
+        <div className="flex flex-col sm:flex-row gap-4 mb-6">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
               type="text"
-              placeholder={isRTL ? "Ø§Ø¨Ø­Ø« Ø¹Ù ÙÙØªØ¬..." : "Search product..."}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold focus:border-transparent"
+              placeholder={labels.search}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#4169E1] focus:border-transparent outline-none"
             />
           </div>
-
-          <div className="flex gap-2 bg-gray-100 p-1 rounded-lg">
-            <button
-              onClick={() => setViewMode("grid")}
-              className={`p-2 rounded transition ${
-                viewMode === "grid"
-                  ? "bg-white text-navy shadow-sm"
-                  : "text-gray-600 hover:text-navy"
-              }`}
-            >
-              <Grid3x3 size={20} />
-            </button>
-            <button
-              onClick={() => setViewMode("list")}
-              className={`p-2 rounded transition ${
-                viewMode === "list"
-                  ? "bg-white text-navy shadow-sm"
-                  : "text-gray-600 hover:text-navy"
-              }`}
-            >
-              <List size={20} />
-            </button>
-          </div>
-        </div>
-
-        {/* Status Filter */}
-        <div className="flex flex-wrap gap-2">
-          {(["all", "active", "pending", "expired", "claimed", "draft"] as const).map(
-            (status) => (
-              <button
-                key={status}
-                onClick={() => setStatusFilter(status)}
-                className={`px-4 py-2 rounded-lg font-medium transition ${
-                  statusFilter === status
-                    ? "bg-gold text-navy"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
-              >
-                {status === "all"
-                  ? isRTL
-                    ? "Ø§ÙÙÙ"
-                    : "All"
-                  : statusConfig[status].label}
+          <div className="flex gap-2">
+            {["all", "active", "expired"].map(s => (
+              <button key={s} onClick={() => setStatusFilter(s)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${statusFilter === s ? "bg-[#4169E1] text-white" : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"}`}>
+                {s === "all" ? labels.all : s === "active" ? labels.active : labels.expired}
               </button>
-            )
-          )}
-        </div>
-      </div>
-
-      {/* Warranties Display */}
-      {hasWarranties ? (
-        <>
-          {viewMode === "grid" ? (
-            // Grid View
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {searchedWarranties.map((warranty) => (
-                <div
-                  key={warranty.id}
-                  className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition cursor-pointer"
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <h3 className="font-bold text-navy text-lg flex-1">
-                      {warranty.product}
-                    </h3>
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap ${
-                        statusConfig[warranty.status].color
-                      }`}
-                    >
-                      {statusConfig[warranty.status].label}
-                    </span>
-                  </div>
-
-                  <div className="space-y-3 mb-4 text-sm">
-                    <div>
-                      <p className="text-gray-600">
-                        {isRTL ? "Ø§ÙØ¨Ø§Ø¦Ø¹" : "Seller"}
-                      </p>
-                      <p className="font-medium text-navy">{warranty.seller}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-600">
-                        {isRTL ? "Ø§ÙÙØ´ØªØ±Ù" : "Buyer"}
-                      </p>
-                      <p className="font-medium text-navy">{warranty.buyer}</p>
-                    </div>
-                    <div className="flex items-center gap-2 pt-2 border-t border-gray-200">
-                      <Calendar size={14} className="text-gray-500" />
-                      <span className="text-gray-600">
-                        {new Date(warranty.expiryDate).toLocaleDateString(
-                          locale === "ar" ? "ar-SA" : "en-US"
-                        )}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-                    <span className="text-xs font-mono text-gray-500">
-                      {warranty.refNumber}
-                    </span>
-                    {warranty.daysLeft > 0 && (
-                      <span
-                        className={`text-xs font-bold px-2 py-1 rounded ${
-                          warranty.daysLeft <= 30
-                            ? "bg-red-100 text-red-700"
-                            : "bg-green-100 text-green-700"
-                        }`}
-                      >
-                        {warranty.daysLeft} {isRTL ? "ÙÙÙ" : "days"}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            // List View
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50 border-b border-gray-200">
-                    <tr>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
-                        {isRTL ? "Ø§ÙÙÙØªØ¬" : "Product"}
-                      </th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
-                        {isRTL ? "Ø§ÙØ¨Ø§Ø¦Ø¹" : "Seller"}
-                      </th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
-                        {dict.warranty.status.active}
-                      </th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
-                        {isRTL ? "ØªØ§Ø±ÙØ® Ø§ÙØ§ÙØªÙØ§Ø¡" : "Expiry Date"}
-                      </th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
-                        {isRTL ? "Ø§ÙÙØ±Ø¬Ø¹" : "Reference"}
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {searchedWarranties.map((warranty) => (
-                      <tr
-                        key={warranty.id}
-                        className="hover:bg-gray-50 transition cursor-pointer"
-                      >
-                        <td className="px-6 py-4">
-                          <p className="font-medium text-navy">
-                            {warranty.product}
-                          </p>
-                        </td>
-                        <td className="px-6 py-4 text-gray-600">
-                          {warranty.seller}
-                        </td>
-                        <td className="px-6 py-4">
-                          <span
-                            className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold ${
-                              statusConfig[warranty.status].color
-                            }`}
-                          >
-                            <span
-                              className={`w-2 h-2 rounded-full ${
-                                statusConfig[warranty.status].dotColor
-                              }`}
-                            ></span>
-                            {statusConfig[warranty.status].label}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-gray-600">
-                          {new Date(warranty.expiryDate).toLocaleDateString(
-                            locale === "ar" ? "ar-SA" : "en-US"
-                          )}
-                        </td>
-                        <td className="px-6 py-4 text-gray-600 font-mono text-sm">
-                          {warranty.refNumber}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-        </>
-      ) : (
-        // Empty State
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
-          <div className="flex justify-center mb-4">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
-              <Badge size={32} className="text-gray-400" />
-            </div>
+            ))}
           </div>
-          <h3 className="text-xl font-bold text-navy mb-2">
-            {isRTL ? "ÙØ§ ØªÙØ¬Ø¯ Ø¶ÙØ§ÙØ§Øª" : "No warranties found"}
-          </h3>
-          <p className="text-gray-600 mb-6">
-            {isRTL
-              ? "Ø§Ø¨Ø¯Ø£ Ø¨Ø¥ÙØ´Ø§Ø¡ Ø¶ÙØ§Ù Ø¬Ø¯ÙØ¯"
-              : "Start by creating your first warranty"}
-          </p>
-          <a
-            href={`/${locale}/warranties/new`}
-            className="inline-flex items-center gap-2 bg-gold hover:bg-yellow-500 text-navy font-semibold px-6 py-3 rounded-lg transition"
-          >
-            <Plus size={20} />
-            {dict.warranty.create}
-          </a>
         </div>
-      )}
+
+        {filtered.length === 0 ? (
+          <div className="text-center py-16">
+            <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+            <p className="text-gray-500">{labels.noWarranties}</p>
+            <Link href={"/" + locale + "/warranties/new"} className="inline-flex items-center gap-1 mt-4 text-[#4169E1] hover:underline">
+              <Plus className="w-4 h-4" /> {labels.addNew}
+            </Link>
+          </div>
+        ) : (
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b bg-gray-50">
+                  <th className="text-start py-3 px-4 text-sm font-medium text-gray-500">{labels.product}</th>
+                  <th className="text-start py-3 px-4 text-sm font-medium text-gray-500">{labels.brand}</th>
+                  <th className="text-start py-3 px-4 text-sm font-medium text-gray-500">{labels.expires}</th>
+                  <th className="text-start py-3 px-4 text-sm font-medium text-gray-500">{labels.status}</th>
+                  <th className="text-start py-3 px-4 text-sm font-medium text-gray-500">{labels.actions}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((w) => {
+                  const st = getStatus(w);
+                  return (
+                    <tr key={w.id} className="border-b last:border-0 hover:bg-gray-50">
+                      <td className="py-3 px-4 font-medium">{w.product_name}</td>
+                      <td className="py-3 px-4 text-gray-600">{w.brand || "-"}</td>
+                      <td className="py-3 px-4 text-gray-600">{new Date(w.warranty_end_date).toLocaleDateString()}</td>
+                      <td className="py-3 px-4"><span className={"px-2 py-1 rounded-full text-xs font-medium " + st.cls}>{st.label}</span></td>
+                      <td className="py-3 px-4">
+                        <div className="flex gap-2">
+                          <button onClick={() => handleDelete(w.id)} className="text-red-500 hover:text-red-700"><Trash2 className="w-4 h-4" /></button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </main>
     </div>
   );
 }

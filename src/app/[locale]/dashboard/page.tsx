@@ -1,292 +1,173 @@
 "use client";
 
-import { useParams } from "next/navigation";
-import {
-  Shield,
-  AlertCircle,
-  Clock,
-  TrendingUp,
-  Plus,
-  ArrowRight,
-  Eye,
-  Share2,
-  Calendar,
-} from "lucide-react";
-import { getDictionary, DIRECTION } from "@/lib/i18n";
-import type { Locale } from "@/lib/i18n";
+import { useState, useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+import { getDashboardStats, getExpiringWarranties } from "@/lib/warranties";
+import Link from "next/link";
+import { Shield, Package, AlertTriangle, Clock, Plus, Bell, LogOut, Store } from "lucide-react";
+
+const translations = {
+  en: {
+    welcome: "Welcome back",
+    dashboard: "Dashboard",
+    totalWarranties: "Total Warranties",
+    activeWarranties: "Active",
+    expiringSoon: "Expiring Soon",
+    expired: "Expired",
+    totalValue: "Total Protected Value",
+    addWarranty: "Add Warranty",
+    viewAll: "View All",
+    expiringWarranties: "Expiring Warranties",
+    noExpiring: "No warranties expiring soon",
+    daysLeft: "days left",
+    signOut: "Sign Out",
+    sellerDashboard: "Seller Dashboard",
+    notifications: "Notifications",
+  },
+  ar: {
+    welcome: "\u0645\u0631\u062D\u0628\u064B\u0627 \u0628\u0639\u0648\u062F\u062A\u0643",
+    dashboard: "\u0644\u0648\u062D\u0629 \u0627\u0644\u062A\u062D\u0643\u0645",
+    totalWarranties: "\u0625\u062C\u0645\u0627\u0644\u064A \u0627\u0644\u0636\u0645\u0627\u0646\u0627\u062A",
+    activeWarranties: "\u0646\u0634\u0637\u0629",
+    expiringSoon: "\u062A\u0646\u062A\u0647\u064A \u0642\u0631\u064A\u0628\u064B\u0627",
+    expired: "\u0645\u0646\u062A\u0647\u064A\u0629",
+    totalValue: "\u0625\u062C\u0645\u0627\u0644\u064A \u0627\u0644\u0642\u064A\u0645\u0629 \u0627\u0644\u0645\u062D\u0645\u064A\u0629",
+    addWarranty: "\u0625\u0636\u0627\u0641\u0629 \u0636\u0645\u0627\u0646",
+    viewAll: "\u0639\u0631\u0636 \u0627\u0644\u0643\u0644",
+    expiringWarranties: "\u0636\u0645\u0627\u0646\u0627\u062A \u062A\u0646\u062A\u0647\u064A \u0642\u0631\u064A\u0628\u064B\u0627",
+    noExpiring: "\u0644\u0627 \u062A\u0648\u062C\u062F \u0636\u0645\u0627\u0646\u0627\u062A \u062A\u0646\u062A\u0647\u064A \u0642\u0631\u064A\u0628\u064B\u0627",
+    daysLeft: "\u064A\u0648\u0645 \u0645\u062A\u0628\u0642\u064A",
+    signOut: "\u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062E\u0631\u0648\u062C",
+    sellerDashboard: "\u0644\u0648\u062D\u0629 \u0627\u0644\u0628\u0627\u0626\u0639",
+    notifications: "\u0627\u0644\u0625\u0634\u0639\u0627\u0631\u0627\u062A",
+  },
+};
 
 export default function DashboardPage() {
   const params = useParams();
+  const router = useRouter();
   const locale = (params.locale as string) || "en";
-  const dict = getDictionary(locale);
-  const isRTL = locale === "ar";
-  const direction = DIRECTION[locale as Locale];
+  const t = translations[locale as keyof typeof translations] || translations.en;
+  const supabase = createClient();
 
-  // Mock data
-  const stats = [
-    {
-      label: dict.dashboard.active_warranties,
-      value: "12",
-      icon: Shield,
-      color: "from-green-50 to-emerald-50",
-      borderColor: "border-green-200",
-      textColor: "text-green-700",
-    },
-    {
-      label: dict.dashboard.expiring_soon,
-      value: "3",
-      icon: Clock,
-      color: "from-yellow-50 to-amber-50",
-      borderColor: "border-yellow-200",
-      textColor: "text-yellow-700",
-    },
-    {
-      label: dict.dashboard.pending_approval,
-      value: "5",
-      icon: AlertCircle,
-      color: "from-blue-50 to-cyan-50",
-      borderColor: "border-blue-200",
-      textColor: "text-blue-700",
-    },
-    {
-      label: dict.dashboard.total_managed,
-      value: "42",
-      icon: TrendingUp,
-      color: "from-purple-50 to-violet-50",
-      borderColor: "border-purple-200",
-      textColor: "text-purple-700",
-    },
+  const [user, setUser] = useState<any>(null);
+  const [stats, setStats] = useState({ total: 0, active: 0, expiringSoon: 0, expired: 0, totalValue: 0 });
+  const [expiring, setExpiring] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadDashboard();
+  }, []);
+
+  async function loadDashboard() {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        router.push("/" + locale + "/auth");
+        return;
+      }
+      setUser(user);
+
+      const [statsData, expiringData] = await Promise.all([
+        getDashboardStats().catch(() => ({ total: 0, active: 0, expiringSoon: 0, expired: 0, totalValue: 0 })),
+        getExpiringWarranties(30).catch(() => []),
+      ]);
+      setStats(statsData);
+      setExpiring(expiringData || []);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleSignOut() {
+    await supabase.auth.signOut();
+    router.push("/" + locale + "/auth");
+  }
+
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#4169E1]" /></div>;
+  }
+
+  const statCards = [
+    { label: t.totalWarranties, value: stats.total, icon: Package, color: "bg-blue-500" },
+    { label: t.activeWarranties, value: stats.active, icon: Shield, color: "bg-green-500" },
+    { label: t.expiringSoon, value: stats.expiringSoon, icon: AlertTriangle, color: "bg-orange-500" },
+    { label: t.expired, value: stats.expired, icon: Clock, color: "bg-red-500" },
   ];
-
-  const recentActivity = [
-    {
-      id: 1,
-      action: isRTL ? "تم إنشاء ضمان جديد" : "New warranty created",
-      product: "iPhone 15 Pro",
-      timestamp: isRTL ? "منذ ساعة" : "1 hour ago",
-      type: "created",
-    },
-    {
-      id: 2,
-      action: isRTL ? "تمت الموافقة على الضمان" : "Warranty approved",
-      product: "Samsung TV 55\"",
-      timestamp: isRTL ? "منذ 3 ساعات" : "3 hours ago",
-      type: "approved",
-    },
-    {
-      id: 3,
-      action: isRTL ? "تم رفع مستند جديد" : "Document uploaded",
-      product: "MacBook Pro",
-      timestamp: isRTL ? "منذ يوم واحد" : "1 day ago",
-      type: "uploaded",
-    },
-    {
-      id: 4,
-      action: isRTL ? "تم إنشاء مطالبة" : "Claim submitted",
-      product: "iPad Air",
-      timestamp: isRTL ? "منذ يومين" : "2 days ago",
-      type: "claimed",
-    },
-  ];
-
-  const expiringWarranties = [
-    {
-      id: 1,
-      product: "Sony Headphones",
-      expiryDate: "2026-04-15",
-      daysLeft: 23,
-      seller: isRTL ? "متجر الإلكترونيات" : "Electronics Store",
-    },
-    {
-      id: 2,
-      product: "Dell Monitor",
-      expiryDate: "2026-04-22",
-      daysLeft: 30,
-      seller: isRTL ? "متجر التكنولوجيا" : "Tech Shop",
-    },
-    {
-      id: 3,
-      product: "Logitech Keyboard",
-      expiryDate: "2026-05-05",
-      daysLeft: 43,
-      seller: isRTL ? "أمازون" : "Amazon",
-    },
-  ];
-
-  const quickActions = [
-    {
-      title: isRTL ? "إضافة ضمان" : "Add Warranty",
-      href: "/warranties/new",
-      icon: Plus,
-      color: "bg-gold hover:bg-yellow-500 text-navy",
-    },
-    {
-      title: isRTL ? "عرض جميع الضمانات" : "View All Warranties",
-      href: "/warranties",
-      icon: Eye,
-      color: "bg-navy hover:bg-navy-dark text-white",
-    },
-    {
-      title: isRTL ? "دعوة البائع" : "Invite Seller",
-      href: "/settings/team",
-      icon: Share2,
-      color: "bg-gray-600 hover:bg-gray-700 text-white",
-    },
-  ];
-
-  const getDaysLeftColor = (daysLeft: number) => {
-    if (daysLeft <= 7) return "text-red-600 bg-red-50";
-    if (daysLeft <= 14) return "text-yellow-600 bg-yellow-50";
-    return "text-green-600 bg-green-50";
-  };
 
   return (
-    <div dir={direction} className="space-y-8">
-      {/* Welcome Section */}
-      <div>
-        <h1 className="text-3xl sm:text-4xl font-bold text-navy mb-2">
-          {dict.dashboard.welcome},{" "}
-          <span className="text-gold">{isRTL ? "محمد" : "Muhammad"}</span>!
-        </h1>
-        <p className="text-gray-600">
-          {isRTL
-            ? "إليك نظرة عامة على جميع ضماناتك"
-            : "Here's an overview of all your warranties"}
-        </p>
-      </div>
+    <div className="min-h-screen bg-[#FAFAFA]">
+      <header className="bg-white border-b border-gray-100 px-6 py-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Shield className="w-8 h-8 text-[#4169E1]" />
+            <span className="text-xl font-bold text-[#1A1A2E]">{t.dashboard}</span>
+          </div>
+          <div className="flex items-center gap-4">
+            <Link href={"/" + locale + "/seller"} className="flex items-center gap-1 text-sm text-gray-600 hover:text-[#4169E1]">
+              <Store className="w-4 h-4" /> {t.sellerDashboard}
+            </Link>
+            <Link href={"/" + locale + "/warranties/new"} className="flex items-center gap-1 bg-[#4169E1] text-white px-4 py-2 rounded-lg text-sm hover:bg-[#3457b5]">
+              <Plus className="w-4 h-4" /> {t.addWarranty}
+            </Link>
+            <button onClick={handleSignOut} className="flex items-center gap-1 text-sm text-gray-500 hover:text-red-500">
+              <LogOut className="w-4 h-4" /> {t.signOut}
+            </button>
+          </div>
+        </div>
+      </header>
 
-      {/* Stats Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat, index) => {
-          const Icon = stat.icon;
-          return (
-            <div
-              key={index}
-              className={`bg-gradient-to-br ${stat.color} border ${stat.borderColor} rounded-lg p-6 shadow-sm hover:shadow-md transition`}
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div className={`p-3 rounded-lg bg-white/50 ${stat.textColor}`}>
-                  <Icon size={24} />
+      <main className="max-w-7xl mx-auto px-6 py-8">
+        <h1 className="text-2xl font-bold text-[#1A1A2E] mb-1">
+          {t.welcome}, {user?.user_metadata?.full_name || user?.email?.split("@")[0]}
+        </h1>
+        <p className="text-gray-500 mb-8">{t.totalValue}: {stats.totalValue.toLocaleString()} SAR</p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          {statCards.map((card, i) => (
+            <div key={i} className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-500">{card.label}</p>
+                  <p className="text-3xl font-bold text-[#1A1A2E] mt-1">{card.value}</p>
+                </div>
+                <div className={card.color + " p-3 rounded-xl"}>
+                  <card.icon className="w-6 h-6 text-white" />
                 </div>
               </div>
-              <h3 className="text-gray-600 text-sm font-medium mb-1">
-                {stat.label}
-              </h3>
-              <p className="text-3xl font-bold text-navy">{stat.value}</p>
             </div>
-          );
-        })}
-      </div>
-
-      {/* Quick Actions */}
-      <div className="flex flex-wrap gap-3">
-        {quickActions.map((action, index) => {
-          const Icon = action.icon;
-          return (
-            <a
-              key={index}
-              href={`/${locale}${action.href}`}
-              className={`${action.color} flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition transform hover:scale-105`}
-            >
-              <Icon size={18} />
-              <span>{action.title}</span>
-            </a>
-          );
-        })}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Recent Activity */}
-        <div className="lg:col-span-2">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-navy">
-                {dict.dashboard.recent_activity}
-              </h2>
-              <a
-                href={`/${locale}/dashboard`}
-                className="text-gold hover:text-yellow-600 font-semibold text-sm flex items-center gap-1 transition"
-              >
-                {dict.dashboard.view_all}
-                <ArrowRight size={16} />
-              </a>
-            </div>
-
-            <div className="space-y-4">
-              {recentActivity.map((activity) => (
-                <div
-                  key={activity.id}
-                  className="flex items-center gap-4 pb-4 border-b border-gray-100 last:border-b-0"
-                >
-                  <div
-                    className={`w-3 h-3 rounded-full ${
-                      activity.type === "created"
-                        ? "bg-blue-500"
-                        : activity.type === "approved"
-                          ? "bg-green-500"
-                          : activity.type === "uploaded"
-                            ? "bg-purple-500"
-                            : "bg-orange-500"
-                    }`}
-                  ></div>
-                  <div className="flex-1">
-                    <p className="font-medium text-navy">{activity.action}</p>
-                    <p className="text-sm text-gray-600">{activity.product}</p>
-                  </div>
-                  <span className="text-xs text-gray-500 whitespace-nowrap">
-                    {activity.timestamp}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
+          ))}
         </div>
 
-        {/* Expiring Soon */}
-        <div>
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h2 className="text-xl font-bold text-navy mb-6">
-              {dict.dashboard.expiring_soon}
-            </h2>
-
-            <div className="space-y-4">
-              {expiringWarranties.map((warranty) => (
-                <div
-                  key={warranty.id}
-                  className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition"
-                >
-                  <div className="flex items-start justify-between mb-2">
-                    <h3 className="font-semibold text-navy text-sm">
-                      {warranty.product}
-                    </h3>
-                    <span
-                      className={`text-xs font-bold px-2 py-1 rounded ${getDaysLeftColor(warranty.daysLeft)}`}
-                    >
-                      {warranty.daysLeft}{isRTL ? " يوم" : " days"}
-                    </span>
-                  </div>
-                  <p className="text-xs text-gray-600 mb-3">{warranty.seller}</p>
-                  <div className="flex items-center gap-2">
-                    <Calendar size={14} className="text-gray-500" />
-                    <span className="text-xs text-gray-600">
-                      {new Date(warranty.expiryDate).toLocaleDateString(
-                        locale === "ar" ? "ar-SA" : "en-US"
-                      )}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <a
-              href={`/${locale}/warranties`}
-              className="block mt-6 w-full text-center bg-gray-100 hover:bg-gray-200 text-navy font-semibold py-2 rounded-lg transition"
-            >
-              {dict.dashboard.view_all}
-            </a>
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-semibold text-[#1A1A2E]">{t.expiringWarranties}</h2>
+            <Link href={"/" + locale + "/warranties"} className="text-[#4169E1] text-sm hover:underline">{t.viewAll}</Link>
           </div>
+          {expiring.length === 0 ? (
+            <p className="text-gray-500 text-center py-8">{t.noExpiring}</p>
+          ) : (
+            <div className="space-y-3">
+              {expiring.map((w) => {
+                const daysLeft = Math.ceil((new Date(w.warranty_end_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+                return (
+                  <div key={w.id} className="flex items-center justify-between p-4 bg-orange-50 rounded-lg border border-orange-100">
+                    <div>
+                      <p className="font-medium text-[#1A1A2E]">{w.product_name}</p>
+                      <p className="text-sm text-gray-500">{w.brand || ""} {w.model_number || ""}</p>
+                    </div>
+                    <div className="text-end">
+                      <p className="text-orange-600 font-semibold">{daysLeft} {t.daysLeft}</p>
+                      <p className="text-xs text-gray-400">{new Date(w.warranty_end_date).toLocaleDateString()}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
-      </div>
+      </main>
     </div>
   );
 }
