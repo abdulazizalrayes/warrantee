@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
-import "./globals.css";
+import "../globals.css";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
 import JsonLd from "@/components/JsonLd";
 
@@ -8,11 +8,11 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: {
-    default: "Warrantee — Trust the Terms™",
+    default: "Warrantee â Trust the Termsâ¢",
     template: "%s | Warrantee",
   },
   description: "Digital warranty management platform. Track, manage, and claim your product warranties in one place. Bilingual support for Arabic and English.",
-  keywords: ["warranty", "warranty management", "product warranty", "digital warranty", "warranty tracking", "warranty claims", "ضمان", "إدارة الضمانات", "Saudi Arabia", "Middle East"],
+  keywords: ["warranty", "warranty management", "product warranty", "digital warranty", "warranty tracking", "warranty claims", "Ø¶ÙØ§Ù", "Ø¥Ø¯Ø§Ø±Ø© Ø§ÙØ¶ÙØ§ÙØ§Øª", "Saudi Arabia", "Middle East"],
   authors: [{ name: "Warrantee" }],
   creator: "Warrantee",
   publisher: "Warrantee",
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     siteName: "Warrantee",
-    title: "Warrantee — Trust the Terms™",
+    title: "Warrantee â Trust the Termsâ¢",
     description: "Digital warranty management platform for the Middle East. Track, manage, and claim your warranties.",
     url: "https://warrantee.sa",
     locale: "en_US",
@@ -43,7 +43,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Warrantee — Trust the Terms™",
+    title: "Warrantee â Trust the Termsâ¢",
     description: "Digital warranty management platform for the Middle East.",
     images: ["/og-image.png"],
   },
