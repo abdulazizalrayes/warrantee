@@ -1,80 +1,95 @@
 import type { Metadata, Viewport } from "next";
-import { notFound } from "next/navigation";
-import { isValidLocale, DIRECTION } from "@/lib/i18n";
-import "@/app/globals.css";
+import { Inter } from "next/font/google";
+import "./globals.css";
+import GoogleAnalytics from "@/components/GoogleAnalytics";
+import JsonLd from "@/components/JsonLd";
+
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Warrantee — Trust the Terms™",
-  description:
-    "Warrantee is the warranty management platform for businesses and consumers. Track, approve, and extend warranties with confidence. Bilingual Arabic and English.",
-  keywords: [
-    "warranty management",
-    "warranty tracking",
-    "warranty certificates",
-    "Arabic",
-    "English",
-    "SaaS",
-    "warrantee",
-  ],
-  robots: "index, follow",
+  title: {
+    default: "Warrantee — Trust the Terms™",
+    template: "%s | Warrantee",
+  },
+  description: "Digital warranty management platform. Track, manage, and claim your product warranties in one place. Bilingual support for Arabic and English.",
+  keywords: ["warranty", "warranty management", "product warranty", "digital warranty", "warranty tracking", "warranty claims", "ضمان", "إدارة الضمانات", "Saudi Arabia", "Middle East"],
   authors: [{ name: "Warrantee" }],
+  creator: "Warrantee",
+  publisher: "Warrantee",
+  metadataBase: new URL("https://warrantee.sa"),
+  alternates: {
+    canonical: "/",
+    languages: {
+      "en": "/en",
+      "ar": "/ar",
+    },
+  },
   openGraph: {
-    title: "Warrantee — Trust the Terms™",
-    description:
-      "Warranty management platform with bilingual certificates and smart approvals.",
-    url: "https://warrantee.io",
-    siteName: "Warrantee",
-    locale: "en_US",
     type: "website",
+    siteName: "Warrantee",
+    title: "Warrantee — Trust the Terms™",
+    description: "Digital warranty management platform for the Middle East. Track, manage, and claim your warranties.",
+    url: "https://warrantee.sa",
+    locale: "en_US",
+    alternateLocale: "ar_SA",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Warrantee - Trust the Terms",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Warrantee — Trust the Terms™",
-    description:
-      "Warranty management platform with bilingual certificates and smart approvals.",
+    description: "Digital warranty management platform for the Middle East.",
+    images: ["/og-image.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
   },
 };
 
 export const viewport: Viewport = {
+  themeColor: "#1A1A2E",
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
 };
 
-interface LocaleLayoutProps {
-  children: React.ReactNode;
-  params: Promise<{ locale: string }>;
-}
-
-export async function generateStaticParams() {
-  return [{ locale: "en" }, { locale: "ar" }];
-}
-
 export default async function LocaleLayout({
   children,
   params,
-}: LocaleLayoutProps) {
+}: {
+  children: React.ReactNode;
+  params: Promise<{ locale: string }>;
+}) {
   const { locale } = await params;
-
-  if (!isValidLocale(locale)) {
-    notFound();
-  }
-
-  const direction = DIRECTION[locale];
+  const direction = locale === "ar" ? "rtl" : "ltr";
   const langCode = locale === "ar" ? "ar-SA" : "en-US";
 
   return (
     <html lang={langCode} dir={direction}>
       <head>
-        <link rel="icon" href="/favicon.ico" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap"
-          rel="stylesheet"
-        />
-        <meta name="theme-color" content="#1A1A2E" />
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="alternate" hrefLang="en" href="https://warrantee.sa/en" />
+        <link rel="alternate" hrefLang="ar" href="https://warrantee.sa/ar" />
+        <link rel="alternate" hrefLang="x-default" href="https://warrantee.sa/en" />
+        <JsonLd locale={locale} />
       </head>
-      <body className="bg-[#FAFAFA] text-[#1A1A2E] antialiased">
+      <body className={`${inter.className} bg-[#FAFAFA] text-[#1A1A2E] antialiased`}>
         {children}
+        <GoogleAnalytics measurementId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || ""} />
       </body>
     </html>
   );
