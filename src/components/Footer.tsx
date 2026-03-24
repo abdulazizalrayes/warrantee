@@ -33,9 +33,9 @@ export function Footer({ locale, dictionary }: FooterProps) {
     {
       title: dictionary.footer.legal,
       links: [
-        { label: 'Privacy Policy', href: '#privacy' },
-        { label: 'Terms of Service', href: '#terms' },
-        { label: 'Cookie Policy', href: '#cookies' },
+        { label: 'Privacy Policy', href: `/${locale}/privacy` },
+        { label: 'Terms of Service', href: `/${locale}/terms` },
+        { label: 'Cookie Policy', href: `/${locale}/terms` },
       ],
     },
   ];
@@ -57,8 +57,8 @@ export function Footer({ locale, dictionary }: FooterProps) {
             </Link>
             <p className="text-sm text-warm-white/60 mb-4">
               {locale === 'en'
-                ? 'Trust the Terms™. Track every warranty with confidence.'
-                : 'ثق بالشروط™. تتبع كل ضمان بثقة.'}
+                ? 'Trust the Termsâ¢. Track every warranty with confidence.'
+                : 'Ø«Ù Ø¨Ø§ÙØ´Ø±ÙØ·â¢. ØªØªØ¨Ø¹ ÙÙ Ø¶ÙØ§Ù Ø¨Ø«ÙØ©.'}
             </p>
             <div className="flex gap-3 items-center">
               <LanguageToggle
@@ -101,10 +101,10 @@ export function Footer({ locale, dictionary }: FooterProps) {
           >
             <p className="text-sm text-warm-white/60">
               {locale === 'en'
-                ? `© ${currentYear} Warrantee. All rights reserved.`
-                : `© ${currentYear} Warrantee. جميع الحقوق محفوظة.`}
+                ? `Â© ${currentYear} Warrantee. All rights reserved.`
+                : `Â© ${currentYear} Warrantee. Ø¬ÙÙØ¹ Ø§ÙØ­ÙÙÙ ÙØ­ÙÙØ¸Ø©.`}
             </p>
-            <p className="text-sm font-medium text-gold">Trust the Terms™</p>
+            <p className="text-sm font-medium text-gold">Trust the Termsâ¢</p>
           </div>
         </div>
       </div>

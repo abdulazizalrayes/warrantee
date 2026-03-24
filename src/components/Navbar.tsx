@@ -52,13 +52,13 @@ export function Navbar({ locale, dictionary }: NavbarProps) {
           <div className={`hidden md:flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
             <LanguageToggle currentLocale={locale} variant="text" />
             <Link
-              href={`/${locale}/login`}
+              href={`/${locale}/auth`}
               className="px-4 py-2 text-sm font-medium text-navy hover:text-gold transition-colors"
             >
               {dictionary.nav.login}
             </Link>
             <Link
-              href={`/${locale}/signup`}
+              href={`/${locale}/auth`}
               className="px-4 py-2 rounded-lg text-sm font-medium text-warm-white bg-gold hover:bg-gold/90 transition-colors"
             >
               {dictionary.nav.signup}
@@ -93,14 +93,14 @@ export function Navbar({ locale, dictionary }: NavbarProps) {
             ))}
             <div className="pt-2 border-t border-navy/10 space-y-2">
               <Link
-                href={`/${locale}/login`}
+                href={`/${locale}/auth`}
                 className="block px-4 py-2 text-sm font-medium text-navy hover:text-gold transition-colors"
                 onClick={() => setIsOpen(false)}
               >
                 {dictionary.nav.login}
               </Link>
               <Link
-                href={`/${locale}/signup`}
+                href={`/${locale}/auth`}
                 className="block px-4 py-2 rounded-lg text-sm font-medium text-warm-white bg-gold hover:bg-gold/90 transition-colors text-center"
                 onClick={() => setIsOpen(false)}
               >

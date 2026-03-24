@@ -70,7 +70,7 @@ export default async function HomePage({ params }: HomePageProps) {
                   className={`flex flex-col sm:flex-row gap-4 ${isRTL ? 'sm:flex-row-reverse' : ''}`}
                 >
                   <a
-                    href={`/${locale}/signup`}
+                    href={`/${locale}/auth`}
                     className="px-8 py-4 bg-gold hover:bg-gold/90 text-navy font-semibold rounded-xl transition-all hover:shadow-lg hover:shadow-gold/20 text-center"
                   >
                     {dictionary.hero.cta_start}
@@ -87,7 +87,7 @@ export default async function HomePage({ params }: HomePageProps) {
                 <p className="mt-8 text-sm text-navy/50">
                   {locale === 'en'
                     ? 'No credit card required. Free forever plan available.'
-                    : 'لا توجد حاجة لبطاقة ائتمان. خطة مجانية دائمة متاحة.'}
+                    : 'ÙØ§ ØªÙØ¬Ø¯ Ø­Ø§Ø¬Ø© ÙØ¨Ø·Ø§ÙØ© Ø§Ø¦ØªÙØ§Ù. Ø®Ø·Ø© ÙØ¬Ø§ÙÙØ© Ø¯Ø§Ø¦ÙØ© ÙØªØ§Ø­Ø©.'}
                 </p>
               </div>
 
@@ -119,7 +119,7 @@ export default async function HomePage({ params }: HomePageProps) {
         <section className="py-16 px-4 sm:px-6 lg:px-8 border-b border-navy/5">
           <div className="max-w-7xl mx-auto">
             <p className="text-center text-navy/50 text-sm uppercase tracking-wider mb-8">
-              {locale === 'en' ? 'Trusted by leading companies' : 'موثوق به من قبل الشركات الرائدة'}
+              {locale === 'en' ? 'Trusted by leading companies' : 'ÙÙØ«ÙÙ Ø¨Ù ÙÙ ÙØ¨Ù Ø§ÙØ´Ø±ÙØ§Øª Ø§ÙØ±Ø§Ø¦Ø¯Ø©'}
             </p>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
               {[1, 2, 3, 4].map((i) => (
@@ -127,7 +127,7 @@ export default async function HomePage({ params }: HomePageProps) {
                   key={i}
                   className="h-16 bg-navy/5 rounded-lg flex items-center justify-center text-navy/30 text-sm font-medium"
                 >
-                  {locale === 'en' ? `Company ${i}` : `الشركة ${i}`}
+                  {locale === 'en' ? `Company ${i}` : `Ø§ÙØ´Ø±ÙØ© ${i}`}
                 </div>
               ))}
             </div>
@@ -141,12 +141,12 @@ export default async function HomePage({ params }: HomePageProps) {
               <h2 className="text-4xl font-bold mb-6 text-navy">
                 {locale === 'en'
                   ? 'Warranties shouldn\'t be lost in chaos'
-                  : 'لا يجب أن تضيع الضمانات في الفوضى'}
+                  : 'ÙØ§ ÙØ¬Ø¨ Ø£Ù ØªØ¶ÙØ¹ Ø§ÙØ¶ÙØ§ÙØ§Øª ÙÙ Ø§ÙÙÙØ¶Ù'}
               </h2>
               <p className="text-lg text-navy/60 mb-12">
                 {locale === 'en'
                   ? 'Managing warranties across your organization is complex. Track them efficiently with Warrantee.'
-                  : 'إدارة الضمانات عبر مؤسستك معقدة. تتبعها بكفاءة باستخدام Warrantee.'}
+                  : 'Ø¥Ø¯Ø§Ø±Ø© Ø§ÙØ¶ÙØ§ÙØ§Øª Ø¹Ø¨Ø± ÙØ¤Ø³Ø³ØªÙ ÙØ¹ÙØ¯Ø©. ØªØªØ¨Ø¹ÙØ§ Ø¨ÙÙØ§Ø¡Ø© Ø¨Ø§Ø³ØªØ®Ø¯Ø§Ù Warrantee.'}
               </p>
             </div>
 
@@ -159,31 +159,31 @@ export default async function HomePage({ params }: HomePageProps) {
               {[
                 {
                   icon: Clock,
-                  title: locale === 'en' ? 'Missing Deadlines' : 'فقدان المواعيد',
+                  title: locale === 'en' ? 'Missing Deadlines' : 'ÙÙØ¯Ø§Ù Ø§ÙÙÙØ§Ø¹ÙØ¯',
                   desc: locale === 'en'
                     ? 'Forget expiration dates and lose coverage when you need it most.'
-                    : 'نسيان تواريخ انتهاء الصلاحية وفقدان التغطية عندما تحتاجها أكثر.',
+                    : 'ÙØ³ÙØ§Ù ØªÙØ§Ø±ÙØ® Ø§ÙØªÙØ§Ø¡ Ø§ÙØµÙØ§Ø­ÙØ© ÙÙÙØ¯Ø§Ù Ø§ÙØªØºØ·ÙØ© Ø¹ÙØ¯ÙØ§ ØªØ­ØªØ§Ø¬ÙØ§ Ø£ÙØ«Ø±.',
                 },
                 {
                   icon: FileCheck,
-                  title: locale === 'en' ? 'Manual Approvals' : 'الموافقات اليدوية',
+                  title: locale === 'en' ? 'Manual Approvals' : 'Ø§ÙÙÙØ§ÙÙØ§Øª Ø§ÙÙØ¯ÙÙØ©',
                   desc: locale === 'en'
                     ? 'Back-and-forth emails and spreadsheets slow down your team.'
-                    : 'رسائل البريد الإلكتروني والجداول الآلية ذهاباً وإياباً تبطئ فريقك.',
+                    : 'Ø±Ø³Ø§Ø¦Ù Ø§ÙØ¨Ø±ÙØ¯ Ø§ÙØ¥ÙÙØªØ±ÙÙÙ ÙØ§ÙØ¬Ø¯Ø§ÙÙ Ø§ÙØ¢ÙÙØ© Ø°ÙØ§Ø¨Ø§Ù ÙØ¥ÙØ§Ø¨Ø§Ù ØªØ¨Ø·Ø¦ ÙØ±ÙÙÙ.',
                 },
                 {
                   icon: Shield,
-                  title: locale === 'en' ? 'Unverified Claims' : 'ادعاءات غير محققة',
+                  title: locale === 'en' ? 'Unverified Claims' : 'Ø§Ø¯Ø¹Ø§Ø¡Ø§Øª ØºÙØ± ÙØ­ÙÙØ©',
                   desc: locale === 'en'
                     ? 'Lack of audit trails and documentation lead to disputes.'
-                    : 'غياب مسارات التدقيق والتوثيق يؤدي إلى نزاعات.',
+                    : 'ØºÙØ§Ø¨ ÙØ³Ø§Ø±Ø§Øª Ø§ÙØªØ¯ÙÙÙ ÙØ§ÙØªÙØ«ÙÙ ÙØ¤Ø¯Ù Ø¥ÙÙ ÙØ²Ø§Ø¹Ø§Øª.',
                 },
                 {
                   icon: Globe,
-                  title: locale === 'en' ? 'Language Barriers' : 'حواجز اللغة',
+                  title: locale === 'en' ? 'Language Barriers' : 'Ø­ÙØ§Ø¬Ø² Ø§ÙÙØºØ©',
                   desc: locale === 'en'
                     ? 'Managing warranties across Arabic and English regions requires translation overhead.'
-                    : 'إدارة الضمانات في المناطق العربية والإنجليزية تتطلب تكاليف ترجمة.',
+                    : 'Ø¥Ø¯Ø§Ø±Ø© Ø§ÙØ¶ÙØ§ÙØ§Øª ÙÙ Ø§ÙÙÙØ§Ø·Ù Ø§ÙØ¹Ø±Ø¨ÙØ© ÙØ§ÙØ¥ÙØ¬ÙÙØ²ÙØ© ØªØªØ·ÙØ¨ ØªÙØ§ÙÙÙ ØªØ±Ø¬ÙØ©.',
                 },
               ].map((pain, idx) => (
                 <div key={idx} className="flex gap-4">
@@ -216,7 +216,7 @@ export default async function HomePage({ params }: HomePageProps) {
               <p className="text-lg text-navy/60">
                 {locale === 'en'
                   ? 'All the tools you need to manage warranties at scale, with confidence and compliance.'
-                  : 'جميع الأدوات التي تحتاجها لإدارة الضمانات بحجم كبير، بثقة والامتثال.'}
+                  : 'Ø¬ÙÙØ¹ Ø§ÙØ£Ø¯ÙØ§Øª Ø§ÙØªÙ ØªØ­ØªØ§Ø¬ÙØ§ ÙØ¥Ø¯Ø§Ø±Ø© Ø§ÙØ¶ÙØ§ÙØ§Øª Ø¨Ø­Ø¬Ù ÙØ¨ÙØ±Ø Ø¨Ø«ÙØ© ÙØ§ÙØ§ÙØªØ«Ø§Ù.'}
               </p>
             </div>
 
@@ -250,7 +250,7 @@ export default async function HomePage({ params }: HomePageProps) {
               <p className="text-lg text-navy/60">
                 {locale === 'en'
                   ? 'Get started in minutes with our intuitive workflow.'
-                  : 'ابدأ في دقائق من خلال سير عملنا الحدسي.'}
+                  : 'Ø§Ø¨Ø¯Ø£ ÙÙ Ø¯ÙØ§Ø¦Ù ÙÙ Ø®ÙØ§Ù Ø³ÙØ± Ø¹ÙÙÙØ§ Ø§ÙØ­Ø¯Ø³Ù.'}
               </p>
             </div>
 
@@ -292,18 +292,18 @@ export default async function HomePage({ params }: HomePageProps) {
                 <h2 className="text-4xl font-bold mb-6 text-navy">
                   {locale === 'en'
                     ? 'Never Lose Coverage Again'
-                    : 'لا تفقد التغطية أبداً مرة أخرى'}
+                    : 'ÙØ§ ØªÙÙØ¯ Ø§ÙØªØºØ·ÙØ© Ø£Ø¨Ø¯Ø§Ù ÙØ±Ø© Ø£Ø®Ø±Ù'}
                 </h2>
                 <p className="text-lg text-navy/60 mb-6">
                   {locale === 'en'
                     ? 'Extend warranties before expiration. Sellers can offer extensions directly through Warrantee, and buyers can purchase them instantly.'
-                    : 'مد الضمانات قبل انتهاء الصلاحية. يمكن للبائعين تقديم التمديدات مباشرة من خلال Warrantee، ويمكن للمشترين شراؤها على الفور.'}
+                    : 'ÙØ¯ Ø§ÙØ¶ÙØ§ÙØ§Øª ÙØ¨Ù Ø§ÙØªÙØ§Ø¡ Ø§ÙØµÙØ§Ø­ÙØ©. ÙÙÙÙ ÙÙØ¨Ø§Ø¦Ø¹ÙÙ ØªÙØ¯ÙÙ Ø§ÙØªÙØ¯ÙØ¯Ø§Øª ÙØ¨Ø§Ø´Ø±Ø© ÙÙ Ø®ÙØ§Ù WarranteeØ ÙÙÙÙÙ ÙÙÙØ´ØªØ±ÙÙ Ø´Ø±Ø§Ø¤ÙØ§ Ø¹ÙÙ Ø§ÙÙÙØ±.'}
                 </p>
                 <ul className="space-y-4">
                   {[
-                    locale === 'en' ? 'Flexible extension terms' : 'شروط تمديد مرنة',
-                    locale === 'en' ? 'Instant approval process' : 'عملية موافقة فورية',
-                    locale === 'en' ? 'Transparent pricing' : 'تسعير شفاف',
+                    locale === 'en' ? 'Flexible extension terms' : 'Ø´Ø±ÙØ· ØªÙØ¯ÙØ¯ ÙØ±ÙØ©',
+                    locale === 'en' ? 'Instant approval process' : 'Ø¹ÙÙÙØ© ÙÙØ§ÙÙØ© ÙÙØ±ÙØ©',
+                    locale === 'en' ? 'Transparent pricing' : 'ØªØ³Ø¹ÙØ± Ø´ÙØ§Ù',
                   ].map((item, idx) => (
                     <li key={idx} className="flex items-center gap-3">
                       <CheckCircle className="w-5 h-5 text-gold flex-shrink-0" />
@@ -318,26 +318,26 @@ export default async function HomePage({ params }: HomePageProps) {
                 <div className="relative h-80 bg-navy/5 rounded-2xl p-8 flex flex-col justify-center items-center space-y-4">
                   <div className="flex items-center gap-3 w-full">
                     <div className="flex-1 h-16 bg-navy/10 rounded-lg flex items-center justify-center text-sm font-medium text-navy/60">
-                      {locale === 'en' ? 'Seller' : 'البائع'}
+                      {locale === 'en' ? 'Seller' : 'Ø§ÙØ¨Ø§Ø¦Ø¹'}
                     </div>
                     <ArrowRight className="w-5 h-5 text-gold flex-shrink-0" />
                   </div>
                   <div className="flex items-center gap-3 w-full">
                     <ArrowRight className="w-5 h-5 text-gold flex-shrink-0" />
                     <div className="flex-1 h-16 bg-gold/10 rounded-lg flex items-center justify-center text-sm font-medium text-navy">
-                      {locale === 'en' ? 'Extension Offer' : 'عرض التمديد'}
+                      {locale === 'en' ? 'Extension Offer' : 'Ø¹Ø±Ø¶ Ø§ÙØªÙØ¯ÙØ¯'}
                     </div>
                   </div>
                   <div className="flex items-center gap-3 w-full">
                     <div className="flex-1 h-16 bg-navy/10 rounded-lg flex items-center justify-center text-sm font-medium text-navy/60">
-                      {locale === 'en' ? 'Buyer' : 'المشتري'}
+                      {locale === 'en' ? 'Buyer' : 'Ø§ÙÙØ´ØªØ±Ù'}
                     </div>
                     <ArrowRight className="w-5 h-5 text-gold flex-shrink-0" />
                   </div>
                   <div className="flex items-center gap-3 w-full">
                     <ArrowRight className="w-5 h-5 text-gold flex-shrink-0" />
                     <div className="flex-1 h-16 bg-green-100 rounded-lg flex items-center justify-center text-sm font-medium text-green-900">
-                      {locale === 'en' ? 'Extended Coverage' : 'تغطية معددة'}
+                      {locale === 'en' ? 'Extended Coverage' : 'ØªØºØ·ÙØ© ÙØ¹Ø¯Ø¯Ø©'}
                     </div>
                   </div>
                 </div>
@@ -378,7 +378,7 @@ export default async function HomePage({ params }: HomePageProps) {
                     <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gold text-navy px-4 py-1 rounded-full text-xs font-bold uppercase">
                       {locale === 'en'
                         ? 'Free first year'
-                        : 'السنة الأولى مجانية'}
+                        : 'Ø§ÙØ³ÙØ© Ø§ÙØ£ÙÙÙ ÙØ¬Ø§ÙÙØ©'}
                     </div>
                   )}
 
@@ -392,9 +392,9 @@ export default async function HomePage({ params }: HomePageProps) {
                   <div className="mb-8">
                     <div className="flex items-baseline gap-2">
                       <span className="text-5xl font-bold text-navy">{plan.price}</span>
-                      {plan.price !== 'Custom' && plan.price !== 'مخصص' && (
+                      {plan.price !== 'Custom' && plan.price !== 'ÙØ®ØµØµ' && (
                         <span className="text-navy/60">/
-                          {locale === 'en' ? 'year' : 'سنة'}
+                          {locale === 'en' ? 'year' : 'Ø³ÙØ©'}
                         </span>
                       )}
                     </div>
@@ -432,12 +432,12 @@ export default async function HomePage({ params }: HomePageProps) {
             <h2 className="text-4xl font-bold mb-6 text-navy">
               {locale === 'en'
                 ? 'Ready to protect what matters?'
-                : 'هل أنت مستعد لحماية ما يهمك؟'}
+                : 'ÙÙ Ø£ÙØª ÙØ³ØªØ¹Ø¯ ÙØ­ÙØ§ÙØ© ÙØ§ ÙÙÙÙØ'}
             </h2>
             <p className="text-lg text-navy/60 mb-8">
               {locale === 'en'
                 ? 'Start your free account today. No credit card required.'
-                : 'ابدأ حسابك المجاني اليوم. لا توجد حاجة لبطاقة ائتمان.'}
+                : 'Ø§Ø¨Ø¯Ø£ Ø­Ø³Ø§Ø¨Ù Ø§ÙÙØ¬Ø§ÙÙ Ø§ÙÙÙÙ. ÙØ§ ØªÙØ¬Ø¯ Ø­Ø§Ø¬Ø© ÙØ¨Ø·Ø§ÙØ© Ø§Ø¦ØªÙØ§Ù.'}
             </p>
 
             {/* Email Capture */}
@@ -445,7 +445,7 @@ export default async function HomePage({ params }: HomePageProps) {
               <input
                 type="email"
                 placeholder={
-                  locale === 'en' ? 'your@email.com' : 'بريدك@البريد.com'
+                  locale === 'en' ? 'your@email.com' : 'Ø¨Ø±ÙØ¯Ù@Ø§ÙØ¨Ø±ÙØ¯.com'
                 }
                 className="flex-1 px-4 py-3 rounded-xl border border-navy/20 focus:outline-none focus:border-gold focus:ring-2 focus:ring-gold/20 bg-warm-white"
                 required
@@ -454,14 +454,14 @@ export default async function HomePage({ params }: HomePageProps) {
                 type="submit"
                 className="px-6 py-3 bg-gold hover:bg-gold/90 text-navy font-semibold rounded-xl transition-all whitespace-nowrap"
               >
-                {locale === 'en' ? 'Get Started' : 'ابدأ الآن'}
+                {locale === 'en' ? 'Get Started' : 'Ø§Ø¨Ø¯Ø£ Ø§ÙØ¢Ù'}
               </button>
             </form>
 
             <p className="mt-4 text-sm text-navy/50">
               {locale === 'en'
                 ? 'We respect your privacy. Unsubscribe at any time.'
-                : 'نحترم خصوصيتك. إلغاء الاشتراك في أي وقت.'}
+                : 'ÙØ­ØªØ±Ù Ø®ØµÙØµÙØªÙ. Ø¥ÙØºØ§Ø¡ Ø§ÙØ§Ø´ØªØ±Ø§Ù ÙÙ Ø£Ù ÙÙØª.'}
             </p>
           </div>
         </section>
