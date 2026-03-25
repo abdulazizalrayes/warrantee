@@ -2,9 +2,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createBrowserClient } from "@/lib/supabase/client";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
-
 const t: Record<string, Record<string, string>> = {
   en: {
     title: "Approval Workflow",
