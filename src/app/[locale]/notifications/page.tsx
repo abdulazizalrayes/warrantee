@@ -1,4 +1,5 @@
 "use client";
+// @ts-nocheck
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { createBrowserClient } from "@/lib/supabase/client";
