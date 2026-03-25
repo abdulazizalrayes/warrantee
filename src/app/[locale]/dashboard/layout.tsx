@@ -1,5 +1,5 @@
-"use client";
 // @ts-nocheck
+"use client";
 
 import { useState } from "react";
 import Link from "next/link";
@@ -18,7 +18,6 @@ import {
   Globe,
   ChevronDown,
   Boxes,
-  Users,
   Store,
 } from "lucide-react";
 import { getDictionary, DIRECTION } from "@/lib/i18n";
