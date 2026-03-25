@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: process.env.EMAIL_FROM || 'Warrantee <noreply@warrantee.io>',
+        from: process.env.EMAIL_FROM || 'Warrantee <hello@warrantee.io>',
         to: [to],
         subject,
         html,
