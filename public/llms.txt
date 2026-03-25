@@ -29,7 +29,7 @@ Warrantee is a SaaS platform that helps consumers and businesses manage product 
 
 ## Contact
 
-- Email: support@warrantee.io
+- Email: hello@warrantee.io
 - Website: https://warrantee.io
 
 ## Version
