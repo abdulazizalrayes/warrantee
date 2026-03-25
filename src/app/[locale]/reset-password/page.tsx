@@ -1,7 +1,6 @@
-// @ts-nocheck
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
 
@@ -18,15 +17,15 @@ const dict = {
     error: "Failed to update password. Please try again.",
   },
   ar: {
-    title: "\u0625\u0639\u0627\u062F\u0629 \u062A\u0639\u064A\u064A\u0646 \u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631",
-    subtitle: "\u0623\u062F\u062E\u0644 \u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631 \u0627\u0644\u062C\u062F\u064A\u062F\u0629 \u0623\u062F\u0646\u0627\u0647",
-    newPassword: "\u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631 \u0627\u0644\u062C\u062F\u064A\u062F\u0629",
-    confirmPassword: "\u062A\u0623\u0643\u064A\u062F \u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631",
-    submit: "\u062A\u062D\u062F\u064A\u062B \u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631",
-    success: "\u062A\u0645 \u062A\u062D\u062F\u064A\u062B \u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631 \u0628\u0646\u062C\u0627\u062D! \u062C\u0627\u0631\u064A \u0627\u0644\u062A\u062D\u0648\u064A\u0644...",
-    mismatch: "\u0643\u0644\u0645\u0627\u062A \u0627\u0644\u0645\u0631\u0648\u0631 \u063A\u064A\u0631 \u0645\u062A\u0637\u0627\u0628\u0642\u0629",
-    tooShort: "\u064A\u062C\u0628 \u0623\u0646 \u062A\u0643\u0648\u0646 \u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631 8 \u0623\u062D\u0631\u0641 \u0639\u0644\u0649 \u0627\u0644\u0623\u0642\u0644",
-    error: "\u0641\u0634\u0644 \u062A\u062D\u062F\u064A\u062B \u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631. \u062D\u0627\u0648\u0644 \u0645\u0631\u0629 \u0623\u062E\u0631\u0649.",
+    title: "إعادة تعيين كلمة المرور",
+    subtitle: "أدخل كلمة المرور الجديدة أدناه",
+    newPassword: "كلمة المرور الجديدة",
+    confirmPassword: "تأكيد كلمة المرور",
+    submit: "تحديث كلمة المرور",
+    success: "تم تحديث كلمة المرور بنجاح! جاري التحويل...",
+    mismatch: "كلمات المرور غير متطابقة",
+    tooShort: "يجب أن تكون كلمة المرور 8 أحرف على الأقل",
+    error: "فشل تحديث كلمة المرور. حاول مرة أخرى.",
   },
 };
 
@@ -63,13 +62,12 @@ export default function ResetPasswordPage() {
 
     setLoading(true);
     const { error: updateError } = await supabase.auth.updateUser({ password });
-
     if (updateError) {
       setError(t.error);
       setLoading(false);
     } else {
       setMessage(t.success);
-      setTimeout(() => router.push(\`/\${locale}/login\`), 2000);
+      setTimeout(() => router.push("/" + locale + "/login"), 2000);
     }
   };
 
