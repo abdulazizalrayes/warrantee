@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Shield, Clock, AlertTriangle, FileText, Plus, TrendingUp, Activity } from "lucide-react";
+import { Shield, Clock, AlertTriangle, FileText, Plus, TrendingUp, Activity, DollarSign } from "lucide-react";
 import { getDictionary, DIRECTION } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth-context";
@@ -28,6 +28,7 @@ export default function DashboardPage() {
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
   const [expiringWarranties, setExpiringWarranties] = useState<RecentWarranty[]>([]);
   const [loading, setLoading] = useState(true);
+  const [totalValue, setTotalValue] = useState(0);
 
   useEffect(() => {
     if (authLoading) return;
@@ -43,6 +44,18 @@ export default function DashboardPage() {
       if (expiring) setExpiringWarranties((expiring as RecentWarranty[]).slice(0, 5));
       const { data: activity } = await supabase.from("activity_log").select("id, action, entity_type, entity_id, metadata, created_at").eq("actor_id", user.id).order("created_at", { ascending: false }).limit(8);
       if (activity) setRecentActivity(activity as RecentActivity[]);
+
+      // Fetch total warranty coverage value
+      const { data: valueData } = await supabase
+        .from("warranties")
+        .select("coverage_amount")
+        .or(`created_by.eq.${user.id},recipient_user_id.eq.${user.id}`)
+        .in("status", ["active", "pending_approval"]);
+      if (valueData) {
+        const total = valueData.reduce((sum: number, w: { coverage_amount: number | null }) => sum + (w.coverage_amount || 0), 0);
+        setTotalValue(total);
+      }
+
       setLoading(false);
     };
     fetchDashboardData();
@@ -75,7 +88,7 @@ export default function DashboardPage() {
         <div><h1 className="text-2xl font-bold text-navy">{dict.dashboard.welcome}, {profile?.full_name?.split(" ")[0] || user?.email?.split("@")[0]}</h1><p className="text-gray-600 text-sm mt-1">{isRTL ? "\u0625\u0644\u064a\u0643 \u0646\u0638\u0631\u0629 \u0639\u0627\u0645\u0629 \u0639\u0644\u0649 \u0636\u0645\u0627\u0646\u0627\u062a\u0643" : "Here's an overview of your warranties"}</p></div>
         <Link href={`/${locale}/warranties/new`} className="bg-gold hover:bg-yellow-500 text-navy font-semibold py-2.5 px-5 rounded-lg transition flex items-center gap-2 w-fit"><Plus size={18} />{dict.warranty.create}</Link>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
         <div className="bg-white rounded-lg border border-gray-200 p-5 hover:shadow-md transition"><div className="flex items-center justify-between mb-3"><Shield size={24} className="text-green-600" /><span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded-full flex items-center gap-1"><TrendingUp size={12} />{isRTL ? "\u0646\u0634\u0637" : "Active"}</span></div><p className="text-3xl font-bold text-navy">{stats?.active_warranties ?? 0}</p><p className="text-sm text-gray-600 mt-1">{dict.dashboard.active_warranties}</p></div>
         <div className="bg-white rounded-lg border border-gray-200 p-5 hover:shadow-md transition"><div className="flex items-center justify-between mb-3"><Clock size={24} className="text-yellow-600" /><span className="text-xs font-medium text-yellow-600 bg-yellow-50 px-2 py-1 rounded-full">{isRTL ? "30 \u064a\u0648\u0645" : "30 days"}</span></div><p className="text-3xl font-bold text-navy">{stats?.expiring_soon ?? 0}</p><p className="text-sm text-gray-600 mt-1">{dict.dashboard.expiring_soon}</p></div>
         <div className="bg-white rounded-lg border border-gray-200 p-5 hover:shadow-md transition"><div className="flex items-center justify-between mb-3"><AlertTriangle size={24} className="text-orange-600" /></div><p className="text-3xl font-bold text-navy">{stats?.pending_approval ?? 0}</p><p className="text-sm text-gray-600 mt-1">{dict.dashboard.pending_approval}</p></div>
