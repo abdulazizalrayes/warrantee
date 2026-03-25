@@ -9,7 +9,7 @@ const content = {
     title: "Privacy Policy",
     lastUpdated: "Last updated: March 2026",
     sections: [
-      {
+      
         heading: "1. Information We Collect",
         body: "We collect information you provide directly, including your name, email address, and warranty details. We also collect usage data such as device information, IP address, and browsing patterns to improve our services."
       },
@@ -27,7 +27,7 @@ const content = {
       },
       {
         heading: "5. Your Rights",
-        body: "You have the right to access, correct, or delete your personal data. You may request a copy of your data or ask us to stop processing it. Contact us at privacy@warrantee.sa to exercise these rights."
+        body: "You have the right to access, correct, or delete your personal data. You may request a copy of your data or ask us to stop processing it. Contact us at hello@warrantee.io to exercise these rights."
       },
       {
         heading: "6. Cookies and Tracking",
@@ -39,7 +39,7 @@ const content = {
       },
       {
         heading: "8. Contact Us",
-        body: "For privacy-related inquiries, contact our Data Protection Officer at privacy@warrantee.sa"
+        body: "For privacy-related inquiries, contact our Data Protection Officer at hello@warrantee.io"
       }
     ]
   },
@@ -65,7 +65,7 @@ const content = {
       },
       {
         heading: "5. \u062D\u0642\u0648\u0642\u0643",
-        body: "\u0644\u0643 \u0627\u0644\u062D\u0642 \u0641\u064A \u0627\u0644\u0648\u0635\u0648\u0644 \u0625\u0644\u0649 \u0628\u064A\u0627\u0646\u0627\u062A\u0643 \u0627\u0644\u0634\u062E\u0635\u064A\u0629 \u0623\u0648 \u062A\u0635\u062D\u064A\u062D\u0647\u0627 \u0623\u0648 \u062D\u0630\u0641\u0647\u0627. \u062A\u0648\u0627\u0635\u0644 \u0645\u0639\u0646\u0627 \u0639\u0628\u0631 privacy@warrantee.sa \u0644\u0645\u0645\u0627\u0631\u0633\u0629 \u0647\u0630\u0647 \u0627\u0644\u062D\u0642\u0648\u0642."
+        body: "\u0644\u0643 \u0627\u0644\u062D\u0642 \u0641\u064A \u0627\u0644\u0648\u0635\u0648\u0644 \u0625\u0644\u0649 \u0628\u064A\u0627\u0646\u0627\u062A\u0643 \u0627\u0644\u0634\u062E\u0635\u064A\u0629 \u0623\u0648 \u062A\u0635\u062D\u064A\u062D\u0647\u0627 \u0623\u0648 \u062D\u0630\u0641\u0647\u0627. \u062A\u0648\u0627\u0635\u0644 \u0645\u0639\u0646\u0627 \u0639\u0628\u0631 hello@warrantee.io \u0644\u0645\u0645\u0627\u0631\u0633\u0629 \u0647\u0630\u0647 \u0627\u0644\u062D\u0642\u0648\u0642."
       },
       {
         heading: "6. \u0645\u0644\u0641\u0627\u062A \u062A\u0639\u0631\u064A\u0641 \u0627\u0644\u0627\u0631\u062A\u0628\u0627\u0637 \u0648\u0627\u0644\u062A\u062A\u0628\u0639",
@@ -77,7 +77,7 @@ const content = {
       },
       {
         heading: "8. \u062A\u0648\u0627\u0635\u0644 \u0645\u0639\u0646\u0627",
-        body: "\u0644\u0644\u0627\u0633\u062A\u0641\u0633\u0627\u0631\u0627\u062A \u0627\u0644\u0645\u062A\u0639\u0644\u0642\u0629 \u0628\u0627\u0644\u062E\u0635\u0648\u0635\u064A\u0629\u060C \u062A\u0648\u0627\u0635\u0644 \u0645\u0639 \u0645\u0633\u0624\u0648\u0644 \u062D\u0645\u0627\u064A\u0629 \u0627\u0644\u0628\u064A\u0627\u0646\u0627\u062A \u0639\u0628\u0631 privacy@warrantee.sa"
+        body: "\u0644\u0644\u0627\u0633\u062A\u0641\u0633\u0627\u0631\u0627\u062A \u0627\u0644\u0645\u062A\u0639\u0644\u0642\u0629 \u0628\u0627\u0644\u062E\u0635\u0648\u0635\u064A\u0629\u060C \u062A\u0648\u0627\u0635\u0644 \u0645\u0639 \u0645\u0633\u0624\u0648\u0644 \u062D\u0645\u0627\u064A\u0629 \u0627\u0644\u0628\u064A\u0627\u0646\u0627\u062A \u0639\u0628\u0631 hello@warrantee.io"
       }
     ]
   }
