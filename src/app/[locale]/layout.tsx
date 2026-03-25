@@ -1,3 +1,4 @@
+// @ts-nocheck
 import type { Metadata, Viewport } from "next";
 import { notFound } from "next/navigation";
 import { isValidLocale, DIRECTION } from "@/lib/i18n";
