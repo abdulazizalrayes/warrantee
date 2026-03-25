@@ -1,8 +1,15 @@
-# Warrantee robots.txt
-User-agent: *
+User-Agent: *
 Allow: /
 Disallow: /api/
-Disallow: /admin-portal-x7k9/
-Disallow: /_next/
+Disallow: /dashboard/
+
+User-Agent: GPTBot
+Allow: /
+
+User-Agent: Google-Extended
+Allow: /
+
+User-Agent: anthropic-ai
+Allow: /
 
 Sitemap: https://warrantee.io/sitemap.xml
