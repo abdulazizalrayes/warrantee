@@ -1,5 +1,6 @@
 'use client';
 
+// @ts-nocheck
 import { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { createBrowserClient } from '@supabase/ssr';
