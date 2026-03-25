@@ -243,15 +243,16 @@ export default async function HomePage({ params }: HomePageProps) {
                       )}
                     </div>
                   </div>
-                  <button
-                    className={`w-full py-2.5 rounded-full text-[15px] font-medium transition-colors mb-8 ${
+                  <a
+                    href={`/${locale}/auth`}
+                    className={`block text-center w-full py-2.5 rounded-full text-[15px] font-medium transition-colors mb-8 ${
                       idx === 1
                         ? 'bg-[#0071e3] hover:bg-[#0077ED] text-white'
                         : 'bg-[#f5f5f7] hover:bg-[#e8e8ed] text-[#1d1d1f]'
                     }`}
                   >
                     {plan.cta}
-                  </button>
+                  </a>
                   <ul className="space-y-3">
                     {plan.features.map((feature, featureIdx) => (
                       <li key={featureIdx} className="flex items-start gap-2.5">
