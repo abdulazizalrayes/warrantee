@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { isValidLocale, DIRECTION } from "@/lib/i18n";
 import { AuthProvider } from "@/lib/auth-context";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
+import CookieConsent from "@/components/CookieConsent";
 import { getOrganizationJsonLd } from "@/lib/jsonld";
 import "@/app/globals.css";
 
@@ -50,6 +51,7 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
       <body className="bg-[#FAFAFA] text-[#1A1A2E] antialiased">
         <GoogleAnalytics />
         <AuthProvider>{children}</AuthProvider>
+        <CookieConsent />
       </body>
     </html>
   );
