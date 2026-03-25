@@ -77,7 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const getRedirectURL = (locale: string = "en") => {
     const baseUrl = typeof window !== "undefined" ? window.location.origin : process.env.NEXT_PUBLIC_SITE_URL || "https://warrantee.io";
-    return `${baseUrl}/${locale}/auth/callback`;
+    return `${baseUrl}/auth/callback`;
   };
 
   const signInWithGoogle = async (locale: string = "en") => {
