@@ -1,5 +1,5 @@
-"use client";
 // @ts-nocheck
+"use client";
 
 import { useState } from "react";
 import { useParams } from "next/navigation";
