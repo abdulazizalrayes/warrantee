@@ -39,7 +39,7 @@ const content = {
       },
       {
         heading: "8. Contact",
-        body: "For questions about these Terms, please contact us at support@warrantee.sa"
+        body: "For questions about these Terms, please contact us at hello@warrantee.io"
       }
     ]
   },
@@ -77,7 +77,7 @@ const content = {
       },
       {
         heading: "8. \u0627\u0644\u062A\u0648\u0627\u0635\u0644",
-        body: "\u0644\u0644\u0627\u0633\u062A\u0641\u0633\u0627\u0631\u0627\u062A \u062D\u0648\u0644 \u0647\u0630\u0647 \u0627\u0644\u0634\u0631\u0648\u0637\u060C \u064A\u0631\u062C\u0649 \u0627\u0644\u062A\u0648\u0627\u0635\u0644 \u0645\u0639\u0646\u0627 \u0639\u0628\u0631 support@warrantee.sa"
+        body: "\u0644\u0644\u0627\u0633\u062A\u0641\u0633\u0627\u0631\u0627\u062A \u062D\u0648\u0644 \u0647\u0630\u0647 \u0627\u0644\u0634\u0631\u0648\u0637\u060C \u064A\u0631\u062C\u0649 \u0627\u0644\u062A\u0648\u0627\u0635\u0644 \u0645\u0639\u0646\u0627 \u0639\u0628\u0631 hello@warrantee.io"
       }
     ]
   }
