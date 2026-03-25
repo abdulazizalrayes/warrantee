@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { createClient } from '@supabase/supabase-js';
 import {
   BarChart3, TrendingUp, TrendingDown, Calendar, Download,
-  ArrowLeft, PieChart, Activity, Clock, AlertTriangle, CheckCircle2
+  ArrowLeft, Activity, Clock, AlertTriangle, CheckCircle2
 } from 'lucide-react';
 
 const supabase = createClient(
