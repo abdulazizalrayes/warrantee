@@ -18,7 +18,7 @@ export default function JsonLd({ locale }: { locale: string }) {
     author: {
       '@type': 'Organization',
       name: 'Warrantee',
-      url: 'https://warrantee.sa',
+      url: 'https://warrantee.io',
     },
     inLanguage: [locale],
     availableLanguage: ['en', 'ar'],
