@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams} from "next/navigation";
 import { createBrowserClient } from "@/lib/supabase/client";
 const t: Record<string, Record<string, string>> = {
   en: {
@@ -56,7 +56,6 @@ interface Warranty {
 
 export default function ApprovalPage() {
   const params = useParams();
-  const router = useRouter();
   const locale = (params?.locale as string) || "en";
   const tr = t[locale] || t.en;
   const [warranties, setWarranties] = useState<Warranty[]>([]);
