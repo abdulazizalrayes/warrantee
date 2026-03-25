@@ -9,7 +9,7 @@ const content = {
     title: "Privacy Policy",
     lastUpdated: "Last updated: March 2026",
     sections: [
-      
+      {
         heading: "1. Information We Collect",
         body: "We collect information you provide directly, including your name, email address, and warranty details. We also collect usage data such as device information, IP address, and browsing patterns to improve our services."
       },
