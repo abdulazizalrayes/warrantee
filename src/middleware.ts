@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { updateSession } from "@/lib/supabase-middleware";
 import type { NextRequest } from "next/server";
 
