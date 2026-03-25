@@ -21,6 +21,6 @@ export default function robots(): MetadataRoute.Robots {
         allow: '/',
       },
     ],
-    sitemap: 'https://warrantee.sa/sitemap.xml',
+    sitemap: 'https://warrantee.io/sitemap.xml',
   }
 }
