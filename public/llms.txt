@@ -1,10 +1,13 @@
 # Warrantee - Trust the Terms
+
 > Bilingual warranty management platform for the Middle East
 
 ## About
+
 Warrantee is a SaaS platform that helps consumers and businesses manage product warranties digitally. Supporting both Arabic (RTL) and English, it provides warranty tracking, claims management, and seller integration.
 
 ## Features
+
 - Digital warranty registration and tracking
 - Warranty expiry notifications (30/15/7 days)
 - Claims management workflow
@@ -13,16 +16,22 @@ Warrantee is a SaaS platform that helps consumers and businesses manage product 
 - Email-to-warranty auto-booking
 - ERP integration via REST API
 - Warranty chain and transfer management
+- PDF warranty certificates
+- Public warranty verification/lookup
+- Data export (CSV/PDF)
 
 ## URLs
-- Main site: https://warrantee.sa
-- English: https://warrantee.sa/en
-- Arabic: https://warrantee.sa/ar
-- API: https://warrantee.sa/api
+
+- Main site: https://warrantee.io
+- English: https://warrantee.io/en
+- Arabic: https://warrantee.io/ar
+- API: https://warrantee.io/api/v1
 
 ## Contact
-- Email: support@warrantee.sa
-- Website: https://warrantee.sa
+
+- Email: support@warrantee.io
+- Website: https://warrantee.io
 
 ## Version
+
 v1.0.0 — Phase 1
