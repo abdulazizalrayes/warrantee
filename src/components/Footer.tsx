@@ -17,25 +17,25 @@ export function Footer({ locale, dictionary }: FooterProps) {
     {
       title: dictionary.footer.product,
       links: [
-        { label: dictionary.nav.features, href: '#features' },
-        { label: 'How It Works', href: '#how-it-works' },
-        { label: dictionary.nav.pricing, href: '#pricing' },
+        { label: dictionary.nav.features, href: `/${locale}#features` },
+        { label: locale === 'en' ? 'How It Works' : 'كيف يعمل', href: `/${locale}#how-it-works` },
+        { label: dictionary.nav.pricing, href: `/${locale}#pricing` },
       ],
     },
     {
       title: dictionary.footer.company,
       links: [
-        { label: 'About', href: '#about' },
-        { label: dictionary.nav.contact, href: '#contact' },
-        { label: 'Blog', href: '#blog' },
+        { label: locale === 'en' ? 'About' : 'عن الشركة', href: `/${locale}#about` },
+        { label: dictionary.nav.contact, href: `/${locale}#contact` },
+        { label: locale === 'en' ? 'Blog' : 'المدونة', href: `/${locale}#blog` },
       ],
     },
     {
       title: dictionary.footer.legal,
       links: [
-        { label: 'Privacy Policy', href: '#privacy' },
-        { label: 'Terms of Service', href: '#terms' },
-        { label: 'Cookie Policy', href: '#cookies' },
+        { label: locale === 'en' ? 'Privacy Policy' : 'سياسة الخصوصية', href: `/${locale}/privacy` },
+        { label: locale === 'en' ? 'Terms of Service' : 'شروط الخدمة', href: `/${locale}/terms` },
+        { label: locale === 'en' ? 'Cookie Policy' : 'سياسة ملفات تعريف الارتباط', href: `/${locale}/cookies` },
       ],
     },
   ];
@@ -55,8 +55,8 @@ export function Footer({ locale, dictionary }: FooterProps) {
             </Link>
             <p className="text-sm text-warm-white/60 mb-4">
               {locale === 'en'
-                ? 'Trust the Terms\u2122. Track every warranty with confidence.'
-                : '\u062B\u0642 \u0628\u0627\u0644\u0634\u0631\u0648\u0637\u2122. \u062A\u062A\u0628\u0639 \u0643\u0644 \u0636\u0645\u0627\u0646 \u0628\u062B\u0642\u0629.'}
+                ? 'Trust the Terms™. Track every warranty with confidence.'
+                : 'ثق بالشروط™. تتبع كل ضمان بثقة.'}
             </p>
             <div className="flex gap-3 items-center">
               <LanguageToggle
@@ -96,10 +96,10 @@ export function Footer({ locale, dictionary }: FooterProps) {
           >
             <p className="text-sm text-warm-white/60">
               {locale === 'en'
-                ? `\u00A9 ${currentYear} Warrantee. All rights reserved.`
-                : `\u00A9 ${currentYear} Warrantee. \u062C\u0645\u064A\u0639 \u0627\u0644\u062D\u0642\u0648\u0642 \u0645\u062D\u0641\u0648\u0638\u0629.`}
+                ? `© ${currentYear} Warrantee. All rights reserved.`
+                : `© ${currentYear} Warrantee. جميع الحقوق محفوظة.`}
             </p>
-            <p className="text-sm font-medium text-gold">Trust the Terms\u2122</p>
+            <p className="text-sm font-medium text-gold">Trust the Terms™</p>
           </div>
         </div>
       </div>
