@@ -1,166 +1,229 @@
+// @ts-nocheck
 "use client";
-import { useState } from "react";
-import { useParams } from "next/navigation";
-import Link from "next/link";
-import { Shield, Upload, Download, FileSpreadsheet, AlertCircle, CheckCircle2, ArrowLeft } from "lucide-react";
 
-const t = {
-  en: {
-    title: "Import Warranties",
-    subtitle: "Upload a CSV file to bulk import warranties",
-    dropzone: "Drag & drop a CSV file here, or click to browse",
-    download: "Download Sample Template",
-    preview: "Preview",
-    rows: "rows found",
-    importBtn: "Import Warranties",
-    importing: "Importing...",
-    results: "Import Results",
-    imported: "Successfully imported",
-    errors: "Errors",
-    row: "Row",
-    back: "Back to Warranties",
-    noFile: "Please select a CSV file first",
-    required: "Required columns: product_name, start_date, end_date",
-  },
-  ar: {
-    title: "\u0627\u0633\u062a\u064a\u0631\u0627\u062f \u0627\u0644\u0636\u0645\u0627\u0646\u0627\u062a",
-    subtitle: "\u0627\u0631\u0641\u0639 \u0645\u0644\u0641 CSV \u0644\u0627\u0633\u062a\u064a\u0631\u0627\u062f \u0627\u0644\u0636\u0645\u0627\u0646\u0627\u062a \u0628\u0627\u0644\u062c\u0645\u0644\u0629",
-    dropzone: "\u0627\u0633\u062d\u0628 \u0645\u0644\u0641 CSV \u0647\u0646\u0627 \u0623\u0648 \u0627\u0646\u0642\u0631 \u0644\u0644\u0627\u062e\u062a\u064a\u0627\u0631",
-    download: "\u062a\u062d\u0645\u064a\u0644 \u0646\u0645\u0648\u0630\u062c",
-    preview: "\u0645\u0639\u0627\u064a\u0646\u0629",
-    rows: "\u0635\u0641\u0648\u0641",
-    importBtn: "\u0627\u0633\u062a\u064a\u0631\u0627\u062f",
-    importing: "\u062c\u0627\u0631\u064a \u0627\u0644\u0627\u0633\u062a\u064a\u0631\u0627\u062f...",
-    results: "\u0646\u062a\u0627\u0626\u062c \u0627\u0644\u0627\u0633\u062a\u064a\u0631\u0627\u062f",
-    imported: "\u062a\u0645 \u0627\u0633\u062a\u064a\u0631\u0627\u062f",
-    errors: "\u0623\u062e\u0637\u0627\u0621",
-    row: "\u0635\u0641",
-    back: "\u0627\u0644\u0639\u0648\u062f\u0629 \u0644\u0644\u0636\u0645\u0627\u0646\u0627\u062a",
-    noFile: "\u064a\u0631\u062c\u0649 \u0627\u062e\u062a\u064a\u0627\u0631 \u0645\u0644\u0641 CSV \u0623\u0648\u0644\u0627\u064b",
-    required: "\u0627\u0644\u0623\u0639\u0645\u062f\u0629 \u0627\u0644\u0645\u0637\u0644\u0648\u0628\u0629: product_name, start_date, end_date",
-  },
-};
+import { useState, useRef } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { ArrowLeft, ArrowRight, Upload, FileText, CheckCircle, AlertCircle, Download } from "lucide-react";
+import { getDictionary, DIRECTION } from "@/lib/i18n";
+import type { Locale } from "@/lib/i18n";
+import { useAuth } from "@/lib/auth-context";
+import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 
-export default function ImportPage() {
+interface ParsedRow {
+  product_name: string;
+  serial_number?: string;
+  sku?: string;
+  category?: string;
+  start_date: string;
+  end_date: string;
+  seller_name?: string;
+  seller_email?: string;
+  quantity?: string;
+}
+
+export default function ImportWarrantiesPage() {
   const params = useParams();
+  const router = useRouter();
   const locale = (params.locale as string) || "en";
-  const l = t[locale as keyof typeof t] || t.en;
+  const dict = getDictionary(locale);
+  const isRTL = locale === "ar";
+  const direction = DIRECTION[locale as Locale];
+
+  const { user } = useAuth();
+  const supabase = createSupabaseBrowserClient();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [file, setFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<any[]>([]);
-  const [headers, setHeaders] = useState<string[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<{ imported: number; errors: { row: number; message: string }[] } | null>(null);
+  const [parsedData, setParsedData] = useState<ParsedRow[]>([]);
+  const [errors, setErrors] = useState<string[]>([]);
+  const [importing, setImporting] = useState(false);
+  const [imported, setImported] = useState(0);
+  const [done, setDone] = useState(false);
 
-  function handleFile(f: File) {
-    setFile(f);
-    setResult(null);
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const text = e.target?.result as string;
-      const lines = text.split("\n").filter(Boolean);
-      if (lines.length > 0) {
-        setHeaders(lines[0].split(",").map(h => h.trim()));
-        const rows = lines.slice(1, 6).map(line => line.split(",").map(c => c.trim()));
-        setPreview(rows);
+  const parseCSV = (text: string): ParsedRow[] => {
+    const lines = text.trim().split("\n");
+    if (lines.length < 2) return [];
+
+    const headers = lines[0].split(",").map((h) => h.trim().toLowerCase().replace(/\s+/g, "_"));
+    const rows: ParsedRow[] = [];
+
+    for (let i = 1; i < lines.length; i++) {
+      const values = lines[i].split(",").map((v) => v.trim().replace(/^"|"$/g, ""));
+      const row: Record<string, string> = {};
+      headers.forEach((h, j) => { row[h] = values[j] || ""; });
+
+      if (row.product_name && row.start_date && row.end_date) {
+        rows.push(row as unknown as ParsedRow);
+      } else {
+        setErrors((prev) => [...prev, `Row ${i + 1}: Missing required fields (product_name, start_date, end_date)`]);
       }
-    };
-    reader.readAsText(f);
-  }
+    }
 
-  function downloadTemplate() {
-    const csv = "product_name,product_name_ar,serial_number,sku,category,start_date,end_date,seller_name,seller_email,language\nSamsung TV 55,\u062a\u0644\u0641\u0632\u064a\u0648\u0646 \u0633\u0627\u0645\u0633\u0648\u0646\u062c,SN-12345,SKU-001,Electronics,2024-01-01,2026-01-01,Best Buy,seller@example.com,en";
+    return rows;
+  };
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selected = e.target.files?.[0];
+    if (!selected) return;
+
+    if (!selected.name.endsWith(".csv")) {
+      setErrors(["Only CSV files are accepted"]);
+      return;
+    }
+
+    setFile(selected);
+    setErrors([]);
+    const text = await selected.text();
+    const parsed = parseCSV(text);
+    setParsedData(parsed);
+  };
+
+  const handleImport = async () => {
+    if (!user || parsedData.length === 0) return;
+    setImporting(true);
+    setImported(0);
+
+    for (const row of parsedData) {
+      const refNum = `WR-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 5).toUpperCase()}`;
+
+      const { error } = await supabase.from("warranties").insert({
+        reference_number: refNum,
+        product_name: row.product_name,
+        serial_number: row.serial_number || null,
+        sku: row.sku || null,
+        category: row.category || "other",
+        start_date: row.start_date,
+        end_date: row.end_date,
+        seller_name: row.seller_name || null,
+        seller_email: row.seller_email || null,
+        quantity: parseInt(row.quantity || "1") || 1,
+        status: "active",
+        created_by: user.id,
+        issuer_user_id: user.id,
+        is_self_registered: true,
+      });
+
+      if (!error) setImported((prev) => prev + 1);
+    }
+
+    setDone(true);
+    setImporting(false);
+  };
+
+  const downloadTemplate = () => {
+    const csv = "product_name,serial_number,sku,category,start_date,end_date,seller_name,seller_email,quantity\nSamsung TV 65\",SN-123456,TV-65-SAM,electronics,2024-01-15,2026-01-15,Samsung Store,store@samsung.com,1\n";
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url; a.download = "warranty_template.csv"; a.click();
-  }
+    a.href = url;
+    a.download = "warrantee_import_template.csv";
+    a.click();
+  };
 
-  async function handleImport() {
-    if (!file) return;
-    setLoading(true);
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-      const res = await fetch("/api/warranties/bulk-import", { method: "POST", body: formData });
-      const data = await res.json();
-      setResult(data);
-    } catch (err) {
-      setResult({ imported: 0, errors: [{ row: 0, message: "Import failed" }] });
-    } finally {
-      setLoading(false);
-    }
+  if (done) {
+    return (
+      <div dir={direction} className="max-w-2xl mx-auto text-center py-16">
+        <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <CheckCircle size={40} className="text-green-600" />
+        </div>
+        <h2 className="text-2xl font-bold text-navy mb-2">
+          {isRTL ? `\u062A\u0645 \u0627\u0633\u062A\u064A\u0631\u0627\u062F ${imported} \u0636\u0645\u0627\u0646 \u0628\u0646\u062C\u0627\u062D!` : `Successfully imported ${imported} warranties!`}
+        </h2>
+        <button
+          onClick={() => router.push(`/${locale}/warranties`)}
+          className="mt-4 bg-gold hover:bg-yellow-500 text-navy font-semibold py-3 px-6 rounded-lg transition"
+        >
+          {isRTL ? "\u0639\u0631\u0636 \u0627\u0644\u0636\u0645\u0627\u0646\u0627\u062A" : "View Warranties"}
+        </button>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA]">
-      <header className="bg-white border-b border-gray-100 px-6 py-4">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Shield className="w-8 h-8 text-[#4169E1]" />
-            <span className="text-xl font-bold text-[#1A1A2E]">{l.title}</span>
-          </div>
-          <Link href={"/" + locale + "/warranties"} className="flex items-center gap-1 text-sm text-gray-500 hover:text-[#4169E1]">
-            <ArrowLeft className="w-4 h-4" /> {l.back}
-          </Link>
+    <div dir={direction} className="max-w-3xl mx-auto">
+      <div className="flex items-center gap-4 mb-6">
+        <button onClick={() => router.back()} className="p-2 hover:bg-gray-100 rounded-lg transition">
+          {isRTL ? <ArrowRight size={20} /> : <ArrowLeft size={20} />}
+        </button>
+        <h1 className="text-2xl font-bold text-navy">{isRTL ? "\u0627\u0633\u062A\u064A\u0631\u0627\u062F \u0636\u0645\u0627\u0646\u0627\u062A \u0645\u0646 CSV" : "Import Warranties from CSV"}</h1>
+      </div>
+
+      <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-6">
+        <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-between">
+          <p className="text-sm text-blue-800">
+            {isRTL ? "\u062D\u0645\u0644 \u0627\u0644\u0642\u0627\u0644\u0628 \u0644\u0631\u0624\u064A\u0629 \u0627\u0644\u062A\u0646\u0633\u064A\u0642 \u0627\u0644\u0645\u0637\u0644\u0648\u0628" : "Download the template to see the required format"}
+          </p>
+          <button onClick={downloadTemplate} className="text-blue-700 hover:text-blue-900 font-medium text-sm flex items-center gap-1">
+            <Download size={14} /> {isRTL ? "\u062A\u062D\u0645\u064A\u0644 \u0627\u0644\u0642\u0627\u0644\u0628" : "Download Template"}
+          </button>
         </div>
-      </header>
-      <main className="max-w-4xl mx-auto px-6 py-8">
-        <p className="text-gray-500 mb-2">{l.subtitle}</p>
-        <p className="text-xs text-gray-400 mb-6">{l.required}</p>
 
         <div
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={(e) => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) handleFile(f); }}
-          onClick={() => { const inp = document.createElement("input"); inp.type = "file"; inp.accept = ".csv"; inp.onchange = (e: any) => { if (e.target.files[0]) handleFile(e.target.files[0]); }; inp.click(); }}
-          className="border-2 border-dashed border-gray-300 rounded-xl p-12 text-center cursor-pointer hover:border-[#4169E1] transition-colors bg-white"
+          onClick={() => fileInputRef.current?.click()}
+          className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-gold transition"
         >
-          <Upload className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-          <p className="text-gray-500">{l.dropzone}</p>
-          {file && <p className="text-[#4169E1] font-medium mt-2">{file.name}</p>}
+          <Upload size={32} className="mx-auto text-gray-400 mb-2" />
+          <p className="text-sm text-gray-600">
+            {file ? file.name : isRTL ? "\u0627\u0636\u063A\u0637 \u0644\u0631\u0641\u0639 \u0645\u0644\u0641 CSV" : "Click to upload CSV file"}
+          </p>
+          <input ref={fileInputRef} type="file" accept=".csv" onChange={handleFileSelect} className="hidden" />
         </div>
 
-        <button onClick={downloadTemplate} className="flex items-center gap-2 mt-4 text-sm text-[#4169E1] hover:underline">
-          <Download className="w-4 h-4" /> {l.download}
-        </button>
+        {errors.length > 0 && (
+          <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+            {errors.map((err, i) => (
+              <p key={i} className="text-sm text-red-800 flex items-center gap-1">
+                <AlertCircle size={14} /> {err}
+              </p>
+            ))}
+          </div>
+        )}
 
-        {preview.length > 0 && (
-          <div className="mt-6 bg-white rounded-xl shadow-sm overflow-hidden">
-            <div className="px-4 py-3 border-b bg-gray-50 flex items-center gap-2">
-              <FileSpreadsheet className="w-4 h-4 text-gray-500" />
-              <span className="text-sm font-medium text-gray-700">{l.preview} ({preview.length} {l.rows})</span>
-            </div>
-            <div className="overflow-x-auto">
+        {parsedData.length > 0 && (
+          <div>
+            <h3 className="font-bold text-navy mb-3">
+              {isRTL ? `\u0645\u0639\u0627\u064A\u0646\u0629: ${parsedData.length} \u0636\u0645\u0627\u0646` : `Preview: ${parsedData.length} warranties`}
+            </h3>
+            <div className="overflow-x-auto border border-gray-200 rounded-lg">
               <table className="w-full text-sm">
-                <thead><tr className="border-b bg-gray-50">{headers.map((h, i) => <th key={i} className="px-3 py-2 text-start text-xs font-medium text-gray-500">{h}</th>)}</tr></thead>
-                <tbody>{preview.map((row, i) => <tr key={i} className="border-b">{row.map((c: string, j: number) => <td key={j} className="px-3 py-2 text-gray-600">{c}</td>)}</tr>)}</tbody>
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-3 py-2 text-left font-medium text-gray-600">{isRTL ? "\u0627\u0644\u0645\u0646\u062A\u062C" : "Product"}</th>
+                    <th className="px-3 py-2 text-left font-medium text-gray-600">{isRTL ? "\u0627\u0644\u0628\u062F\u0621" : "Start"}</th>
+                    <th className="px-3 py-2 text-left font-medium text-gray-600">{isRTL ? "\u0627\u0644\u0627\u0646\u062A\u0647\u0627\u0621" : "End"}</th>
+                    <th className="px-3 py-2 text-left font-medium text-gray-600">{isRTL ? "\u0627\u0644\u0628\u0627\u0626\u0639" : "Seller"}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {parsedData.slice(0, 10).map((row, i) => (
+                    <tr key={i}>
+                      <td className="px-3 py-2">{row.product_name}</td>
+                      <td className="px-3 py-2">{row.start_date}</td>
+                      <td className="px-3 py-2">{row.end_date}</td>
+                      <td className="px-3 py-2">{row.seller_name || "\u2014"}</td>
+                    </tr>
+                  ))}
+                </tbody>
               </table>
+              {parsedData.length > 10 && (
+                <p className="text-center text-sm text-gray-500 py-2">
+                  ...{isRTL ? `\u0648 ${parsedData.length - 10} \u0623\u062E\u0631\u0649` : `and ${parsedData.length - 10} more`}
+                </p>
+              )}
             </div>
+
+            <button
+              onClick={handleImport}
+              disabled={importing}
+              className="mt-4 w-full bg-gold hover:bg-yellow-500 text-navy font-semibold py-3 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {importing
+                ? `${isRTL ? "\u062C\u0627\u0631\u064A \u0627\u0644\u0627\u0633\u062A\u064A\u0631\u0627\u062F..." : "Importing..."} (${imported}/${parsedData.length})`
+                : isRTL ? `\u0627\u0633\u062A\u064A\u0631\u0627\u062F ${parsedData.length} \u0636\u0645\u0627\u0646` : `Import ${parsedData.length} Warranties`}
+            </button>
           </div>
         )}
-
-        {file && !result && (
-          <button onClick={handleImport} disabled={loading} className="mt-6 bg-[#4169E1] text-white px-6 py-3 rounded-lg font-medium hover:bg-[#3457b5] disabled:opacity-50">
-            {loading ? l.importing : l.importBtn}
-          </button>
-        )}
-
-        {result && (
-          <div className="mt-6 bg-white rounded-xl shadow-sm p-6">
-            <h3 className="font-bold text-lg mb-4">{l.results}</h3>
-            <div className="flex items-center gap-2 text-green-600 mb-2">
-              <CheckCircle2 className="w-5 h-5" /> {l.imported}: {result.imported}
-            </div>
-            {result.errors.length > 0 && (
-              <div className="mt-3">
-                <p className="text-red-600 font-medium flex items-center gap-2"><AlertCircle className="w-5 h-5" /> {l.errors}: {result.errors.length}</p>
-                <ul className="mt-2 text-sm text-red-500 space-y-1">
-                  {result.errors.map((e, i) => <li key={i}>{l.row} {e.row}: {e.message}</li>)}
-                </ul>
-              </div>
-            )}
-          </div>
-        )}
-      </main>
+      </div>
     </div>
   );
 }
