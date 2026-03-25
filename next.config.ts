@@ -48,5 +48,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;// Warrantee Next.js Configuration
-import type { NextConfig } from "next";const nextConfig: NextConfig = {  reactStrictMode: true,  typescript: {    ignoreBuildErrors: true,  },  eslint: {    ignoreDuringBuilds: true,  },  images: {    remotePatterns: [      { protocol: "https", hostname: "lh3.googleusercontent.com", pathname: "/**" },      { protocol: "https", hostname: "erptubrslnfmkuouczgn.supabase.co", pathname: "/storage/**" },    ],  },  headers: async () => {    return [      {        source: "/:path*",        headers: [          { key: "X-DNS-Prefetch-Control", value: "on" },          { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" },          { key: "X-Frame-Options", value: "SAMEORIGIN" },          { key: "X-Content-Type-Options", value: "nosniff" },          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },          { key: "X-XSS-Protection", value: "1; mode=block" },        ],      },      {        source: "/api/:path*",
+export default nextConfig;
