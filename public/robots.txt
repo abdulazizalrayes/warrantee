@@ -1,0 +1,8 @@
+# Warrantee robots.txt
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /admin-portal-x7k9/
+Disallow: /_next/
+
+Sitemap: https://warrantee.io/sitemap.xml
