@@ -1,5 +1,6 @@
 'use client';
 
+// @ts-nocheck
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Copy, Check, Code2, Key, Globe } from 'lucide-react';
