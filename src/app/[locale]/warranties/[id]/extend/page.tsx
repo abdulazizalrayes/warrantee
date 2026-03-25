@@ -1,5 +1,5 @@
-"use client";
 // @ts-nocheck
+"use client";
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, CheckCircle } from "lucide-react";
