@@ -2,172 +2,112 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
-import { getDashboardStats, getExpiringWarranties } from "@/lib/warranties";
 import Link from "next/link";
-import { Shield, Package, AlertTriangle, Clock, Plus, Bell, LogOut, Store } from "lucide-react";
+import { Shield, Clock, AlertTriangle, FileText, Plus, TrendingUp, Activity } from "lucide-react";
+import { getDictionary, DIRECTION } from "@/lib/i18n";
+import type { Locale } from "@/lib/i18n";
+import { useAuth } from "@/lib/auth-context";
+import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 
-const translations = {
-  en: {
-    welcome: "Welcome back",
-    dashboard: "Dashboard",
-    totalWarranties: "Total Warranties",
-    activeWarranties: "Active",
-    expiringSoon: "Expiring Soon",
-    expired: "Expired",
-    totalValue: "Total Protected Value",
-    addWarranty: "Add Warranty",
-    viewAll: "View All",
-    expiringWarranties: "Expiring Warranties",
-    noExpiring: "No warranties expiring soon",
-    daysLeft: "days left",
-    signOut: "Sign Out",
-    sellerDashboard: "Seller Dashboard",
-    notifications: "Notifications",
-  },
-  ar: {
-    welcome: "\u0645\u0631\u062D\u0628\u064B\u0627 \u0628\u0639\u0648\u062F\u062A\u0643",
-    dashboard: "\u0644\u0648\u062D\u0629 \u0627\u0644\u062A\u062D\u0643\u0645",
-    totalWarranties: "\u0625\u062C\u0645\u0627\u0644\u064A \u0627\u0644\u0636\u0645\u0627\u0646\u0627\u062A",
-    activeWarranties: "\u0646\u0634\u0637\u0629",
-    expiringSoon: "\u062A\u0646\u062A\u0647\u064A \u0642\u0631\u064A\u0628\u064B\u0627",
-    expired: "\u0645\u0646\u062A\u0647\u064A\u0629",
-    totalValue: "\u0625\u062C\u0645\u0627\u0644\u064A \u0627\u0644\u0642\u064A\u0645\u0629 \u0627\u0644\u0645\u062D\u0645\u064A\u0629",
-    addWarranty: "\u0625\u0636\u0627\u0641\u0629 \u0636\u0645\u0627\u0646",
-    viewAll: "\u0639\u0631\u0636 \u0627\u0644\u0643\u0644",
-    expiringWarranties: "\u0636\u0645\u0627\u0646\u0627\u062A \u062A\u0646\u062A\u0647\u064A \u0642\u0631\u064A\u0628\u064B\u0627",
-    noExpiring: "\u0644\u0627 \u062A\u0648\u062C\u062F \u0636\u0645\u0627\u0646\u0627\u062A \u062A\u0646\u062A\u0647\u064A \u0642\u0631\u064A\u0628\u064B\u0627",
-    daysLeft: "\u064A\u0648\u0645 \u0645\u062A\u0628\u0642\u064A",
-    signOut: "\u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062E\u0631\u0648\u062C",
-    sellerDashboard: "\u0644\u0648\u062D\u0629 \u0627\u0644\u0628\u0627\u0626\u0639",
-    notifications: "\u0627\u0644\u0625\u0634\u0639\u0627\u0631\u0627\u062A",
-  },
-};
+interface DashboardStats { active_warranties: number; expiring_soon: number; pending_approval: number; total_warranties: number; open_claims: number; unread_notifications: number; }
+interface RecentWarranty { id: string; product_name: string; product_name_ar: string | null; status: string; end_date: string; reference_number: string; seller_name: string | null; created_at: string; }
+interface RecentActivity { id: string; action: string; entity_type: string; entity_id: string; metadata: Record<string, unknown> | null; created_at: string; }
 
 export default function DashboardPage() {
   const params = useParams();
   const router = useRouter();
   const locale = (params.locale as string) || "en";
-  const t = translations[locale as keyof typeof translations] || translations.en;
-  const supabase = createClient();
-
-  const [user, setUser] = useState<any>(null);
-  const [stats, setStats] = useState({ total: 0, active: 0, expiringSoon: 0, expired: 0, totalValue: 0 });
-  const [expiring, setExpiring] = useState<any[]>([]);
+  const dict = getDictionary(locale);
+  const isRTL = locale === "ar";
+  const direction = DIRECTION[locale as Locale];
+  const { user, profile, loading: authLoading } = useAuth();
+  const supabase = createSupabaseBrowserClient();
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [recentWarranties, setRecentWarranties] = useState<RecentWarranty[]>([]);
+  const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
+  const [expiringWarranties, setExpiringWarranties] = useState<RecentWarranty[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadDashboard();
-  }, []);
-
-  async function loadDashboard() {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        router.push("/" + locale + "/auth");
-        return;
-      }
-      setUser(user);
-
-      const [statsData, expiringData] = await Promise.all([
-        getDashboardStats().catch(() => ({ total: 0, active: 0, expiringSoon: 0, expired: 0, totalValue: 0 })),
-        getExpiringWarranties(30).catch(() => []),
-      ]);
-      setStats(statsData);
-      setExpiring(expiringData || []);
-    } finally {
+    if (authLoading) return;
+    if (!user) { router.push(`/${locale}/auth`); return; }
+    if (profile && !profile.onboarding_completed) { router.push(`/${locale}/onboarding`); return; }
+    const fetchDashboardData = async () => {
+      setLoading(true);
+      const { data: statsData } = await supabase.rpc("get_user_dashboard_stats", { user_uuid: user.id });
+      if (statsData) setStats(statsData as unknown as DashboardStats);
+      const { data: warranties } = await supabase.from("warranties").select("id, product_name, product_name_ar, status, end_date, reference_number, seller_name, created_at").or(`created_by.eq.${user.id},recipient_user_id.eq.${user.id}`).order("created_at", { ascending: false }).limit(5);
+      if (warranties) setRecentWarranties(warranties as RecentWarranty[]);
+      const { data: expiring } = await supabase.rpc("get_expiring_warranties", { days_ahead: 30 });
+      if (expiring) setExpiringWarranties((expiring as RecentWarranty[]).slice(0, 5));
+      const { data: activity } = await supabase.from("activity_log").select("id, action, entity_type, entity_id, metadata, created_at").eq("actor_id", user.id).order("created_at", { ascending: false }).limit(8);
+      if (activity) setRecentActivity(activity as RecentActivity[]);
       setLoading(false);
-    }
-  }
+    };
+    fetchDashboardData();
+  }, [user, profile, authLoading, locale, router, supabase]);
 
-  async function handleSignOut() {
-    await supabase.auth.signOut();
-    router.push("/" + locale + "/auth");
-  }
+  const getStatusColor = (status: string) => {
+    const colors: Record<string, string> = { active: "bg-green-100 text-green-800", pending_approval: "bg-yellow-100 text-yellow-800", draft: "bg-gray-100 text-gray-800", expired: "bg-red-100 text-red-800", claimed: "bg-blue-100 text-blue-800", cancelled: "bg-gray-100 text-gray-600" };
+    return colors[status] || "bg-gray-100 text-gray-800";
+  };
+  const getStatusLabel = (status: string) => {
+    const labels: Record<string, { en: string; ar: string }> = { active: { en: "Active", ar: "\u0646\u0634\u0637" }, pending_approval: { en: "Pending", ar: "\u0641\u064a \u0627\u0644\u0627\u0646\u062a\u0638\u0627\u0631" }, draft: { en: "Draft", ar: "\u0645\u0633\u0648\u062f\u0629" }, expired: { en: "Expired", ar: "\u0645\u0646\u062a\u0647\u064a" }, claimed: { en: "Claimed", ar: "\u0645\u0637\u0627\u0644\u0628" }, cancelled: { en: "Cancelled", ar: "\u0645\u0644\u063a\u064a" } };
+    const l = labels[status] || { en: status, ar: status };
+    return isRTL ? l.ar : l.en;
+  };
+  const getActivityLabel = (action: string) => {
+    const labels: Record<string, { en: string; ar: string }> = { warranty_created: { en: "Created a warranty", ar: "\u0623\u0646\u0634\u0623 \u0636\u0645\u0627\u0646" }, warranty_approved: { en: "Approved a warranty", ar: "\u0648\u0627\u0641\u0642 \u0639\u0644\u0649 \u0636\u0645\u0627\u0646" }, warranty_claimed: { en: "Filed a claim", ar: "\u0642\u062f\u0645 \u0645\u0637\u0627\u0644\u0628\u0629" }, document_uploaded: { en: "Uploaded a document", ar: "\u0631\u0641\u0639 \u0645\u0633\u062a\u0646\u062f" }, warranty_extended: { en: "Extended a warranty", ar: "\u0645\u062f\u062f \u0636\u0645\u0627\u0646" }, certificate_generated: { en: "Generated certificate", ar: "\u0623\u0646\u0634\u0623 \u0634\u0647\u0627\u062f\u0629" } };
+    const l = labels[action] || { en: action, ar: action };
+    return isRTL ? l.ar : l.en;
+  };
+  const formatDate = (dateStr: string) => new Date(dateStr).toLocaleDateString(isRTL ? "ar-SA" : "en-US", { month: "short", day: "numeric", year: "numeric" });
+  const daysUntilExpiry = (endDate: string) => { const now = new Date(); const end = new Date(endDate); return Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)); };
 
-  if (loading) {
-    return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#4169E1]" /></div>;
+  if (authLoading || loading) {
+    return (<div className="flex items-center justify-center min-h-[60vh]"><div className="text-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gold mx-auto mb-4"></div><p className="text-gray-600">{dict.common.loading}</p></div></div>);
   }
-
-  const statCards = [
-    { label: t.totalWarranties, value: stats.total, icon: Package, color: "bg-blue-500" },
-    { label: t.activeWarranties, value: stats.active, icon: Shield, color: "bg-green-500" },
-    { label: t.expiringSoon, value: stats.expiringSoon, icon: AlertTriangle, color: "bg-orange-500" },
-    { label: t.expired, value: stats.expired, icon: Clock, color: "bg-red-500" },
-  ];
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA]">
-      <header className="bg-white border-b border-gray-100 px-6 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Shield className="w-8 h-8 text-[#4169E1]" />
-            <span className="text-xl font-bold text-[#1A1A2E]">{t.dashboard}</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <Link href={"/" + locale + "/seller"} className="flex items-center gap-1 text-sm text-gray-600 hover:text-[#4169E1]">
-              <Store className="w-4 h-4" /> {t.sellerDashboard}
-            </Link>
-            <Link href={"/" + locale + "/warranties/new"} className="flex items-center gap-1 bg-[#4169E1] text-white px-4 py-2 rounded-lg text-sm hover:bg-[#3457b5]">
-              <Plus className="w-4 h-4" /> {t.addWarranty}
-            </Link>
-            <button onClick={handleSignOut} className="flex items-center gap-1 text-sm text-gray-500 hover:text-red-500">
-              <LogOut className="w-4 h-4" /> {t.signOut}
-            </button>
+    <div dir={direction}>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+        <div><h1 className="text-2xl font-bold text-navy">{dict.dashboard.welcome}, {profile?.full_name?.split(" ")[0] || user?.email?.split("@")[0]}</h1><p className="text-gray-600 text-sm mt-1">{isRTL ? "\u0625\u0644\u064a\u0643 \u0646\u0638\u0631\u0629 \u0639\u0627\u0645\u0629 \u0639\u0644\u0649 \u0636\u0645\u0627\u0646\u0627\u062a\u0643" : "Here's an overview of your warranties"}</p></div>
+        <Link href={`/${locale}/warranties/new`} className="bg-gold hover:bg-yellow-500 text-navy font-semibold py-2.5 px-5 rounded-lg transition flex items-center gap-2 w-fit"><Plus size={18} />{dict.warranty.create}</Link>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="bg-white rounded-lg border border-gray-200 p-5 hover:shadow-md transition"><div className="flex items-center justify-between mb-3"><Shield size={24} className="text-green-600" /><span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded-full flex items-center gap-1"><TrendingUp size={12} />{isRTL ? "\u0646\u0634\u0637" : "Active"}</span></div><p className="text-3xl font-bold text-navy">{stats?.active_warranties ?? 0}</p><p className="text-sm text-gray-600 mt-1">{dict.dashboard.active_warranties}</p></div>
+        <div className="bg-white rounded-lg border border-gray-200 p-5 hover:shadow-md transition"><div className="flex items-center justify-between mb-3"><Clock size={24} className="text-yellow-600" /><span className="text-xs font-medium text-yellow-600 bg-yellow-50 px-2 py-1 rounded-full">{isRTL ? "30 \u064a\u0648\u0645" : "30 days"}</span></div><p className="text-3xl font-bold text-navy">{stats?.expiring_soon ?? 0}</p><p className="text-sm text-gray-600 mt-1">{dict.dashboard.expiring_soon}</p></div>
+        <div className="bg-white rounded-lg border border-gray-200 p-5 hover:shadow-md transition"><div className="flex items-center justify-between mb-3"><AlertTriangle size={24} className="text-orange-600" /></div><p className="text-3xl font-bold text-navy">{stats?.pending_approval ?? 0}</p><p className="text-sm text-gray-600 mt-1">{dict.dashboard.pending_approval}</p></div>
+        <div className="bg-white rounded-lg border border-gray-200 p-5 hover:shadow-md transition"><div className="flex items-center justify-between mb-3"><FileText size={24} className="text-blue-600" /></div><p className="text-3xl font-bold text-navy">{stats?.total_warranties ?? 0}</p><p className="text-sm text-gray-600 mt-1">{dict.dashboard.total_managed}</p></div>
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 bg-white rounded-lg border border-gray-200">
+          <div className="p-5 border-b border-gray-200 flex items-center justify-between"><h2 className="font-bold text-navy">{isRTL ? "\u0623\u062d\u062f\u062b \u0627\u0644\u0636\u0645\u0627\u0646\u0627\u062a" : "Recent Warranties"}</h2><Link href={`/${locale}/warranties`} className="text-sm text-gold hover:text-yellow-600 font-medium transition">{dict.dashboard.view_all}</Link></div>
+          <div className="divide-y divide-gray-100">
+            {recentWarranties.length === 0 ? (<div className="p-8 text-center"><Shield size={48} className="mx-auto text-gray-300 mb-3" /><p className="text-gray-600 font-medium">{isRTL ? "\u0644\u0627 \u062a\u0648\u062c\u062f \u0636\u0645\u0627\u0646\u0627\u062a \u0628\u0639\u062f" : "No warranties yet"}</p><Link href={`/${locale}/warranties/new`} className="inline-flex items-center gap-2 mt-4 bg-gold hover:bg-yellow-500 text-navy font-semibold py-2 px-4 rounded-lg transition text-sm"><Plus size={16} />{dict.warranty.create}</Link></div>) : (
+              recentWarranties.map((w) => (<Link key={w.id} href={`/${locale}/warranties/${w.id}`} className="flex items-center justify-between p-4 hover:bg-gray-50 transition"><div className="flex-1 min-w-0"><p className="font-medium text-navy truncate">{isRTL && w.product_name_ar ? w.product_name_ar : w.product_name}</p><p className="text-xs text-gray-500 mt-0.5">{w.reference_number}{w.seller_name && ` \u2022 ${w.seller_name}`}</p></div><div className="flex items-center gap-3"><span className={`text-xs px-2 py-1 rounded-full font-medium ${getStatusColor(w.status)}`}>{getStatusLabel(w.status)}</span><span className="text-xs text-gray-500 hidden sm:block">{formatDate(w.end_date)}</span></div></Link>))
+            )}
           </div>
         </div>
-      </header>
-
-      <main className="max-w-7xl mx-auto px-6 py-8">
-        <h1 className="text-2xl font-bold text-[#1A1A2E] mb-1">
-          {t.welcome}, {user?.user_metadata?.full_name || user?.email?.split("@")[0]}
-        </h1>
-        <p className="text-gray-500 mb-8">{t.totalValue}: {stats.totalValue.toLocaleString()} SAR</p>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {statCards.map((card, i) => (
-            <div key={i} className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-500">{card.label}</p>
-                  <p className="text-3xl font-bold text-[#1A1A2E] mt-1">{card.value}</p>
-                </div>
-                <div className={card.color + " p-3 rounded-xl"}>
-                  <card.icon className="w-6 h-6 text-white" />
-                </div>
-              </div>
+        <div className="space-y-6">
+          <div className="bg-white rounded-lg border border-gray-200">
+            <div className="p-5 border-b border-gray-200"><h2 className="font-bold text-navy flex items-center gap-2"><Clock size={18} className="text-yellow-600" />{dict.dashboard.expiring_soon}</h2></div>
+            <div className="divide-y divide-gray-100">
+              {expiringWarranties.length === 0 ? (<div className="p-6 text-center"><p className="text-sm text-gray-500">{isRTL ? "\u0644\u0627 \u062a\u0648\u062c\u062f \u0636\u0645\u0627\u0646\u0627\u062a \u062a\u0646\u062a\u0647\u064a \u0642\u0631\u064a\u0628\u0627\u064b" : "No warranties expiring soon"}</p></div>) : (
+                expiringWarranties.map((w) => { const days = daysUntilExpiry(w.end_date); return (<Link key={w.id} href={`/${locale}/warranties/${w.id}`} className="flex items-center justify-between p-3 hover:bg-gray-50 transition"><p className="text-sm font-medium text-navy truncate flex-1">{isRTL && w.product_name_ar ? w.product_name_ar : w.product_name}</p><span className={`text-xs font-semibold px-2 py-1 rounded-full ${days <= 7 ? "bg-red-100 text-red-800" : days <= 15 ? "bg-orange-100 text-orange-800" : "bg-yellow-100 text-yellow-800"}`}>{days} {isRTL ? "\u064a\u0648\u0645" : "days"}</span></Link>); })
+              )}
             </div>
-          ))}
-        </div>
-
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-semibold text-[#1A1A2E]">{t.expiringWarranties}</h2>
-            <Link href={"/" + locale + "/warranties"} className="text-[#4169E1] text-sm hover:underline">{t.viewAll}</Link>
           </div>
-          {expiring.length === 0 ? (
-            <p className="text-gray-500 text-center py-8">{t.noExpiring}</p>
-          ) : (
-            <div className="space-y-3">
-              {expiring.map((w) => {
-                const daysLeft = Math.ceil((new Date(w.warranty_end_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-                return (
-                  <div key={w.id} className="flex items-center justify-between p-4 bg-orange-50 rounded-lg border border-orange-100">
-                    <div>
-                      <p className="font-medium text-[#1A1A2E]">{w.product_name}</p>
-                      <p className="text-sm text-gray-500">{w.brand || ""} {w.model_number || ""}</p>
-                    </div>
-                    <div className="text-end">
-                      <p className="text-orange-600 font-semibold">{daysLeft} {t.daysLeft}</p>
-                      <p className="text-xs text-gray-400">{new Date(w.warranty_end_date).toLocaleDateString()}</p>
-                    </div>
-                  </div>
-                );
-              })}
+          <div className="bg-white rounded-lg border border-gray-200">
+            <div className="p-5 border-b border-gray-200"><h2 className="font-bold text-navy flex items-center gap-2"><Activity size={18} className="text-blue-600" />{dict.dashboard.recent_activity}</h2></div>
+            <div className="divide-y divide-gray-100">
+              {recentActivity.length === 0 ? (<div className="p-6 text-center"><p className="text-sm text-gray-500">{isRTL ? "\u0644\u0627 \u064a\u0648\u062c\u062f \u0646\u0634\u0627\u0637 \u0628\u0639\u062f" : "No activity yet"}</p></div>) : (
+                recentActivity.map((a) => (<div key={a.id} className="p-3"><p className="text-sm text-navy">{getActivityLabel(a.action)}</p><p className="text-xs text-gray-400 mt-0.5">{formatDate(a.created_at)}</p></div>))
+              )}
             </div>
-          )}
+          </div>
         </div>
-      </main>
+      </div>
     </div>
   );
 }
