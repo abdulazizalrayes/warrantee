@@ -353,8 +353,8 @@ export default function SettingsPage() {
                   >
                     <div className="w-10 h-10 rounded-full bg-[#f5f5f7] flex items-center justify-center text-[17px] font-medium">AR</div>
                     <div className="text-left rtl:text-right">
-                      <p className="text-[15px] font-medium text-[#1d1d1f]">\u0627\u0644\u0639\u0631\u0628\u064a\u0629</p>
-                      <p className="text-[13px] text-[#86868b]">\u0627\u0644\u0645\u0645\u0644\u0643\u0629 \u0627\u0644\u0639\u0631\u0628\u064a\u0629 \u0627\u0644\u0633\u0639\u0648\u062f\u064a\u0629</p>
+                      <p className="text-[15px] font-medium text-[#1d1d1f]">{"العربية"}</p>
+                      <p className="text-[13px] text-[#86868b]">{"المملكة العربية السعودية"}</p>
                     </div>
                     {preferredLocale === "ar" && <Check className="w-5 h-5 text-[#0071e3] ml-auto rtl:mr-auto rtl:ml-0" />}
                   </button>
