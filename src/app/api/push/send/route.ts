@@ -1,4 +1,4 @@
-// fiximport { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import webpush from "web-push";
 
@@ -9,14 +9,17 @@ function getSupabaseAdmin() {
   );
 }
 
-const VAPID_PUBLIC = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!;
-const VAPID_PRIVATE = process.env.VAPID_PRIVATE_KEY!;
-
-webpush.setVapidDetails(
-  "mailto:support@warrantee.io",
-  VAPID_PUBLIC,
-  VAPID_PRIVATE
-);
+// Lazy-init VAPID to avoid build-time crash when env vars are missing
+let vapidConfigured = false;
+function ensureVapid() {
+  if (vapidConfigured) return;
+  const pub = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+  const priv = process.env.VAPID_PRIVATE_KEY;
+  if (pub && priv) {
+    webpush.setVapidDetails("mailto:support@warrantee.io", pub, priv);
+    vapidConfigured = true;
+  }
+}
 
 interface PushPayload {
   userId: string;
@@ -29,6 +32,15 @@ interface PushPayload {
 
 export async function POST(req: NextRequest) {
   try {
+    ensureVapid();
+
+    if (!vapidConfigured) {
+      return NextResponse.json(
+        { error: "Push notifications not configured" },
+        { status: 503 }
+      );
+    }
+
     const authHeader = req.headers.get("authorization");
     if (authHeader !== `Bearer ${process.env.INTERNAL_API_SECRET}`) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
