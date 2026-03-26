@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createClient } from '@/lib/supabase-client';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import Link from 'next/link';
 
 type IngestionStatus = 'received' | 'processing' | 'extracted' | 'confirmed' | 'failed';
@@ -43,7 +43,7 @@ export default function InboxPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
-  const supabase = createClient();
+  const supabase = createClientComponentClient();
 
   useEffect(() => {
     loadRecords();
