@@ -1,201 +1,166 @@
-// @ts-nocheck
 "use client";
 
 import { useState } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { getDictionary, DIRECTION } from "@/lib/i18n";
-import type { Locale } from "@/lib/i18n";
-import { useAuth } from "@/lib/auth-context";
-import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
-import { ArrowLeft, MessageSquare, Mail, Phone, Clock, Send, CheckCircle, AlertCircle } from "lucide-react";
-
-type TicketCategory = "general" | "technical" | "billing" | "warranty" | "claim" | "account";
-type TicketPriority = "low" | "medium" | "high";
+import { useParams } from "next/navigation";
+import { Headphones, Mail, MessageCircle, Clock, Send, ChevronRight, BookOpen, Shield, ExternalLink } from "lucide-react";
+import Link from "next/link";
 
 export default function SupportPage() {
   const params = useParams();
-  const router = useRouter();
-  const locale = (params.locale as string) || "en";
-  const dict = getDictionary(locale);
+  const locale = params?.locale as string || "en";
   const isRTL = locale === "ar";
-  const direction = DIRECTION[locale as Locale];
-  const { user, profile } = useAuth();
-  const supabase = createSupabaseBrowserClient();
-
-  const [category, setCategory] = useState<TicketCategory>("general");
-  const [priority, setPriority] = useState<TicketPriority>("medium");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-  const [error, setError] = useState("");
-  const [ticketNumber, setTicketNumber] = useState("");
+  const [sent, setSent] = useState(false);
 
-  const categories: { value: TicketCategory; en: string; ar: string }[] = [
-    { value: "general", en: "General Inquiry", ar: "استفسار عام" },
-    { value: "technical", en: "Technical Issue", ar: "مشكلة تقنية" },
-    { value: "billing", en: "Billing & Subscription", ar: "الفواتير والاشتراك" },
-    { value: "warranty", en: "Warranty Question", ar: "سؤال عن الضمان" },
-    { value: "claim", en: "Claim Issue", ar: "مشكلة مطالبة" },
-    { value: "account", en: "Account & Settings", ar: "الحساب والإعدادات" },
-  ];
-
-  const priorities: { value: TicketPriority; en: string; ar: string }[] = [
-    { value: "low", en: "Low", ar: "منخفض" },
-    { value: "medium", en: "Medium", ar: "متوسط" },
-    { value: "high", en: "High - Urgent", ar: "عالي - عاجل" },
-  ];
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!subject.trim() || !message.trim()) {
-      setError(isRTL ? "يرجى ملء جميع الحقول المطلوبة" : "Please fill in all required fields");
-      return;
-    }
-    setSubmitting(true);
-    setError("");
-
-    try {
-      const ticket = `TKT-${Date.now().toString(36).toUpperCase()}`;
-      const { error: dbError } = await supabase.from("support_tickets").insert({
-        ticket_number: ticket,
-        user_id: user?.id,
-        email: profile?.email || user?.email || "",
-        category,
-        priority,
-        subject: subject.trim(),
-        message: message.trim(),
-        status: "open",
-      });
-
-      if (dbError) {
-        // If table doesn't exist yet, send via email fallback
-        const res = await fetch("/api/email/send", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            to: "hello@warrantee.io",
-            subject: `[Support Ticket ${ticket}] ${subject}`,
-            html: `<h3>Support Ticket: ${ticket}</h3><p><strong>From:</strong> ${profile?.email || user?.email}</p><p><strong>Category:</strong> ${category}</p><p><strong>Priority:</strong> ${priority}</p><p><strong>Subject:</strong> ${subject}</p><p><strong>Message:</strong></p><p>${message.replace(/\n/g, "<br/>")}</p>`,
-          }),
-        });
-        if (!res.ok) throw new Error("Failed to send");
-      }
-
-      setTicketNumber(ticket);
-      setSubmitted(true);
-    } catch (err) {
-      setError(isRTL ? "حدث خطأ. يرجى المحاولة مرة أخرى أو مراسلتنا على hello@warrantee.io" : "Something went wrong. Please try again or email us at hello@warrantee.io");
-    } finally {
-      setSubmitting(false);
-    }
+    setSent(true);
   };
 
-  if (submitted) {
-    return (
-      <div dir={direction} className="max-w-2xl mx-auto text-center py-16">
-        <div className="bg-green-50 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6">
-          <CheckCircle size={40} className="text-green-600" />
-        </div>
-        <h1 className="text-2xl font-bold text-navy mb-2">
-          {isRTL ? "تم إرسال طلبك بنجاح!" : "Your ticket has been submitted!"}
-        </h1>
-        <p className="text-gray-600 mb-2">
-          {isRTL ? "رقم التذكرة:" : "Ticket number:"} <strong className="text-navy">{ticketNumber}</strong>
-        </p>
-        <p className="text-gray-500 text-sm mb-8">
-          {isRTL ? "سنرد عليك خلال 24 ساعة عمل." : "We'll respond within 24 business hours."}
-        </p>
-        <div className="flex gap-3 justify-center">
-          <button onClick={() => { setSubmitted(false); setSubject(""); setMessage(""); }} className="bg-white border border-gray-300 text-navy px-6 py-2.5 rounded-lg font-medium hover:bg-gray-50 transition">
-            {isRTL ? "تذكرة جديدة" : "New Ticket"}
-          </button>
-          <button onClick={() => router.push(`/${locale}/dashboard`)} className="bg-gold text-navy px-6 py-2.5 rounded-lg font-semibold hover:bg-yellow-500 transition">
-            {isRTL ? "العودة للوحة التحكم" : "Back to Dashboard"}
-          </button>
-        </div>
-      </div>
-    );
-  }
+  const channels = [
+    { icon: Mail, title: isRTL ? "البريد الإلكتروني" : "Email", desc: isRTL ? "support@warrantee.io" : "support@warrantee.io", sub: isRTL ? "رد خلال 24 ساعة" : "Response within 24 hours", color: "#007aff" },
+    { icon: MessageCircle, title: isRTL ? "الدردشة المباشرة" : "Live Chat", desc: isRTL ? "تحدث مع فريقنا" : "Chat with our team", sub: isRTL ? "متاح 9ص-6م" : "Available 9AM-6PM", color: "#30d158" },
+    { icon: Clock, title: isRTL ? "مركز المساعدة" : "Help Center", desc: isRTL ? "مقالات وأدلة" : "Articles and guides", sub: isRTL ? "متاح 24/7" : "Available 24/7", color: "#ff9f0a" },
+  ];
 
   return (
-    <div dir={direction} className="max-w-3xl mx-auto">
-      <div className="flex items-center gap-3 mb-8">
-        <button onClick={() => router.back()} className="p-2 hover:bg-gray-100 rounded-lg transition">
-          <ArrowLeft size={20} className={isRTL ? "rotate-180" : ""} />
-        </button>
-        <div>
-          <h1 className="text-2xl font-bold text-navy flex items-center gap-2">
-            <MessageSquare size={28} className="text-gold" />
-            {isRTL ? "الدعم والمساعدة" : "Contact Support"}
+    <div dir={isRTL ? "rtl" : "ltr"} className="min-h-screen bg-[#f5f5f7]">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
+        {/* Header */}
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-[#1A1A2E] to-[#2d2d5e] mb-4">
+            <Headphones className="w-7 h-7 text-white" />
+          </div>
+          <h1 className="text-[28px] font-semibold text-[#1d1d1f] tracking-tight">
+            {isRTL ? "الدعم" : "Support"}
           </h1>
-          <p className="text-gray-600 text-sm mt-1">
-            {isRTL ? "أرسل تذكرة دعم وسنرد عليك في أقرب وقت" : "Submit a support ticket and we'll get back to you soon"}
+          <p className="text-[15px] text-[#86868b] mt-2">
+            {isRTL ? "نحن هنا لمساعدتك" : "We\'re here to help"}
           </p>
         </div>
-      </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-        <div className="bg-white rounded-lg border border-gray-200 p-4 text-center">
-          <Mail size={24} className="text-emerald-600 mx-auto mb-2" />
-          <p className="text-sm font-medium text-navy">{isRTL ? "البريد الإلكتروني" : "Email"}</p>
-          <a href="mailto:hello@warrantee.io" className="text-sm text-emerald-600 hover:underline">hello@warrantee.io</a>
+        {/* Contact Channels */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
+          {channels.map((ch, i) => {
+            const Icon = ch.icon;
+            return (
+              <div key={i} className="bg-white rounded-2xl p-5 ring-1 ring-[#d2d2d7]/40 shadow-sm hover:shadow-md transition-all text-center">
+                <div className="w-11 h-11 rounded-xl mx-auto flex items-center justify-center mb-3" style={{ backgroundColor: ch.color + "14" }}>
+                  <Icon className="w-5 h-5" style={{ color: ch.color }} />
+                </div>
+                <h3 className="text-[15px] font-semibold text-[#1d1d1f] mb-1">{ch.title}</h3>
+                <p className="text-[13px] text-[#007aff] font-medium mb-0.5">{ch.desc}</p>
+                <p className="text-[12px] text-[#86868b]">{ch.sub}</p>
+              </div>
+            );
+          })}
         </div>
-        <div className="bg-white rounded-lg border border-gray-200 p-4 text-center">
-          <Clock size={24} className="text-blue-600 mx-auto mb-2" />
-          <p className="text-sm font-medium text-navy">{isRTL ? "وقت الاستجابة" : "Response Time"}</p>
-          <p className="text-sm text-gray-600">{isRTL ? "خلال 24 ساعة" : "Within 24 hours"}</p>
-        </div>
-        <div className="bg-white rounded-lg border border-gray-200 p-4 text-center">
-          <Phone size={24} className="text-purple-600 mx-auto mb-2" />
-          <p className="text-sm font-medium text-navy">{isRTL ? "ساعات العمل" : "Business Hours"}</p>
-          <p className="text-sm text-gray-600">{isRTL ? "الأحد - الخميس، 9ص - 5م" : "Sun - Thu, 9AM - 5PM"}</p>
-        </div>
-      </div>
 
-      <form onSubmit={handleSubmit} className="bg-white rounded-lg border border-gray-200 p-6 space-y-5">
-        <h2 className="font-bold text-navy text-lg">{isRTL ? "أرسل تذكرة دعم" : "Submit a Support Ticket"}</h2>
-
-        {error && (
-          <div className="flex items-center gap-2 bg-red-50 text-red-700 p-3 rounded-lg text-sm">
-            <AlertCircle size={16} /> {error}
+        {/* Contact Form */}
+        <div className="bg-white rounded-2xl ring-1 ring-[#d2d2d7]/40 shadow-sm overflow-hidden mb-10">
+          <div className="px-6 py-4 border-b border-[#d2d2d7]/30">
+            <h2 className="text-[17px] font-semibold text-[#1d1d1f]">
+              {isRTL ? "أرسل رسالة" : "Send a Message"}
+            </h2>
           </div>
-        )}
+          {sent ? (
+            <div className="p-10 text-center">
+              <div className="w-14 h-14 rounded-full bg-[#30d158]/10 flex items-center justify-center mx-auto mb-4">
+                <Send className="w-6 h-6 text-[#30d158]" />
+              </div>
+              <h3 className="text-[17px] font-semibold text-[#1d1d1f] mb-2">
+                {isRTL ? "تم الإرسال!" : "Message Sent!"}
+              </h3>
+              <p className="text-[14px] text-[#86868b]">
+                {isRTL ? "سنرد عليك خلال 24 ساعة" : "We\'ll get back to you within 24 hours"}
+              </p>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[13px] font-medium text-[#1d1d1f] mb-1.5">{isRTL ? "الاسم" : "Name"}</label>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                    className="w-full px-4 py-2.5 rounded-xl bg-[#f5f5f7] border-0 ring-1 ring-[#d2d2d7]/40 text-[14px] text-[#1d1d1f] placeholder:text-[#86868b] focus:ring-2 focus:ring-[#007aff] outline-none transition-all"
+                    placeholder={isRTL ? "اسمك" : "Your name"}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[13px] font-medium text-[#1d1d1f] mb-1.5">{isRTL ? "البريد" : "Email"}</label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="w-full px-4 py-2.5 rounded-xl bg-[#f5f5f7] border-0 ring-1 ring-[#d2d2d7]/40 text-[14px] text-[#1d1d1f] placeholder:text-[#86868b] focus:ring-2 focus:ring-[#007aff] outline-none transition-all"
+                    placeholder={isRTL ? "بريدك" : "Your email"}
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-[13px] font-medium text-[#1d1d1f] mb-1.5">{isRTL ? "الموضوع" : "Subject"}</label>
+                <input
+                  type="text"
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  required
+                  className="w-full px-4 py-2.5 rounded-xl bg-[#f5f5f7] border-0 ring-1 ring-[#d2d2d7]/40 text-[14px] text-[#1d1d1f] placeholder:text-[#86868b] focus:ring-2 focus:ring-[#007aff] outline-none transition-all"
+                  placeholder={isRTL ? "موضوع الرسالة" : "What is this about?"}
+                />
+              </div>
+              <div>
+                <label className="block text-[13px] font-medium text-[#1d1d1f] mb-1.5">{isRTL ? "الرسالة" : "Message"}</label>
+                <textarea
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  required
+                  rows={4}
+                  className="w-full px-4 py-2.5 rounded-xl bg-[#f5f5f7] border-0 ring-1 ring-[#d2d2d7]/40 text-[14px] text-[#1d1d1f] placeholder:text-[#86868b] focus:ring-2 focus:ring-[#007aff] outline-none transition-all resize-none"
+                  placeholder={isRTL ? "كيف يمكننا مساعدتك؟" : "How can we help you?"}
+                />
+              </div>
+              <button
+                type="submit"
+                className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#1A1A2E] text-white rounded-full text-[14px] font-medium hover:bg-[#2d2d5e] transition-colors"
+              >
+                <Send className="w-4 h-4" />
+                {isRTL ? "إرسال" : "Send Message"}
+              </button>
+            </form>
+          )}
+        </div>
 
+        {/* Quick Links */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{isRTL ? "الفئة" : "Category"}</label>
-            <select value={category} onChange={(e) => setCategory(e.target.value as TicketCategory)} className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-gold focus:border-gold">
-              {categories.map((c) => (
-                <option key={c.value} value={c.value}>{isRTL ? c.ar : c.en}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{isRTL ? "الأولوية" : "Priority"}</label>
-            <select value={priority} onChange={(e) => setPriority(e.target.value as TicketPriority)} className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-gold focus:border-gold">
-              {priorities.map((p) => (
-                <option key={p.value} value={p.value}>{isRTL ? p.ar : p.en}</option>
-              ))}
-            </select>
-          </div>
+          <Link href={"/" + locale + "/guide"} className="bg-white rounded-2xl p-5 ring-1 ring-[#d2d2d7]/40 shadow-sm hover:shadow-md transition-all flex items-center gap-4 group">
+            <div className="w-10 h-10 rounded-xl bg-[#007aff]/10 flex items-center justify-center">
+              <BookOpen className="w-5 h-5 text-[#007aff]" />
+            </div>
+            <div className="flex-1">
+              <div className="text-[14px] font-medium text-[#1d1d1f]">{isRTL ? "دليل الاستخدام" : "Getting Started Guide"}</div>
+              <div className="text-[12px] text-[#86868b]">{isRTL ? "تعلم الأساسيات" : "Learn the basics"}</div>
+            </div>
+            <ChevronRight className={"w-4 h-4 text-[#86868b] group-hover:text-[#007aff] transition-colors " + (isRTL ? "rotate-180" : "")} />
+          </Link>
+          <Link href={"/" + locale + "/warranties"} className="bg-white rounded-2xl p-5 ring-1 ring-[#d2d2d7]/40 shadow-sm hover:shadow-md transition-all flex items-center gap-4 group">
+            <div className="w-10 h-10 rounded-xl bg-[#30d158]/10 flex items-center justify-center">
+              <Shield className="w-5 h-5 text-[#30d158]" />
+            </div>
+            <div className="flex-1">
+              <div className="text-[14px] font-medium text-[#1d1d1f]">{isRTL ? "ضماناتي" : "My Warranties"}</div>
+              <div className="text-[12px] text-[#86868b]">{isRTL ? "إدارة الضمانات" : "Manage warranties"}</div>
+            </div>
+            <ChevronRight className={"w-4 h-4 text-[#86868b] group-hover:text-[#30d158] transition-colors " + (isRTL ? "rotate-180" : "")} />
+          </Link>
         </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">{isRTL ? "الموضوع" : "Subject"} *</label>
-          <input type="text" value={subject} onChange={(e) => setSubject(e.target.value)} placeholder={isRTL ? "صف مشكلتك باختصار" : "Briefly describe your issue"} className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-gold focus:border-gold" required />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">{isRTL ? "الرسالة" : "Message"} *</label>
-          <textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={6} placeholder={isRTL ? "اشرح مشكلتك بالتفصيل..." : "Explain your issue in detail..."} className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-gold focus:border-gold resize-none" required />
-        </div>
-
-        <button type="submit" disabled={submitting} className="w-full bg-gold hover:bg-yellow-500 text-navy font-semibold py-3 rounded-lg transition flex items-center justify-center gap-2 disabled:opacity-50">
-          <Send size={18} />
-          {submitting ? (isRTL ? "جاري الإرسال..." : "Submitting...") : (isRTL ? "إرسال التذكرة" : "Submit Ticket")}
-        </button>
-      </form>
+      </div>
     </div>
   );
 }
