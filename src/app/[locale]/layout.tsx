@@ -71,7 +71,7 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
         <link rel="alternate" hrefLang="ar" href="https://warrantee.io/ar" />
         <link rel="alternate" hrefLang="x-default" href="https://warrantee.io/en" />
         {/* Bing Webmaster verification */}
-        <meta name="msvalidate.01" content="E1C23BBD8660B5FBF84E7E6B1AE1B743" />
+        <meta name="msvalidate.01" content="E1C23BBDB660B5FBF84E7E6B1AE1B743" />
         {/* Geo meta tags for Saudi Arabia */}
         <meta name="geo.region" content="SA" />
         <meta name="geo.placename" content="Saudi Arabia" />
