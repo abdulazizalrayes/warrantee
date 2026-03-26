@@ -1,240 +1,117 @@
-// @ts-nocheck
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
-import { getDictionary, DIRECTION } from "@/lib/i18n";
-import type { Locale } from "@/lib/i18n";
-import { ArrowLeft, BookOpen, Shield, FileText, Upload, Bell, Users, HelpCircle, CheckCircle } from "lucide-react";
-
-const guides = {
-  en: [
-    {
-      icon: Shield,
-      title: "Register a Warranty",
-      description: "Learn how to add your product warranties to Warrantee for safe tracking and management.",
-      steps: [
-        "Go to Dashboard and click 'Create Warranty'",
-        "Fill in product details: name, serial number, purchase date",
-        "Set warranty start and end dates",
-        "Add coverage type and amount",
-        "Upload supporting documents (receipt, warranty card)",
-        "Submit for tracking"
-      ]
-    },
-    {
-      icon: Upload,
-      title: "Upload Documents",
-      description: "Attach receipts, warranty cards, and other supporting documents to your warranties.",
-      steps: [
-        "Open any warranty from your dashboard",
-        "Click the 'Documents' tab",
-        "Drag and drop or click to upload files",
-        "Supported formats: PDF, JPG, PNG (max 10MB)",
-        "Documents are securely stored and encrypted"
-      ]
-    },
-    {
-      icon: FileText,
-      title: "File a Warranty Claim",
-      description: "Submit a claim when your product needs repair or replacement under warranty.",
-      steps: [
-        "Open the warranty you want to claim",
-        "Click 'File Claim' button",
-        "Describe the issue in detail",
-        "Upload photos or videos of the problem",
-        "Submit and track your claim status"
-      ]
-    },
-    {
-      icon: Bell,
-      title: "Expiry Notifications",
-      description: "Never miss a warranty expiration with automatic email and push notifications.",
-      steps: [
-        "Notifications are enabled by default",
-        "You'll receive alerts 30, 15, and 7 days before expiry",
-        "Manage notification preferences in Settings",
-        "Enable push notifications for instant alerts",
-        "Check the 'Expiring Soon' section on your dashboard"
-      ]
-    },
-    {
-      icon: Users,
-      title: "Transfer a Warranty",
-      description: "Transfer warranty ownership when selling or gifting a product.",
-      steps: [
-        "Open the warranty you want to transfer",
-        "Click 'Transfer Warranty'",
-        "Enter the recipient's email address",
-        "Add a reason for the transfer (optional)",
-        "The recipient will receive an email to accept"
-      ]
-    },
-    {
-      icon: CheckCircle,
-      title: "Verify a Warranty",
-      description: "Check if a warranty is valid using the certificate number or QR code.",
-      steps: [
-        "Go to the Verify page",
-        "Enter the warranty certificate number",
-        "Or scan the QR code on the warranty certificate",
-        "View warranty details and validity status",
-        "Download or share the verification result"
-      ]
-    }
-  ],
-  ar: [
-    {
-      icon: Shield,
-      title: "تسجيل ضمان",
-      description: "تعلم كيفية إضافة ضمانات منتجاتك إلى وارنتي لتتبعها وإدارتها بأمان.",
-      steps: [
-        "اذهب إلى لوحة التحكم وانقر على 'إنشاء ضمان'",
-        "أدخل تفاصيل المنتج: الاسم، الرقم التسلسلي، تاريخ الشراء",
-        "حدد تاريخ بداية ونهاية الضمان",
-        "أضف نوع التغطية والمبلغ",
-        "ارفع المستندات الداعمة (إيصال، بطاقة ضمان)",
-        "أرسل للتتبع"
-      ]
-    },
-    {
-      icon: Upload,
-      title: "رفع المستندات",
-      description: "أرفق الإيصالات وبطاقات الضمان والمستندات الداعمة الأخرى لضماناتك.",
-      steps: [
-        "افتح أي ضمان من لوحة التحكم",
-        "انقر على تبويب 'المستندات'",
-        "اسحب وأفلت أو انقر لرفع الملفات",
-        "الصيغ المدعومة: PDF، JPG، PNG (حد أقصى 10 ميجابايت)",
-        "المستندات مخزنة ومشفرة بأمان"
-      ]
-    },
-    {
-      icon: FileText,
-      title: "تقديم مطالبة ضمان",
-      description: "قدم مطالبة عندما يحتاج منتجك إلى إصلاح أو استبدال تحت الضمان.",
-      steps: [
-        "افتح الضمان الذي تريد المطالبة به",
-        "انقر زر 'تقديم مطالبة'",
-        "صف المشكلة بالتفصيل",
-        "ارفع صور أو فيديوهات للمشكلة",
-        "أرسل وتتبع حالة مطالبتك"
-      ]
-    },
-    {
-      icon: Bell,
-      title: "إشعارات الانتهاء",
-      description: "لا تفوت انتهاء ضمان مع الإشعارات التلقائية بالبريد والإشعارات الفورية.",
-      steps: [
-        "الإشعارات مفعلة افتراضيًا",
-        "ستتلقى تنبيهات قبل 30 و15 و7 أيام من الانتهاء",
-        "أدر تفضيلات الإشعارات في الإعدادات",
-        "فعّل الإشعارات الفورية للتنبيهات اللحظية",
-        "تحقق من قسم 'تنتهي قريبًا' في لوحة التحكم"
-      ]
-    },
-    {
-      icon: Users,
-      title: "نقل ضمان",
-      description: "انقل ملكية الضمان عند بيع أو إهداء منتج.",
-      steps: [
-        "افتح الضمان الذي تريد نقله",
-        "انقر 'نقل الضمان'",
-        "أدخل البريد الإلكتروني للمستلم",
-        "أضف سبب النقل (اختياري)",
-        "سيتلقى المستلم بريدًا إلكترونيًا للقبول"
-      ]
-    },
-    {
-      icon: CheckCircle,
-      title: "التحقق من ضمان",
-      description: "تحقق من صلاحية الضمان باستخدام رقم الشهادة أو رمز QR.",
-      steps: [
-        "اذهب إلى صفحة التحقق",
-        "أدخل رقم شهادة الضمان",
-        "أو امسح رمز QR على شهادة الضمان",
-        "اعرض تفاصيل الضمان وحالة الصلاحية",
-        "حمّل أو شارك نتيجة التحقق"
-      ]
-    }
-  ]
-};
+import { useState } from "react";
+import { useParams } from "next/navigation";
+import { BookOpen, Shield, FileText, Upload, Bell, ChevronRight, CheckCircle, Sparkles, ArrowRight, HelpCircle, Zap } from "lucide-react";
+import Link from "next/link";
 
 export default function GuidePage() {
   const params = useParams();
-  const router = useRouter();
-  const locale = (params.locale as string) || "en";
-  const dict = getDictionary(locale);
+  const locale = params?.locale as string || "en";
   const isRTL = locale === "ar";
-  const direction = DIRECTION[locale as Locale];
-  const guideList = isRTL ? guides.ar : guides.en;
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
+
+  const steps = [
+    { icon: Upload, title: isRTL ? "أضف ضمانك الأول" : "Add Your First Warranty", desc: isRTL ? "ارفع صورة أو أدخل التفاصيل يدوياً. المسح الذكي يملأ الحقول تلقائياً." : "Upload a photo or enter details manually. Smart Scan auto-fills fields for you.", color: "#007aff" },
+    { icon: Shield, title: isRTL ? "تتبع الحالة" : "Track Status", desc: isRTL ? "راقب حالة الضمانات النشطة والمنتهية والتي ستنتهي." : "Monitor active, expiring, and expired warranties at a glance.", color: "#30d158" },
+    { icon: Bell, title: isRTL ? "احصل على تنبيهات" : "Get Notified", desc: isRTL ? "استلم تنبيهات قبل انتهاء الضمان حتى لا تفوتك." : "Receive alerts before warranties expire so you never miss a claim.", color: "#ff9f0a" },
+    { icon: FileText, title: isRTL ? "قدم مطالبة" : "File a Claim", desc: isRTL ? "قدم مطالبة ضمان بضغطة واحدة وتابع التقدم." : "Submit a warranty claim in one click and track its progress.", color: "#ff453a" },
+  ];
+
+  const faqs = [
+    { q: isRTL ? "كيف أضيف ضماناً جديداً؟" : "How do I add a new warranty?", a: isRTL ? "اذهب إلى الضمانات > جديد وارفع صورة أو أدخل التفاصيل يدوياً." : "Go to Warranties > New and upload a photo or enter details manually. Smart Scan will auto-fill fields from your receipt." },
+    { q: isRTL ? "ما هو المسح الذكي؟" : "What is Smart Scan?", a: isRTL ? "تقنية OCR تقرأ الإيصالات ووثائق الضمان وتستخرج التفاصيل تلقائياً." : "Smart Scan uses OCR technology to read receipts and warranty documents, automatically extracting product details, dates, and seller info." },
+    { q: isRTL ? "كيف أقدم مطالبة ضمان؟" : "How do I file a warranty claim?", a: isRTL ? "افتح الضمان > انقر تقديم مطالبة > صف المشكلة وأرفق الصور." : "Open the warranty > Click File Claim > Describe the issue and attach photos. We will notify the seller and track the process." },
+    { q: isRTL ? "هل يمكنني مشاركة الضمان؟" : "Can I share a warranty?", a: isRTL ? "نعم، يمكنك مشاركة شهادة الضمان عبر رابط أو تنزيل PDF." : "Yes! You can share the warranty certificate via a link or download it as a PDF." },
+  ];
 
   return (
-    <div dir={direction} className="max-w-4xl mx-auto">
-      <div className="flex items-center gap-3 mb-8">
-        <button onClick={() => router.back()} className="p-2 hover:bg-gray-100 rounded-lg transition">
-          <ArrowLeft size={20} className={isRTL ? "rotate-180" : ""} />
-        </button>
-        <div>
-          <h1 className="text-2xl font-bold text-navy flex items-center gap-2">
-            <BookOpen size={28} className="text-gold" />
-            {isRTL ? "دليل الاستخدام" : "User Guide & Training"}
+    <div dir={isRTL ? "rtl" : "ltr"} className="min-h-screen bg-[#f5f5f7]">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
+        {/* Header */}
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-[#1A1A2E] to-[#2d2d5e] mb-4">
+            <BookOpen className="w-7 h-7 text-white" />
+          </div>
+          <h1 className="text-[28px] font-semibold text-[#1d1d1f] tracking-tight">
+            {isRTL ? "دليل الاستخدام" : "Getting Started Guide"}
           </h1>
-          <p className="text-gray-600 text-sm mt-1">
-            {isRTL ? "تعلم كيفية استخدام جميع ميزات وارنتي" : "Learn how to use all Warrantee features"}
+          <p className="text-[15px] text-[#86868b] mt-2 max-w-lg mx-auto">
+            {isRTL ? "تعلم كيف تدير ضماناتك بفعالية في 4 خطوات بسيطة" : "Learn how to manage your warranties effectively in 4 simple steps"}
           </p>
         </div>
-      </div>
 
-      <div className="space-y-6">
-        {guideList.map((guide, index) => {
-          const Icon = guide.icon;
-          return (
-            <div key={index} className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition">
-              <div className="p-6">
+        {/* Steps */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10">
+          {steps.map((step, i) => {
+            const Icon = step.icon;
+            return (
+              <div key={i} className="bg-white rounded-2xl p-6 ring-1 ring-[#d2d2d7]/40 shadow-sm hover:shadow-md transition-all group">
                 <div className="flex items-start gap-4">
-                  <div className="bg-emerald-50 p-3 rounded-lg">
-                    <Icon size={24} className="text-emerald-600" />
-                  </div>
-                  <div className="flex-1">
-                    <h2 className="text-lg font-bold text-navy mb-1">{guide.title}</h2>
-                    <p className="text-gray-600 text-sm mb-4">{guide.description}</p>
-                    <div className="space-y-2">
-                      {guide.steps.map((step, stepIndex) => (
-                        <div key={stepIndex} className="flex items-start gap-3">
-                          <span className="flex-shrink-0 w-6 h-6 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center text-xs font-bold">
-                            {stepIndex + 1}
-                          </span>
-                          <p className="text-sm text-gray-700 pt-0.5">{step}</p>
-                        </div>
-                      ))}
+                  <div className="flex-shrink-0">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: step.color + "14" }}>
+                      <Icon className="w-5 h-5" style={{ color: step.color }} />
                     </div>
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-[12px] font-medium text-[#86868b]">{isRTL ? "الخطوة" : "Step"} {i + 1}</span>
+                    </div>
+                    <h3 className="text-[15px] font-semibold text-[#1d1d1f] mb-1">{step.title}</h3>
+                    <p className="text-[13px] text-[#86868b] leading-relaxed">{step.desc}</p>
                   </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
 
-      <div className="mt-8 bg-blue-50 rounded-lg p-6 border border-blue-200">
-        <div className="flex items-start gap-3">
-          <HelpCircle size={24} className="text-blue-600 flex-shrink-0" />
-          <div>
-            <h3 className="font-bold text-navy mb-1">
-              {isRTL ? "تحتاج مساعدة إضافية؟" : "Need more help?"}
-            </h3>
-            <p className="text-sm text-gray-600 mb-3">
-              {isRTL
-                ? "تواصل مع فريق الدعم لأي استفسارات أو مشاكل تقنية."
-                : "Contact our support team for any questions or technical issues."}
-            </p>
-            <a
-              href={`/${locale}/support`}
-              className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition"
-            >
-              {isRTL ? "تواصل مع الدعم" : "Contact Support"}
-            </a>
+        {/* FAQ Section */}
+        <div className="mb-10">
+          <h2 className="text-[20px] font-semibold text-[#1d1d1f] mb-4">
+            {isRTL ? "الأسئلة الشائعة" : "Frequently Asked Questions"}
+          </h2>
+          <div className="bg-white rounded-2xl ring-1 ring-[#d2d2d7]/40 shadow-sm overflow-hidden divide-y divide-[#d2d2d7]/30">
+            {faqs.map((faq, i) => (
+              <button
+                key={i}
+                onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                className="w-full text-left px-5 py-4 hover:bg-[#fafafa] transition-colors"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <HelpCircle className="w-4 h-4 text-[#007aff] flex-shrink-0" />
+                    <span className="text-[14px] font-medium text-[#1d1d1f]">{faq.q}</span>
+                  </div>
+                  <ChevronRight className={"w-4 h-4 text-[#86868b] transition-transform " + (openFaq === i ? "rotate-90" : "")} />
+                </div>
+                {openFaq === i && (
+                  <p className="text-[13px] text-[#86868b] mt-3 leading-relaxed pl-7">
+                    {faq.a}
+                  </p>
+                )}
+              </button>
+            ))}
           </div>
+        </div>
+
+        {/* CTA Banner */}
+        <div className="bg-gradient-to-br from-[#1A1A2E] to-[#2d2d5e] rounded-2xl p-8 text-center">
+          <Sparkles className="w-8 h-8 text-[#ff9f0a] mx-auto mb-3" />
+          <h2 className="text-[20px] font-semibold text-white mb-2">
+            {isRTL ? "جاهز للبدء؟" : "Ready to get started?"}
+          </h2>
+          <p className="text-[14px] text-white/70 mb-5 max-w-md mx-auto">
+            {isRTL ? "أضف ضمانك الأول الآن وابدأ في حماية مشترياتك" : "Add your first warranty now and start protecting your purchases"}
+          </p>
+          <Link
+            href={"/" + locale + "/warranties/new"}
+            className="inline-flex items-center gap-2 px-6 py-3 bg-white text-[#1A1A2E] rounded-full text-[14px] font-semibold hover:bg-white/90 transition-colors"
+          >
+            <Zap className="w-4 h-4" />
+            {isRTL ? "أضف ضمان" : "Add Warranty"}
+            <ArrowRight className={"w-4 h-4 " + (isRTL ? "rotate-180" : "")} />
+          </Link>
         </div>
       </div>
     </div>
