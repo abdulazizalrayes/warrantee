@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+function getSupabaseAdmin() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 // Parse warranty data from OCR/email text using regex patterns
 function extractWarrantyData(text: string) {
@@ -201,7 +203,7 @@ export async function POST(request: NextRequest) {
 
     // Look up user by email
     if (fromEmail) {
-      const { data: profile } = await supabaseAdmin
+      const { data: profile } = await getSupabaseAdmin()
         .from("profiles")
         .select("id")
         .eq("email", fromEmail.toLowerCase())
@@ -211,7 +213,7 @@ export async function POST(request: NextRequest) {
 
     if (!userId) {
       // Try to find user in auth.users
-      const { data: { users } } = await supabaseAdmin.auth.admin.listUsers();
+      const { data: { users } } = await getSupabaseAdmin().auth.admin.listUsers();
       const authUser = users?.find((u) => u.email?.toLowerCase() === fromEmail.toLowerCase());
       if (authUser) userId = authUser.id;
     }
@@ -250,7 +252,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Log the ingestion
-    const { data: ingestion } = await supabaseAdmin.from("email_ingestion").insert({
+    const { data: ingestion } = await getSupabaseAdmin().from("email_ingestion").insert({
       user_id: userId,
       from_email: fromEmail,
       subject: subject,
@@ -262,7 +264,7 @@ export async function POST(request: NextRequest) {
     // Auto-create warranty if confidence is high enough
     let warranty = null;
     if (confidence >= 30 && extractedData.product_name) {
-      const { data: newWarranty } = await supabaseAdmin.from("warranties").insert({
+      const { data: newWarranty } = await getSupabaseAdmin().from("warranties").insert({
         product_name: extractedData.product_name,
         serial_number: extractedData.serial_number || null,
         start_date: startDate,
@@ -280,7 +282,7 @@ export async function POST(request: NextRequest) {
 
       // Link warranty to ingestion record
       if (warranty && ingestion) {
-        await supabaseAdmin.from("email_ingestion").update({
+        await getSupabaseAdmin().from("email_ingestion").update({
           warranty_id: warranty.id,
           status: "confirmed",
         }).eq("id", ingestion.id);
@@ -307,3 +309,4 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
