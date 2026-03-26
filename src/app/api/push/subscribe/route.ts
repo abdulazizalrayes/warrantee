@@ -1,11 +1,13 @@
-import { NextRequest, NextResponse } from "next/server";
+// fiximport { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import webpush from "web-push";
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+function getSupabaseAdmin() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 // Configure VAPID keys for web push
 const VAPID_PUBLIC = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "";
@@ -25,7 +27,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Store subscription in database
-    const { error } = await supabaseAdmin.from("push_subscriptions").upsert(
+    const { error } = await getSupabaseAdmin().from("push_subscriptions").upsert(
       {
         user_id: userId,
         endpoint: subscription.endpoint,
@@ -38,7 +40,7 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       // If conflict resolution fails, try insert
-      await supabaseAdmin.from("push_subscriptions").insert({
+      await getSupabaseAdmin().from("push_subscriptions").insert({
         user_id: userId,
         endpoint: subscription.endpoint,
         p256dh: subscription.keys?.p256dh || null,
@@ -62,7 +64,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "Missing endpoint or userId" }, { status: 400 });
     }
 
-    await supabaseAdmin
+    await getSupabaseAdmin()
       .from("push_subscriptions")
       .delete()
       .eq("user_id", userId)
