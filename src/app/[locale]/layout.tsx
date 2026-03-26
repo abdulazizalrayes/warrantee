@@ -9,15 +9,39 @@ import { getOrganizationJsonLd } from "@/lib/jsonld";
 import "@/app/globals.css";
 
 export const metadata: Metadata = {
-  title: "Warrantee \u2014 Trust the Terms\u2122",
+  title: "Warrantee — Trust the Terms™",
   description: "Warrantee is the warranty management platform for businesses and consumers. Track, approve, and extend warranties with confidence. Bilingual Arabic and English.",
-  keywords: ["warranty management", "warranty tracking", "warranty certificates", "Arabic", "English", "SaaS", "warrantee"],
+  keywords: [
+    "warranty management", "warranty tracking", "warranty tracking app", "warranty reminder",
+    "warranty management software", "warranty management platform", "warranty claim management",
+    "warranty transfer", "digital warranty", "warranty certificates", "construction warranty",
+    "OCR warranty scanning", "bilingual warranty", "Arabic warranty management",
+    "إدارة الضمانات", "تتبع الضمان", "تذكير الضمان", "نقل الضمان",
+    "warrantee", "warrantee.io", "SaaS", "GCC", "Saudi Arabia", "UAE", "warranty app",
+  ],
   robots: "index, follow",
   authors: [{ name: "Warrantee" }],
   metadataBase: new URL("https://warrantee.io"),
   alternates: { canonical: "https://warrantee.io", languages: { en: "https://warrantee.io/en", ar: "https://warrantee.io/ar" } },
-  openGraph: { title: "Warrantee \u2014 Trust the Terms\u2122", description: "Warranty management platform with bilingual certificates and smart approvals.", url: "https://warrantee.io", siteName: "Warrantee", locale: "en_US", type: "website" },
-  twitter: { card: "summary_large_image", title: "Warrantee \u2014 Trust the Terms\u2122", description: "Warranty management platform with bilingual certificates and smart approvals." },
+  verification: {
+    google: "4tG-gxxHOu8AVF1Mm-qHOJIoq1SHqJmvGsx72zR97v8",
+  },
+  openGraph: {
+    title: "Warrantee — Trust the Terms™",
+    description: "Track, manage, transfer, and claim warranties in one place. Bilingual Arabic & English. Free to start.",
+    url: "https://warrantee.io",
+    siteName: "Warrantee",
+    locale: "en_US",
+    type: "website",
+    images: [{ url: "https://warrantee.io/og-image.png", width: 1200, height: 630, alt: "Warrantee — Warranty Management Platform" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Warrantee — Trust the Terms™",
+    description: "Track, manage, transfer, and claim warranties. Bilingual AR+EN. Free to start.",
+    images: ["https://warrantee.io/og-image.png"],
+    creator: "@warrantee_io",
+  },
 };
 
 export const viewport: Viewport = { width: "device-width", initialScale: 1, maximumScale: 5 };
@@ -46,6 +70,20 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
         <link rel="alternate" hrefLang="en" href="https://warrantee.io/en" />
         <link rel="alternate" hrefLang="ar" href="https://warrantee.io/ar" />
         <link rel="alternate" hrefLang="x-default" href="https://warrantee.io/en" />
+        {/* Bing Webmaster verification */}
+        <meta name="msvalidate.01" content="E1C23BBD8660B5FBF84E7E6B1AE1B743" />
+        {/* Geo meta tags for Saudi Arabia */}
+        <meta name="geo.region" content="SA" />
+        <meta name="geo.placename" content="Saudi Arabia" />
+        <meta name="geo.position" content="24.7136;46.6753" />
+        <meta name="ICBM" content="24.7136, 46.6753" />
+        {/* Additional SEO meta */}
+        <meta name="distribution" content="global" />
+        <meta name="rating" content="general" />
+        <meta name="revisit-after" content="7 days" />
+        <meta name="apple-mobile-web-app-title" content="Warrantee" />
+        <meta name="application-name" content="Warrantee" />
+        <meta name="mobile-web-app-capable" content="yes" />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(getOrganizationJsonLd()) }} />
       </head>
       <body className="bg-[#FAFAFA] text-[#1A1A2E] antialiased">
