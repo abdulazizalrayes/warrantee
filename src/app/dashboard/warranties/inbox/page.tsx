@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
 import Link from 'next/link';
 
 type IngestionStatus = 'received' | 'processing' | 'extracted' | 'confirmed' | 'failed';
@@ -43,7 +43,7 @@ export default function InboxPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
-  const supabase = createClientComponentClient();
+  const supabase = createSupabaseBrowserClient();
 
   useEffect(() => {
     loadRecords();
@@ -157,7 +157,6 @@ export default function InboxPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Left: Record List */}
         <div className="space-y-3">
           {records.map((record) => {
             const extracted = (record.extracted_data || {}) as Record<string, unknown>;
@@ -187,7 +186,6 @@ export default function InboxPage() {
           })}
         </div>
 
-        {/* Right: Detail Panel */}
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           {selected ? (
             <>
@@ -216,7 +214,6 @@ export default function InboxPage() {
                   );
                 })}
               </div>
-
               <div className="mt-4 p-3 bg-gray-50 rounded-lg">
                 <p className="text-sm text-gray-600">
                   <strong>Overall Confidence:</strong>{' '}
@@ -225,7 +222,6 @@ export default function InboxPage() {
                   </span>
                 </p>
               </div>
-
               <div className="flex gap-3 mt-6">
                 <button onClick={() => confirmRecord(selected)} disabled={actionLoading} className="flex-1 px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition disabled:opacity-50 font-medium">
                   Confirm
