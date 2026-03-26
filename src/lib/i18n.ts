@@ -73,7 +73,7 @@ const dictionaries: Record<Locale, Dictionary> = {
           id: "business",
           name: "Business",
           price: "$1",
-          description: "Per warranty, per month. First year free.",
+          description: "Unlimited warranties. First year free.",
           features: [
             "Unlimited warranties",
             "Advanced dashboard & analytics",
