@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
 
 interface DashboardStats {
   totalUsers: number;
@@ -9,7 +9,7 @@ interface DashboardStats {
   totalWarranties: number;
   activeWarranties: number;
   archivedWarranties: number;
-  legalHoldWarranties: number;
+  legalHoldWarranties: number
   totalClaims: number;
   pendingIngestions: number;
   activeHandoffs: number;
@@ -38,7 +38,7 @@ export default function AdminDashboard() {
   const [archivedWarranties, setArchivedWarranties] = useState<ArchivedWarranty[]>([]);
   const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'archived' | 'ingestion' | 'legal'>('overview');
   const [loading, setLoading] = useState(true);
-  const supabase = createClientComponentClient();
+  const supabase = createSupabaseBrowserClient();
 
   const fetchStats = useCallback(async () => {
     setLoading(true);
