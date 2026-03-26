@@ -6,8 +6,16 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@supabase/supabase-js';
 import {
-  BarChart3, TrendingUp, TrendingDown, Calendar, Download,
-  ArrowLeft, Activity, Clock, AlertTriangle, CheckCircle2
+  BarChart3,
+  TrendingUp,
+  TrendingDown,
+  Calendar,
+  Download,
+  Activity,
+  Clock,
+  AlertTriangle,
+  CheckCircle2,
+  Shield,
 } from 'lucide-react';
 
 const supabase = createClient(
@@ -32,58 +40,66 @@ interface AnalyticsData {
 
 const translations = {
   en: {
-    title: 'Analytics Dashboard',
+    title: 'Analytics',
     subtitle: 'Comprehensive warranty analytics and insights',
-    back: 'Back to Dashboard',
     overview: 'Overview',
     totalWarranties: 'Total Warranties',
     active: 'Active',
     expired: 'Expired',
-    expiringThisMonth: 'Expiring This Month',
+    expiringThisMonth: 'Expiring Soon',
     totalClaims: 'Total Claims',
     pendingClaims: 'Pending Claims',
-    avgDuration: 'Avg Duration (days)',
-    coverageValue: 'Total Coverage Value',
-    categoryBreakdown: 'Category Breakdown',
+    avgDuration: 'Avg Duration',
+    coverageValue: 'Coverage Value',
+    categoryBreakdown: 'Categories',
     monthlyTrend: 'Monthly Trend',
     statusDistribution: 'Status Distribution',
     topSuppliers: 'Top Suppliers',
-    exportReport: 'Export Report',
+    exportReport: 'Export',
     noData: 'No data available yet. Add warranties to see analytics.',
     loading: 'Loading analytics...',
     warranties: 'warranties',
     created: 'Created',
     expiredLabel: 'Expired',
     claims: 'claims',
+    days: 'days',
   },
   ar: {
-    title: '\u0644\u0648\u062d\u0629 \u0627\u0644\u062a\u062d\u0644\u064a\u0644\u0627\u062a',
+    title: '\u0627\u0644\u062a\u062d\u0644\u064a\u0644\u0627\u062a',
     subtitle: '\u062a\u062d\u0644\u064a\u0644\u0627\u062a \u0634\u0627\u0645\u0644\u0629 \u0644\u0644\u0636\u0645\u0627\u0646\u0627\u062a',
-    back: '\u0627\u0644\u0639\u0648\u062f\u0629 \u0625\u0644\u0649 \u0644\u0648\u062d\u0629 \u0627\u0644\u062a\u062d\u0643\u0645',
     overview: '\u0646\u0638\u0631\u0629 \u0639\u0627\u0645\u0629',
     totalWarranties: '\u0625\u062c\u0645\u0627\u0644\u064a \u0627\u0644\u0636\u0645\u0627\u0646\u0627\u062a',
     active: '\u0646\u0634\u0637',
     expired: '\u0645\u0646\u062a\u0647\u064a',
-    expiringThisMonth: '\u062a\u0646\u062a\u0647\u064a \u0647\u0630\u0627 \u0627\u0644\u0634\u0647\u0631',
+    expiringThisMonth: '\u062a\u0646\u062a\u0647\u064a \u0642\u0631\u064a\u0628\u0627\u064b',
     totalClaims: '\u0625\u062c\u0645\u0627\u0644\u064a \u0627\u0644\u0645\u0637\u0627\u0644\u0628\u0627\u062a',
     pendingClaims: '\u0645\u0637\u0627\u0644\u0628\u0627\u062a \u0645\u0639\u0644\u0642\u0629',
-    avgDuration: '\u0645\u062a\u0648\u0633\u0637 \u0627\u0644\u0645\u062f\u0629 (\u0623\u064a\u0627\u0645)',
-    coverageValue: '\u0625\u062c\u0645\u0627\u0644\u064a \u0642\u064a\u0645\u0629 \u0627\u0644\u062a\u063a\u0637\u064a\u0629',
-    categoryBreakdown: '\u062a\u0648\u0632\u064a\u0639 \u0627\u0644\u0641\u0626\u0627\u062a',
+    avgDuration: '\u0645\u062a\u0648\u0633\u0637 \u0627\u0644\u0645\u062f\u0629',
+    coverageValue: '\u0642\u064a\u0645\u0629 \u0627\u0644\u062a\u063a\u0637\u064a\u0629',
+    categoryBreakdown: '\u0627\u0644\u0641\u0626\u0627\u062a',
     monthlyTrend: '\u0627\u0644\u0627\u062a\u062c\u0627\u0647 \u0627\u0644\u0634\u0647\u0631\u064a',
     statusDistribution: '\u062a\u0648\u0632\u064a\u0639 \u0627\u0644\u062d\u0627\u0644\u0629',
     topSuppliers: '\u0623\u0647\u0645 \u0627\u0644\u0645\u0648\u0631\u062f\u064a\u0646',
-    exportReport: '\u062a\u0635\u062f\u064a\u0631 \u0627\u0644\u062a\u0642\u0631\u064a\u0631',
+    exportReport: '\u062a\u0635\u062f\u064a\u0631',
     noData: '\u0644\u0627 \u062a\u0648\u062c\u062f \u0628\u064a\u0627\u0646\u0627\u062a \u0628\u0639\u062f. \u0623\u0636\u0641 \u0636\u0645\u0627\u0646\u0627\u062a \u0644\u0639\u0631\u0636 \u0627\u0644\u062a\u062d\u0644\u064a\u0644\u0627\u062a.',
     loading: '\u062c\u0627\u0631\u064a \u062a\u062d\u0645\u064a\u0644 \u0627\u0644\u062a\u062d\u0644\u064a\u0644\u0627\u062a...',
     warranties: '\u0636\u0645\u0627\u0646\u0627\u062a',
     created: '\u0645\u0646\u0634\u0623\u0629',
     expiredLabel: '\u0645\u0646\u062a\u0647\u064a\u0629',
     claims: '\u0645\u0637\u0627\u0644\u0628\u0627\u062a',
-  }
+    days: '\u064a\u0648\u0645',
+  },
 };
 
-const COLORS = ['#4169E1', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#84CC16'];
+const COLORS = ['#0071e3', '#30d158', '#ff9f0a', '#ff3b30', '#bf5af2', '#ff375f', '#64d2ff', '#30d158'];
+
+const statusColors: Record<string, { dot: string; bg: string; text: string }> = {
+  active: { dot: 'bg-[#30d158]', bg: 'bg-[#e8f9ed]', text: 'text-[#1d7a34]' },
+  pending: { dot: 'bg-[#ff9f0a]', bg: 'bg-[#fff6e5]', text: 'text-[#7a5a00]' },
+  expired: { dot: 'bg-[#ff3b30]', bg: 'bg-[#feeeed]', text: 'text-[#7a1d1d]' },
+  draft: { dot: 'bg-[#86868b]', bg: 'bg-[#f5f5f7]', text: 'text-[#48484a]' },
+  claimed: { dot: 'bg-[#0071e3]', bg: 'bg-[#e5f1ff]', text: 'text-[#003d7a]' },
+};
 
 export default function AnalyticsPage() {
   const params = useParams();
@@ -104,15 +120,12 @@ export default function AnalyticsPage() {
         .select('*')
         .eq('user_id', user.id);
 
-      const { data: claims } = await supabase
-        .from('claims')
-        .select('*');
+      const { data: claims } = await supabase.from('claims').select('*');
 
       if (!warranties) { setLoading(false); return; }
 
       const now = new Date();
       const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-
       const active = warranties.filter(w => new Date(w.end_date) > now);
       const expired = warranties.filter(w => new Date(w.end_date) <= now);
       const expiringThisMonth = warranties.filter(w => {
@@ -125,25 +138,26 @@ export default function AnalyticsPage() {
         const end = new Date(w.end_date);
         return Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
       });
-      const avgDuration = durations.length > 0 ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length) : 0;
+      const avgDuration = durations.length > 0
+        ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length) : 0;
 
-      // Category breakdown
       const catMap: Record<string, number> = {};
       warranties.forEach(w => {
         const cat = w.category || 'Uncategorized';
         catMap[cat] = (catMap[cat] || 0) + 1;
       });
-      const categoryBreakdown = Object.entries(catMap).map(([category, count]) => ({ category, count })).sort((a, b) => b.count - a.count);
+      const categoryBreakdown = Object.entries(catMap)
+        .map(([category, count]) => ({ category, count }))
+        .sort((a, b) => b.count - a.count);
 
-      // Status breakdown
       const statusMap: Record<string, number> = {};
       warranties.forEach(w => {
         const status = w.status || 'active';
         statusMap[status] = (statusMap[status] || 0) + 1;
       });
-      const statusBreakdown = Object.entries(statusMap).map(([status, count]) => ({ status, count }));
+      const statusBreakdown = Object.entries(statusMap)
+        .map(([status, count]) => ({ status, count }));
 
-      // Monthly trend (last 6 months)
       const monthlyTrend = [];
       for (let i = 5; i >= 0; i--) {
         const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
@@ -160,12 +174,13 @@ export default function AnalyticsPage() {
         monthlyTrend.push({ month: monthStr, created, expired: expiredCount });
       }
 
-      // Top suppliers
       const suppMap: Record<string, number> = {};
       warranties.forEach(w => {
         if (w.supplier) suppMap[w.supplier] = (suppMap[w.supplier] || 0) + 1;
       });
-      const topSuppliers = Object.entries(suppMap).map(([supplier, count]) => ({ supplier, count })).sort((a, b) => b.count - a.count).slice(0, 5);
+      const topSuppliers = Object.entries(suppMap)
+        .map(([supplier, count]) => ({ supplier, count }))
+        .sort((a, b) => b.count - a.count).slice(0, 5);
 
       const coverageValue = warranties.reduce((sum, w) => sum + (parseFloat(w.purchase_price) || 0), 0);
 
@@ -177,11 +192,7 @@ export default function AnalyticsPage() {
         totalClaims: claims?.length || 0,
         pendingClaims: claims?.filter(c => c.status === 'pending').length || 0,
         avgWarrantyDuration: avgDuration,
-        categoryBreakdown,
-        monthlyTrend,
-        statusBreakdown,
-        topSuppliers,
-        coverageValue,
+        categoryBreakdown, monthlyTrend, statusBreakdown, topSuppliers, coverageValue,
       });
     } catch (err) {
       console.error('Analytics error:', err);
@@ -192,205 +203,196 @@ export default function AnalyticsPage() {
 
   useEffect(() => { fetchAnalytics(); }, [fetchAnalytics]);
 
-  const maxBarValue = data ? Math.max(...data.monthlyTrend.map(m => Math.max(m.created, m.expired)), 1) : 1;
+  const maxBarValue = data
+    ? Math.max(...data.monthlyTrend.map(m => Math.max(m.created, m.expired)), 1) : 1;
+
+  const kpiCards = data ? [
+    { icon: BarChart3, label: t.totalWarranties, value: data.totalWarranties, iconColor: 'text-[#0071e3]', iconBg: 'bg-[#e5f1ff]' },
+    { icon: CheckCircle2, label: t.active, value: data.activeWarranties, iconColor: 'text-[#30d158]', iconBg: 'bg-[#e8f9ed]' },
+    { icon: TrendingDown, label: t.expired, value: data.expiredWarranties, iconColor: 'text-[#ff3b30]', iconBg: 'bg-[#feeeed]' },
+    { icon: AlertTriangle, label: t.expiringThisMonth, value: data.expiringThisMonth, iconColor: 'text-[#ff9f0a]', iconBg: 'bg-[#fff6e5]' },
+    { icon: Activity, label: t.totalClaims, value: data.totalClaims, iconColor: 'text-[#bf5af2]', iconBg: 'bg-[#f3e8ff]' },
+    { icon: Clock, label: t.pendingClaims, value: data.pendingClaims, iconColor: 'text-[#ff9f0a]', iconBg: 'bg-[#fff6e5]' },
+    { icon: Calendar, label: t.avgDuration, value: data.avgWarrantyDuration + ' ' + t.days, iconColor: 'text-[#0071e3]', iconBg: 'bg-[#e5f1ff]' },
+    { icon: TrendingUp, label: t.coverageValue, value: 'SAR ' + data.coverageValue.toLocaleString(), iconColor: 'text-[#30d158]', iconBg: 'bg-[#e8f9ed]' },
+  ] : [];
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center" dir={isRTL ? 'rtl' : 'ltr'}>
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#4169E1]" />
+      <div className="flex items-center justify-center min-h-[60vh]" dir={isRTL ? 'rtl' : 'ltr'}>
+        <div className="w-8 h-8 border-2 border-[#1A1A2E] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA]" dir={isRTL ? 'rtl' : 'ltr'}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <Link href={`/${locale}/dashboard`} className="text-[#4169E1] hover:underline flex items-center gap-2 mb-2 text-sm">
-              <ArrowLeft className="w-4 h-4" /> {t.back}
-            </Link>
-            <h1 className="text-3xl font-bold text-gray-900">{t.title}</h1>
-            <p className="text-gray-500 mt-1">{t.subtitle}</p>
-          </div>
-          <Link
-            href={`/${locale}/reports`}
-            className="flex items-center gap-2 px-4 py-2 bg-[#4169E1] text-white rounded-lg hover:bg-[#3457c9] transition"
-          >
-            <Download className="w-4 h-4" />
-            {t.exportReport}
-          </Link>
+    <div dir={isRTL ? 'rtl' : 'ltr'} className="space-y-8">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+        <div>
+          <h1 className="text-[32px] sm:text-[40px] font-semibold tracking-tight text-[#1d1d1f]">
+            {t.title}
+          </h1>
+          <p className="text-[15px] text-[#86868b] mt-1">{t.subtitle}</p>
         </div>
-
-        {!data || data.totalWarranties === 0 ? (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
-            <BarChart3 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500 text-lg">{t.noData}</p>
-          </div>
-        ) : (
-          <>
-            {/* KPI Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-sm font-medium text-gray-500">{t.totalWarranties}</span>
-                  <BarChart3 className="w-5 h-5 text-[#4169E1]" />
-                </div>
-                <p className="text-3xl font-bold text-gray-900">{data.totalWarranties}</p>
-              </div>
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-sm font-medium text-gray-500">{t.active}</span>
-                  <CheckCircle2 className="w-5 h-5 text-green-500" />
-                </div>
-                <p className="text-3xl font-bold text-green-600">{data.activeWarranties}</p>
-              </div>
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-sm font-medium text-gray-500">{t.expired}</span>
-                  <TrendingDown className="w-5 h-5 text-red-500" />
-                </div>
-                <p className="text-3xl font-bold text-red-600">{data.expiredWarranties}</p>
-              </div>
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-sm font-medium text-gray-500">{t.expiringThisMonth}</span>
-                  <AlertTriangle className="w-5 h-5 text-yellow-500" />
-                </div>
-                <p className="text-3xl font-bold text-yellow-600">{data.expiringThisMonth}</p>
-              </div>
-            </div>
-
-            {/* Second Row KPIs */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-sm font-medium text-gray-500">{t.totalClaims}</span>
-                  <Activity className="w-5 h-5 text-purple-500" />
-                </div>
-                <p className="text-3xl font-bold text-gray-900">{data.totalClaims}</p>
-              </div>
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-sm font-medium text-gray-500">{t.pendingClaims}</span>
-                  <Clock className="w-5 h-5 text-orange-500" />
-                </div>
-                <p className="text-3xl font-bold text-orange-600">{data.pendingClaims}</p>
-              </div>
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-sm font-medium text-gray-500">{t.avgDuration}</span>
-                  <Calendar className="w-5 h-5 text-blue-500" />
-                </div>
-                <p className="text-3xl font-bold text-gray-900">{data.avgWarrantyDuration}</p>
-              </div>
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-sm font-medium text-gray-500">{t.coverageValue}</span>
-                  <TrendingUp className="w-5 h-5 text-green-500" />
-                </div>
-                <p className="text-3xl font-bold text-gray-900">SAR {data.coverageValue.toLocaleString()}</p>
-              </div>
-            </div>
-
-            {/* Charts Row */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-              {/* Monthly Trend Bar Chart */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-6">{t.monthlyTrend}</h3>
-                <div className="space-y-4">
-                  {data.monthlyTrend.map((m, i) => (
-                    <div key={i} className="space-y-2">
-                      <div className="flex justify-between text-sm text-gray-600">
-                        <span>{m.month}</span>
-                        <span>{m.created} {t.created} / {m.expired} {t.expiredLabel}</span>
-                      </div>
-                      <div className="flex gap-1 h-6">
-                        <div
-                          className="bg-[#4169E1] rounded-sm transition-all duration-500"
-                          style={{ width: `${(m.created / maxBarValue) * 50}%` }}
-                          title={`${t.created}: ${m.created}`}
-                        />
-                        <div
-                          className="bg-red-400 rounded-sm transition-all duration-500"
-                          style={{ width: `${(m.expired / maxBarValue) * 50}%` }}
-                          title={`${t.expiredLabel}: ${m.expired}`}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="flex items-center gap-6 mt-4 text-sm text-gray-500">
-                  <div className="flex items-center gap-2"><div className="w-3 h-3 bg-[#4169E1] rounded-sm" /> {t.created}</div>
-                  <div className="flex items-center gap-2"><div className="w-3 h-3 bg-red-400 rounded-sm" /> {t.expiredLabel}</div>
-                </div>
-              </div>
-
-              {/* Category Breakdown */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-6">{t.categoryBreakdown}</h3>
-                <div className="space-y-4">
-                  {data.categoryBreakdown.map((cat, i) => (
-                    <div key={i} className="flex items-center gap-4">
-                      <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
-                      <div className="flex-1">
-                        <div className="flex justify-between mb-1">
-                          <span className="text-sm font-medium text-gray-700">{cat.category}</span>
-                          <span className="text-sm text-gray-500">{cat.count} {t.warranties}</span>
-                        </div>
-                        <div className="w-full bg-gray-100 rounded-full h-2">
-                          <div
-                            className="h-2 rounded-full transition-all duration-500"
-                            style={{ width: `${(cat.count / data.totalWarranties) * 100}%`, backgroundColor: COLORS[i % COLORS.length] }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Bottom Row */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Status Distribution */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-6">{t.statusDistribution}</h3>
-                <div className="flex flex-wrap gap-4">
-                  {data.statusBreakdown.map((s, i) => (
-                    <div key={i} className="flex-1 min-w-[120px] bg-gray-50 rounded-lg p-4 text-center">
-                      <div className="w-4 h-4 rounded-full mx-auto mb-2" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
-                      <p className="text-2xl font-bold text-gray-900">{s.count}</p>
-                      <p className="text-xs text-gray-500 capitalize">{s.status}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Top Suppliers */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-6">{t.topSuppliers}</h3>
-                {data.topSuppliers.length === 0 ? (
-                  <p className="text-gray-400 text-center py-8">No supplier data</p>
-                ) : (
-                  <div className="space-y-3">
-                    {data.topSuppliers.map((s, i) => (
-                      <div key={i} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
-                        <div className="flex items-center gap-3">
-                          <span className="w-6 h-6 bg-[#4169E1] text-white rounded-full flex items-center justify-center text-xs font-bold">{i + 1}</span>
-                          <span className="text-sm font-medium text-gray-700">{s.supplier}</span>
-                        </div>
-                        <span className="text-sm text-gray-500">{s.count} {t.warranties}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </>
-        )}
+        <Link
+          href={`/${locale}/reports`}
+          className="inline-flex items-center gap-2 px-6 py-3 bg-[#1A1A2E] hover:bg-[#2d2d5e] text-white text-[15px] font-medium rounded-full transition-colors w-fit"
+        >
+          <Download size={16} />
+          {t.exportReport}
+        </Link>
       </div>
+
+      {!data || data.totalWarranties === 0 ? (
+        <div className="bg-white rounded-2xl ring-1 ring-[#d2d2d7]/40 shadow-sm p-16 text-center">
+          <div className="w-16 h-16 rounded-2xl bg-[#f5f5f7] flex items-center justify-center mx-auto mb-4">
+            <BarChart3 size={24} className="text-[#86868b]" />
+          </div>
+          <p className="text-[15px] font-medium text-[#1d1d1f]">{t.noData}</p>
+        </div>
+      ) : (
+        <>
+          {/* KPI Grid */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {kpiCards.map((card, i) => (
+              <div key={i} className="bg-white rounded-2xl ring-1 ring-[#d2d2d7]/40 shadow-sm p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-[13px] font-medium text-[#86868b]">{card.label}</span>
+                  <div className={`w-8 h-8 rounded-lg ${card.iconBg} flex items-center justify-center`}>
+                    <card.icon size={16} className={card.iconColor} />
+                  </div>
+                </div>
+                <p className="text-[24px] sm:text-[28px] font-semibold tracking-tight text-[#1d1d1f]">
+                  {card.value}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          {/* Charts Row */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* Monthly Trend */}
+            <div className="bg-white rounded-2xl ring-1 ring-[#d2d2d7]/40 shadow-sm p-6">
+              <h3 className="text-[17px] font-semibold text-[#1d1d1f] mb-6">{t.monthlyTrend}</h3>
+              <div className="space-y-4">
+                {data.monthlyTrend.map((m, i) => (
+                  <div key={i} className="space-y-1.5">
+                    <div className="flex justify-between text-[13px]">
+                      <span className="text-[#1d1d1f] font-medium">{m.month}</span>
+                      <span className="text-[#86868b]">{m.created} {t.created} / {m.expired} {t.expiredLabel}</span>
+                    </div>
+                    <div className="flex gap-1 h-5">
+                      <div
+                        className="bg-[#0071e3] rounded transition-all duration-500"
+                        style={{ width: `${(m.created / maxBarValue) * 50}%` }}
+                      />
+                      <div
+                        className="bg-[#ff3b30]/60 rounded transition-all duration-500"
+                        style={{ width: `${(m.expired / maxBarValue) * 50}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="flex items-center gap-6 mt-5 text-[12px] text-[#86868b]">
+                <div className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 bg-[#0071e3] rounded" />
+                  {t.created}
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 bg-[#ff3b30]/60 rounded" />
+                  {t.expiredLabel}
+                </div>
+              </div>
+            </div>
+
+            {/* Category Breakdown */}
+            <div className="bg-white rounded-2xl ring-1 ring-[#d2d2d7]/40 shadow-sm p-6">
+              <h3 className="text-[17px] font-semibold text-[#1d1d1f] mb-6">{t.categoryBreakdown}</h3>
+              <div className="space-y-4">
+                {data.categoryBreakdown.map((cat, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <div
+                      className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: COLORS[i % COLORS.length] }}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between mb-1.5">
+                        <span className="text-[14px] font-medium text-[#1d1d1f]">{cat.category}</span>
+                        <span className="text-[13px] text-[#86868b]">{cat.count} {t.warranties}</span>
+                      </div>
+                      <div className="w-full bg-[#f5f5f7] rounded-full h-1.5">
+                        <div
+                          className="h-1.5 rounded-full transition-all duration-500"
+                          style={{
+                            width: `${(cat.count / data.totalWarranties) * 100}%`,
+                            backgroundColor: COLORS[i % COLORS.length],
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom Row */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* Status Distribution */}
+            <div className="bg-white rounded-2xl ring-1 ring-[#d2d2d7]/40 shadow-sm p-6">
+              <h3 className="text-[17px] font-semibold text-[#1d1d1f] mb-6">{t.statusDistribution}</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {data.statusBreakdown.map((s, i) => {
+                  const sc = statusColors[s.status] || statusColors.active;
+                  return (
+                    <div key={i} className={`rounded-xl p-4 ${sc.bg}`}>
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className={`w-2 h-2 rounded-full ${sc.dot}`} />
+                        <span className={`text-[12px] font-medium capitalize ${sc.text}`}>{s.status}</span>
+                      </div>
+                      <p className={`text-[24px] font-semibold tracking-tight ${sc.text}`}>{s.count}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Top Suppliers */}
+            <div className="bg-white rounded-2xl ring-1 ring-[#d2d2d7]/40 shadow-sm p-6">
+              <h3 className="text-[17px] font-semibold text-[#1d1d1f] mb-6">{t.topSuppliers}</h3>
+              {data.topSuppliers.length === 0 ? (
+                <div className="py-8 text-center">
+                  <div className="w-12 h-12 rounded-xl bg-[#f5f5f7] flex items-center justify-center mx-auto mb-3">
+                    <Shield size={20} className="text-[#86868b]" />
+                  </div>
+                  <p className="text-[13px] text-[#86868b]">No supplier data</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {data.topSuppliers.map((s, i) => (
+                    <div
+                      key={i}
+                      className={`flex items-center justify-between py-3 ${
+                        i < data.topSuppliers.length - 1 ? 'border-b border-[#f5f5f7]' : ''
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="w-7 h-7 bg-[#1A1A2E] text-white rounded-lg flex items-center justify-center text-[12px] font-semibold">
+                          {i + 1}
+                        </span>
+                        <span className="text-[14px] font-medium text-[#1d1d1f]">{s.supplier}</span>
+                      </div>
+                      <span className="text-[13px] text-[#86868b]">{s.count} {t.warranties}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
