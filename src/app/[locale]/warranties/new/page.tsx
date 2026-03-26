@@ -3,7 +3,7 @@
 
 import { useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, Upload, X, FileText, CheckCircle } from "lucide-react";
+import { ArrowLeft, ArrowRight, Upload, X, FileText, CheckCircle, ScanLine, Sparkles, Camera } from "lucide-react";
 import { getDictionary, DIRECTION } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth-context";
@@ -56,6 +56,54 @@ export default function NewWarrantyPage() {
   const [files, setFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
   const [createdWarrantyId, setCreatedWarrantyId] = useState<string | null>(null);
+
+  const [scanning, setScanning] = useState(false);
+  const [scanProgress, setScanProgress] = useState(0);
+  const [scanResult, setScanResult] = useState<{fieldsFound: number} | null>(null);
+  const scanInputRef = useRef<HTMLInputElement>(null);
+
+  const handleSmartScan = async (file: File) => {
+    setScanning(true);
+    setScanProgress(0);
+    setScanResult(null);
+    setError("");
+    try {
+      const Tesseract = await import("tesseract.js");
+      const worker = await Tesseract.createWorker("eng+ara", 1, {
+        logger: (m: any) => {
+          if (m.status === "recognizing text") {
+            setScanProgress(Math.round(m.progress * 100));
+          }
+        },
+      });
+      const { data: { text: ocrText } } = await worker.recognize(file);
+      await worker.terminate();
+      setScanProgress(100);
+      const res = await fetch("/api/ocr", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: ocrText }),
+      });
+      const parsed = await res.json();
+      if (parsed.success && parsed.fields) {
+        const f = parsed.fields;
+        let count = 0;
+        if (f.product_name) { setProductName(f.product_name); count++; }
+        if (f.serial_number) { setSerialNumber(f.serial_number); count++; }
+        if (f.category) { setCategory(f.category); count++; }
+        if (f.supplier) { setSellerName(f.supplier); count++; }
+        if (f.invoice_reference) { setInvoiceReference(f.invoice_reference); count++; }
+        if (f.start_date) { setStartDate(f.start_date); count++; }
+        if (f.end_date) { setEndDate(f.end_date); count++; }
+        setScanResult({ fieldsFound: count });
+      }
+      setFiles((prev) => [...prev, file]);
+    } catch (err: any) {
+      setError(isRTL ? "\u0641\u0634\u0644 \u0627\u0644\u0645\u0633\u062D \u0627\u0644\u0630\u0643\u064A" : "Smart Scan failed: " + (err.message || "Unknown error"));
+    } finally {
+      setScanning(false);
+    }
+  };
 
   const generateReferenceNumber = () => {
     const prefix = "WR";
@@ -323,6 +371,49 @@ export default function NewWarrantyPage() {
           </button>
           <h1 className="text-2xl font-bold text-navy">{dict.warranty.create}</h1>
         </div>
+        
+        {step < 4 && (
+          <div className="mb-6 bg-gradient-to-r from-[#1A1A2E] to-[#2d2d5e] rounded-2xl p-4 text-white">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center">
+                  <ScanLine size={20} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[15px] font-semibold">{isRTL ? "\u0627\u0644\u0645\u0633\u062D \u0627\u0644\u0630\u0643\u064A" : "Smart Scan"}</span>
+                    <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-full flex items-center gap-1"><Sparkles size={10} /> AI</span>
+                  </div>
+                  <p className="text-[12px] text-white/60">{isRTL ? "\u0627\u0645\u0633\u062D \u0645\u0633\u062A\u0646\u062F \u0627\u0644\u0636\u0645\u0627\u0646 \u0644\u0645\u0644\u0621 \u0627\u0644\u062D\u0642\u0648\u0644 \u062A\u0644\u0642\u0627\u0626\u064A\u0627\u064B" : "Scan warranty document to auto-fill fields"}</p>
+                </div>
+              </div>
+              <div>
+                <input ref={scanInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleSmartScan(f); }} />
+                <button onClick={() => scanInputRef.current?.click()} disabled={scanning} className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-xl flex items-center justify-center transition disabled:opacity-50">
+                  <Camera size={18} />
+                </button>
+              </div>
+            </div>
+            {scanning && (
+              <div className="mt-3">
+                <div className="flex items-center justify-between text-[12px] mb-1">
+                  <span>{isRTL ? "\u062C\u0627\u0631\u064D \u0627\u0644\u0645\u0633\u062D..." : "Scanning..."}</span>
+                  <span>{scanProgress}%</span>
+                </div>
+                <div className="w-full bg-white/10 rounded-full h-1.5">
+                  <div className="bg-[#30d158] h-1.5 rounded-full transition-all duration-300" style={{ width: scanProgress + "%" }} />
+                </div>
+              </div>
+            )}
+            {scanResult && (
+              <div className="mt-3 flex items-center gap-2 text-[12px] text-[#30d158]">
+                <CheckCircle size={14} />
+                <span>{isRTL ? `\u062A\u0645 \u0627\u0644\u0639\u062B\u0648\u0631 \u0639\u0644\u0649 ${scanResult.fieldsFound} \u062D\u0642\u0648\u0644` : `Found ${scanResult.fieldsFound} fields`}</span>
+              </div>
+            )}
+          </div>
+        )}
+
         {step < 4 && (
           <div className="flex items-center gap-2 mb-8">
             {[1, 2, 3].map((s) => (
