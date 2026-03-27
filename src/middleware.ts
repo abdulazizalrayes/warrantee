@@ -48,11 +48,20 @@ export async function middleware(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
 
+  // Extract locale from pathname (default to "en")
+  const localeMatch = pathname.match(/^\/(en|ar)\//);
+  const locale = localeMatch ? localeMatch[1] : "en";
+
+  // Allow auth callback to always pass through (critical for OAuth flow)
+  if (pathname === "/auth/callback" || pathname.match(/^\/(en|ar)\/auth\/callback/)) {
+    return response;
+  }
+
   // Protect /admin routes — only users with role = 'admin'
-  if (pathname.startsWith("/admin") || pathname.startsWith("/dashboard/admin")) {
+  if (pathname.startsWith("/admin") || pathname.startsWith("/dashboard/admin") || pathname.match(/^\/(en|ar)\/admin/)) {
     if (!user) {
       const url = request.nextUrl.clone();
-      url.pathname = "/auth/login";
+      url.pathname = "/" + locale + "/auth";
       url.searchParams.set("redirect", pathname);
       return NextResponse.redirect(url);
     }
@@ -65,36 +74,38 @@ export async function middleware(request: NextRequest) {
 
     if (!profile || profile.role !== "admin") {
       const url = request.nextUrl.clone();
-      url.pathname = "/dashboard";
+      url.pathname = "/" + locale + "/dashboard";
       return NextResponse.redirect(url);
     }
   }
 
   // Protect /dashboard routes — must be authenticated
-  if (pathname.startsWith("/dashboard")) {
+  if (pathname.startsWith("/dashboard") || pathname.match(/^\/(en|ar)\/dashboard/)) {
     if (!user) {
       const url = request.nextUrl.clone();
-      url.pathname = "/auth/login";
+      url.pathname = "/" + locale + "/auth";
       url.searchParams.set("redirect", pathname);
       return NextResponse.redirect(url);
     }
   }
 
   // Protect /seller routes — must have seller or both company role
-  if (pathname.startsWith("/seller") || pathname.startsWith("/dashboard/seller")) {
+  if (pathname.startsWith("/seller") || pathname.match(/^\/(en|ar)\/seller/)) {
     if (!user) {
       const url = request.nextUrl.clone();
-      url.pathname = "/auth/login";
+      url.pathname = "/" + locale + "/auth";
       url.searchParams.set("redirect", pathname);
       return NextResponse.redirect(url);
     }
   }
 
-  // Redirect logged-in users away from auth pages
-  if (pathname.startsWith("/auth/") && user) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
-    return NextResponse.redirect(url);
+  // Redirect logged-in users away from auth pages (but NOT the callback route)
+  if ((pathname.startsWith("/auth/") || pathname.match(/^\/(en|ar)\/auth/)) && user) {
+    if (!pathname.includes("/auth/callback")) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/" + locale + "/dashboard";
+      return NextResponse.redirect(url);
+    }
   }
 
   return response;
