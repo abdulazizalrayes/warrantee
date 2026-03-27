@@ -151,8 +151,8 @@ export default function ClaimDetailPage() {
         action: 'claim_status_changed',
         entity_type: 'warranty_claim',
         entity_id: claimId,
-        details: { old_status: oldStatus, new_status: newStatus, note: statusNote || null },
-        performed_by: user?.id
+        metadata: { old_status: oldStatus, new_status: newStatus, note: statusNote || null },
+        actor_id: user?.id
       });
 
       setStatusNote('');
