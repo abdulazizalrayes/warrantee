@@ -3,7 +3,7 @@
 // Warrantee — Seller Invitation Acceptance Page
 // Validates token and lets seller accept the invitation
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 
@@ -15,7 +15,7 @@ interface InvitationData {
   status: string;
 }
 
-export default function AcceptSellerInvitePage() {
+function AcceptSellerInviteContent() {
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
   const { user, loading: authLoading } = useAuth();
@@ -206,5 +206,17 @@ export default function AcceptSellerInvitePage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function AcceptSellerInvitePage() {
+  return (
+    <Suspense fallback={
+      <div style={{ minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+        <div style={{ textAlign: 'center', color: '#64748B' }}>Loading...</div>
+      </div>
+    }>
+      <AcceptSellerInviteContent />
+    </Suspense>
   );
 }
