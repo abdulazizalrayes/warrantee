@@ -7,16 +7,19 @@ import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+function getSupabaseAdmin() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ token: string }> }
 ) {
   const { token } = await params;
+  const supabaseAdmin = getSupabaseAdmin();
 
   const { data: invitation, error } = await supabaseAdmin
     .from('seller_invitations')
@@ -57,6 +60,7 @@ export async function POST(
   { params }: { params: Promise<{ token: string }> }
 ) {
   const { token } = await params;
+  const supabaseAdmin = getSupabaseAdmin();
 
   // User must be authenticated
   const cookieStore = await cookies();
@@ -104,4 +108,4 @@ export async function POST(
     status: 'accepted',
     message: 'Welcome to Warrantee as a seller!',
   });
-}
+    }
