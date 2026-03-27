@@ -2,10 +2,12 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+function getSupabaseAdmin() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 export type AuditAction =
   | 'received'
@@ -42,6 +44,7 @@ export async function logAudit(
   attachmentId?: string
 ): Promise<void> {
   try {
+    const supabaseAdmin = getSupabaseAdmin();
     await supabaseAdmin.from('ingestion_audit_log').insert({
       ingestion_job_id: ingestionJobId,
       attachment_id: attachmentId || null,
