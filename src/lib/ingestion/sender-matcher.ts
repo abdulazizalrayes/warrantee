@@ -4,10 +4,12 @@
 import { createClient } from '@supabase/supabase-js';
 import type { SenderMatch, TrustLevel } from './types';
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+function getSupabaseAdmin() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 /**
  * Match sender email to a registered user.
@@ -25,6 +27,7 @@ export async function matchSender(
   ccEmails: string[] = [],
   replyTo?: string
 ): Promise<SenderMatch> {
+  const supabaseAdmin = getSupabaseAdmin();
   const normalizedFrom = fromEmail.toLowerCase().trim();
 
   // Step 1: Exact email match in profiles (linked to auth.users)
@@ -35,9 +38,8 @@ export async function matchSender(
     .single();
 
   if (exactMatch) {
-    // Check if sender is a seller with a buyer in CC
     if (exactMatch.role === 'seller' && ccEmails.length > 0) {
-      const buyerId = await findBuyerFromCC(ccEmails);
+      const buyerId = await findBuyerFromCC(ccEmails, supabaseAdmin);
       return {
         user_id: exactMatch.id,
         trust_level: 'verified_seller',
@@ -55,7 +57,7 @@ export async function matchSender(
     };
   }
 
-  // Step 2: Check CC addresses for registered users (seller on behalf of buyer)
+  // Step 2: Check CC addresses for registered users
   for (const cc of ccEmails) {
     const { data: ccMatch } = await supabaseAdmin
       .from('profiles')
@@ -90,7 +92,7 @@ export async function matchSender(
     };
   }
 
-  // Step 4: Domain match (e.g., user@company.com matches company admin)
+  // Step 4: Domain match
   const domain = normalizedFrom.split('@')[1];
   if (domain && !isCommonEmailDomain(domain)) {
     const { data: domainMatch } = await supabaseAdmin
@@ -120,7 +122,7 @@ export async function matchSender(
   };
 }
 
-async function findBuyerFromCC(ccEmails: string[]): Promise<string | null> {
+async function findBuyerFromCC(ccEmails: string[], supabaseAdmin: ReturnType<typeof createClient>): Promise<string | null> {
   for (const cc of ccEmails) {
     const { data } = await supabaseAdmin
       .from('profiles')
