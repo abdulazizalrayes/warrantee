@@ -18,12 +18,15 @@ import {
 } from '@/lib/ingestion';
 import type { ResendInboundPayload, IngestionJobStatus } from '@/lib/ingestion';
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+function getSupabaseAdmin() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 export async function POST(request: NextRequest) {
+  const supabaseAdmin = getSupabaseAdmin();
   try {
     // 1. Verify Resend webhook signature
     const signature = request.headers.get('resend-signature');
@@ -38,7 +41,7 @@ export async function POST(request: NextRequest) {
 
     // 2. Rate limiting
     const fromEmail = payload.from.toLowerCase().trim();
-    const isAllowed = await checkRateLimit(fromEmail);
+    const isAllowed = await checkRateLimit(fromEmail, supabaseAdmin);
     if (!isAllowed) {
       console.warn(`[Ingest] Rate limited: ${fromEmail}`);
       return NextResponse.json({ error: 'Rate limited' }, { status: 429 });
@@ -102,15 +105,14 @@ export async function POST(request: NextRequest) {
         error_message: 'No attachments found',
       }).eq('id', job.id);
 
-      // Send notification: no attachments
       await sendNoAttachmentNotification(fromEmail, payload.subject);
       return NextResponse.json({ status: 'no_attachments', job_id: job.id });
     }
 
-    // Process each attachment asynchronously
+    // Process each attachment
     const attachmentResults = [];
     for (const attachment of payload.attachments) {
-      const result = await processAttachment(job.id, attachment, senderMatch, fromEmail);
+      const result = await processAttachment(job.id, attachment, senderMatch, fromEmail, supabaseAdmin);
       attachmentResults.push(result);
     }
 
@@ -158,9 +160,9 @@ async function processAttachment(
   jobId: string,
   attachment: ResendInboundPayload['attachments'][0],
   senderMatch: Awaited<ReturnType<typeof matchSender>>,
-  fromEmail: string
+  fromEmail: string,
+  supabaseAdmin: ReturnType<typeof createClient>
 ): Promise<{ confidence: number; hasFraud: boolean }> {
-  // Validate file type and size
   const isSupported = SUPPORTED_FILE_TYPES.includes(attachment.content_type);
   if (attachment.size > MAX_FILE_SIZE) {
     await logAudit(jobId, 'error', 'system', {
@@ -171,11 +173,9 @@ async function processAttachment(
     return { confidence: 0, hasFraud: false };
   }
 
-  // Compute file hash
   const fileBuffer = Buffer.from(attachment.content, 'base64');
   const fileHash = crypto.createHash('sha256').update(fileBuffer).digest('hex');
 
-  // Store file in Supabase Storage
   const storagePath = `ingestion/${jobId}/${attachment.filename}`;
   await supabaseAdmin.storage
     .from('warranty-documents')
@@ -183,7 +183,6 @@ async function processAttachment(
       contentType: attachment.content_type,
     });
 
-  // Create attachment record
   const { data: attachmentRecord } = await supabaseAdmin
     .from('ingestion_attachments')
     .insert({
@@ -213,18 +212,14 @@ async function processAttachment(
     return { confidence: 0, hasFraud: false };
   }
 
-  // Run OCR
   await logAudit(jobId, 'ocr_started', 'system', {
     attachment_id: attachmentRecord.id,
   }, attachmentRecord.id);
 
   try {
     const ocrResult = await processDocument(attachment.content, attachment.content_type);
-
-    // Compute SimHash for content dedup
     const simHash = ocrResult.raw_text ? computeSimHash(ocrResult.raw_text) : null;
 
-    // Update attachment with OCR results
     await supabaseAdmin.from('ingestion_attachments').update({
       ocr_status: 'completed',
       ocr_raw_text: ocrResult.raw_text,
@@ -244,7 +239,6 @@ async function processAttachment(
         .filter((k) => ocrResult.extracted_fields[k as keyof typeof ocrResult.extracted_fields] !== null).length,
     }, attachmentRecord.id);
 
-    // Run fraud detection
     const fraudSignals = await detectFraud(
       jobId,
       attachmentRecord.id,
@@ -262,23 +256,16 @@ async function processAttachment(
       }, attachmentRecord.id);
     }
 
-    // Create provisional warranty if we have enough data
     if (senderMatch.user_id && ocrResult.aggregate_confidence >= CONFIDENCE_THRESHOLDS.MEDIUM && !hasFraud) {
-      await createProvisionalWarranty(
-        jobId,
-        attachmentRecord.id,
-        senderMatch.user_id,
-        ocrResult
-      );
+      await createProvisionalWarranty(jobId, attachmentRecord.id, senderMatch.user_id, ocrResult, supabaseAdmin);
     }
 
-    // Auto-confirm if high confidence + high trust + no fraud
     if (
       ocrResult.aggregate_confidence >= CONFIDENCE_THRESHOLDS.HIGH &&
       senderMatch.trust_score >= 0.9 &&
       !hasFraud
     ) {
-      await autoConfirmWarranty(jobId, attachmentRecord.id, senderMatch.user_id!, ocrResult);
+      await autoConfirmWarranty(jobId, attachmentRecord.id, senderMatch.user_id!, ocrResult, supabaseAdmin);
       await logAudit(jobId, 'auto_confirmed', 'system', {
         confidence: ocrResult.aggregate_confidence,
         trust_score: senderMatch.trust_score,
@@ -305,12 +292,12 @@ async function createProvisionalWarranty(
   jobId: string,
   attachmentId: string,
   userId: string,
-  ocrResult: Awaited<ReturnType<typeof processDocument>>
+  ocrResult: Awaited<ReturnType<typeof processDocument>>,
+  supabaseAdmin: ReturnType<typeof createClient>
 ) {
   const fields = ocrResult.extracted_fields;
   const needsInput: string[] = [];
 
-  // Identify missing/low-confidence fields
   const fieldChecks: [string, unknown][] = [
     ['product_name', fields.product_name],
     ['brand', fields.brand],
@@ -350,11 +337,11 @@ async function autoConfirmWarranty(
   jobId: string,
   attachmentId: string,
   userId: string,
-  ocrResult: Awaited<ReturnType<typeof processDocument>>
+  ocrResult: Awaited<ReturnType<typeof processDocument>>,
+  supabaseAdmin: ReturnType<typeof createClient>
 ) {
   const fields = ocrResult.extracted_fields;
 
-  // Create actual warranty record (matches warranties table schema)
   const { data: warranty } = await supabaseAdmin
     .from('warranties')
     .insert({
@@ -373,7 +360,6 @@ async function autoConfirmWarranty(
     .single();
 
   if (warranty) {
-    // Link attachment to warranty
     await supabaseAdmin.from('ingestion_attachments').update({
       warranty_id: warranty.id,
     }).eq('id', attachmentId);
@@ -382,7 +368,6 @@ async function autoConfirmWarranty(
 
 function verifyResendSignature(body: string, signature: string | null): boolean {
   if (!signature || !process.env.RESEND_WEBHOOK_SECRET) {
-    // In development, skip signature verification
     if (process.env.NODE_ENV === 'development') return true;
     return false;
   }
@@ -398,7 +383,7 @@ function verifyResendSignature(body: string, signature: string | null): boolean 
   );
 }
 
-async function checkRateLimit(email: string): Promise<boolean> {
+async function checkRateLimit(email: string, supabaseAdmin: ReturnType<typeof createClient>): Promise<boolean> {
   const { data } = await supabaseAdmin.rpc('check_rate_limit', {
     p_identifier: email,
     p_type: 'email',
@@ -409,15 +394,10 @@ async function checkRateLimit(email: string): Promise<boolean> {
 }
 
 function extractName(fromField: string): string | null {
-  // "John Doe <john@example.com>" → "John Doe"
   const match = fromField.match(/^([^<]+)<[^>]+>$/);
   return match ? match[1].trim() : null;
 }
 
 async function sendNoAttachmentNotification(email: string, subject: string | undefined) {
-  // TODO: Send via Resend - "We received your email but found no warranty documents attached"
   console.log(`[Ingest] No attachments notification for ${email}, subject: ${subject}`);
 }
-
-// Type import fix
-type ResendInboundPayload = import('@/lib/ingestion').ResendInboundPayload;
