@@ -3,12 +3,12 @@
 // Warrantee — Admin Invitation Acceptance Page
 // Allows invited users to accept admin role
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
 
-export default function AdminAcceptInvitePage() {
+function AdminAcceptInviteContent() {
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
   const router = useRouter();
@@ -58,7 +58,6 @@ export default function AdminAcceptInvitePage() {
     setAccepting(true);
 
     try {
-      // Update user's role in profiles
       const { error: profileError } = await supabase
         .from('profiles')
         .update({ role: invitation.role })
@@ -66,7 +65,6 @@ export default function AdminAcceptInvitePage() {
 
       if (profileError) throw profileError;
 
-      // Mark invitation as accepted
       await supabase
         .from('admin_invitations')
         .update({
@@ -228,5 +226,17 @@ export default function AdminAcceptInvitePage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function AdminAcceptInvitePage() {
+  return (
+    <Suspense fallback={
+      <div style={{ minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#F8FAFC' }}>
+        <div style={{ textAlign: 'center', color: '#64748B' }}>Loading...</div>
+      </div>
+    }>
+      <AdminAcceptInviteContent />
+    </Suspense>
   );
 }
