@@ -57,7 +57,7 @@ export default function DashboardLayout({
   const navigationItems = [
     { href: "/dashboard", label: dict.nav.dashboard, icon: LayoutDashboard },
     { href: "/warranties", label: dict.nav.warranties, icon: Shield },
-    { href: "/warranties/claims", label: isRTL ? "\u0627\u0644\u0627\u062f\u0639\u0627\u0621\u0627\u062a" : "Claims", icon: FileText },
+    { href: "/dashboard/claims", label: isRTL ? "\u0627\u0644\u0627\u062f\u0639\u0627\u0621\u0627\u062a" : "Claims", icon: FileText },
     { href: "/warranties/extensions", label: isRTL ? "\u0627\u0644\u062a\u0645\u062f\u064a\u062f\u0627\u062a" : "Extensions", icon: Clock },
     { href: "/documents", label: isRTL ? "\u0627\u0644\u0645\u0633\u062a\u0646\u062f\u0627\u062a" : "Documents", icon: Boxes },
     { href: "/seller", label: isRTL ? "\u0627\u0644\u0628\u0627\u0626\u0639" : "Seller", icon: Store },
