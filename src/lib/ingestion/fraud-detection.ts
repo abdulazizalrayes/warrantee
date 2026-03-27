@@ -3,10 +3,12 @@
 import { createClient } from '@supabase/supabase-js';
 import type { FraudSeverity, OCRExtractedFields } from './types';
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+function getSupabaseAdmin() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 export interface FraudSignal {
   signal_type: string;
@@ -14,10 +16,6 @@ export interface FraudSignal {
   details: Record<string, unknown>;
 }
 
-/**
- * Run all fraud detection checks on an ingestion job + attachment.
- * Returns array of detected fraud signals.
- */
 export async function detectFraud(
   ingestionJobId: string,
   attachmentId: string,
@@ -26,10 +24,11 @@ export async function detectFraud(
   fromEmail: string,
   matchedUserId: string | null
 ): Promise<FraudSignal[]> {
+  const supabaseAdmin = getSupabaseAdmin();
   const signals: FraudSignal[] = [];
 
-  // Check 1: Duplicate file hash (exact same document)
-  const duplicateFile = await checkDuplicateFileHash(fileHash, attachmentId);
+  // Check 1: Duplicate file hash
+  const duplicateFile = await checkDuplicateFileHash(fileHash, attachmentId, supabaseAdmin);
   if (duplicateFile) {
     signals.push({
       signal_type: 'duplicate_document',
@@ -44,8 +43,7 @@ export async function detectFraud(
   // Check 2: Duplicate serial number across different users
   if (extractedFields.serial_number) {
     const duplicateSerial = await checkDuplicateSerial(
-      extractedFields.serial_number.value,
-      matchedUserId
+      extractedFields.serial_number.value, matchedUserId, supabaseAdmin
     );
     if (duplicateSerial) {
       signals.push({
@@ -98,7 +96,7 @@ export async function detectFraud(
   }
 
   // Check 6: High volume from single sender
-  const volumeCheck = await checkSenderVolume(fromEmail);
+  const volumeCheck = await checkSenderVolume(fromEmail, supabaseAdmin);
   if (volumeCheck.last24h > 50) {
     signals.push({
       signal_type: 'high_volume_sender',
@@ -137,8 +135,7 @@ export async function detectFraud(
 }
 
 async function checkDuplicateFileHash(
-  fileHash: string,
-  currentAttachmentId: string
+  fileHash: string, currentAttachmentId: string, supabaseAdmin: ReturnType<typeof createClient>
 ): Promise<{ id: string; ingestion_job_id: string } | null> {
   const { data } = await supabaseAdmin
     .from('ingestion_attachments')
@@ -151,10 +148,8 @@ async function checkDuplicateFileHash(
 }
 
 async function checkDuplicateSerial(
-  serialNumber: string,
-  currentUserId: string | null
+  serialNumber: string, currentUserId: string | null, supabaseAdmin: ReturnType<typeof createClient>
 ): Promise<{ id: string; user_id: string } | null> {
-  // Check in confirmed warranties
   const { data } = await supabaseAdmin
     .from('warranties')
     .select('id, user_id')
@@ -162,11 +157,8 @@ async function checkDuplicateSerial(
     .limit(1)
     .single();
 
-  if (data && data.user_id !== currentUserId) {
-    return data;
-  }
+  if (data && data.user_id !== currentUserId) return data;
 
-  // Also check provisional warranties
   const { data: provisional } = await supabaseAdmin
     .from('provisional_warranties')
     .select('id, user_id')
@@ -175,14 +167,11 @@ async function checkDuplicateSerial(
     .limit(1)
     .single();
 
-  if (provisional && provisional.user_id !== currentUserId) {
-    return provisional;
-  }
-
+  if (provisional && provisional.user_id !== currentUserId) return provisional;
   return null;
 }
 
-async function checkSenderVolume(email: string): Promise<{ last24h: number; last1h: number }> {
+async function checkSenderVolume(email: string, supabaseAdmin: ReturnType<typeof createClient>): Promise<{ last24h: number; last1h: number }> {
   const now = new Date();
   const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
   const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
@@ -202,10 +191,6 @@ async function checkSenderVolume(email: string): Promise<{ last24h: number; last
   return { last24h: last24h || 0, last1h: last1h || 0 };
 }
 
-/**
- * Compute SimHash for content-level deduplication.
- * Returns a 64-bit hex string.
- */
 export function computeSimHash(text: string): string {
   const tokens = text.toLowerCase().replace(/[^\w\s]/g, '').split(/\s+/).filter(Boolean);
   const hashBits = new Int32Array(64);
@@ -240,14 +225,10 @@ function fnv1a64(str: string): bigint {
   return hash;
 }
 
-/**
- * Check SimHash similarity against existing documents.
- * Distance < 3 indicates near-duplicate content.
- */
 export async function checkSimHashDuplicate(
-  simHash: string,
-  currentAttachmentId: string
+  simHash: string, currentAttachmentId: string
 ): Promise<boolean> {
+  const supabaseAdmin = getSupabaseAdmin();
   const { data: existing } = await supabaseAdmin
     .from('ingestion_attachments')
     .select('sim_hash')
