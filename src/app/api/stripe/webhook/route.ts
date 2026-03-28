@@ -10,6 +10,21 @@ function getSupabaseAdmin() {
   );
 }
 
+// Idempotency: track processed event IDs to prevent duplicate handling
+const processedEvents = new Set<string>();
+const MAX_PROCESSED_EVENTS = 10000;
+
+function isEventProcessed(eventId: string): boolean {
+  if (processedEvents.has(eventId)) return true;
+  // Prevent unbounded memory growth
+  if (processedEvents.size >= MAX_PROCESSED_EVENTS) {
+    const firstKey = processedEvents.values().next().value;
+    if (firstKey) processedEvents.delete(firstKey);
+  }
+  processedEvents.add(eventId);
+  return false;
+}
+
 export async function POST(request: Request) {
   const body = await request.text();
   const signature = request.headers.get("stripe-signature");
@@ -26,67 +41,91 @@ export async function POST(request: Request) {
       process.env.STRIPE_WEBHOOK_SECRET!
     );
   } catch (err) {
-    console.error("Webhook signature verification failed:", err);
+    // Log signature failures without exposing internal details
+    console.warn("Webhook signature verification failed");
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
+  }
+
+  // Idempotency check: skip if we already processed this event
+  if (isEventProcessed(event.id)) {
+    return NextResponse.json({ received: true, deduplicated: true });
   }
 
   const supabaseAdmin = getSupabaseAdmin();
 
-  switch (event.type) {
-    case "checkout.session.completed": {
-      const session = event.data.object;
-      const userId = session.metadata?.user_id;
-      const planId = session.metadata?.plan_id;
+  try {
+    switch (event.type) {
+      case "checkout.session.completed": {
+        const session = event.data.object;
+        const userId = session.metadata?.user_id;
+        const planId = session.metadata?.plan_id;
 
-      if (userId && planId) {
-        await supabaseAdmin
-          .from("profiles")
-          .update({ role: planId === "pro" ? "user" : "admin" })
-          .eq("id", userId);
-      }
-      break;
-    }
-
-    case "customer.subscription.updated": {
-      const subscription = event.data.object;
-      const userId = subscription.metadata?.user_id;
-      if (userId) {
-        const status = subscription.status;
-        if (status === "canceled" || status === "unpaid") {
-          await supabaseAdmin
+        if (userId && planId) {
+          const { error } = await supabaseAdmin
             .from("profiles")
-            .update({ role: "user" })
+            .update({ role: planId === "pro" ? "user" : "admin" })
             .eq("id", userId);
+
+          if (error) console.warn("Profile update failed:", error.message);
         }
+        break;
       }
-      break;
-    }
 
-    case "invoice.payment_succeeded": {
-      const invoice = event.data.object;
-      const metadata = invoice.metadata;
+      case "customer.subscription.updated": {
+        const subscription = event.data.object;
+        const userId = subscription.metadata?.user_id;
 
-      if (metadata?.extension_id) {
-        await supabaseAdmin
-          .from("warranty_extensions")
-          .update({ is_purchased: true })
-          .eq("id", metadata.extension_id);
+        if (userId) {
+          const status = subscription.status;
+          if (status === "canceled" || status === "unpaid") {
+            const { error } = await supabaseAdmin
+              .from("profiles")
+              .update({ role: "user" })
+              .eq("id", userId);
 
-        const { data: extension } = await supabaseAdmin
-          .from("warranty_extensions")
-          .select("warranty_id, new_end_date")
-          .eq("id", metadata.extension_id)
-          .single();
-
-        if (extension) {
-          await supabaseAdmin
-            .from("warranties")
-            .update({ end_date: extension.new_end_date, status: "renewed" })
-            .eq("id", extension.warranty_id);
+            if (error) console.warn("Subscription downgrade failed:", error.message);
+          }
         }
+        break;
       }
-      break;
+
+      case "invoice.payment_succeeded": {
+        const invoice = event.data.object;
+        const metadata = invoice.metadata;
+
+        if (metadata?.extension_id) {
+          const { error: extError } = await supabaseAdmin
+            .from("warranty_extensions")
+            .update({ is_purchased: true })
+            .eq("id", metadata.extension_id);
+
+          if (extError) {
+            console.warn("Extension update failed:", extError.message);
+            break;
+          }
+
+          const { data: extension } = await supabaseAdmin
+            .from("warranty_extensions")
+            .select("warranty_id, new_end_date")
+            .eq("id", metadata.extension_id)
+            .single();
+
+          if (extension) {
+            await supabaseAdmin
+              .from("warranties")
+              .update({
+                end_date: extension.new_end_date,
+                status: "renewed",
+              })
+              .eq("id", extension.warranty_id);
+          }
+        }
+        break;
+      }
     }
+  } catch (err) {
+    // Log processing errors but still return 200 to prevent Stripe retries
+    console.warn("Webhook processing error for event:", event.type);
   }
 
   return NextResponse.json({ received: true });
