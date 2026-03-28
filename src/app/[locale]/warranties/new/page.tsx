@@ -14,8 +14,8 @@ type Step = 1 | 2 | 3 | 4;
 const CATEGORIES = [
   { value: "electronics", en: "Electronics", ar: "\u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A\u0627\u062A" },
   { value: "appliances", en: "Appliances", ar: "\u0623\u062C\u0647\u0632\u0629 \u0645\u0646\u0632\u0644\u064A\u0629" },
-  { value: "automotive", en: "Automotive", ar: "\u0633\u064A\u0627\u0631\u0627\u062A" },
-  { value: "machinery", en: "Machinery", ar: "\u0622\u0644\u0627\u062A" },
+  { value: "automotive", en: "Automotive", ar: "\u0633\u064A\u0627\u0631\u0627\u062B" },
+  { value: "machinery", en: "Machinery", ar: "\u0622\u0644\u0627\u062B" },
   { value: "hvac", en: "HVAC", ar: "\u062A\u0643\u064A\u064A\u0641" },
   { value: "plumbing", en: "Plumbing", ar: "\u0633\u0628\u0627\u0643\u0629" },
   { value: "construction", en: "Construction", ar: "\u0628\u0646\u0627\u0621" },
@@ -57,6 +57,7 @@ export default function NewWarrantyPage() {
   const [uploading, setUploading] = useState(false);
   const [createdWarrantyId, setCreatedWarrantyId] = useState<string | null>(null);
 
+  const [dragOver, setDragOver] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [scanProgress, setScanProgress] = useState(0);
   const [scanResult, setScanResult] = useState<{fieldsFound: number} | null>(null);
@@ -67,24 +68,37 @@ export default function NewWarrantyPage() {
     setScanProgress(0);
     setScanResult(null);
     setError("");
+    let worker: any = null;
     try {
+      setScanProgress(5);
       const Tesseract = await import("tesseract.js");
-      const worker = await Tesseract.createWorker("eng+ara", 1, {
+      setScanProgress(10);
+      worker = await Tesseract.createWorker("eng+ara", 1, {
         logger: (m: any) => {
           if (m.status === "recognizing text") {
-            setScanProgress(Math.round(m.progress * 100));
+            setScanProgress(10 + Math.round(m.progress * 80));
           }
         },
       });
       const { data: { text: ocrText } } = await worker.recognize(file);
       await worker.terminate();
-      setScanProgress(100);
+      worker = null;
+      setScanProgress(95);
+      if (!ocrText || ocrText.trim().length === 0) {
+        setError(isRTL ? "\u0644\u0645 \u064A\u062A\u0645 \u0627\u0644\u0639\u062B\u0648\u0631 \u0639\u0644\u0649 \u0646\u0635 \u0641\u064A \u0627\u0644\u0635\u0648\u0631\u0629" : "No text found in the image. Try a clearer photo.");
+        setFiles((prev) => [...prev, file]);
+        return;
+      }
       const res = await fetch("/api/ocr", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: ocrText }),
       });
+      if (!res.ok) {
+        throw new Error(isRTL ? "\u0641\u0634\u0644 \u062A\u062D\u0644\u064A\u0644 \u0627\u0644\u0646\u0635" : "Failed to analyze text");
+      }
       const parsed = await res.json();
+      setScanProgress(100);
       if (parsed.success && parsed.fields) {
         const f = parsed.fields;
         let count = 0;
@@ -99,8 +113,12 @@ export default function NewWarrantyPage() {
       }
       setFiles((prev) => [...prev, file]);
     } catch (err: any) {
-      setError(isRTL ? "\u0641\u0634\u0644 \u0627\u0644\u0645\u0633\u062D \u0627\u0644\u0630\u0643\u064A" : "Smart Scan failed: " + (err.message || "Unknown error"));
+      console.error("Smart Scan error:", err);
+      const msg = err?.message || "";
+      const userMsg = msg.length > 0 ? msg : (isRTL ? "\u062D\u062F\u062B \u062E\u0637\u0623 \u063A\u064A\u0631 \u0645\u062A\u0648\u0642\u0639" : "An unexpected error occurred. Please try again.");
+      setError(isRTL ? `\u0641\u0634\u0644 \u0627\u0644\u0645\u0633\u062D \u0627\u0644\u0630\u0643\u064A: ${userMsg}` : `Smart Scan failed: ${userMsg}`);
     } finally {
+      if (worker) { try { await worker.terminate(); } catch {} }
       setScanning(false);
     }
   };
@@ -114,21 +132,40 @@ export default function NewWarrantyPage() {
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = Array.from(e.target.files || []);
-    const maxSize = 10 * 1024 * 1024;
-    const allowed = ["image/png", "image/jpeg", "image/webp", "application/pdf",
-      "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"];
+    addFiles(selected);
+  };
+
+  const addFiles = (selected: File[]) => {
+    const maxSize = 25 * 1024 * 1024;
+    setError("");
     const valid = selected.filter((f) => {
       if (f.size > maxSize) {
-        setError(isRTL ? `\u0627\u0644\u0645\u0644\u0641 ${f.name} \u0643\u0628\u064A\u0631 \u062C\u062F\u0627\u064B (\u062D\u062F 10MB)` : `File ${f.name} too large (10MB limit)`);
-        return false;
-      }
-      if (!allowed.includes(f.type)) {
-        setError(isRTL ? `\u0646\u0648\u0639 \u0627\u0644\u0645\u0644\u0641 ${f.name} \u063A\u064A\u0631 \u0645\u062F\u0639\u0648\u0645` : `File type ${f.name} not supported`);
+        setError(isRTL ? `\u0627\u0644\u0645\u0644\u0641 ${f.name} \u0643\u0628\u064A\u0631 \u062C\u062F\u0627\u064B (\u062D\u062F 25MB)` : `File ${f.name} too large (25MB limit)`);
         return false;
       }
       return true;
     });
     setFiles((prev) => [...prev, ...valid]);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(false);
+    const dropped = Array.from(e.dataTransfer.files);
+    if (dropped.length > 0) addFiles(dropped);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(false);
   };
 
   const removeFile = (index: number) => {
@@ -302,13 +339,14 @@ export default function NewWarrantyPage() {
   const renderStep3 = () => (
     <div className="space-y-5">
       <h2 className="text-lg font-bold text-navy">{isRTL ? "\u0627\u0644\u0645\u0633\u062A\u0646\u062F\u0627\u062A" : "Documents"}</h2>
-      <p className="text-sm text-gray-600">{isRTL ? "\u0627\u0631\u0641\u0642 \u0627\u0644\u0641\u0648\u0627\u062A\u064A\u0631 \u0623\u0648 \u0627\u0644\u0645\u0633\u062A\u0646\u062F\u0627\u062A \u0627\u0644\u0645\u062A\u0639\u0644\u0642\u0629 \u0628\u0627\u0644\u0636\u0645\u0627\u0646 (\u0627\u062E\u062A\u064A\u0627\u0631\u064A)" : "Attach invoices or warranty-related documents (optional)"}</p>
+      <p className="text-sm text-gray-600">{isRTL ? "\u0627\u0631\u0641\u0642 \u0627\u0644\u0641\u0648\u0627\u062A\u064A\u0631 \u0623\u0648 \u0627\u0644\u0645\u0633\u062A\u0646\u062D\u0627\u062A \u0627\u0644\u0645\u062A\u0639\u0644\u0642\u0629 \u0628\u0627\u0644\u0636\u0645\u0627\u0646 (\u0627\u062E\u062A\u064A\u0627\u0631\u064A)" : "Attach invoices or warranty-related documents (optional)"}</p>
       <div onClick={() => fileInputRef.current?.click()}
-        className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-gold transition">
-        <Upload size={32} className="mx-auto text-gray-400 mb-2" />
-        <p className="text-sm text-gray-600">{isRTL ? "\u0627\u0636\u063A\u0637 \u0644\u0631\u0641\u0639 \u0627\u0644\u0645\u0644\u0641\u0627\u062A" : "Click to upload files"}</p>
-        <p className="text-xs text-gray-400 mt-1">PNG, JPEG, WebP, PDF, DOC, DOCX (max 10MB)</p>
-        <input ref={fileInputRef} type="file" multiple accept=".png,.jpg,.jpeg,.webp,.pdf,.doc,.docx" onChange={handleFileSelect} className="hidden" />
+        onDrop={handleDrop} onDragOver={handleDragOver} onDragLeave={handleDragLeave}
+        className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition ${dragOver ? "border-gold bg-yellow-50" : "border-gray-300 hover:border-gold"}`}>
+        <Upload size={32} className={`mx-auto mb-2 ${dragOver ? "text-gold" : "text-gray-400"}`} />
+        <p className="text-sm text-gray-600">{isRTL ? "\u0627\u0633\u062D\u0628 \u0627\u0644\u0645\u0644\u0641\u0627\u062A \u0647\u0646\u0627 \u0623\u0648 \u0627\u0636\u063A\u0637 \u0644\u0644\u0631\u0641\u0639" : "Drag & drop files here or click to upload"}</p>
+        <p className="text-xs text-gray-400 mt-1">{isRTL ? "\u062C\u0645\u064A\u0639 \u0623\u0646\u0648\u0627\u0639 \u0627\u0644\u0645\u0644\u0641\u0627\u062A \u0645\u062F\u0639\u0648\u0645\u0629 (\u062D\u062F 25MB)" : "All file types accepted (max 25MB)"}</p>
+        <input ref={fileInputRef} type="file" multiple onChange={handleFileSelect} className="hidden" />
       </div>
       {files.length > 0 && (
         <div className="space-y-2">
@@ -388,7 +426,7 @@ export default function NewWarrantyPage() {
                 </div>
               </div>
               <div>
-                <input ref={scanInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleSmartScan(f); }} />
+                <input ref={scanInputRef} type="file" accept="image/*,application/pdf" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleSmartScan(f); }} />
                 <button onClick={() => scanInputRef.current?.click()} disabled={scanning} className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-xl flex items-center justify-center transition disabled:opacity-50">
                   <Camera size={18} />
                 </button>
