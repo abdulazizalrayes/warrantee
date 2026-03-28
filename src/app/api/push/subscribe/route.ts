@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, message: "Push subscription saved" });
   } catch (error) {
-    console.error("Push subscribe error:", error);
+    console.warn("Push subscribe error:", error);
     return NextResponse.json({ error: "Failed to save subscription" }, { status: 500 });
   }
 }
@@ -72,7 +72,7 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ success: true, message: "Unsubscribed" });
   } catch (error) {
-    console.error("Push unsubscribe error:", error);
+    console.warn("Push unsubscribe error:", error);
     return NextResponse.json({ error: "Failed to unsubscribe" }, { status: 500 });
   }
 }
