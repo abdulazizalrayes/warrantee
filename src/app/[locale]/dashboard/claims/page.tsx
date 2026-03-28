@@ -26,7 +26,6 @@ export default function ClaimsListPage() {
   const pathname = usePathname();
   const locale = pathname.split('/')[1] || 'en';
   const t = getDictionary(locale);
-  const locale = pathname?.startsWith('/ar') ? 'ar' : 'en';
   const isRTL = locale === 'ar';
   const [claims, setClaims] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
