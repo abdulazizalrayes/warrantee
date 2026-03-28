@@ -258,12 +258,12 @@ export async function POST(request: NextRequest) {
       subject: subject,
       extracted_data: extractedData,
       confidence_score: confidence,
-      status: confidence >= 30 ? "extracted" : "received",
+      status: confidence >= 50 ? "extracted" : "received",
     }).select().single();
 
     // Auto-create warranty if confidence is high enough
     let warranty = null;
-    if (confidence >= 30 && extractedData.product_name) {
+    if (confidence >= 50 && extractedData.product_name) {
       const { data: newWarranty } = await getSupabaseAdmin().from("warranties").insert({
         product_name: extractedData.product_name,
         serial_number: extractedData.serial_number || null,
