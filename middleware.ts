@@ -35,7 +35,7 @@ export async function middleware(request: NextRequest) {
           );
           response = NextResponse.next({ request });
           cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
+            response.cookies.set(name, value, { ...options, sameSite: "lax", secure: true })
           );
         },
       },
@@ -45,6 +45,7 @@ export async function middleware(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
   const pathname = request.nextUrl.pathname;
   const localeMatch = pathname.match(/^\/(en|ar)\//);
   const locale = localeMatch ? localeMatch[1] : "en";
@@ -57,8 +58,7 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
-  // Protect /admin routes - require authentication only
-  // Admin role check is handled by the admin page itself for reliability
+  // Protect /admin routes - require authentication and admin role
   if (
     pathname.startsWith("/admin") ||
     pathname.startsWith("/dashboard/admin") ||
@@ -68,6 +68,19 @@ export async function middleware(request: NextRequest) {
       const url = request.nextUrl.clone();
       url.pathname = "/" + locale + "/auth";
       url.searchParams.set("redirect", pathname);
+      return NextResponse.redirect(url);
+    }
+
+    // Server-side admin role verification
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+
+    if (!profile || !["admin", "super_admin"].includes(profile.role)) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/" + locale + "/dashboard";
       return NextResponse.redirect(url);
     }
   }
@@ -100,8 +113,7 @@ export async function middleware(request: NextRequest) {
 
   // Redirect logged-in users away from auth pages
   if (
-    (pathname.startsWith("/auth/") ||
-      pathname.match(/^\/(en|ar)\/auth/)) &&
+    (pathname.startsWith("/auth/") || pathname.match(/^\/(en|ar)\/auth/)) &&
     user
   ) {
     if (!pathname.includes("/auth/callback")) {
