@@ -8,16 +8,16 @@ import { createBrowserClient } from '@supabase/ssr';
 const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
 const STATUSES = ['all','draft','submitted','under_review','awaiting_info','approved','rejected','resolved','closed'];
 const statusCfg: Record<string,{l:string;a:string;bg:string;tx:string}> = {
-  draft:{l:'Draft',a:'ÙØ³ÙØ¯Ø©',bg:'bg-gray-100',tx:'text-gray-700'},
-  submitted:{l:'Submitted',a:'ÙÙØ¯Ù',bg:'bg-blue-100',tx:'text-blue-700'},
-  under_review:{l:'Under Review',a:'ÙÙØ¯ Ø§ÙÙØ±Ø§Ø¬Ø¹Ø©',bg:'bg-yellow-100',tx:'text-yellow-700'},
-  awaiting_info:{l:'Awaiting Info',a:'Ø¨Ø§ÙØªØ¸Ø§Ø± ÙØ¹ÙÙÙØ§Øª',bg:'bg-orange-100',tx:'text-orange-700'},
-  approved:{l:'Approved',a:'ÙÙØ§ÙÙ Ø¹ÙÙÙ',bg:'bg-green-100',tx:'text-green-700'},
-  rejected:{l:'Rejected',a:'ÙØ±ÙÙØ¶',bg:'bg-red-100',tx:'text-red-700'},
-  resolved:{l:'Resolved',a:'ØªÙ Ø§ÙØ­Ù',bg:'bg-emerald-100',tx:'text-emerald-700'},
-  closed:{l:'Closed',a:'ÙØºÙÙ',bg:'bg-slate-100',tx:'text-slate-700'},
-  open:{l:'Open',a:'ÙÙØªÙØ­',bg:'bg-blue-100',tx:'text-blue-700'},
-  in_progress:{l:'In Progress',a:'Ø¬Ø§Ø±Ù',bg:'bg-yellow-100',tx:'text-yellow-700'},
+  draft:{l:'Draft',a:'مسودة',bg:'bg-gray-100',tx:'text-gray-700'},
+  submitted:{l:'Submitted',a:'مقدم',bg:'bg-blue-100',tx:'text-blue-700'},
+  under_review:{l:'Under Review',a:'قيد المراجعة',bg:'bg-yellow-100',tx:'text-yellow-700'},
+  awaiting_info:{l:'Awaiting Info',a:'بانتظار معلومات',bg:'bg-orange-100',tx:'text-orange-700'},
+  approved:{l:'Approved',a:'موافق عليه',bg:'bg-green-100',tx:'text-green-700'},
+  rejected:{l:'Rejected',a:'مرفوض',bg:'bg-red-100',tx:'text-red-700'},
+  resolved:{l:'Resolved',a:'تم الحل',bg:'bg-emerald-100',tx:'text-emerald-700'},
+  closed:{l:'Closed',a:'مغلق',bg:'bg-slate-100',tx:'text-slate-700'},
+  open:{l:'Open',a:'مفتوح',bg:'bg-blue-100',tx:'text-blue-700'},
+  in_progress:{l:'In Progress',a:'جاري',bg:'bg-yellow-100',tx:'text-yellow-700'},
 };
 const sevCfg: Record<string,{l:string;c:string}> = {low:{l:'Low',c:'text-green-600'},medium:{l:'Medium',c:'text-yellow-600'},high:{l:'High',c:'text-orange-600'},critical:{l:'Critical',c:'text-red-600'}};
 
@@ -33,7 +33,7 @@ export default function ClaimsListPage() {
   const [pg, setPg] = useState(0);
   const PS = 20;
   const t = isRTL
-    ? {title:'Ø§ÙÙØ·Ø§ÙØ¨Ø§Øª',search:'Ø¨Ø­Ø«...',none:'ÙØ§ ØªÙØ¬Ø¯ ÙØ·Ø§ÙØ¨Ø§Øª',noneD:'ÙÙ ÙØªÙ Ø§ÙØ¹Ø«ÙØ± Ø¹ÙÙ ÙØ·Ø§ÙØ¨Ø§Øª',empty:'ÙØ§ ØªÙØ¬Ø¯ ÙØ·Ø§ÙØ¨Ø§Øª Ø¨Ø¹Ø¯',emptyD:'Ø³ØªØ¸ÙØ± ÙØ·Ø§ÙØ¨Ø§ØªÙ ÙÙØ§',war:'Ø§ÙØ¶ÙØ§Ù',sev:'Ø§ÙØ®Ø·ÙØ±Ø©',filed:'ØªØ§Ø±ÙØ®',stat:'Ø§ÙØ­Ø§ÙØ©',prev:'Ø§ÙØ³Ø§Ø¨Ù',next:'Ø§ÙØªØ§ÙÙ',back:'Ø§ÙØ¹ÙØ¯Ø©',all:'Ø§ÙÙÙ',err:'Ø­Ø¯Ø« Ø®Ø·Ø£',retry:'Ø¥Ø¹Ø§Ø¯Ø©'}
+    ? {title:'المطالبات',search:'بحث...',none:'لا توجد مطالبات',noneD:'لم يتم العثور على مطالبات',empty:'لا توجد مطالبات بعد',emptyD:'ستظهر مطالباتك هنا',war:'الضمان',sev:'الخطورة',filed:'تاريخ',stat:'الحالة',prev:'السابق',next:'التالي',back:'العودة',all:'الكل',err:'حدث خطأ',retry:'إعادة'}
     : {title:'Claims',search:'Search claims...',none:'No claims found',noneD:'No claims match your filters.',empty:'No claims yet',emptyD:'File a claim from a warranty to see it here.',war:'Warranty',sev:'Severity',filed:'Filed',stat:'Status',prev:'Previous',next:'Next',back:'Back to Dashboard',all:'All',err:'Something went wrong',retry:'Retry'};
   const load = async () => {
     setLoading(true); setError('');
