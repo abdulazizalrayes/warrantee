@@ -18,24 +18,24 @@ export function Footer({ locale, dictionary }: FooterProps) {
       title: dictionary.footer.product,
       links: [
         { label: dictionary.nav.features, href: `/${locale}#features` },
-        { label: locale === 'en' ? 'How It Works' : 'ÙÙÙ ÙØ¹ÙÙ', href: `/${locale}#how-it-works` },
+        { label: locale === 'en' ? 'How It Works' : 'كيف يعمل', href: `/${locale}#how-it-works` },
         { label: dictionary.nav.pricing, href: `/${locale}#pricing` },
       ],
     },
     {
       title: dictionary.footer.company,
       links: [
-        { label: locale === 'en' ? 'About' : 'Ø¹Ù Ø§ÙØ´Ø±ÙØ©', href: `/${locale}#about` },
+        { label: locale === 'en' ? 'About' : 'عن الشركة', href: `/${locale}#about` },
         { label: dictionary.nav.contact, href: `/${locale}#contact` },
-        { label: locale === 'en' ? 'Blog' : 'Ø§ÙÙØ¯ÙÙØ©', href: `/${locale}#blog` },
+        { label: locale === 'en' ? 'Blog' : 'المدونة', href: `/${locale}#blog` },
       ],
     },
     {
       title: dictionary.footer.legal,
       links: [
-        { label: locale === 'en' ? 'Privacy Policy' : 'Ø³ÙØ§Ø³Ø© Ø§ÙØ®ØµÙØµÙØ©', href: `/${locale}/privacy` },
-        { label: locale === 'en' ? 'Terms of Service' : 'Ø´Ø±ÙØ· Ø§ÙØ®Ø¯ÙØ©', href: `/${locale}/terms` },
-        { label: locale === 'en' ? 'Cookie Policy' : 'Ø³ÙØ§Ø³Ø© ÙÙÙØ§Øª ØªØ¹Ø±ÙÙ Ø§ÙØ§Ø±ØªØ¨Ø§Ø·', href: `/${locale}/cookies` },
+        { label: locale === 'en' ? 'Privacy Policy' : 'سياسة الخصوصية', href: `/${locale}/privacy` },
+        { label: locale === 'en' ? 'Terms of Service' : 'شروط الخدمة', href: `/${locale}/terms` },
+        { label: locale === 'en' ? 'Cookie Policy' : 'سياسة ملفات تعريف الارتباط', href: `/${locale}/cookies` },
       ],
     },
   ];
@@ -55,8 +55,8 @@ export function Footer({ locale, dictionary }: FooterProps) {
             </Link>
             <p className="text-sm text-warm-white/60 mb-4">
               {locale === 'en'
-                ? 'Trust the Termsâ¢. Track every warranty with confidence.'
-                : 'Ø«Ù Ø¨Ø§ÙØ´Ø±ÙØ·â¢. ØªØªØ¨Ø¹ ÙÙ Ø¶ÙØ§Ù Ø¨Ø«ÙØ©.'}
+                ? 'Trust the Terms™. Track every warranty with confidence.'
+                : 'ثق بالشروط™. تتبع كل ضمان بثقة.'}
             </p>
             <div className="flex gap-3 items-center">
               <LanguageToggle
@@ -96,10 +96,10 @@ export function Footer({ locale, dictionary }: FooterProps) {
           >
             <p className="text-sm text-warm-white/60">
               {locale === 'en'
-                ? `Â© ${currentYear} Warrantee. All rights reserved.`
-                : `Â© ${currentYear} Warrantee. Ø¬ÙÙØ¹ Ø§ÙØ­ÙÙÙ ÙØ­ÙÙØ¸Ø©.`}
+                ? `© ${currentYear} Warrantee. All rights reserved.`
+                : `© ${currentYear} Warrantee. جميع الحقوق محفوظة.`}
             </p>
-            <p className="text-sm font-medium text-gold">Trust the Termsâ¢</p>
+            <p className="text-sm font-medium text-gold">Trust the Terms™</p>
           </div>
         </div>
       </div>
