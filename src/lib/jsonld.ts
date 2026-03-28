@@ -10,7 +10,7 @@ export function getOrganizationJsonLd() {
     operatingSystem: "Web",
     offers: [
       { "@type": "Offer", name: "Free", price: "0", priceCurrency: "USD", description: "Up to 10 warranties, basic dashboard" },
-      { "@type": "Offer", name: "Professional", price: "99", priceCurrency: "USD", description: "Unlimited warranties, advanced features, first year free" },
+      { "@type": "Offer", name: "Professional", price: "1", priceCurrency: "USD", description: "Unlimited warranties, advanced features, first month free" },
     ],
     inLanguage: ["en", "ar"],
     author: { "@type": "Organization", name: "Warrantee", url: "https://warrantee.io", email: "hello@warrantee.io" },
@@ -40,7 +40,7 @@ export function getFAQJsonLd(locale: string = "en") {
           "@type": "Answer",
           text: isAr
             ? "\u064a\u0642\u062f\u0645 Warrantee \u062e\u0637\u0629 \u0645\u062c\u0627\u0646\u064a\u0629 \u0648\u062e\u0637\u0629 \u0627\u062d\u062a\u0631\u0627\u0641\u064a\u0629 \u0648\u062e\u0637\u0629 \u0645\u0624\u0633\u0633\u064a\u0629."
-            : "Warrantee offers a Free plan (up to 10 warranties), Professional plan ($99/month with first year free), and Enterprise plan with custom pricing.",
+            : "Warrantee offers a Free plan (up to 10 warranties), Professional plan ($1/month with first month free), and Enterprise plan with custom pricing.",
         },
       },
     ],
