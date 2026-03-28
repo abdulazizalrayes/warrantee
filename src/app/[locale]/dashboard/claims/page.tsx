@@ -23,7 +23,7 @@ const sevCfg: Record<string,{l:string;c:string}> = {low:{l:'Low',c:'text-green-6
 
 export default function ClaimsListPage() {
   const pathname = usePathname();
-  const locale = pathname?.split('/')[1] || 'en';
+  const locale = pathname?.startsWith('/ar') ? 'ar' : 'en';
   const isRTL = locale === 'ar';
   const [claims, setClaims] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -34,7 +34,7 @@ export default function ClaimsListPage() {
   const PS = 20;
   const t = isRTL
     ? {title:'Ø§ÙÙØ·Ø§ÙØ¨Ø§Øª',search:'Ø¨Ø­Ø«...',none:'ÙØ§ ØªÙØ¬Ø¯ ÙØ·Ø§ÙØ¨Ø§Øª',noneD:'ÙÙ ÙØªÙ Ø§ÙØ¹Ø«ÙØ± Ø¹ÙÙ ÙØ·Ø§ÙØ¨Ø§Øª',empty:'ÙØ§ ØªÙØ¬Ø¯ ÙØ·Ø§ÙØ¨Ø§Øª Ø¨Ø¹Ø¯',emptyD:'Ø³ØªØ¸ÙØ± ÙØ·Ø§ÙØ¨Ø§ØªÙ ÙÙØ§',war:'Ø§ÙØ¶ÙØ§Ù',sev:'Ø§ÙØ®Ø·ÙØ±Ø©',filed:'ØªØ§Ø±ÙØ®',stat:'Ø§ÙØ­Ø§ÙØ©',prev:'Ø§ÙØ³Ø§Ø¨Ù',next:'Ø§ÙØªØ§ÙÙ',back:'Ø§ÙØ¹ÙØ¯Ø©',all:'Ø§ÙÙÙ',err:'Ø­Ø¯Ø« Ø®Ø·Ø£',retry:'Ø¥Ø¹Ø§Ø¯Ø©'}
-    : {title:t.claims.title,search:'Search claims...',none:t.claims.no_claims,noneD:'No claims match your filters.',empty:t.claims.no_claims,emptyD:'File a claim from a warranty to see it here.',war:'Warranty',sev:'Severity',filed:'Filed',stat:'Status',prev:t.common.previous,next:t.common.next,back:t.common.back,all:t.common.all,err:t.common.error,retry:t.common.retry};
+    : {title:'Claims',search:'Search claims...',none:'No claims found',noneD:'No claims match your filters.',empty:'No claims yet',emptyD:'File a claim from a warranty to see it here.',war:'Warranty',sev:'Severity',filed:'Filed',stat:'Status',prev:'Previous',next:'Next',back:'Back to Dashboard',all:'All',err:'Something went wrong',retry:'Retry'};
   const load = async () => {
     setLoading(true); setError('');
     try {
