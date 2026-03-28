@@ -7,15 +7,9 @@ import { getOrganizationJsonLd } from "@/lib/jsonld";
 import "@/app/globals.css";
 import dynamic from "next/dynamic";
 
-const GoogleAnalytics = dynamic(() => import("@/components/GoogleAnalytics"), {
-  ssr: false,
-});
-const Hotjar = dynamic(() => import("@/components/Hotjar"), {
-  ssr: false,
-});
-const CookieConsent = dynamic(() => import("@/components/CookieConsent"), {
-  ssr: false,
-});
+const GoogleAnalytics = dynamic(() => import("@/components/GoogleAnalytics"));
+const Hotjar = dynamic(() => import("@/components/Hotjar"));
+const CookieConsent = dynamic(() => import("@/components/CookieConsent"));
 
 export const metadata: Metadata = {
   title: "Warrantee Ã¢ÂÂ Trust the TermsÃ¢ÂÂ¢",
