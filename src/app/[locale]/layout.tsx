@@ -3,11 +3,19 @@ import type { Metadata, Viewport } from "next";
 import { notFound } from "next/navigation";
 import { isValidLocale, DIRECTION } from "@/lib/i18n";
 import { AuthProvider } from "@/lib/auth-context";
-import GoogleAnalytics from "@/components/GoogleAnalytics";
-import Hotjar from "@/components/Hotjar";
-import CookieConsent from "@/components/CookieConsent";
 import { getOrganizationJsonLd } from "@/lib/jsonld";
 import "@/app/globals.css";
+import dynamic from "next/dynamic";
+
+const GoogleAnalytics = dynamic(() => import("@/components/GoogleAnalytics"), {
+  ssr: false,
+});
+const Hotjar = dynamic(() => import("@/components/Hotjar"), {
+  ssr: false,
+});
+const CookieConsent = dynamic(() => import("@/components/CookieConsent"), {
+  ssr: false,
+});
 
 export const metadata: Metadata = {
   title: "Warrantee Ã¢ÂÂ Trust the TermsÃ¢ÂÂ¢",
