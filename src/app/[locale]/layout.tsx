@@ -4,19 +4,20 @@ import { notFound } from "next/navigation";
 import { isValidLocale, DIRECTION } from "@/lib/i18n";
 import { AuthProvider } from "@/lib/auth-context";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
+import Hotjar from "@/components/Hotjar";
 import CookieConsent from "@/components/CookieConsent";
 import { getOrganizationJsonLd } from "@/lib/jsonld";
 import "@/app/globals.css";
 
 export const metadata: Metadata = {
-  title: "Warrantee — Trust the Terms™",
+  title: "Warrantee â Trust the Termsâ¢",
   description: "Warrantee is the warranty management platform for businesses and consumers. Track, approve, and extend warranties with confidence. Bilingual Arabic and English.",
   keywords: [
     "warranty management", "warranty tracking", "warranty tracking app", "warranty reminder",
     "warranty management software", "warranty management platform", "warranty claim management",
     "warranty transfer", "digital warranty", "warranty certificates", "construction warranty",
     "OCR warranty scanning", "bilingual warranty", "Arabic warranty management",
-    "إدارة الضمانات", "تتبع الضمان", "تذكير الضمان", "نقل الضمان",
+    "Ø¥Ø¯Ø§Ø±Ø© Ø§ÙØ¶ÙØ§ÙØ§Øª", "ØªØªØ¨Ø¹ Ø§ÙØ¶ÙØ§Ù", "ØªØ°ÙÙØ± Ø§ÙØ¶ÙØ§Ù", "ÙÙÙ Ø§ÙØ¶ÙØ§Ù",
     "warrantee", "warrantee.io", "SaaS", "GCC", "Saudi Arabia", "UAE", "warranty app",
   ],
   robots: "index, follow",
@@ -27,17 +28,17 @@ export const metadata: Metadata = {
     google: "4tG-gxxHOu8AVF1Mm-qHOJIoq1SHqJmvGsx72zR97v8",
   },
   openGraph: {
-    title: "Warrantee — Trust the Terms™",
+    title: "Warrantee â Trust the Termsâ¢",
     description: "Track, manage, transfer, and claim warranties in one place. Bilingual Arabic & English. Free to start.",
     url: "https://warrantee.io",
     siteName: "Warrantee",
     locale: "en_US",
     type: "website",
-    images: [{ url: "https://warrantee.io/og-image.png", width: 1200, height: 630, alt: "Warrantee — Warranty Management Platform" }],
+    images: [{ url: "https://warrantee.io/og-image.png", width: 1200, height: 630, alt: "Warrantee â Warranty Management Platform" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Warrantee — Trust the Terms™",
+    title: "Warrantee â Trust the Termsâ¢",
     description: "Track, manage, transfer, and claim warranties. Bilingual AR+EN. Free to start.",
     images: ["https://warrantee.io/og-image.png"],
     creator: "@warrantee_io",
@@ -88,6 +89,7 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
       </head>
       <body className="bg-[#FAFAFA] text-[#1A1A2E] antialiased">
         <GoogleAnalytics />
+          <Hotjar />
         <AuthProvider>{children}</AuthProvider>
         <CookieConsent />
       </body>
