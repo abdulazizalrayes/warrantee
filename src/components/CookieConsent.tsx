@@ -85,7 +85,7 @@ export default function CookieConsent() {
   if (!showBanner) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 p-4" dir={isRTL ? 'rtl' : 'ltr'}>
+    <div className="fixed bottom-0 left-0 right-0 z-50 p-4" role="dialog" aria-label="Cookie consent" aria-live="polite" dir={isRTL ? 'rtl' : 'ltr'}>
       <div className="max-w-2xl mx-auto bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
         <div className="p-6">
           <div className="flex items-center gap-2 mb-3">
