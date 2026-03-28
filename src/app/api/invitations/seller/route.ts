@@ -6,7 +6,13 @@ import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+let _resend: Resend | null = null;
+function getResend() {
+  if (!_resend) {
+    _resend = new Resend(process.env.RESEND_API_KEY);
+  }
+  return _resend;
+}
 
 export async function POST(request: NextRequest) {
   const cookieStore = await cookies();
@@ -86,7 +92,7 @@ export async function POST(request: NextRequest) {
   const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL}/en/seller/accept-invite?token=${invitation.token}`;
 
   try {
-    await resend.emails.send({
+    await getResend().emails.send({
       from: 'Warrantee <noreply@warrantee.io>',
       to: seller_email,
       subject: `${inviterProfile?.full_name || 'A customer'} invited you to Warrantee`,
