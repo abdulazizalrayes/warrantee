@@ -12,14 +12,14 @@ const Hotjar = dynamic(() => import("@/components/Hotjar"));
 const CookieConsent = dynamic(() => import("@/components/CookieConsent"));
 
 export const metadata: Metadata = {
-  title: "Warrantee Ã¢ÂÂ Trust the TermsÃ¢ÂÂ¢",
+  title: "Warrantee — Trust the Terms™",
   description: "Warrantee is the warranty management platform for businesses and consumers. Track, approve, and extend warranties with confidence. Bilingual Arabic and English.",
   keywords: [
     "warranty management", "warranty tracking", "warranty tracking app", "warranty reminder",
     "warranty management software", "warranty management platform", "warranty claim management",
     "warranty transfer", "digital warranty", "warranty certificates", "construction warranty",
     "OCR warranty scanning", "bilingual warranty", "Arabic warranty management",
-    "ÃÂ¥ÃÂ¯ÃÂ§ÃÂ±ÃÂ© ÃÂ§ÃÂÃÂ¶ÃÂÃÂ§ÃÂÃÂ§ÃÂª", "ÃÂªÃÂªÃÂ¨ÃÂ¹ ÃÂ§ÃÂÃÂ¶ÃÂÃÂ§ÃÂ", "ÃÂªÃÂ°ÃÂÃÂÃÂ± ÃÂ§ÃÂÃÂ¶ÃÂÃÂ§ÃÂ", "ÃÂÃÂÃÂ ÃÂ§ÃÂÃÂ¶ÃÂÃÂ§ÃÂ",
+    "إدارة الضمانات", "تتبع الضمان", "تذكير الضمان", "نقل الضمان",
     "warrantee", "warrantee.io", "SaaS", "GCC", "Saudi Arabia", "UAE", "warranty app",
   ],
   robots: "index, follow",
@@ -30,17 +30,17 @@ export const metadata: Metadata = {
     google: "4tG-gxxHOu8AVF1Mm-qHOJIoq1SHqJmvGsx72zR97v8",
   },
   openGraph: {
-    title: "Warrantee Ã¢ÂÂ Trust the TermsÃ¢ÂÂ¢",
+    title: "Warrantee — Trust the Terms™",
     description: "Track, manage, transfer, and claim warranties in one place. Bilingual Arabic & English. Free to start.",
     url: "https://warrantee.io",
     siteName: "Warrantee",
     locale: "en_US",
     type: "website",
-    images: [{ url: "https://warrantee.io/og-image.png", width: 1200, height: 630, alt: "Warrantee Ã¢ÂÂ Warranty Management Platform" }],
+    images: [{ url: "https://warrantee.io/og-image.png", width: 1200, height: 630, alt: "Warrantee — Warranty Management Platform" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Warrantee Ã¢ÂÂ Trust the TermsÃ¢ÂÂ¢",
+    title: "Warrantee — Trust the Terms™",
     description: "Track, manage, transfer, and claim warranties. Bilingual AR+EN. Free to start.",
     images: ["https://warrantee.io/og-image.png"],
     creator: "@warrantee_io",
