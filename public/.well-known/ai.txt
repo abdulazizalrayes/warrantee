@@ -1,0 +1,24 @@
+# Warrantee AI Information
+# https://warrantee.io
+
+User-agent: *
+Full-Name: Warrantee - Trust the Terms
+Description: Bilingual (EN/AR) warranty management platform for the Saudi construction sector. Manage warranties, track claims, and enforce obligations digitally.
+Website: https://warrantee.io
+Contact: support@warrantee.io
+Logo: https://warrantee.io/icon
+Privacy-Policy: https://warrantee.io/en/terms
+Terms-of-Service: https://warrantee.io/en/terms
+
+# AI Crawling Policy
+Allow: /en/
+Allow: /ar/
+Allow: /en/features
+Allow: /en/pricing
+Allow: /en/faq
+Allow: /en/contact
+Allow: /en/terms
+Disallow: /en/dashboard
+Disallow: /en/admin
+Disallow: /en/seller
+Disallow: /api/
