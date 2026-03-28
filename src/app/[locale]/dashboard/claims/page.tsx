@@ -23,7 +23,7 @@ const sevCfg: Record<string,{l:string;c:string}> = {low:{l:'Low',c:'text-green-6
 
 export default function ClaimsListPage() {
   const pathname = usePathname();
-  const locale = pathname.split('/')[1] || 'en';
+  const locale = pathname?.split('/')[1] || 'en';
   const isRTL = locale === 'ar';
   const [claims, setClaims] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
