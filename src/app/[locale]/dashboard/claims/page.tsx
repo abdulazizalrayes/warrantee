@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { createBrowserClient } from '@supabase/ssr';
-import { getDictionary } from '@/lib/i18n';
 
 const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
 const STATUSES = ['all','draft','submitted','under_review','awaiting_info','approved','rejected','resolved','closed'];
@@ -25,7 +24,6 @@ const sevCfg: Record<string,{l:string;c:string}> = {low:{l:'Low',c:'text-green-6
 export default function ClaimsListPage() {
   const pathname = usePathname();
   const locale = pathname.split('/')[1] || 'en';
-  const t = getDictionary(locale);
   const isRTL = locale === 'ar';
   const [claims, setClaims] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
