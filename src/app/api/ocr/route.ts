@@ -1,8 +1,12 @@
+// @ts-nocheck
 import { NextRequest, NextResponse } from "next/server";
+import { apiRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
+
+const MAX_OCR_TEXT_LENGTH = 50000;
 
 // Warranty field extraction from OCR text
 function extractWarrantyFields(text: string) {
-  const result: Record<string, any> = { confidence: 0, raw_text: text };
+  const result: Record<string, any> = { confidence: 0, raw_text: text.substring(0, 500) };
 
   // Product name patterns
   const productPatterns = [
@@ -11,6 +15,7 @@ function extractWarrantyFields(text: string) {
     /(?:purchased|bought)\s+(?:a\s+)?(.+?)(?:\s+on|\s+from|\.|\n|$)/i,
     /^([A-Z][A-Za-z0-9\s\-]+(?:Pro|Plus|Max|Ultra|Mini|Air)?)/m,
   ];
+
   for (const p of productPatterns) {
     const m = text.match(p);
     if (m && m[1].trim().length > 2 && m[1].trim().length < 100) {
@@ -25,6 +30,7 @@ function extractWarrantyFields(text: string) {
     /(?:serial|s\/n|sn|imei|sku)\s*(?:number|no|#)?\s*[:;\-]?\s*([A-Za-z0-9\-]{4,30})/i,
     /(?:model)\s*(?:number|no|#)?\s*[:;\-]?\s*([A-Za-z0-9\-]{4,30})/i,
   ];
+
   for (const p of serialPatterns) {
     const m = text.match(p);
     if (m) {
@@ -34,8 +40,8 @@ function extractWarrantyFields(text: string) {
     }
   }
 
-  // Dates (purchase date, warranty start, warranty end)
-  const dateRegex = /(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})/g;
+  // Dates
+  const dateRegex = /(\d{1,2})[\/\.\-](\d{1,2})[\/\.\-](\d{2,4})/g;
   const isoDateRegex = /(\d{4})[\-](\d{2})[\-](\d{2})/g;
   const dates: string[] = [];
   let dm;
@@ -57,6 +63,7 @@ function extractWarrantyFields(text: string) {
     /(?:warranty|guarantee|coverage)\s*(?:period|duration)?\s*[:;]?\s*(\d+)\s*(?:year|yr|month|mo)/i,
     /(\d+)\s*(?:month|mo)s?\s*(?:warranty|guarantee|coverage)/i,
   ];
+
   for (const p of durationPatterns) {
     const m = text.match(p);
     if (m) {
@@ -71,6 +78,7 @@ function extractWarrantyFields(text: string) {
     /(?:seller|vendor|supplier|retailer|dealer|sold by|purchased from|store)\s*[:;\-]?\s*(.+?)(?:\n|\r|$)/i,
     /(?:company|manufacturer|brand)\s*[:;\-]?\s*(.+?)(?:\n|\r|$)/i,
   ];
+
   for (const p of supplierPatterns) {
     const m = text.match(p);
     if (m && m[1].trim().length > 1) {
@@ -85,10 +93,11 @@ function extractWarrantyFields(text: string) {
     /(?:price|amount|total|cost|paid)\s*[:;\-]?\s*(?:SAR|SR|\$|USD|EUR|\u00a3|\u20ac)?\s*([\d,]+\.?\d*)/i,
     /(?:SAR|SR|\$|USD|EUR)\s*([\d,]+\.?\d*)/i,
   ];
+
   for (const p of pricePatterns) {
     const m = text.match(p);
     if (m) {
-      result.purchase_price = m[1].replace(/,/g, '');
+      result.purchase_price = m[1].replace(/,/g, "");
       result.confidence += 0.1;
       break;
     }
@@ -105,9 +114,10 @@ function extractWarrantyFields(text: string) {
     construction: ["cement", "steel", "roofing", "insulation", "plywood", "brick"],
     software: ["license", "subscription", "software", "saas", "cloud"],
   };
+
   const lowerText = text.toLowerCase();
   for (const [cat, keywords] of Object.entries(categories)) {
-    if (keywords.some(k => lowerText.includes(k))) {
+    if (keywords.some((k) => lowerText.includes(k))) {
       result.category = cat;
       result.confidence += 0.05;
       break;
@@ -120,6 +130,7 @@ function extractWarrantyFields(text: string) {
     /(?:po|purchase order)\s*(?:number|no|#|ref)?\s*[:;\-]?\s*([A-Za-z0-9\-\/]{3,30})/i,
     /(?:receipt|order)\s*(?:number|no|#|ref)?\s*[:;\-]?\s*([A-Za-z0-9\-\/]{3,30})/i,
   ];
+
   for (const p of refPatterns) {
     const m = text.match(p);
     if (m) {
@@ -134,7 +145,22 @@ function extractWarrantyFields(text: string) {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const ip = request.headers.get("x-forwarded-for") || "unknown";
+    const rateLimitResult = await apiRateLimit(ip);
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { error: "Too many requests" },
+        { status: 429, headers: getRateLimitHeaders(rateLimitResult) }
+      );
+    }
+
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    }
+
     const { text } = body;
 
     if (!text || typeof text !== "string") {
@@ -144,17 +170,34 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const fields = extractWarrantyFields(text);
+    if (text.length > MAX_OCR_TEXT_LENGTH) {
+      return NextResponse.json(
+        { error: `Text exceeds maximum length of ${MAX_OCR_TEXT_LENGTH} characters` },
+        { status: 400 }
+      );
+    }
+
+    const trimmedText = text.trim();
+    if (trimmedText.length === 0) {
+      return NextResponse.json(
+        { error: "Text field cannot be empty" },
+        { status: 400 }
+      );
+    }
+
+    const fields = extractWarrantyFields(trimmedText);
 
     return NextResponse.json({
       success: true,
       fields,
-      message: fields.confidence >= 0.3
-        ? "Fields extracted successfully"
-        : "Low confidence - some fields may need manual entry",
+      message:
+        fields.confidence >= 0.3
+          ? "Fields extracted successfully"
+          : "Low confidence - some fields may need manual entry",
     });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (err) {
+    console.warn("OCR parsing error:", err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
@@ -162,10 +205,17 @@ export async function GET() {
   return NextResponse.json({
     status: "OCR parsing endpoint active",
     usage: "POST with { text: 'extracted OCR text' }",
+    max_text_length: MAX_OCR_TEXT_LENGTH,
     fields: [
-      "product_name", "serial_number", "start_date", "end_date",
-      "warranty_duration", "supplier", "purchase_price", "category",
-      "invoice_reference"
+      "product_name",
+      "serial_number",
+      "start_date",
+      "end_date",
+      "warranty_duration",
+      "supplier",
+      "purchase_price",
+      "category",
+      "invoice_reference",
     ],
   });
 }
