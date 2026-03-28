@@ -32,11 +32,11 @@ const plans = [
     iconBg: "bg-[#f5f5f7]",
     price: 0,
     features_en: ["Up to 10 warranties", "Basic dashboard", "Email support", "Single user"],
-    features_ar: ["Ø­ØªÙ 10 Ø¶ÙØ§ÙØ§Øª", "ÙÙØ­Ø© Ø£Ø³Ø§Ø³ÙØ©", "Ø¯Ø¹Ù Ø¨Ø±ÙØ¯", "ÙØ³ØªØ®Ø¯Ù ÙØ§Ø­Ø¯"],
+    features_ar: ["حتى 10 ضمانات", "لوحة أساسية", "دعم بريد", "مستخدم واحد"],
     name_en: "Free",
-    name_ar: "ÙØ¬Ø§ÙÙ",
+    name_ar: "مجاني",
     desc_en: "For individuals getting started",
-    desc_ar: "ÙÙØ£ÙØ±Ø§Ø¯ Ø§ÙØ°ÙÙ ÙØ¨Ø¯Ø£ÙÙ"
+    desc_ar: "للأفراد الذين يبدأون"
   },
   {
     id: "pro",
@@ -46,11 +46,11 @@ const plans = [
     price: 1,
     popular: true,
     features_en: ["Unlimited warranties", "Advanced analytics", "Priority support", "Up to 5 team members", "Custom workflows", "Bilingual certificates", "8% commission"],
-    features_ar: ["Ø¶ÙØ§ÙØ§Øª ØºÙØ± ÙØ­Ø¯ÙØ¯Ø©", "ØªØ­ÙÙÙØ§Øª ÙØªÙØ¯ÙØ©", "Ø¯Ø¹Ù Ø£ÙÙÙÙØ©", "Ø­ØªÙ 5 Ø£Ø¹Ø¶Ø§Ø¡", "Ø³ÙØ± Ø¹ÙÙ ÙØ®ØµØµ", "Ø´ÙØ§Ø¯Ø§Øª Ø«ÙØ§Ø¦ÙØ©", "Ø¹ÙÙÙØ© 8%"],
+    features_ar: ["ضمانات غير محدودة", "تحليلات متقدمة", "دعم أولوية", "حتى 5 أعضاء", "سير عمل مخصص", "شهادات ثنائية", "عمولة 8%"],
     name_en: "Professional",
-    name_ar: "Ø§Ø­ØªØ±Ø§ÙÙ",
+    name_ar: "احترافي",
     desc_en: "For growing businesses",
-    desc_ar: "ÙÙØ´Ø±ÙØ§Øª Ø§ÙÙØ§ÙÙØ©"
+    desc_ar: "للشركات النامية"
   },
   {
     id: "enterprise",
@@ -59,11 +59,11 @@ const plans = [
     iconBg: "bg-[#0071e3]/10",
     price: -1,
     features_en: ["Everything in Professional", "Unlimited team members", "Dedicated account manager", "Custom integrations", "SLA guarantee"],
-    features_ar: ["ÙÙ ÙØ§ ÙÙ Ø§ÙØ§Ø­ØªØ±Ø§ÙÙ", "Ø£Ø¹Ø¶Ø§Ø¡ ØºÙØ± ÙØ­Ø¯ÙØ¯ÙÙ", "ÙØ¯ÙØ± Ø­Ø³Ø§Ø¨ ÙØ®ØµØµ", "ØªÙØ§ÙÙØ§Øª ÙØ®ØµØµØ©", "Ø¶ÙØ§Ù SLA"],
+    features_ar: ["كل ما في الاحترافي", "أعضاء غير محدودين", "مدير حساب مخصص", "تكاملات مخصصة", "ضمان SLA"],
     name_en: "Enterprise",
-    name_ar: "ÙØ¤Ø³Ø³Ù",
+    name_ar: "مؤسسي",
     desc_en: "For large organizations",
-    desc_ar: "ÙÙÙØ¤Ø³Ø³Ø§Øª Ø§ÙÙØ¨ÙØ±Ø©"
+    desc_ar: "للمؤسسات الكبيرة"
   },
 ];
 
@@ -93,7 +93,7 @@ export default function BillingPage() {
 
   const handleUpgrade = async (planId: string) => {
     if (planId === "enterprise") {
-      window.location.href = "mailto:hello@warrantee.io?subject=" + encodeURIComponent(isRTL ? "Ø§Ø³ØªÙØ³Ø§Ø± Ø¹Ù Ø®Ø·Ø© Ø§ÙÙØ¤Ø³Ø³Ø§Øª" : "Enterprise Plan Inquiry");
+      window.location.href = "mailto:hello@warrantee.io?subject=" + encodeURIComponent(isRTL ? "استفسار عن خطة المؤسسات" : "Enterprise Plan Inquiry");
       return;
     }
     setUpgrading(true);
@@ -119,11 +119,11 @@ export default function BillingPage() {
   const currentPlan = subscription?.plan_id || "free";
 
   const sections = [
-    { id: "profile", label: isRTL ? "Ø§ÙÙÙÙ Ø§ÙØ´Ø®ØµÙ" : "Profile", icon: User, href: `/${locale}/settings` },
-    { id: "notifications", label: isRTL ? "Ø§ÙØ¥Ø´Ø¹Ø§Ø±Ø§Øª" : "Notifications", icon: Bell, href: `/${locale}/settings` },
-    { id: "language", label: isRTL ? "Ø§ÙÙØºØ© ÙØ§ÙÙÙØ·ÙØ©" : "Language & Region", icon: Globe, href: `/${locale}/settings` },
-    { id: "subscription", label: isRTL ? "Ø§ÙØ§Ø´ØªØ±Ø§Ù" : "Subscription", icon: CreditCard, href: `/${locale}/billing`, active: true },
-    { id: "security", label: isRTL ? "Ø§ÙØ£ÙØ§Ù" : "Security", icon: Shield, href: `/${locale}/settings` },
+    { id: "profile", label: isRTL ? "الملف الشخصي" : "Profile", icon: User, href: `/${locale}/settings` },
+    { id: "notifications", label: isRTL ? "الإشعارات" : "Notifications", icon: Bell, href: `/${locale}/settings` },
+    { id: "language", label: isRTL ? "اللغة والمنطقة" : "Language & Region", icon: Globe, href: `/${locale}/settings` },
+    { id: "subscription", label: isRTL ? "الاشتراك" : "Subscription", icon: CreditCard, href: `/${locale}/billing`, active: true },
+    { id: "security", label: isRTL ? "الأمان" : "Security", icon: Shield, href: `/${locale}/settings` },
   ];
 
   if (loading || authLoading) {
@@ -150,13 +150,13 @@ export default function BillingPage() {
           ) : (
             <ChevronLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
           )}
-          {isRTL ? "Ø§ÙØ¹ÙØ¯Ø© ÙÙØ¥Ø¹Ø¯Ø§Ø¯Ø§Øª" : "Back to Settings"}
+          {isRTL ? "العودة للإعدادات" : "Back to Settings"}
         </button>
         <h1 className="text-[32px] sm:text-[40px] font-semibold tracking-tight text-[#1d1d1f]">
           {dict.common.settings}
         </h1>
         <p className="text-[17px] text-[#86868b] mt-2">
-          {isRTL ? "Ø¥Ø¯Ø§Ø±Ø© Ø§Ø´ØªØ±Ø§ÙÙ ÙÙÙØ§ØªÙØ±Ù" : "Manage your subscription and billing"}
+          {isRTL ? "إدارة اشتراكك وفواتيرك" : "Manage your subscription and billing"}
         </p>
       </div>
 
@@ -196,7 +196,7 @@ export default function BillingPage() {
                   </div>
                   <div>
                     <p className="text-[13px] font-medium text-white/60 uppercase tracking-wide">
-                      {isRTL ? "Ø®Ø·ØªÙ Ø§ÙØ­Ø§ÙÙØ©" : "Current Plan"}
+                      {isRTL ? "خطتك الحالية" : "Current Plan"}
                     </p>
                     <p className="text-[21px] font-semibold tracking-tight">
                       {plans.find((p) => p.id === currentPlan)?.[isRTL ? "name_ar" : "name_en"] || currentPlan}
@@ -204,27 +204,27 @@ export default function BillingPage() {
                   </div>
                 </div>
                 <span className="text-[13px] font-medium bg-[#D4A853] text-[#1A1A2E] px-3 py-1 rounded-full">
-                  {subscription.status === "trialing" ? (isRTL ? "ØªØ¬Ø±ÙØ¨Ù" : "Trial") : (isRTL ? "ÙØ´Ø·" : "Active")}
+                  {subscription.status === "trialing" ? (isRTL ? "تجريبي" : "Trial") : (isRTL ? "نشط" : "Active")}
                 </span>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 <div className="bg-white/5 rounded-xl p-4">
-                  <p className="text-[12px] text-white/50 mb-1">{isRTL ? "Ø§ÙØ¶ÙØ§ÙØ§Øª" : "Warranties"}</p>
+                  <p className="text-[12px] text-white/50 mb-1">{isRTL ? "الضمانات" : "Warranties"}</p>
                   <p className="text-[20px] font-semibold">{subscription.warranties_used}{subscription.warranty_limit > 0 && <span className="text-[14px] font-normal text-white/40"> / {subscription.warranty_limit}</span>}</p>
                 </div>
                 <div className="bg-white/5 rounded-xl p-4">
-                  <p className="text-[12px] text-white/50 mb-1">{isRTL ? "Ø§ÙÙØ±ÙÙ" : "Team"}</p>
+                  <p className="text-[12px] text-white/50 mb-1">{isRTL ? "الفريق" : "Team"}</p>
                   <p className="text-[20px] font-semibold">{subscription.team_members_used}{subscription.team_limit > 0 && <span className="text-[14px] font-normal text-white/40"> / {subscription.team_limit}</span>}</p>
                 </div>
                 {subscription.trial_end && (
                   <div className="bg-white/5 rounded-xl p-4">
-                    <p className="text-[12px] text-white/50 mb-1">{isRTL ? "ÙÙØ§ÙØ© Ø§ÙØªØ¬Ø±Ø¨Ø©" : "Trial Ends"}</p>
+                    <p className="text-[12px] text-white/50 mb-1">{isRTL ? "نهاية التجربة" : "Trial Ends"}</p>
                     <p className="text-[14px] font-medium">{formatDate(subscription.trial_end)}</p>
                   </div>
                 )}
                 {subscription.current_period_end && (
                   <div className="bg-white/5 rounded-xl p-4">
-                    <p className="text-[12px] text-white/50 mb-1">{isRTL ? "Ø§ÙØªØ¬Ø¯ÙØ¯" : "Renewal"}</p>
+                    <p className="text-[12px] text-white/50 mb-1">{isRTL ? "التجديد" : "Renewal"}</p>
                     <p className="text-[14px] font-medium">{formatDate(subscription.current_period_end)}</p>
                   </div>
                 )}
@@ -235,7 +235,7 @@ export default function BillingPage() {
           {/* Plans Section Header */}
           <div>
             <h3 className="text-[13px] font-semibold text-[#86868b] uppercase tracking-wide mb-4">
-              {isRTL ? "Ø§ÙØ®Ø·Ø· Ø§ÙÙØªØ§Ø­Ø©" : "Available Plans"}
+              {isRTL ? "الخطط المتاحة" : "Available Plans"}
             </h3>
           </div>
 
@@ -261,7 +261,7 @@ export default function BillingPage() {
                 >
                   {plan.popular && (
                     <div className="bg-[#D4A853] text-[#1A1A2E] text-[12px] font-semibold text-center py-1.5 tracking-wide uppercase">
-                      {isRTL ? "Ø§ÙØ£ÙØ«Ø± Ø´Ø¹Ø¨ÙØ©" : "Most Popular"}
+                      {isRTL ? "الأكثر شعبية" : "Most Popular"}
                     </div>
                   )}
                   <div className="p-6">
@@ -273,15 +273,15 @@ export default function BillingPage() {
 
                     <div className="mt-4 mb-5">
                       {plan.price === 0 ? (
-                        <p className="text-[28px] font-semibold tracking-tight text-[#1d1d1f]">{isRTL ? "ÙØ¬Ø§ÙÙ" : "Free"}</p>
+                        <p className="text-[28px] font-semibold tracking-tight text-[#1d1d1f]">{isRTL ? "مجاني" : "Free"}</p>
                       ) : plan.price === -1 ? (
-                        <p className="text-[17px] font-semibold text-[#1d1d1f]">{isRTL ? "ØªÙØ§ØµÙ ÙØ¹ÙØ§" : "Contact Us"}</p>
+                        <p className="text-[17px] font-semibold text-[#1d1d1f]">{isRTL ? "تواصل معنا" : "Contact Us"}</p>
                       ) : (
                         <div>
                           <span className="text-[28px] font-semibold tracking-tight text-[#1d1d1f]">${plan.price}</span>
-                          <span className="text-[14px] text-[#86868b]"> /{isRTL ? "Ø´ÙØ±" : "month"}</span>
+                          <span className="text-[14px] text-[#86868b]"> /{isRTL ? "شهر" : "month"}</span>
                           {plan.id === "pro" && (
-                            <p className="text-[12px] text-[#30d158] font-medium mt-1">{isRTL ? "Ø§ÙØ´ÙØ± Ø§ÙØ£ÙÙ ÙØ¬Ø§ÙÙ!" : "First month free!"}</p>
+                            <p className="text-[12px] text-[#30d158] font-medium mt-1">{isRTL ? "الشهر الأول مجاني!" : "First month free!"}</p>
                           )}
                         </div>
                       )}
@@ -303,7 +303,7 @@ export default function BillingPage() {
                         disabled
                         className="w-full py-2.5 rounded-full text-[14px] font-medium bg-[#f5f5f7] text-[#86868b] cursor-not-allowed"
                       >
-                        {isRTL ? "Ø®Ø·ØªÙ Ø§ÙØ­Ø§ÙÙØ©" : "Current Plan"}
+                        {isRTL ? "خطتك الحالية" : "Current Plan"}
                       </button>
                     ) : (
                       <button
@@ -318,8 +318,8 @@ export default function BillingPage() {
                         {upgrading
                           ? "..."
                           : plan.price === -1
-                          ? (isRTL ? "ØªÙØ§ØµÙ ÙØ¹ÙØ§" : "Contact Sales")
-                          : (isRTL ? "ØªØ±ÙÙØ©" : "Upgrade")}
+                          ? (isRTL ? "تواصل معنا" : "Contact Sales")
+                          : (isRTL ? "ترقية" : "Upgrade")}
                       </button>
                     )}
                   </div>
