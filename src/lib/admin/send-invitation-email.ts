@@ -1,9 +1,14 @@
 // Warrantee — Admin Invitation Email via Resend
 // Sends admin role invitation emails
-
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+let _resend: Resend | null = null;
+function getResend() {
+  if (!_resend) {
+    _resend = new Resend(process.env.RESEND_API_KEY);
+  }
+  return _resend;
+}
 
 interface InvitationEmailParams {
   to: string;
@@ -28,6 +33,7 @@ export async function sendAdminInvitationEmail({
 }: InvitationEmailParams) {
   const isAr = locale === 'ar';
   const acceptUrl = `${process.env.NEXT_PUBLIC_APP_URL}/${locale}/admin/accept-invite?token=${token}`;
+
   const roleLabel = isAr ? roleLabels[role]?.ar || role : roleLabels[role]?.en || role;
 
   const subject = isAr
@@ -56,9 +62,14 @@ export async function sendAdminInvitationEmail({
         </p>
         <div style="text-align: center; margin: 32px 0;">
           <a href="${acceptUrl}" style="
-            display: inline-block; padding: 14px 40px; border-radius: 8px;
-            background: #2563EB; color: white; text-decoration: none;
-            font-weight: 600; font-size: 16px;
+            display: inline-block;
+            padding: 14px 40px;
+            border-radius: 8px;
+            background: #2563EB;
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 16px;
           ">
             ${isAr ? 'قبول الدعوة' : 'Accept Invitation'}
           </a>
@@ -77,6 +88,7 @@ export async function sendAdminInvitationEmail({
     </div>
   `;
 
+  const resend = getResend();
   const result = await resend.emails.send({
     from: 'Warrantee Admin <admin@warrantee.io>',
     to,
