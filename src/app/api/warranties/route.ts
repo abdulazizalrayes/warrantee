@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       console.warn("Warranties fetch error:", error.message);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 
     return NextResponse.json({
@@ -165,7 +165,7 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.warn("Warranty insert error:", error.message);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 
     return NextResponse.json({ data }, { status: 201 });
