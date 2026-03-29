@@ -2,12 +2,17 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createBrowserClient } from '@supabase/ssr';
+
+const supabase = createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 const translations = {
   en: {
     title: 'Admin Portal',
-    subtitle: 'Warrantee â Trust the Termsâ¢',
+    subtitle: 'Warrantee — Trust the Terms™',
     description: 'Sign in to access the admin dashboard',
     emailLabel: 'Admin Email',
     sendLink: 'Send Magic Link',
@@ -15,23 +20,23 @@ const translations = {
     sent: 'Magic link sent! Check your inbox.',
     error: 'Failed to send magic link. Please try again.',
     unauthorized: 'This email is not authorized for admin access.',
-    footer: 'Â© 2026 Warrantee. All rights reserved.',
+    footer: '© 2026 Warrantee. All rights reserved.',
     alreadyLoggedIn: 'You are already logged in.',
     goToAdmin: 'Go to Admin Dashboard',
   },
   ar: {
-    title: 'Ø¨ÙØ§Ø¨Ø© Ø§ÙÙØ¯ÙØ±',
-    subtitle: 'ÙØ§Ø±ÙØªÙ â Ø«Ù Ø¨Ø§ÙØ´Ø±ÙØ·â¢',
-    description: 'ØªØ³Ø¬ÙÙ Ø§ÙØ¯Ø®ÙÙ ÙÙÙØµÙÙ Ø¥ÙÙ ÙÙØ­Ø© Ø§ÙØ¥Ø¯Ø§Ø±Ø©',
-    emailLabel: 'Ø§ÙØ¨Ø±ÙØ¯ Ø§ÙØ¥ÙÙØªØ±ÙÙÙ ÙÙÙØ¯ÙØ±',
-    sendLink: 'Ø¥Ø±Ø³Ø§Ù Ø±Ø§Ø¨Ø· Ø§ÙØ¯Ø®ÙÙ',
-    sending: 'Ø¬Ø§Ø±Ù Ø§ÙØ¥Ø±Ø³Ø§Ù...',
-    sent: 'ØªÙ Ø¥Ø±Ø³Ø§Ù Ø§ÙØ±Ø§Ø¨Ø·! ØªØ­ÙÙ ÙÙ Ø¨Ø±ÙØ¯Ù Ø§ÙØ¥ÙÙØªØ±ÙÙÙ.',
-    error: 'ÙØ´Ù ÙÙ Ø¥Ø±Ø³Ø§Ù Ø§ÙØ±Ø§Ø¨Ø·. ÙØ±Ø¬Ù Ø§ÙÙØ­Ø§ÙÙØ© ÙØ±Ø© Ø£Ø®Ø±Ù.',
-    unauthorized: 'ÙØ°Ø§ Ø§ÙØ¨Ø±ÙØ¯ Ø§ÙØ¥ÙÙØªØ±ÙÙÙ ØºÙØ± ÙØµØ±Ø­ ÙÙ Ø¨Ø§ÙÙØµÙÙ.',
-    footer: 'Â© 2026 ÙØ§Ø±ÙØªÙ. Ø¬ÙÙØ¹ Ø§ÙØ­ÙÙÙ ÙØ­ÙÙØ¸Ø©.',
-    alreadyLoggedIn: 'Ø£ÙØª ÙØ³Ø¬Ù Ø§ÙØ¯Ø®ÙÙ Ø¨Ø§ÙÙØ¹Ù.',
-    goToAdmin: 'Ø§ÙØ°ÙØ§Ø¨ Ø¥ÙÙ ÙÙØ­Ø© Ø§ÙØ¥Ø¯Ø§Ø±Ø©',
+    title: 'بوابة المدير',
+    subtitle: 'وارنتي — ثق بالشروط™',
+    description: 'تسجيل الدخول للوصول إلى لوحة الإدارة',
+    emailLabel: 'البريد الإلكتروني للمدير',
+    sendLink: 'إرسال رابط الدخول',
+    sending: 'جارٍ الإرسال...',
+    sent: 'تم إرسال الرابط! تحقق من بريدك الإلكتروني.',
+    error: 'فشل في إرسال الرابط. يرجى المحاولة مرة أخرى.',
+    unauthorized: 'هذا البريد الإلكتروني غير مصرح له بالوصول.',
+    footer: '© 2026 وارنتي. جميع الحقوق محفوظة.',
+    alreadyLoggedIn: 'أنت مسجل الدخول بالفعل.',
+    goToAdmin: 'الذهاب إلى لوحة الإدارة',
   },
 };
 
@@ -41,7 +46,6 @@ export default function AdminLoginPage() {
   const isRTL = locale === 'ar';
   const t = translations[locale as keyof typeof translations] || translations.en;
   const router = useRouter();
-  const supabase = createClientComponentClient();
 
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error' | 'unauthorized'>('idle');
@@ -64,7 +68,7 @@ export default function AdminLoginPage() {
       setChecking(false);
     };
     checkSession();
-  }, [supabase]);
+  }, []);
 
   const AUTHORIZED_ADMIN_EMAILS = ['abdulaziz.alrayes@gmail.com'];
 
@@ -177,7 +181,7 @@ export default function AdminLoginPage() {
         {isLoggedIn ? (
           <div style={{ textAlign: 'center' }}>
             <p style={{ color: '#2ECC71', fontSize: '15px', marginBottom: '16px' }}>
-              â {t.alreadyLoggedIn}
+              ✓ {t.alreadyLoggedIn}
             </p>
             <button
               onClick={() => router.push(`/${locale}/admin`)}
@@ -247,7 +251,7 @@ export default function AdminLoginPage() {
                 letterSpacing: '0.3px',
               }}
             >
-              {status === 'sending' ? t.sending : status === 'sent' ? 'â ' + t.sent : t.sendLink}
+              {status === 'sending' ? t.sending : status === 'sent' ? '✓ ' + t.sent : t.sendLink}
             </button>
           </form>
         )}
