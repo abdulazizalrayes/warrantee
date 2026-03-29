@@ -1,5 +1,5 @@
-// Warrantee — Admin Ingestion Management API
-// GET /api/admin/ingestion — List ingestion jobs (admin only)
+// Warrantee â Admin Ingestion Management API
+// GET /api/admin/ingestion â List ingestion jobs (admin only)
 
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
@@ -54,7 +54,9 @@ export async function GET(request: NextRequest) {
   }
 
   if (search) {
-    query = query.or(`from_email.ilike.%${search}%,subject.ilike.%${search}%`);
+    // Escape special characters for safe use in .or() query
+    const escapedSearch = search.replace(/[%_\\]/g, '\\$&');
+    query = query.or(`from_email.ilike.%${escapedSearch}%,subject.ilike.%${escapedSearch}%`);
   }
 
   const { data, error, count } = await query;
