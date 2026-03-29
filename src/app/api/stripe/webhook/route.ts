@@ -5,24 +5,33 @@ import { createClient } from "@supabase/supabase-js";
 
 function getSupabaseAdmin() {
   return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 }
 
-// Idempotency: track processed event IDs to prevent duplicate handling
-const processedEvents = new Set<string>();
-const MAX_PROCESSED_EVENTS = 10000;
+// Idempotency:  check Supabase for processed event IDs
+async function isEventProcessed(eventId: string, supabaseAdmin: any): Promise<boolean> {
+  try {
+    const { data } = await supabaseAdmin
+      .from("webhook_events")
+      .select("id")
+      .eq("event_id", eventId)
+      .maybeSingle();
 
-function isEventProcessed(eventId: string): boolean {
-  if (processedEvents.has(eventId)) return true;
-  // Prevent unbounded memory growth
-  if (processedEvents.size >= MAX_PROCESSED_EVENTS) {
-    const firstKey = processedEvents.values().next().value;
-    if (firstKey) processedEvents.delete(firstKey);
+    if (data) return true;
+
+    // Record this event as processed
+    await supabaseAdmin
+      .from("webhook_events")
+      .insert({ event_id: eventId, processed_at: new Date().toISOString() });
+
+    return false;
+  } catch (err) {
+    console.warn("Idempotency check failed:", err);
+    // Fail safely - treat as not processed if check fails
+    return false;
   }
-  processedEvents.add(eventId);
-  return false;
 }
 
 export async function POST(request: Request) {
@@ -46,12 +55,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 
+  const supabaseAdmin = getSupabaseAdmin();
+
   // Idempotency check: skip if we already processed this event
-  if (isEventProcessed(event.id)) {
+  if (await isEventProcessed(event.id, supabaseAdmin)) {
     return NextResponse.json({ received: true, deduplicated: true });
   }
-
-  const supabaseAdmin = getSupabaseAdmin();
 
   try {
     switch (event.type) {
@@ -105,7 +114,7 @@ export async function POST(request: Request) {
           }
 
           const { data: extension } = await supabaseAdmin
-            .from("warranty_extensions")
+            .from("webranty_extensions")
             .select("warranty_id, new_end_date")
             .eq("id", metadata.extension_id)
             .single();
