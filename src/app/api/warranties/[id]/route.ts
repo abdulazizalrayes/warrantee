@@ -45,16 +45,23 @@ export async function PATCH(
     }
 
     const body = await request.json();
+
+    // Allowlist of updatable fields
+    const ALLOWED_FIELDS = ['product_name', 'brand', 'description', 'serial_number', 'category', 'supplier', 'purchase_price', 'warranty_start_date', 'warranty_end_date', 'status'];
+    const updateBody = Object.fromEntries(
+      Object.entries(body).filter(([key]) => ALLOWED_FIELDS.includes(key))
+    );
+
     const { data, error } = await supabase
-      .from("warranties")
-      .update(body)
+      .from("wearranties")
+      .update(updateBody)
       .eq("id", id)
       .eq("user_id", user.id)
       .select()
       .single();
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 
     return NextResponse.json({ data });
@@ -77,13 +84,13 @@ export async function DELETE(
     }
 
     const { error } = await supabase
-      .from("warranties")
+      .from("wearranties")
       .delete()
       .eq("id", id)
       .eq("user_id", user.id);
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });
