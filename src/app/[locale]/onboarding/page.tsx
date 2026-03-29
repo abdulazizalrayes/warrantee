@@ -1,9 +1,9 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { useAuth } from "@/lib/auth-context";
-import { Shield, User, Building2, Bell, ChevronRight, ChevronLeft, Check, Sparkles, Globe, Camera, Smartphone } from "lucide-react";
+import { Shield, Phone, Bell, ChevronRight, ChevronLeft, Check, Sparkles } from "lucide-react";
 import Link from "next/link";
 
 export default function OnboardingPage() {
@@ -15,8 +15,6 @@ export default function OnboardingPage() {
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
-    full_name: "",
-    company: "",
     phone: "",
     notify_expiry: true,
     notify_claims: true,
@@ -24,21 +22,22 @@ export default function OnboardingPage() {
     language: locale as string,
   });
 
+  const userName = user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split("@")[0] || "";
+
   const steps = [
-    { icon: User, title: isAr ? "\u0645\u0639\u0644\u0648\u0645\u0627\u062a\u0643 \u0627\u0644\u0634\u062e\u0635\u064a\u0629" : "Personal Info", sub: isAr ? "\u0623\u062e\u0628\u0631\u0646\u0627 \u0639\u0646 \u0646\u0641\u0633\u0643" : "Tell us about yourself" },
-    { icon: Building2, title: isAr ? "\u0628\u064a\u0627\u0646\u0627\u062a \u0627\u0644\u0639\u0645\u0644" : "Business Details", sub: isAr ? "\u0645\u0639\u0644\u0648\u0645\u0627\u062a \u0634\u0631\u0643\u062a\u0643" : "Your company info" },
-    { icon: Bell, title: isAr ? "\u0627\u0644\u0625\u0634\u0639\u0627\u0631\u0627\u062a" : "Notifications", sub: isAr ? "\u0627\u062e\u062a\u0631 \u062a\u0646\u0628\u064a\u0647\u0627\u062a\u0643" : "Choose your alerts" },
+    { icon: Phone, title: isAr ? "\u0631\u0642\u0645 \u0627\u0644\u0647\u0627\u062a\u0641" : "Phone Number", sub: isAr ? "\u0623\u0636\u0641 \u0631\u0642\u0645 \u0647\u0627\u062a\u0641\u0643" : "Add your mobile number" },
+    { icon: Bell, title: isAr ? "\u0627\u0644\u0625\u0634\u0639\u0627\u0631\u0627\u062a" : "Notifications", sub: isAr ? "\u0627\u062e\u062a\u0632 \u062a\u0646\u0628\u064a\u0647\u0627\u062a\u0643" : "Choose your alerts" },
     { icon: Sparkles, title: isAr ? "\u062c\u0627\u0647\u0632!" : "All Set!", sub: isAr ? "\u0627\u0628\u062f\u0623 \u0627\u0644\u0622\u0646" : "Start exploring" },
   ];
+
   const handleSubmit = async () => {
     if (!user) return;
     setLoading(true);
     try {
       const { error } = await supabase.from("profiles").upsert({
         id: user.id,
-        full_name: form.full_name,
-        company: form.company,
-        phone: form.phone,
+        full_name: userName,
+        phone: form.phone || null,
         notify_expiry: form.notify_expiry,
         notify_claims: form.notify_claims,
         notify_newsletter: form.notify_newsletter,
@@ -54,8 +53,6 @@ export default function OnboardingPage() {
       setLoading(false);
     }
   };
-
-  const canNext = step === 0 ? form.full_name.trim().length > 0 : true;
 
   return (
     <div dir={isAr ? "rtl" : "ltr"} className="min-h-screen bg-[#f5f5f7]">
@@ -87,6 +84,15 @@ export default function OnboardingPage() {
           ))}
         </div>
 
+        {/* Welcome greeting */}
+        {step === 0 && userName && (
+          <div className="text-center mb-4">
+            <p className="text-[17px] text-[#1d1d1f] font-medium">
+              {isAr ? "\u0645\u0631\u062d\u0628\u0627\u064b, " + userName + "!" : "Welcome, " + userName + "!"}
+            </p>
+          </div>
+        )}
+
         {/* Step title */}
         <div className="text-center mb-8">
           <h1 className="text-[28px] font-bold text-[#1d1d1f] tracking-tight">{steps[step].title}</h1>
@@ -98,24 +104,16 @@ export default function OnboardingPage() {
           {step === 0 && (
             <div className="space-y-6">
               <div>
-                <label className="block text-[13px] font-medium text-[#86868b] mb-2">{isAr ? "\u0627\u0644\u0627\u0633\u0645 \u0627\u0644\u0643\u0627\u0645\u0644" : "Full Name"} *</label>
-                <input
-                  type="text"
-                  value={form.full_name}
-                  onChange={(e) => setForm({ ...form, full_name: e.target.value })}
-                  placeholder={isAr ? "\u0623\u062f\u062e\u0644 \u0627\u0633\u0645\u0643" : "Enter your name"}
-                  className="w-full px-4 py-3 rounded-xl bg-[#f5f5f7] border-0 text-[15px] text-[#1d1d1f] placeholder:text-[#86868b]/60 focus:outline-none focus:ring-2 focus:ring-[#007aff] transition-all"
-                />
-              </div>
-              <div>
-                <label className="block text-[13px] font-medium text-[#86868b] mb-2">{isAr ? "\u0631\u0642\u0645 \u0627\u0644\u0647\u0627\u062a\u0641" : "Phone Number"}</label>
+                <label className="block text-[13px] font-medium text-[#86868b] mb-2">{isAr ? "\u0631\u0642\u0645 \u0627\u0644\u062c\u0648\u0627\u0644" : "Mobile Number"}</label>
                 <input
                   type="tel"
                   value={form.phone}
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
                   placeholder={isAr ? "+966 5x xxx xxxx" : "+966 5x xxx xxxx"}
                   className="w-full px-4 py-3 rounded-xl bg-[#f5f5f7] border-0 text-[15px] text-[#1d1d1f] placeholder:text-[#86868b]/60 focus:outline-none focus:ring-2 focus:ring-[#007aff] transition-all"
+                  dir="ltr"
                 />
+                <p className="text-[12px] text-[#86868b] mt-2">{isAr ? "\u0627\u062e\u062a\u064a\u0627\u0631\u064a \u2014 \u0644\u0625\u0631\u0633\u0627\u0644 \u062a\u0646\u0628\u064a\u0647\u0627\u062a \u0627\u0644\u0636\u0645\u0627\u0646" : "Optional \u2014 for warranty expiry alerts via SMS"}</p>
               </div>
               <div>
                 <label className="block text-[13px] font-medium text-[#86868b] mb-2">{isAr ? "\u0627\u0644\u0644\u063a\u0629 \u0627\u0644\u0645\u0641\u0636\u0644\u0629" : "Preferred Language"}</label>
@@ -135,38 +133,6 @@ export default function OnboardingPage() {
           )}
 
           {step === 1 && (
-            <div className="space-y-6">
-              <div>
-                <label className="block text-[13px] font-medium text-[#86868b] mb-2">{isAr ? "\u0627\u0633\u0645 \u0627\u0644\u0634\u0631\u0643\u0629" : "Company Name"}</label>
-                <input
-                  type="text"
-                  value={form.company}
-                  onChange={(e) => setForm({ ...form, company: e.target.value })}
-                  placeholder={isAr ? "\u0627\u0633\u0645 \u0634\u0631\u0643\u062a\u0643 (\u0627\u062e\u062a\u064a\u0627\u0631\u064a)" : "Your company name (optional)"}
-                  className="w-full px-4 py-3 rounded-xl bg-[#f5f5f7] border-0 text-[15px] text-[#1d1d1f] placeholder:text-[#86868b]/60 focus:outline-none focus:ring-2 focus:ring-[#007aff] transition-all"
-                />
-              </div>
-              <div className="bg-[#f5f5f7] rounded-2xl p-6">
-                <h3 className="text-[15px] font-semibold text-[#1d1d1f] mb-3">{isAr ? "\u0645\u0627\u0630\u0627 \u064a\u0645\u0643\u0646\u0643 \u0641\u0639\u0644\u0647" : "What you can do"}</h3>
-                <div className="space-y-3">
-                  {[
-                    { icon: Camera, text: isAr ? "\u0645\u0633\u062d \u0636\u0648\u0626\u064a \u0644\u0644\u0636\u0645\u0627\u0646\u0627\u062a \u0628\u0627\u0644\u0630\u0643\u0627\u0621 \u0627\u0644\u0627\u0635\u0637\u0646\u0627\u0639\u064a" : "AI-powered warranty scanning" },
-                    { icon: Globe, text: isAr ? "\u062f\u0639\u0645 \u062b\u0646\u0627\u0626\u064a \u0627\u0644\u0644\u063a\u0629" : "Bilingual Arabic & English" },
-                    { icon: Smartphone, text: isAr ? "\u062a\u0646\u0628\u064a\u0647\u0627\u062a \u0630\u0643\u064a\u0629 \u0642\u0628\u0644 \u0627\u0646\u062a\u0647\u0627\u0621 \u0627\u0644\u0636\u0645\u0627\u0646" : "Smart expiry alerts" },
-                  ].map((item, i) => (
-                    <div key={i} className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center">
-                        <item.icon className="w-4 h-4 text-[#007aff]" />
-                      </div>
-                      <span className="text-[14px] text-[#1d1d1f]">{item.text}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {step === 2 && (
             <div className="space-y-4">
               {[
                 { key: "notify_expiry", title: isAr ? "\u062a\u0646\u0628\u064a\u0647\u0627\u062a \u0627\u0646\u062a\u0647\u0627\u0621 \u0627\u0644\u0636\u0645\u0627\u0646" : "Warranty Expiry Alerts", desc: isAr ? "\u0625\u0634\u0639\u0627\u0631 \u0642\u0628\u0644 30 \u064a\u0648\u0645 \u0645\u0646 \u0627\u0646\u062a\u0647\u0627\u0621 \u0627\u0644\u0636\u0645\u0627\u0646" : "Get notified 30 days before expiry", recommended: true },
@@ -195,16 +161,16 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {step === 3 && (
+          {step === 2 && (
             <div className="text-center py-8">
               <div className="w-20 h-20 rounded-full bg-[#30d158]/10 flex items-center justify-center mx-auto mb-6">
                 <Check className="w-10 h-10 text-[#30d158]" />
               </div>
               <h2 className="text-[24px] font-bold text-[#1d1d1f] mb-2">
-                {isAr ? "\u0645\u0631\u062d\u0628\u0627\u064b \u0628\u0643, " + form.full_name + "!" : "Welcome, " + form.full_name + "!"}
+                {isAr ? "\u0645\u0631\u062d\u0628\u0627\u064b \u0628\u0643, " + userName + "!" : "Welcome, " + userName + "!"}
               </h2>
               <p className="text-[15px] text-[#86868b] mb-8 max-w-md mx-auto">
-                {isAr ? "\u062d\u0633\u0627\u0628\u0643 \u062c\u0627\u0647\u0632. \u0627\u0628\u062f\u0623 \u0628\u0625\u0636\u0627\u0641\u0629 \u0623\u0648\u0644 \u0636\u0645\u0627\u0646 \u0644\u0643." : "Your account is all set up. Start by adding your first warranty."}
+                {isAr ? "\u062d\u0633\u0627\u0628\u0643 \u062c\u0627\u0647\u0632. \u0627\u0628\u062d\u0623 \u0628\u0625\u0636\u0627\u0641\u0629 \u0623\u0648\u0644 \u0636\u0645\u0627\u0646 \u0644\u0643." : "Your account is all set up. Start by adding your first warranty."}
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Link
@@ -226,7 +192,7 @@ export default function OnboardingPage() {
         </div>
 
         {/* Navigation */}
-        {step < 3 && (
+        {step < 2 && (
           <div className="flex items-center justify-between">
             <button
               onClick={() => setStep(Math.max(0, step - 1))}
@@ -237,11 +203,10 @@ export default function OnboardingPage() {
               {isAr ? "\u0627\u0644\u0633\u0627\u0628\u0642" : "Back"}
             </button>
 
-            {step < 2 ? (
+            {step === 0 ? (
               <button
-                onClick={() => setStep(step + 1)}
-                disabled={!canNext}
-                className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#1A1A2E] text-white text-[15px] font-medium hover:opacity-90 disabled:opacity-40 transition-all"
+                onClick={() => setStep(1)}
+                className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#1A1A2E] text-white text-[15px] font-medium hover:opacity-90 transition-all"
               >
                 {isAr ? "\u0627\u0644\u062a\u0627\u0644\u064a" : "Next"}
                 <ChevronRight className="w-4 h-4" />
@@ -266,13 +231,13 @@ export default function OnboardingPage() {
         )}
 
         {/* Skip link */}
-        {step < 3 && (
+        {step < 2 && (
           <div className="text-center mt-6">
             <Link
               href={"/" + locale + "/dashboard"}
               className="text-[13px] text-[#86868b] hover:text-[#1d1d1f] transition-colors"
             >
-              {isAr ? "\u062a\u062e\u0637\u064a \u0627\u0644\u0625\u0639\u062f\u0627\u062f" : "Skip for now"}
+              {isAr ? "\u062a\u062e\u0637\u064a \u0627\u0644\u0625\u0639\u062f\u0627\u062d" : "Skip for now"}
             </Link>
           </div>
         )}
