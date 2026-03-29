@@ -12,16 +12,16 @@ import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 type Step = 1 | 2 | 3 | 4;
 
 const CATEGORIES = [
-  { value: "electronics", en: "Electronics", ar: "\u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A\u0627\u062A" },
-  { value: "appliances", en: "Appliances", ar: "\u0623\u062C\u0647\u0632\u0629 \u0645\u0646\u0632\u0644\u064A\u0629" },
-  { value: "automotive", en: "Automotive", ar: "\u0633\u064A\u0627\u0631\u0627\u062B" },
-  { value: "machinery", en: "Machinery", ar: "\u0622\u0644\u0627\u062B" },
-  { value: "hvac", en: "HVAC", ar: "\u062A\u0643\u064A\u064A\u0641" },
+  { value: "electronics", en: "Electronics", ar: "\u0625\u0644\u0643\u062a\u0631\u0648\u0646\u064a\u0627\u062a" },
+  { value: "appliances", en: "Appliances", ar: "\u0623\u062c\u0647\u0632\u0629 \u0645\u0646\u0632\u0644\u064a\u0629" },
+  { value: "automotive", en: "Automotive", ar: "\u0633\u064a\u0627\u0631\u0627\u062a" },
+  { value: "machinery", en: "Machinery", ar: "\u0622\u0644\u0627\u062a" },
+  { value: "hvac", en: "HVAC", ar: "\u062a\u0643\u064a\u064a\u0641" },
   { value: "plumbing", en: "Plumbing", ar: "\u0633\u0628\u0627\u0643\u0629" },
   { value: "construction", en: "Construction", ar: "\u0628\u0646\u0627\u0621" },
-  { value: "furniture", en: "Furniture", ar: "\u0623\u062B\u0627\u062B" },
-  { value: "software", en: "Software", ar: "\u0628\u0631\u0645\u062C\u064A\u0627\u062A" },
-  { value: "other", en: "Other", ar: "\u0623\u062E\u0631\u0649" },
+  { value: "furniture", en: "Furniture", ar: "\u0623\u062b\u0627\u062b" },
+  { value: "software", en: "Software", ar: "\u0628\u0631\u0645\u062c\u064a\u0627\u062a" },
+  { value: "other", en: "Other", ar: "\u0623\u062e\u0631\u0649" },
 ];
 
 export default function NewWarrantyPage() {
@@ -85,7 +85,7 @@ export default function NewWarrantyPage() {
       worker = null;
       setScanProgress(95);
       if (!ocrText || ocrText.trim().length === 0) {
-        setError(isRTL ? "\u0644\u0645 \u064A\u062A\u0645 \u0627\u0644\u0639\u062B\u0648\u0631 \u0639\u0644\u0649 \u0646\u0635 \u0641\u064A \u0627\u0644\u0635\u0648\u0631\u0629" : "No text found in the image. Try a clearer photo.");
+        setError(isRTL ? "\u0644\u0645 \u064a\u062a\u0645 \u0627\u0644\u0639\u062b\u0648\u0631 \u0639\u0644\u0649 \u0646\u0635 \u0641\u064a \u0627\u0644\u0635\u0648\u0631\u0629" : "No text found in the image. Try a clearer photo.");
         setFiles((prev) => [...prev, file]);
         return;
       }
@@ -95,7 +95,7 @@ export default function NewWarrantyPage() {
         body: JSON.stringify({ text: ocrText }),
       });
       if (!res.ok) {
-        throw new Error(isRTL ? "\u0641\u0634\u0644 \u062A\u062D\u0644\u064A\u0644 \u0627\u0644\u0646\u0635" : "Failed to analyze text");
+        throw new Error(isRTL ? "\u0641\u0634\u0644 \u062a\u062d\u0644\u064a\u0644 \u0627\u0644\u0646\u0635" : "Failed to analyze text");
       }
       const parsed = await res.json();
       setScanProgress(100);
@@ -115,8 +115,8 @@ export default function NewWarrantyPage() {
     } catch (err: any) {
       console.error("Smart Scan error:", err);
       const msg = err?.message || "";
-      const userMsg = msg.length > 0 ? msg : (isRTL ? "\u062D\u062F\u062B \u062E\u0637\u0623 \u063A\u064A\u0631 \u0645\u062A\u0648\u0642\u0639" : "An unexpected error occurred. Please try again.");
-      setError(isRTL ? `\u0641\u0634\u0644 \u0627\u0644\u0645\u0633\u062D \u0627\u0644\u0630\u0643\u064A: ${userMsg}` : `Smart Scan failed: ${userMsg}`);
+      const userMsg = msg.length > 0 ? msg : (isRTL ? "\u062d\u062f\u062b \u062e\u0637\u0623 \u063a\u064a\u0631 \u0645\u062a\u0648\u0642\u0639" : "An unexpected error occurred. Please try again.");
+      setError(isRTL ? `\u0641\u0634\u0644 \u0627\u0644\u0645\u0633\u062d \u0627\u0644\u0630\u0643\u064a: ${userMsg}` : `Smart Scan failed: ${userMsg}`);
     } finally {
       if (worker) { try { await worker.terminate(); } catch {} }
       setScanning(false);
@@ -136,11 +136,11 @@ export default function NewWarrantyPage() {
   };
 
   const addFiles = (selected: File[]) => {
-    const maxSize = 25 * 1024 * 1024;
+    const maxSize = 10 * 1024 * 1024;
     setError("");
     const valid = selected.filter((f) => {
       if (f.size > maxSize) {
-        setError(isRTL ? `\u0627\u0644\u0645\u0644\u0641 ${f.name} \u0643\u0628\u064A\u0631 \u062C\u062F\u0627\u064B (\u062D\u062F 25MB)` : `File ${f.name} too large (25MB limit)`);
+        setError(isRTL ? `\u0627\u0644\u0645\u0644\u0641 ${f.name} \u0643\u0628\u064a\u0631 \u062c\u062f\u0627\u064b (\u062d\u062f 10MB)` : `File ${f.name} too large (10MB limit)`);
         return false;
       }
       return true;
@@ -229,15 +229,15 @@ export default function NewWarrantyPage() {
 
   const renderStep1 = () => (
     <div className="space-y-5">
-      <h2 className="text-lg font-bold text-navy">{isRTL ? "\u0645\u0639\u0644\u0648\u0645\u0627\u062A \u0627\u0644\u0645\u0646\u062A\u062C" : "Product Information"}</h2>
+      <h2 className="text-lg font-bold text-navy">{isRTL ? "\u0645\u0639\u0644\u0648\u0645\u0627\u062a \u0627\u0644\u0645\u0646\u062a\u062c" : "Product Information"}</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-navy mb-1">{dict.warranty.fields.product_name} ({isRTL ? "\u0625\u0646\u062C\u0644\u064A\u0632\u064A" : "English"}) *</label>
+          <label className="block text-sm font-medium text-navy mb-1">{dict.warranty.fields.product_name} ({isRTL ? "\u0625\u0646\u062c\u0644\u064a\u0632\u064a" : "English"}) *</label>
           <input type="text" value={productName} onChange={(e) => setProductName(e.target.value)}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold focus:border-transparent" required />
         </div>
         <div>
-          <label className="block text-sm font-medium text-navy mb-1">{dict.warranty.fields.product_name} ({isRTL ? "\u0639\u0631\u0628\u064A" : "Arabic"})</label>
+          <label className="block text-sm font-medium text-navy mb-1">{dict.warranty.fields.product_name} ({isRTL ? "\u0639\u0631\u0628\u064a" : "Arabic"})</label>
           <input type="text" value={productNameAr} onChange={(e) => setProductNameAr(e.target.value)}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold focus:border-transparent" dir="rtl" />
         </div>
@@ -254,7 +254,7 @@ export default function NewWarrantyPage() {
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold focus:border-transparent" dir="ltr" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-navy mb-1">{isRTL ? "\u0627\u0644\u0643\u0645\u064A\u0629" : "Quantity"}</label>
+          <label className="block text-sm font-medium text-navy mb-1">{isRTL ? "\u0627\u0644\u0643\u0645\u064a\u0629" : "Quantity"}</label>
           <input type="number" value={quantity} onChange={(e) => setQuantity(parseInt(e.target.value) || 1)} min={1}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold focus:border-transparent" />
         </div>
@@ -278,7 +278,7 @@ export default function NewWarrantyPage() {
 
   const renderStep2 = () => (
     <div className="space-y-5">
-      <h2 className="text-lg font-bold text-navy">{isRTL ? "\u062A\u0641\u0627\u0635\u064A\u0644 \u0627\u0644\u0636\u0645\u0627\u0646" : "Warranty Details"}</h2>
+      <h2 className="text-lg font-bold text-navy">{isRTL ? "\u062a\u0641\u0627\u0635\u064a\u0644 \u0627\u0644\u0636\u0645\u0627\u0646" : "Warranty Details"}</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-navy mb-1">{dict.warranty.fields.start_date} *</label>
@@ -298,19 +298,19 @@ export default function NewWarrantyPage() {
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold focus:border-transparent" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-navy mb-1">{isRTL ? "\u0628\u0631\u064A\u062F \u0627\u0644\u0628\u0627\u0626\u0639" : "Seller Email"}</label>
+          <label className="block text-sm font-medium text-navy mb-1">{isRTL ? "\u0628\u0631\u064a\u062f \u0627\u0644\u0628\u0627\u0626\u0639" : "Seller Email"}</label>
           <input type="email" value={sellerEmail} onChange={(e) => setSellerEmail(e.target.value)}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold focus:border-transparent" dir="ltr" />
         </div>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-navy mb-1">{isRTL ? "\u0645\u0631\u062C\u0639 \u0623\u0645\u0631 \u0627\u0644\u0634\u0631\u0627\u0621" : "PO Reference"}</label>
+          <label className="block text-sm font-medium text-navy mb-1">{isRTL ? "\u0645\u0631\u062c\u0639 \u0623\u0645\u0631 \u0627\u0644\u0634\u0631\u0627\u0621" : "PO Reference"}</label>
           <input type="text" value={poReference} onChange={(e) => setPoReference(e.target.value)}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold focus:border-transparent" dir="ltr" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-navy mb-1">{isRTL ? "\u0645\u0631\u062C\u0639 \u0627\u0644\u0641\u0627\u062A\u0648\u0631\u0629" : "Invoice Reference"}</label>
+          <label className="block text-sm font-medium text-navy mb-1">{isRTL ? "\u0645\u0631\u062c\u0639 \u0627\u0644\u0641\u0627\u062a\u0648\u0631\u0629" : "Invoice Reference"}</label>
           <input type="text" value={invoiceReference} onChange={(e) => setInvoiceReference(e.target.value)}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold focus:border-transparent" dir="ltr" />
         </div>
@@ -321,7 +321,7 @@ export default function NewWarrantyPage() {
           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold focus:border-transparent resize-none" />
       </div>
       <div>
-        <label className="block text-sm font-medium text-navy mb-1">{isRTL ? "\u0628\u0646\u0648\u062F \u0645\u062E\u0635\u0635\u0629" : "Custom Clauses"}</label>
+        <label className="block text-sm font-medium text-navy mb-1">{isRTL ? "\u0628\u0646\u0648\u062f \u0645\u062e\u0635\u0635\u0629" : "Custom Clauses"}</label>
         <textarea value={customClauses} onChange={(e) => setCustomClauses(e.target.value)} rows={2}
           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold focus:border-transparent resize-none" />
       </div>
@@ -338,14 +338,14 @@ export default function NewWarrantyPage() {
 
   const renderStep3 = () => (
     <div className="space-y-5">
-      <h2 className="text-lg font-bold text-navy">{isRTL ? "\u0627\u0644\u0645\u0633\u062A\u0646\u062F\u0627\u062A" : "Documents"}</h2>
-      <p className="text-sm text-gray-600">{isRTL ? "\u0627\u0631\u0641\u0642 \u0627\u0644\u0641\u0648\u0627\u062A\u064A\u0631 \u0623\u0648 \u0627\u0644\u0645\u0633\u062A\u0646\u062D\u0627\u062A \u0627\u0644\u0645\u062A\u0639\u0644\u0642\u0629 \u0628\u0627\u0644\u0636\u0645\u0627\u0646 (\u0627\u062E\u062A\u064A\u0627\u0631\u064A)" : "Attach invoices or warranty-related documents (optional)"}</p>
+      <h2 className="text-lg font-bold text-navy">{isRTL ? "\u0627\u0644\u0645\u0633\u062a\u0646\u062d\u0627\u062a" : "Documents"}</h2>
+      <p className="text-sm text-gray-600">{isRTL ? "\u0627\u0631\u0641\u0642 \u0627\u0644\u0641\u0648\u0627\u062a\u064a\u0631 \u0623\u0648 \u0627\u0644\u0645\u0633\u062a\u0646\u062d\u0627\u062a \u0627\u0644\u0645\u062a\u0639\u0644\u0642\u0629 \u0628\u0627\u0644\u0636\u0645\u0627\u0646 (\u0627\u062e\u062a\u064a\u0627\u0631\u064a)" : "Attach invoices or warranty-related documents (optional)"}</p>
       <div onClick={() => fileInputRef.current?.click()}
         onDrop={handleDrop} onDragOver={handleDragOver} onDragLeave={handleDragLeave}
         className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition ${dragOver ? "border-gold bg-yellow-50" : "border-gray-300 hover:border-gold"}`}>
         <Upload size={32} className={`mx-auto mb-2 ${dragOver ? "text-gold" : "text-gray-400"}`} />
-        <p className="text-sm text-gray-600">{isRTL ? "\u0627\u0633\u062D\u0628 \u0627\u0644\u0645\u0644\u0641\u0627\u062A \u0647\u0646\u0627 \u0623\u0648 \u0627\u0636\u063A\u0637 \u0644\u0644\u0631\u0641\u0639" : "Drag & drop files here or click to upload"}</p>
-        <p className="text-xs text-gray-400 mt-1">{isRTL ? "\u062C\u0645\u064A\u0639 \u0623\u0646\u0648\u0627\u0639 \u0627\u0644\u0645\u0644\u0641\u0627\u062A \u0645\u062F\u0639\u0648\u0645\u0629 (\u062D\u062F 25MB)" : "All file types accepted (max 25MB)"}</p>
+        <p className="text-sm text-gray-600">{isRTL ? "\u0627\u0633\u062d\u0628 \u0627\u0644\u0645\u0644\u0641\u0627\u062a \u0647\u0646\u0627 \u0623\u0648 \u0627\u0636\u063a\u0637 \u0644\u0644\u0631\u0641\u0639" : "Drag & drop files here or click to upload"}</p>
+        <p className="text-xs text-gray-400 mt-1">{isRTL ? "\u062c\u0645\u064a\u0639 \u0623\u0646\u0648\u0627\u0639 \u0627\u0644\u0645\u0644\u0641\u0627\u062a \u0645\u062f\u0639\u0648\u0645\u0629 (\u062d\u062f 10MB)" : "All file types accepted (max 10MB)"}</p>
         <input ref={fileInputRef} type="file" multiple onChange={handleFileSelect} className="hidden" />
       </div>
       {files.length > 0 && (
@@ -370,7 +370,7 @@ export default function NewWarrantyPage() {
         <button onClick={() => setStep(2)} className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-medium text-navy">{dict.common.back}</button>
         <button onClick={() => handleSubmit(true)} disabled={loading}
           className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-medium text-navy disabled:opacity-50">
-          {isRTL ? "\u062D\u0641\u0638 \u0643\u0645\u0633\u0648\u062F\u0629" : "Save as Draft"}
+          {isRTL ? "\u062d\u0641\u0638 \u0643\u0645\u0633\u0648\u062f\u0629" : "Save as Draft"}
         </button>
         <button onClick={() => handleSubmit(false)} disabled={loading}
           className="flex-1 bg-gold hover:bg-yellow-500 text-navy font-semibold py-3 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
@@ -385,8 +385,8 @@ export default function NewWarrantyPage() {
       <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto">
         <CheckCircle size={40} className="text-green-600" />
       </div>
-      <h2 className="text-2xl font-bold text-navy">{isRTL ? "\u062A\u0645 \u0625\u0646\u0634\u0627\u0621 \u0627\u0644\u0636\u0645\u0627\u0646 \u0628\u0646\u062C\u0627\u062D!" : "Warranty Created Successfully!"}</h2>
-      <p className="text-gray-600">{isRTL ? "\u064A\u0645\u0643\u0646\u0643 \u0627\u0644\u0622\u0646 \u0639\u0631\u0636 \u0627\u0644\u0636\u0645\u0627\u0646 \u0648\u0625\u062F\u0627\u0631\u062A\u0647 \u0645\u0646 \u0644\u0648\u062D\u0629 \u0627\u0644\u062A\u062D\u0643\u0645." : "You can now view and manage the warranty from your dashboard."}</p>
+      <h2 className="text-2xl font-bold text-navy">{isRTL ? "\u062a\u0645 \u0625\u0646\u0634\u0627\u0621 \u0627\u0644\u0636\u0645\u0627\u0646 \u0628\u0646\u062c\u0627\u062d!" : "Warranty Created Successfully!"}</h2>
+      <p className="text-gray-600">{isRTL ? "\u064a\u0645\u0643\u0646\u0643 \u0627\u0644\u0622\u0646 \u0639\u0631\u0636 \u0627\u0644\u0636\u0645\u0627\u0646 \u0648\u0625\u062f\u0627\u0631\u062a\u0647 \u0645\u0646 \u0644\u0648\u062d\u0629 \u0627\u0644\u062a\u062d\u0643\u0645." : "You can now view and manage the warranty from your dashboard."}</p>
       <div className="flex gap-3 justify-center">
         <button onClick={() => router.push(`/${locale}/warranties/${createdWarrantyId}`)}
           className="bg-gold hover:bg-yellow-500 text-navy font-semibold py-3 px-6 rounded-lg transition">
@@ -394,7 +394,7 @@ export default function NewWarrantyPage() {
         </button>
         <button onClick={() => { setStep(1); setProductName(""); setProductNameAr(""); setSku(""); setSerialNumber(""); setQuantity(1); setStartDate(new Date().toISOString().split("T")[0]); setEndDate(""); setSellerName(""); setSellerEmail(""); setFiles([]); setCreatedWarrantyId(null); }}
           className="border border-gray-300 text-navy font-medium py-3 px-6 rounded-lg hover:bg-gray-50 transition">
-          {isRTL ? "\u0625\u0646\u0634\u0627\u0621 \u0622\u062E\u0631" : "Create Another"}
+          {isRTL ? "\u0625\u0646\u0634\u0627\u0621 \u0622\u062e\u0631" : "Create Another"}
         </button>
       </div>
     </div>
@@ -419,10 +419,10 @@ export default function NewWarrantyPage() {
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[15px] font-semibold">{isRTL ? "\u0627\u0644\u0645\u0633\u062D \u0627\u0644\u0630\u0643\u064A" : "Smart Scan"}</span>
+                    <span className="text-[15px] font-semibold">{isRTL ? "\u0627\u0644\u0645\u0633\u062d \u0627\u0644\u0630\u0643\u064a" : "Smart Scan"}</span>
                     <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-full flex items-center gap-1"><Sparkles size={10} /> AI</span>
                   </div>
-                  <p className="text-[12px] text-white/60">{isRTL ? "\u0627\u0645\u0633\u062D \u0645\u0633\u062A\u0646\u062F \u0627\u0644\u0636\u0645\u0627\u0646 \u0644\u0645\u0644\u0621 \u0627\u0644\u062D\u0642\u0648\u0644 \u062A\u0644\u0642\u0627\u0626\u064A\u0627\u064B" : "Scan warranty document to auto-fill fields"}</p>
+                  <p className="text-[12px] text-white/60">{isRTL ? "\u0627\u0645\u0633\u062d \u0645\u0633\u062a\u0646\u062f \u0627\u0644\u0636\u0645\u0627\u0646 \u0644\u0645\u0644\u0621 \u0627\u0644\u062d\u0642\u0648\u0644 \u062a\u0644\u0642\u0627\u0626\u064a\u0627\u064b" : "Scan warranty document to auto-fill fields"}</p>
                 </div>
               </div>
               <div>
@@ -435,7 +435,7 @@ export default function NewWarrantyPage() {
             {scanning && (
               <div className="mt-3">
                 <div className="flex items-center justify-between text-[12px] mb-1">
-                  <span>{isRTL ? "\u062C\u0627\u0631\u064D \u0627\u0644\u0645\u0633\u062D..." : "Scanning..."}</span>
+                  <span>{isRTL ? "\u062c\u0627\u0631\u064d \u0627\u0644\u0645\u0633\u062d..." : "Scanning..."}</span>
                   <span>{scanProgress}%</span>
                 </div>
                 <div className="w-full bg-white/10 rounded-full h-1.5">
@@ -446,7 +446,7 @@ export default function NewWarrantyPage() {
             {scanResult && (
               <div className="mt-3 flex items-center gap-2 text-[12px] text-[#30d158]">
                 <CheckCircle size={14} />
-                <span>{isRTL ? `\u062A\u0645 \u0627\u0644\u0639\u062B\u0648\u0631 \u0639\u0644\u0649 ${scanResult.fieldsFound} \u062D\u0642\u0648\u0644` : `Found ${scanResult.fieldsFound} fields`}</span>
+                <span>{isRTL ? `\u062a\u0645 \u0627\u0644\u0639\u062b\u0648\u0631 \u0639\u0644\u0649 ${scanResult.fieldsFound} \u062d\u0642\u0648\u0644` : `Found ${scanResult.fieldsFound} fields`}</span>
               </div>
             )}
           </div>
