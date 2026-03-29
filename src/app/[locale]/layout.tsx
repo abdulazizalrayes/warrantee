@@ -24,6 +24,12 @@ export const metadata: Metadata = {
   ],
   robots: "index, follow",
   authors: [{ name: "Warrantee" }],
+  icons: {
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
+    ],
+    apple: "/favicon.svg",
+  },
   metadataBase: new URL("https://warrantee.io"),
   alternates: { canonical: "https://warrantee.io", languages: { en: "https://warrantee.io/en", ar: "https://warrantee.io/ar" } },
   verification: {
