@@ -21,6 +21,9 @@ export async function POST(request: NextRequest) {
     const RESEND_API_KEY = process.env.RESEND_API_KEY;
 
     if (!RESEND_API_KEY) {
+      if (process.env.NODE_ENV === 'production') {
+        return NextResponse.json({ error: 'Email service unavailable' }, { status: 500 });
+      }
       console.log('Email would be sent:', { to, subject });
       return NextResponse.json({ success: true, mock: true, message: 'Email logged (no API key)' });
     }
