@@ -3,8 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { Clock, CheckCircle, Calendar, RefreshCw } from 'lucide-react';
-import { getDictionary } from '@/lib/i18n';
+import { Calendar, RefreshCw } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
 
@@ -31,7 +30,7 @@ export default function ExtensionsPage() {
       setLoading(true);
       const { data: userWarrantyIds } = await supabase.from('warranties').select('id').or(`created_by.eq.${user.id},recipient_user_id.eq.${user.id}`);
       if (!userWarrantyIds || userWarrantyIds.length === 0) { setExtensions([]); setLoading(false); return; }
-      const ids = userWarrantyIds.map((w) => w.id);
+      const ids = userWarrantyIds.map((w: { id: string }) => w.id);
       let query = supabase.from('warranty_extensions').select('id, new_end_date, price, currency, commission_rate, commission_amount, terms, is_purchased, created_at, warranty_id, warranties(product_name, product_name_ar, reference_number, end_date)').in('warranty_id', ids).order('created_at', { ascending: false });
       if (filter === 'purchased') query = query.eq('is_purchased', true);
       else if (filter === 'available') query = query.eq('is_purchased', false);
