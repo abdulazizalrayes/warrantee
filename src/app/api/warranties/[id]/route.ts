@@ -2,7 +2,7 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
@@ -46,7 +46,6 @@ export async function PATCH(
 
     const body = await request.json();
 
-    // Allowlist of updatable fields
     const ALLOWED_FIELDS = ['product_name', 'brand', 'description', 'serial_number', 'category', 'supplier', 'purchase_price', 'warranty_start_date', 'warranty_end_date', 'status'];
     const updateBody = Object.fromEntries(
       Object.entries(body).filter(([key]) => ALLOWED_FIELDS.includes(key))
@@ -71,7 +70,7 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
