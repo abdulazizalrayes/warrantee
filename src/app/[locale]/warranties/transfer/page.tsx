@@ -1,7 +1,7 @@
 // @ts-nocheck
 "use client";
 
-import { useState, useEffect } from "react";
+import { use, useState, useEffect } from "react";
 import { getDictionary } from "@/lib/i18n";
 import { createBrowserClient } from "@supabase/ssr";
 
@@ -10,8 +10,9 @@ const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-export default function TransferWarrantyPage({ params }: { params: { locale: string } }) {
-  const isAr = params.locale === "ar";
+export default function TransferWarrantyPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = use(params);
+  const isAr = locale === "ar";
   const [warranties, setWarranties] = useState<any[]>([]);
   const [selectedWarranty, setSelectedWarranty] = useState("");
   const [recipientEmail, setRecipientEmail] = useState("");
@@ -52,7 +53,7 @@ export default function TransferWarrantyPage({ params }: { params: { locale: str
         .single();
 
       if (!recipient) {
-        setError(isAr ? "لم يتم العثور على المستخدم بهذا البريد" : "No user found with that email");
+        setError(isAr ? "ÙÙ ÙØªÙ Ø§ÙØ¹Ø«ÙØ± Ø¹ÙÙ Ø§ÙÙØ³ØªØ®Ø¯Ù Ø¨ÙØ°Ø§ Ø§ÙØ¨Ø±ÙØ¯" : "No user found with that email");
         setLoading(false);
         return;
       }
@@ -81,7 +82,7 @@ export default function TransferWarrantyPage({ params }: { params: { locale: str
       setRecipientEmail("");
       setReason("");
     } catch (err: any) {
-      setError(err.message || (isAr ? "حدث خطأ" : "An error occurred"));
+      setError(err.message || (isAr ? "Ø­Ø¯Ø« Ø®Ø·Ø£" : "An error occurred"));
     } finally {
       setLoading(false);
     }
@@ -91,20 +92,20 @@ export default function TransferWarrantyPage({ params }: { params: { locale: str
     <div className="min-h-screen bg-gray-50 py-12 px-4" dir={isAr ? "rtl" : "ltr"}>
       <div className="max-w-xl mx-auto">
         <h1 className="text-3xl font-bold text-gray-900 mb-2 text-center">
-          {isAr ? "نقل الضمان" : "Transfer Warranty"}
+          {isAr ? "ÙÙÙ Ø§ÙØ¶ÙØ§Ù" : "Transfer Warranty"}
         </h1>
         <p className="text-gray-600 text-center mb-8">
-          {isAr ? "نقل ملكية الضمان إلى شخص آخر" : "Transfer warranty ownership to another person"}
+          {isAr ? "ÙÙÙ ÙÙÙÙØ© Ø§ÙØ¶ÙØ§Ù Ø¥ÙÙ Ø´Ø®Øµ Ø¢Ø®Ø±" : "Transfer warranty ownership to another person"}
         </p>
 
         <form onSubmit={handleTransfer} className="bg-white rounded-2xl shadow-sm border p-6 space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              {isAr ? "اختر الضمان" : "Select Warranty"}
+              {isAr ? "Ø§Ø®ØªØ± Ø§ÙØ¶ÙØ§Ù" : "Select Warranty"}
             </label>
             <select value={selectedWarranty} onChange={(e) => setSelectedWarranty(e.target.value)}
               className="w-full px-4 py-3 border border-gray-300 rounded-xl" required>
-              <option value="">{isAr ? "-- اختر --" : "-- Select --"}</option>
+              <option value="">{isAr ? "-- Ø§Ø®ØªØ± --" : "-- Select --"}</option>
               {warranties.map((w) => (
                 <option key={w.id} value={w.id}>{w.product_name} ({w.serial_number})</option>
               ))}
@@ -112,7 +113,7 @@ export default function TransferWarrantyPage({ params }: { params: { locale: str
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              {isAr ? "البريد الإلكتروني للمستلم" : "Recipient Email"}
+              {isAr ? "Ø§ÙØ¨Ø±ÙØ¯ Ø§ÙØ¥ÙÙØªØ±ÙÙÙ ÙÙÙØ³ØªÙÙ" : "Recipient Email"}
             </label>
             <input type="email" value={recipientEmail} onChange={(e) => setRecipientEmail(e.target.value)}
               className="w-full px-4 py-3 border border-gray-300 rounded-xl" required
@@ -120,20 +121,20 @@ export default function TransferWarrantyPage({ params }: { params: { locale: str
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              {isAr ? "سبب النقل (اختياري)" : "Transfer Reason (optional)"}
+              {isAr ? "Ø³Ø¨Ø¨ Ø§ÙÙÙÙ (Ø§Ø®ØªÙØ§Ø±Ù)" : "Transfer Reason (optional)"}
             </label>
             <textarea value={reason} onChange={(e) => setReason(e.target.value)}
               className="w-full px-4 py-3 border border-gray-300 rounded-xl" rows={3}
-              placeholder={isAr ? "سبب نقل الضمان..." : "Reason for transfer..."} />
+              placeholder={isAr ? "Ø³Ø¨Ø¨ ÙÙÙ Ø§ÙØ¶ÙØ§Ù..." : "Reason for transfer..."} />
           </div>
           <button type="submit" disabled={loading}
             className="w-full py-3 bg-emerald-600 text-white rounded-xl font-medium hover:bg-emerald-700 disabled:opacity-50">
-            {loading ? (isAr ? "جاري النقل..." : "Transferring...") : (isAr ? "نقل الضمان" : "Transfer Warranty")}
+            {loading ? (isAr ? "Ø¬Ø§Ø±Ù Ø§ÙÙÙÙ..." : "Transferring...") : (isAr ? "ÙÙÙ Ø§ÙØ¶ÙØ§Ù" : "Transfer Warranty")}
           </button>
         </form>
 
         {success && <div className="mt-4 bg-green-50 border border-green-200 text-green-700 px-6 py-4 rounded-2xl">
-          {isAr ? "تم نقل الضمان بنجاح!" : "Warranty transferred successfully!"}
+          {isAr ? "ØªÙ ÙÙÙ Ø§ÙØ¶ÙØ§Ù Ø¨ÙØ¬Ø§Ø­!" : "Warranty transferred successfully!"}
         </div>}
         {error && <div className="mt-4 bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded-2xl">{error}</div>}
       </div>
