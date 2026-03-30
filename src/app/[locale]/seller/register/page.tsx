@@ -2,7 +2,7 @@
 
 // @ts-nocheck
 import { useState } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { createBrowserClient } from '@supabase/ssr';
 
 const supabase = createBrowserClient(
@@ -26,7 +26,6 @@ interface SellerData {
 export default function SellerRegisterPage() {
   const pathname = usePathname();
   const locale = pathname?.startsWith('/ar') ? 'ar' : 'en';
-  const router = useRouter();
   const isRTL = locale === 'ar';
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -54,7 +53,7 @@ export default function SellerRegisterPage() {
     city: '\u0627\u0644\u0645\u062f\u064a\u0646\u0629',
     warrantyPolicy: '\u0633\u064a\u0627\u0633\u0629 \u0627\u0644\u0636\u0645\u0627\u0646 \u0627\u0644\u0627\u0641\u062a\u0631\u0627\u0636\u064a\u0629',
     policyHint: '\u0635\u0641 \u0633\u064a\u0627\u0633\u0629 \u0627\u0644\u0636\u0645\u0627\u0646 \u0627\u0644\u0627\u0641\u062a\u0631\u0627\u0636\u064a\u0629 \u0644\u0645\u0646\u062a\u062c\u0627\u062a\u0643',
-    industries: ['\u0625\u0644\u0643\u062a\u0631\u0648\u0646\u064a\u0627\u062a', '\u0623\u062c\u0647\u0632\u0629 \u0645\u0646\u0632\u0644\u064a\u0629', '\u0633\u064a\u0627\u0631\u0627\u062a', '\u0623\u062b\u0627\u062b', '\u0645\u062c\u0648\u0647\u0631\u0627\u062a', '\u0623\u062e\u0631\u0649'],
+    industries: ['\u0625\u0644\u0643\u062a\u0631\u0648\u0646\u064a\u0627\u062b', '\u0623\u062c\u0647\u0632\u0629 \u0645\u0646\u0632\u0644\u064a\u0629', '\u0633\u064a\u0627\u0631\u0627\u062b', '\u0623\u062b\u0627\u062b', '\u0645\u062c\u0648\u0647\u0631\u0627\u062a', '\u0623\u062e\u0631\u0649'],
     next: '\u0627\u0644\u062a\u0627\u0644\u064a',
     back: '\u0627\u0644\u0633\u0627\u0628\u0642',
     submit: '\u062a\u0642\u062f\u064a\u0645 \u0627\u0644\u0637\u0644\u0628',
@@ -139,7 +138,7 @@ export default function SellerRegisterPage() {
         </div>
 
         <div className="flex items-center justify-center gap-2 mb-8">
-          {[t.step1, t.step2, t.step3].map((s, i) => (
+          {[t.step1, t.step2, t.step3].map((_s, i) => (
             <div key={i} className="flex items-center gap-2">
               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${step > i + 1 ? 'bg-emerald-500 text-white' : step === i + 1 ? 'bg-emerald-100 text-emerald-700 ring-2 ring-emerald-500' : 'bg-gray-100 text-gray-400'}`}>{step > i + 1 ? '\u2713' : i + 1}</div>
               {i < 2 && <div className={`w-12 h-0.5 ${step > i + 1 ? 'bg-emerald-500' : 'bg-gray-200'}`} />}
