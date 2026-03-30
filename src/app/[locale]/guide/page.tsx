@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useParams } from "next/navigation";
-import { BookOpen, Shield, FileText, Upload, Bell, ChevronRight, CheckCircle, Sparkles, ArrowRight, HelpCircle, Zap } from "lucide-react";
+import { BookOpen, Shield, FileText, Upload, Bell, ChevronRight, Sparkles, ArrowRight, HelpCircle, Zap } from "lucide-react";
 import Link from "next/link";
 
 export default function GuidePage() {
@@ -12,17 +12,17 @@ export default function GuidePage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   const steps = [
-    { icon: Upload, title: isRTL ? "أضف ضمانك الأول" : "Add Your First Warranty", desc: isRTL ? "ارفع صورة أو أدخل التفاصيل يدوياً. المسح الذكي يملأ الحقول تلقائياً." : "Upload a photo or enter details manually. Smart Scan auto-fills fields for you.", color: "#007aff" },
-    { icon: Shield, title: isRTL ? "تتبع الحالة" : "Track Status", desc: isRTL ? "راقب حالة الضمانات النشطة والمنتهية والتي ستنتهي." : "Monitor active, expiring, and expired warranties at a glance.", color: "#30d158" },
-    { icon: Bell, title: isRTL ? "احصل على تنبيهات" : "Get Notified", desc: isRTL ? "استلم تنبيهات قبل انتهاء الضمان حتى لا تفوتك." : "Receive alerts before warranties expire so you never miss a claim.", color: "#ff9f0a" },
-    { icon: FileText, title: isRTL ? "قدم مطالبة" : "File a Claim", desc: isRTL ? "قدم مطالبة ضمان بضغطة واحدة وتابع التقدم." : "Submit a warranty claim in one click and track its progress.", color: "#ff453a" },
+    { icon: Upload, title: isRTL ? "Ø£Ø¶Ù Ø¶ÙØ§ÙÙ Ø§ÙØ£ÙÙ" : "Add Your First Warranty", desc: isRTL ? "Ø§Ø±ÙØ¹ ØµÙØ±Ø© Ø£Ù Ø£Ø¯Ø®Ù Ø§ÙØªÙØ§ØµÙÙ ÙØ¯ÙÙØ§Ù. Ø§ÙÙØ³Ø­ Ø§ÙØ°ÙÙ ÙÙÙØ£ Ø§ÙØ­ÙÙÙ ØªÙÙØ§Ø¦ÙØ§Ù." : "Upload a photo or enter details manually. Smart Scan auto-fills fields for you.", color: "#007aff" },
+    { icon: Shield, title: isRTL ? "ØªØªØ¨Ø¹ Ø§ÙØ­Ø§ÙØ©" : "Track Status", desc: isRTL ? "Ø±Ø§ÙØ¨ Ø­Ø§ÙØ© Ø§ÙØ¶ÙØ§ÙØ§Øª Ø§ÙÙØ´Ø·Ø© ÙØ§ÙÙÙØªÙÙØ© ÙØ§ÙØªÙ Ø³ØªÙØªÙÙ." : "Monitor active, expiring, and expired warranties at a glance.", color: "#30d158" },
+    { icon: Bell, title: isRTL ? "Ø§Ø­ØµÙ Ø¹ÙÙ ØªÙØ¨ÙÙØ§Øª" : "Get Notified", desc: isRTL ? "Ø§Ø³ØªÙÙ ØªÙØ¨ÙÙØ§Øª ÙØ¨Ù Ø§ÙØªÙØ§Ø¡ Ø§ÙØ¶ÙØ§Ù Ø­ØªÙ ÙØ§ ØªÙÙØªÙ." : "Receive alerts before warranties expire so you never miss a claim.", color: "#ff9f0a" },
+    { icon: FileText, title: isRTL ? "ÙØ¯Ù ÙØ·Ø§ÙØ¨Ø©" : "File a Claim", desc: isRTL ? "ÙØ¯Ù ÙØ·Ø§ÙØ¨Ø© Ø¶ÙØ§Ù Ø¨Ø¶ØºØ·Ø© ÙØ§Ø­Ø¯Ø© ÙØªØ§Ø¨Ø¹ Ø§ÙØªÙØ¯Ù." : "Submit a warranty claim in one click and track its progress.", color: "#ff453a" },
   ];
 
   const faqs = [
-    { q: isRTL ? "كيف أضيف ضماناً جديداً؟" : "How do I add a new warranty?", a: isRTL ? "اذهب إلى الضمانات > جديد وارفع صورة أو أدخل التفاصيل يدوياً." : "Go to Warranties > New and upload a photo or enter details manually. Smart Scan will auto-fill fields from your receipt." },
-    { q: isRTL ? "ما هو المسح الذكي؟" : "What is Smart Scan?", a: isRTL ? "تقنية OCR تقرأ الإيصالات ووثائق الضمان وتستخرج التفاصيل تلقائياً." : "Smart Scan uses OCR technology to read receipts and warranty documents, automatically extracting product details, dates, and seller info." },
-    { q: isRTL ? "كيف أقدم مطالبة ضمان؟" : "How do I file a warranty claim?", a: isRTL ? "افتح الضمان > انقر تقديم مطالبة > صف المشكلة وأرفق الصور." : "Open the warranty > Click File Claim > Describe the issue and attach photos. We will notify the seller and track the process." },
-    { q: isRTL ? "هل يمكنني مشاركة الضمان؟" : "Can I share a warranty?", a: isRTL ? "نعم، يمكنك مشاركة شهادة الضمان عبر رابط أو تنزيل PDF." : "Yes! You can share the warranty certificate via a link or download it as a PDF." },
+    { q: isRTL ? "ÙÙÙ Ø£Ø¶ÙÙ Ø¶ÙØ§ÙØ§Ù Ø¬Ø¯ÙØ¯Ø§ÙØ" : "How do I add a new warranty?", a: isRTL ? "Ø§Ø°ÙØ¨ Ø¥ÙÙ Ø§ÙØ¶ÙØ§ÙØ§Øª > Ø¬Ø¯ÙØ¯ ÙØ§Ø±ÙØ¹ ØµÙØ±Ø© Ø£Ù Ø£Ø¯Ø®Ù Ø§ÙØªÙØ§ØµÙÙ ÙØ¯ÙÙØ§Ù." : "Go to Warranties > New and upload a photo or enter details manually. Smart Scan will auto-fill fields from your receipt." },
+    { q: isRTL ? "ÙØ§ ÙÙ Ø§ÙÙØ³Ø­ Ø§ÙØ°ÙÙØ" : "What is Smart Scan?", a: isRTL ? "ØªÙÙÙØ© OCR ØªÙØ±Ø£ Ø§ÙØ¥ÙØµØ§ÙØ§Øª ÙÙØ«Ø§Ø¦Ù Ø§ÙØ¶ÙØ§Ù ÙØªØ³ØªØ®Ø±Ø¬ Ø§ÙØªÙØ§ØµÙÙ ØªÙÙØ§Ø¦ÙØ§Ù." : "Smart Scan uses OCR technology to read receipts and warranty documents, automatically extracting product details, dates, and seller info." },
+    { q: isRTL ? "ÙÙÙ Ø£ÙØ¯Ù ÙØ·Ø§ÙØ¨Ø© Ø¶ÙØ§ÙØ" : "How do I file a warranty claim?", a: isRTL ? "Ø§ÙØªØ­ Ø§ÙØ¶ÙØ§Ù > Ø§ÙÙØ± ØªÙØ¯ÙÙ ÙØ·Ø§ÙØ¨Ø© > ØµÙ Ø§ÙÙØ´ÙÙØ© ÙØ£Ø±ÙÙ Ø§ÙØµÙØ±." : "Open the warranty > Click File Claim > Describe the issue and attach photos. We will notify the seller and track the process." },
+    { q: isRTL ? "ÙÙ ÙÙÙÙÙÙ ÙØ´Ø§Ø±ÙØ© Ø§ÙØ¶ÙØ§ÙØ" : "Can I share a warranty?", a: isRTL ? "ÙØ¹ÙØ ÙÙÙÙÙ ÙØ´Ø§Ø±ÙØ© Ø´ÙØ§Ø¯Ø© Ø§ÙØ¶ÙØ§Ù Ø¹Ø¨Ø± Ø±Ø§Ø¨Ø· Ø£Ù ØªÙØ²ÙÙ PDF." : "Yes! You can share the warranty certificate via a link or download it as a PDF." },
   ];
 
   return (
@@ -34,10 +34,10 @@ export default function GuidePage() {
             <BookOpen className="w-7 h-7 text-white" />
           </div>
           <h1 className="text-[28px] font-semibold text-[#1d1d1f] tracking-tight">
-            {isRTL ? "دليل الاستخدام" : "Getting Started Guide"}
+            {isRTL ? "Ø¯ÙÙÙ Ø§ÙØ§Ø³ØªØ®Ø¯Ø§Ù" : "Getting Started Guide"}
           </h1>
           <p className="text-[15px] text-[#86868b] mt-2 max-w-lg mx-auto">
-            {isRTL ? "تعلم كيف تدير ضماناتك بفعالية في 4 خطوات بسيطة" : "Learn how to manage your warranties effectively in 4 simple steps"}
+            {isRTL ? "ØªØ¹ÙÙ ÙÙÙ ØªØ¯ÙØ± Ø¶ÙØ§ÙØ§ØªÙ Ø¨ÙØ¹Ø§ÙÙØ© ÙÙ 4 Ø®Ø·ÙØ§Øª Ø¨Ø³ÙØ·Ø©" : "Learn how to manage your warranties effectively in 4 simple steps"}
           </p>
         </div>
 
@@ -55,7 +55,7 @@ export default function GuidePage() {
                   </div>
                   <div>
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-[12px] font-medium text-[#86868b]">{isRTL ? "الخطوة" : "Step"} {i + 1}</span>
+                      <span className="text-[12px] font-medium text-[#86868b]">{isRTL ? "Ø§ÙØ®Ø·ÙØ©" : "Step"} {i + 1}</span>
                     </div>
                     <h3 className="text-[15px] font-semibold text-[#1d1d1f] mb-1">{step.title}</h3>
                     <p className="text-[13px] text-[#86868b] leading-relaxed">{step.desc}</p>
@@ -69,7 +69,7 @@ export default function GuidePage() {
         {/* FAQ Section */}
         <div className="mb-10">
           <h2 className="text-[20px] font-semibold text-[#1d1d1f] mb-4">
-            {isRTL ? "الأسئلة الشائعة" : "Frequently Asked Questions"}
+            {isRTL ? "Ø§ÙØ£Ø³Ø¦ÙØ© Ø§ÙØ´Ø§Ø¦Ø¹Ø©" : "Frequently Asked Questions"}
           </h2>
           <div className="bg-white rounded-2xl ring-1 ring-[#d2d2d7]/40 shadow-sm overflow-hidden divide-y divide-[#d2d2d7]/30">
             {faqs.map((faq, i) => (
@@ -99,17 +99,17 @@ export default function GuidePage() {
         <div className="bg-gradient-to-br from-[#1A1A2E] to-[#2d2d5e] rounded-2xl p-8 text-center">
           <Sparkles className="w-8 h-8 text-[#ff9f0a] mx-auto mb-3" />
           <h2 className="text-[20px] font-semibold text-white mb-2">
-            {isRTL ? "جاهز للبدء؟" : "Ready to get started?"}
+            {isRTL ? "Ø¬Ø§ÙØ² ÙÙØ¨Ø¯Ø¡Ø" : "Ready to get started?"}
           </h2>
           <p className="text-[14px] text-white/70 mb-5 max-w-md mx-auto">
-            {isRTL ? "أضف ضمانك الأول الآن وابدأ في حماية مشترياتك" : "Add your first warranty now and start protecting your purchases"}
+            {isRTL ? "Ø£Ø¶Ù Ø¶ÙØ§ÙÙ Ø§ÙØ£ÙÙ Ø§ÙØ¢Ù ÙØ§Ø¨Ø¯Ø£ ÙÙ Ø­ÙØ§ÙØ© ÙØ´ØªØ±ÙØ§ØªÙ" : "Add your first warranty now and start protecting your purchases"}
           </p>
           <Link
             href={"/" + locale + "/warranties/new"}
             className="inline-flex items-center gap-2 px-6 py-3 bg-white text-[#1A1A2E] rounded-full text-[14px] font-semibold hover:bg-white/90 transition-colors"
           >
             <Zap className="w-4 h-4" />
-            {isRTL ? "أضف ضمان" : "Add Warranty"}
+            {isRTL ? "Ø£Ø¶Ù Ø¶ÙØ§Ù" : "Add Warranty"}
             <ArrowRight className={"w-4 h-4 " + (isRTL ? "rotate-180" : "")} />
           </Link>
         </div>
