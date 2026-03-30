@@ -3,11 +3,7 @@
 import { useState } from 'react';
 import { Mail, MessageCircle, Send } from 'lucide-react';
 
-interface ContactPageProps {
-  params: Promise<{ locale: string }>;
-}
-
-export default function ContactPage({ params }: ContactPageProps) {
+export default function ContactPage() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -31,7 +27,7 @@ export default function ContactPage({ params }: ContactPageProps) {
     }
   }
 
-  const locale = 'en';
+  // const locale = 'en'; // hardcoded English only for now
 
   if (submitted) {
     return (
