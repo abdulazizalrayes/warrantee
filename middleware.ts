@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
@@ -30,7 +29,7 @@ export async function middleware(request: NextRequest) {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
+          cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           );
           response = NextResponse.next({ request });
@@ -47,8 +46,22 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const pathname = request.nextUrl.pathname;
-  const localeMatch = pathname.match(/^\/(en|ar)\//);
+  const localeMatch = pathname.match(/^\/(en|ar)(\/|$)/);
   const locale = localeMatch ? localeMatch[1] : "en";
+
+  // Redirect locale-less paths to /en/ prefix (fixes Google Search Console 404s)
+  // Skip API routes, static files, and paths that already have a locale
+  if (
+    !localeMatch &&
+    !pathname.startsWith("/api/") &&
+    !pathname.startsWith("/_next/") &&
+    !pathname.startsWith("/auth/callback") &&
+    pathname !== "/"
+  ) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/en" + pathname;
+    return NextResponse.redirect(url, 301);
+  }
 
   // Allow auth callback to always pass through
   if (
