@@ -34,7 +34,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   return NextResponse.json(data, { status: 201 });
 }
 
-export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id: warrantyId } = await params;
   const supabase = createClient(supabaseUrl, supabaseKey);
 
