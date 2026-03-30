@@ -1,6 +1,6 @@
-// Warrantee — Seller Invitation Token API
-// GET /api/invitations/seller/[token] — Validate invitation
-// POST /api/invitations/seller/[token] — Accept invitation
+// Warrantee â Seller Invitation Token API
+// GET /api/invitations/seller/[token] â Validate invitation
+// POST /api/invitations/seller/[token] â Accept invitation
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
@@ -15,7 +15,7 @@ function getSupabaseAdmin() {
 }
 
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ token: string }> }
 ) {
   const { token } = await params;
@@ -56,13 +56,12 @@ export async function GET(
 }
 
 export async function POST(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ token: string }> }
 ) {
   const { token } = await params;
   const supabaseAdmin = getSupabaseAdmin();
 
-  // User must be authenticated
   const cookieStore = await cookies();
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -74,7 +73,6 @@ export async function POST(
     return NextResponse.json({ error: 'Please register or sign in first' }, { status: 401 });
   }
 
-  // Validate invitation
   const { data: invitation } = await supabaseAdmin
     .from('seller_invitations')
     .select('*')
@@ -86,18 +84,15 @@ export async function POST(
     return NextResponse.json({ error: 'Invalid or expired invitation' }, { status: 404 });
   }
 
-  // Update user role to seller
   await supabaseAdmin.from('profiles').update({
     role: 'seller',
   }).eq('id', user.id);
 
-  // Mark invitation as accepted
   await supabaseAdmin.from('seller_invitations').update({
     status: 'accepted',
     accepted_at: new Date().toISOString(),
   }).eq('id', invitation.id);
 
-  // Link warranty to seller if applicable
   if (invitation.warranty_id) {
     await supabaseAdmin.from('warranties').update({
       seller_id: user.id,
