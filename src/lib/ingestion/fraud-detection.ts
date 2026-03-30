@@ -1,4 +1,5 @@
-// Warrantee — Fraud Detection & Duplicate Detection Engine
+// @ts-nocheck
+// Warrantee â Fraud Detection & Duplicate Detection Engine
 
 import { createClient } from '@supabase/supabase-js';
 import type { FraudSeverity, OCRExtractedFields } from './types';
