@@ -1,5 +1,5 @@
-// Warrantee — Admin Ingestion Stats API
-// GET /api/admin/ingestion/stats — Get pipeline statistics
+// Warrantee â Admin Ingestion Stats API
+// GET /api/admin/ingestion/stats â Get pipeline statistics
 
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
@@ -13,7 +13,7 @@ function getSupabaseAdmin() {
   );
 }
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   const supabaseAdmin = getSupabaseAdmin();
 
   const cookieStore = await cookies();
