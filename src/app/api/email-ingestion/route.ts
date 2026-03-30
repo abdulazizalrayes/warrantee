@@ -56,7 +56,7 @@ function extractWarrantyData(text: string) {
   // Seller/vendor name
   const sellerPatterns = [
     /(?:seller|vendor|store|shop|retailer|sold by|from)[:\s]+([^\n,]+)/i,
-    /(?:\u0627\u0644\u0628\u0627\u0626\u0639|\u0627\u0644\u0645\u062a\u062c\u0631|\u0627\u0644\u0645\u0648\u0631\u062f)[:\s]+([^\n,]+)/i,
+    /(?:\u0627\u0644\u0628\u0627\u0626\u0639\u0627\u0644\u0645\u062a\u062c\u0631|\u0627\u0644\u0645\u0648\u0631\u062f)[:\s]+([^\n,]+)/i,
   ];
   for (const p of sellerPatterns) {
     const m = text.match(p);
@@ -92,221 +92,179 @@ function computeConfidence(data: Record<string, string>): number {
     warranty_period: 15, seller_name: 10, invoice_reference: 5, category: 5,
   };
   let score = 0;
-  for (const [key, weight] of Object.entries(weights)) {
-    if (data[key]) score += weight;
-  }
-  return Math.min(score, 100);
-}
+  for (cÛÝÚÙ^KÙZYÚHÙØXÝ[Y\ÊÙZYÚÊJHÂY
+]VÚÙ^WJHØÛÜH
+ÏHÙZYÚÂB]\X]Z[ØÛÜKL
+NÂBËÈ\ÙH]HÝ[È[ÈVVVKSSKQ[Ý[Û\ÙQ]J]TÝÝ[ÊNÝ[È[ÂÛÛÝÛX[YH]TÝ\XÙJÖ××KÙËHNÂÛÛÝ\ÈHÛX[YÜ]
+HNÂY
+\Ë[ÝOOHÊH]\[Â]ØK×HH\ËX\
+[X\NÂËÈ[HSSKVVVVHÜVVVKSSKQY
+HÌJH]\ÛX[YÈËÈ[XYHVVVKSSKQY
+ÈÌJH]\È
+ÈH
+ÈÝ[ÊKYÝ\
+H
+ÈH
+ÈÝ[ÊJKYÝ\
+NÂ]\[ÂB^Ü\Þ[È[Ý[ÛÔÕ
+\]Y\Ý^\]Y\Ý
+HÂHÂÛÛÝÛÛ[\HH\]Y\ÝXY\ËÙ]
+ÛÛ[]\HHÂ]ÛQ[XZ[HÂ]ÝXXÝHÂ]^ÙHHÂ]]XÚY[^ÎÝ[Ö×HH×NÂ]\Ù\YÝ[È[H[ÂËÈ[H][\\ÜH]H
+Ù[ÜYÔÜÝX\È[Ý[\ÙJBY
+ÛÛ[\K[ÛY\Ê][\\ÙÜKY]HHÛÛ[\K[ÛY\Ê\XØ][ÛÞ]ÝÝËYÜK]\[ÛÙYJHÂÛÛÝÜQ]HH]ØZ]\]Y\ÝÜQ]J
+NÂÛQ[XZ[H
+ÜQ]KÙ]
+ÛHH\ÈÝ[ÊH
+ÜQ]KÙ]
+Ù[\H\ÈÝ[ÊHÂÝXXÝH
+ÜQ]KÙ]
+ÝXXÝH\ÈÝ[ÊHÂ^ÙHH
+ÜQ]KÙ]
+^H\ÈÝ[ÊH
+ÜQ]KÙ]
+^ÙHH\ÈÝ[ÊHÂËÈ[ÙH\È]Z[XH[ÜQ]H]ÝÝ\[H\ÙY
+ÜQ]KÙ]
+[H\ÈÝ[ÊH
+ÜQ]KÙ]
+[ÙHH\ÈÝ[ÊHÂËÈ^XÝÙ[\[XZ[ÛH[YH[XZ[ÜX]ÛÛÝ[XZ[X]ÚHÛQ[XZ[X]Ú
+Ï
+×JÊOÊNÂY
+[XZ[X]Ú
+HÛQ[XZ[H[XZ[X]ÚÌWNÂËÈØÙ\ÜÈ]XÚY[È8 %Ù[ÜYÙ[È[H\È[X\YY[ÂÛÛÝ]XÚY[ÛÝ[H\ÙR[
 
-// Parse date string into YYYY-MM-DD
-function parseDate(dateStr: string): string | null {
-  const cleaned = dateStr.replace(/[\/\.]/g, "-");
-  const parts = cleaned.split("-");
-  if (parts.length !== 3) return null;
-  let [a, b, c] = parts.map(Number);
-  // Handle DD-MM-YYYY or YYYY-MM-DD
-  if (a > 31) return cleaned; // Already YYYY-MM-DD
-  if (c > 31) return c + "-" + String(b).padStart(2, "0") + "-" + String(a).padStart(2, "0");
-  return null;
-}
+ÜQ]KÙ]
+]XÚY[ÈH\ÈÝ[ÊHNÂÜ
+]HHNÈHHX]X^
+]XÚY[ÛÝ[L
+NÈJÊÊHÂÛÛÝ]HÜQ]KÙ]
+]XÚY[
+ÈJH\È[H[ÂY
+X]
+HÛÛ[YNÂÛÛÝ]\HH]\HÂËÈÜ[XYÙ\È[ËÙ[ÈÐÔ[Ú[Y
+]\KÝ\ÕÚ]
+[XYÙKÈH]\HOOH\XØ][ÛÜHÂHÂÛÛÝY\H]ØZ]]\^PY\
+NÂÛÛÝ\ÙMHY\ÛJY\KÔÝ[Ê\ÙMNÂÛÛÝ]U\HH]N
+È]\H
+ÈØ\ÙM
+È\ÙMÂËÈØ[Ý\ÐÔTHÝ]BÛÛÝØÜ\H]ÈT
+Ø\KÛØÜ\]Y\Ý\
+NÂÛÛÝØÜ\ÈH]ØZ]]Ú
+ØÜ\ÔÝ[Ê
+KÂY]ÙÔÕXY\ÎÈÛÛ[U\H\XØ][ÛÚÛÛKÙNÓÓÝ[ÚYJÈ[XYÙN]U\HJKJNÂY
+ØÜ\ËÚÊHÂÛÛÝØÜ]HH]ØZ]ØÜ\ËÛÛ
+NÂY
+ØÜ]K^
+H]XÚY[^Ë\Ú
+ØÜ]K^
+NÂBHØ]Ú
+JHÂÛÛÛÛK\ÜÐÔZ[YÜ]XÚY[JNÂBBËÈÜ^[\ËXY\XÝB[ÙHY
+]\KÝ\ÕÚ]
+^ÈJHÂHÂ]XÚY[^Ë\Ú
+]ØZ]]^
 
-export async function POST(request: NextRequest) {
-  try {
-    const contentType = request.headers.get("content-type") || "";
-    let fromEmail = "";
-    let subject = "";
-    let textBody = "";
-    let htmlBody = "";
-    let attachmentTexts: string[] = [];
-    let userId: string | null = null;
+JNÂHØ]Ú
+JHÈÊÚÚ\
+ÈBBBËÈ[ÛÈ[HÜÝX\Ë\Ý[H]XÚY[È[ÓÓÛÛÝ]XÚY[ÒÛÛHÜQ]KÙ]
+]XÚY[ÈH\ÈÝ[ÎÂY
+]XÚY[ÒÛÛHÂHÂÛÛÝ]ÈHÓÓ\ÙJ]XÚY[ÒÛÛNÂÜ
+ÛÛÝ]Ù]ÊHÂY
+]ÛÛ[\OËÝ\ÕÚ]
+[XYÙKÈH]ÛÛ[\HOOH\XØ][ÛÜHÂÛÛÝ]U\HH]N
+È]ÛÛ[\H
+ÈØ\ÙM
+È]ÛÛ[ÂÛÛÝØÜ\H]ÈT
+Ø\KÛØÜ\]Y\Ý\
+NÂÛÛÝØÜ\ÈH]ØZ]]Ú
+ØÜ\ÔÝ[Ê
+KÂY]ÙÔÕXY\ÎÈÛÛ[U\H\XØ][ÛÚÛÛKÙNÓÓÝ[ÚYJÈ[XYÙN]U\HJKJNÂY
+ØÜ\ËÚÊHÂÛÛÝØÜ]HH]ØZ]ØÜ\ËÛÛ
+NÂY
+ØÜ]K^
+H]XÚY[^Ë\Ú
+ØÜ]K^
+NÂBBBHØ]Ú
+JHÈÊÝÓÓ
+ÈBBBËÈ[HÓÓÙH
+\XÝTHØ[
+B[ÙHÂÛÛÝÛÛH]ØZ]\]Y\ÝÛÛ
+NÂÛQ[XZ[HÛÛÛHÛÛÙ[\ÛÛ[XZ[ÂÝXXÝHÛÛÝXXÝÂ^ÙHHÛÛ^ÛÛÙHÂY
+ÛÛ]XÚY[Ý^
+H]XÚY[^Ë\Ú
+ÛÛ]XÚY[Ý^
+NÂBËÈÛÚÈ\\Ù\H[XZ[Y
+ÛQ[XZ[
+HÂÛÛÝÈ]NÙ[HHH]ØZ]Ù]Ý\X\ÙPYZ[
+BÛJÙ[\ÈBÙ[XÝ
+YB\J[XZ[ÛQ[XZ[ÓÝÙ\Ø\ÙJ
+JBÚ[ÛJ
+NÂY
+Ù[JH\Ù\YHÙ[KYÂBY
+]\Ù\Y
+HÂËÈHÈ[\Ù\[]]\Ù\ÂÛÛÝÈ]NÈ\Ù\ÈHHH]ØZ]Ù]Ý\X\ÙPYZ[
+K]]YZ[\Ý\Ù\Ê
+NÂÛÛÝ]]\Ù\H\Ù\ÏË[
 
-    // Handle multipart form data (SendGrid/Postmark inbound parse)
-    if (contentType.includes("multipart/form-data") || contentType.includes("application/x-www-form-urlencoded")) {
-      const formData = await request.formData();
-      fromEmail = (formData.get("from") as string) || (formData.get("sender") as string) || "";
-      subject = (formData.get("subject") as string) || "";
-      textBody = (formData.get("text") as string) || (formData.get("TextBody") as string) || "";
-      htmlBody = (formData.get("html") as string) || (formData.get("HtmlBody") as string) || "";
+JHOK[XZ[ËÓÝÙ\Ø\ÙJ
+HOOHÛQ[XZ[ÓÝÙ\Ø\ÙJ
+JNÂY
+]]\Ù\H\Ù\YH]]\Ù\YÂBY
+]\Ù\Y
+HÂ]\^\ÜÛÙKÛÛÈ\ÜÈXØÛÝ[Ý[Ü[XZ[
+ÈÛQ[XZ[
+ÈX\ÙHÚYÛ\]Ø\[YK[È\ÝKÈÝ]\Î
+
+B
+NÂBËÈÛÛX[H[^ÛÝ\Ù\ÈÜ^XÝ[ÛÛÛÝ[^HÜÝXXÝ^ÙK]XÚY[^×KÚ[NÂÛÛÝ^XÝY]HH^XÝØ\[Q]J[^
+NÂÛÛÝÛÛY[ÙHHÛÛ\]PÛÛY[ÙJ^XÝY]JNÂËÈØ[Ý[]H]\Â]Ý\]HH^XÝY]KÝ\Ù]HÈ\ÙQ]J^XÝY]KÝ\Ù]JH[ÂY
+\Ý\]JHÝ\]HH]È]J
+KÒTÓÔÝ[Ê
+KÜ]
+VÌNÂ][]NÝ[È[H[ÂY
+^XÝY]KØ\[WÜ\[Ù
+HÂÛÛÝ\[ÙH\ÙR[
+^XÝY]KØ\[WÜ\[Ù
+NÂÛÛÝÝ\H]È]JÝ\]JNÂY
+[^ÓÝÙ\Ø\ÙJ
+K[ÛY\Ê[ÛH[^[ÛY\ÊL
+ÍL
+
+×L
+ÌHJHÂÝ\Ù][Û
+Ý\Ù][Û
 
-      // Extract sender email from "Name <email>" format
-      const emailMatch = fromEmail.match(/<([^>]+)>/);
-      if (emailMatch) fromEmail = emailMatch[1];
+H
+È\[Ù
+NÂH[ÙHÂÝ\Ù][YX\Ý\Ù][YX\
+H
+È\[Ù
+NÂB[]HHÝ\ÒTÓÔÝ[Ê
+KÜ]
+VÌNÂBY
+Y[]JHÂÛÛÝH]È]JÝ\]JNÂÙ][YX\Ù][YX\
+H
+ÈJNÂ[]HHÒTÓÔÝ[Ê
+KÜ]
+VÌNÂBËÈÙÈH[Ù\Ý[ÛÛÛÝÈ]N[Ù\Ý[ÛHH]ØZ]Ù]Ý\X\ÙPYZ[
+KÛJ[XZ[Ú[Ù\Ý[ÛK[Ù\
+Â\Ù\ÚY\Ù\YÛWÙ[XZ[ÛQ[XZ[ÝXXÝÝXXÝ^XÝYÙ]N^XÝY]KÛÛY[ÙWÜØÛÜNÛÛY[ÙKÝ]\ÎÛÛY[ÙHH
+LÈ^XÝYXÙZ]YJKÙ[XÝ
 
-      // Process attachments — SendGrid sends them as numbered fields
-      const attachmentCount = parseInt((formData.get("attachments") as string) || "0");
-      for (let i = 1; i <= Math.max(attachmentCount, 10); i++) {
-        const att = formData.get("attachment" + i) as File | null;
-        if (!att) continue;
+KÚ[ÛJ
+NÂËÈ]]ËXÜX]HØ\[HYÛÛY[ÙH\ÈYÚ[ÝYÚ]Ø\[HH[ÂY
+ÛÛY[ÙHH
+L	^XÝY]KÙXÝÛ[YJHÂÛÛÝÈ]N]ÕØ\[HHH]ØZ]Ù]Ý\X\ÙPYZ[
+KÛJØ\[Y\ÈK[Ù\
+ÂÙXÝÛ[YN^XÝY]KÙXÝÛ[YKÙ\X[Û[X\^XÝY]KÙ\X[Û[X\[Ý\Ù]NÝ\]K[Ù]N[]KÙ[\Û[YN^XÝY]KÙ[\Û[YH[[ÚXÙWÜY\[ÙN^XÝY]K[ÚXÙWÜY\[ÙH[Ø]YÛÜN^XÝY]KØ]YÛÜH[ÜX]YØN\Ù\YÝ]\ÎÛÛY[ÙHH
+ÈXÝ]HY\×ÜÙ[ÜYÚ\Ý\YYK[ÝXYÙN[^X]Ú
+Ö×L
+WL
+KÊHÈ\[JKÙ[XÝ
 
-        const attType = att.type || "";
-        // For images and PDFs, send to OCR endpoint
-        if (attType.startsWith("image/") || attType === "application/pdf") {
-          try {
-            const buffer = await att.arrayBuffer();
-            const base64 = Buffer.from(buffer).toString("base64");
-            const dataUri = "data:" + attType + ";base64," + base64;
-
-            // Call our OCR API route
-            const ocrUrl = new URL("/api/ocr", request.url);
-            const ocrRes = await fetch(ocrUrl.toString(), {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ image: dataUri }),
-            });
-            if (ocrRes.ok) {
-              const ocrData = await ocrRes.json();
-              if (ocrData.text) attachmentTexts.push(ocrData.text);
-            }
-          } catch (e) {
-            console.error("OCR failed for attachment:", e);
-          }
-        }
-        // For text files, read directly
-        else if (attType.startsWith("text/")) {
-          try {
-            attachmentTexts.push(await att.text());
-          } catch (e) { /* skip */ }
-        }
-      }
-
-      // Also handle Postmark-style attachments in JSON
-      const attachmentsJson = formData.get("Attachments") as string;
-      if (attachmentsJson) {
-        try {
-          const atts = JSON.parse(attachmentsJson);
-          for (const att of atts) {
-            if (att.ContentType?.startsWith("image/") || att.ContentType === "application/pdf") {
-              const dataUri = "data:" + att.ContentType + ";base64," + att.Content;
-              const ocrUrl = new URL("/api/ocr", request.url);
-              const ocrRes = await fetch(ocrUrl.toString(), {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ image: dataUri }),
-              });
-              if (ocrRes.ok) {
-                const ocrData = await ocrRes.json();
-                if (ocrData.text) attachmentTexts.push(ocrData.text);
-              }
-            }
-          }
-        } catch (e) { /* not JSON */ }
-      }
-    }
-    // Handle JSON body (direct API call)
-    else {
-      const json = await request.json();
-      fromEmail = json.from || json.sender || json.email || "";
-      subject = json.subject || "";
-      textBody = json.text || json.body || "";
-      if (json.attachment_text) attachmentTexts.push(json.attachment_text);
-    }
-
-    // Look up user by email
-    if (fromEmail) {
-      const { data: profile } = await getSupabaseAdmin()
-        .from("profiles")
-        .select("id")
-        .eq("email", fromEmail.toLowerCase())
-        .single();
-      if (profile) userId = profile.id;
-    }
-
-    if (!userId) {
-      // Try to find user in auth.users
-      const { data: { users } } = await getSupabaseAdmin().auth.admin.listUsers();
-      const authUser = users?.find((u) => u.email?.toLowerCase() === fromEmail.toLowerCase());
-      if (authUser) userId = authUser.id;
-    }
-
-    if (!userId) {
-      return NextResponse.json(
-        { error: "No account found for email: " + fromEmail + ". Please sign up at warrantee.io first." },
-        { status: 404 }
-      );
-    }
-
-    // Combine all text sources for extraction
-    const allText = [subject, textBody, ...attachmentTexts].join("\n");
-    const extractedData = extractWarrantyData(allText);
-    const confidence = computeConfidence(extractedData);
-
-    // Calculate dates
-    let startDate = extractedData.start_date ? parseDate(extractedData.start_date) : null;
-    if (!startDate) startDate = new Date().toISOString().split("T")[0];
-
-    let endDate: string | null = null;
-    if (extractedData.warranty_period) {
-      const period = parseInt(extractedData.warranty_period);
-      const start = new Date(startDate);
-      if (allText.toLowerCase().includes("month") || allText.includes("\u0634\u0647\u0631")) {
-        start.setMonth(start.getMonth() + period);
-      } else {
-        start.setFullYear(start.getFullYear() + period);
-      }
-      endDate = start.toISOString().split("T")[0];
-    }
-    if (!endDate) {
-      const d = new Date(startDate);
-      d.setFullYear(d.getFullYear() + 1);
-      endDate = d.toISOString().split("T")[0];
-    }
-
-    // Log the ingestion
-    const { data: ingestion } = await getSupabaseAdmin().from("email_ingestion").insert({
-      user_id: userId,
-      from_email: fromEmail,
-      subject: subject,
-      extracted_data: extractedData,
-      confidence_score: confidence,
-      status: confidence >= 50 ? "extracted" : "received",
-    }).select().single();
-
-    // Auto-create warranty if confidence is high enough
-    let warranty = null;
-    if (confidence >= 50 && extractedData.product_name) {
-      const { data: newWarranty } = await getSupabaseAdmin().from("warranties").insert({
-        product_name: extractedData.product_name,
-        serial_number: extractedData.serial_number || null,
-        start_date: startDate,
-        end_date: endDate,
-        seller_name: extractedData.seller_name || null,
-        invoice_reference: extractedData.invoice_reference || null,
-        category: extractedData.category || null,
-        created_by: userId,
-        status: confidence >= 60 ? "active" : "draft",
-        is_self_registered: true,
-        language: allText.match(/[\u0600-\u06FF]/) ? "ar" : "en",
-      }).select().single();
-
-      warranty = newWarranty;
-
-      // Link warranty to ingestion record
-      if (warranty && ingestion) {
-        await getSupabaseAdmin().from("email_ingestion").update({
-          warranty_id: warranty.id,
-          status: "confirmed",
-        }).eq("id", ingestion.id);
-      }
-    }
-
-    return NextResponse.json({
-      success: true,
-      message: warranty
-        ? "Warranty auto-created from email"
-        : "Email received but confidence too low for auto-creation. Please add manually.",
-      confidence,
-      extracted: extractedData,
-      warranty_id: warranty?.id || null,
-      warranty_ref: warranty?.reference_number || null,
-      status: warranty ? warranty.status : "needs_review",
-    });
-
-  } catch (error: unknown) {
-    console.error("Email ingestion error:", error);
-    return NextResponse.json(
-      { error: "Failed to process email", details: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 }
-    );
-  }
-}
-
+KÚ[ÛJ
+NÂØ\[HH]ÕØ\[NÂËÈ[ÈØ\[HÈ[Ù\Ý[ÛXÛÜY
+Ø\[H	[Ù\Ý[ÛHÂ]ØZ]Ù]Ý\X\ÙPYZ[
+KÛJ[XZ[Ú[Ù\Ý[ÛK\]JÂØ\[WÚYØ\[KYÝ]\ÎÛÛ\YYJK\JY[Ù\Ý[ÛY
+NÂBB]\^\ÜÛÙKÛÛÂÝXØÙ\ÜÎYKY\ÜØYÙNØ\[BÈØ\[H]]ËXÜX]YÛH[XZ[[XZ[XÙZ]Y]ÛÛY[ÙHÛÈÝÈÜ]]ËXÜX][ÛX\ÙHYX[X[KÛÛY[ÙK^XÝY^XÝY]KØ\[WÚYØ\[OËY[Ø\[WÜYØ\[OËY\[ÙWÛ[X\[Ý]\ÎØ\[HÈØ\[KÝ]\ÈYY×Ü]Y]ÈJNÂHØ]Ú
+\Ü[ÛÝÛHÂÛÛÛÛK\Ü[XZ[[Ù\Ý[Û\Ü\ÜNÂ]\^\ÜÛÙKÛÛÈ\ÜZ[YÈØÙ\ÜÈ[XZ[]Z[Î\Ü[Ý[Ù[Ù\ÜÈ\ÜY\ÜØYÙH[ÛÝÛ\ÜKÈÝ]\Î
+LB
+NÂBB
