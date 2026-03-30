@@ -1,6 +1,6 @@
-// Warrantee — Admin Invitation API
-// POST /api/admin/invitations — Send admin invitation via Resend
-// GET /api/admin/invitations — List admin invitations
+// Warrantee â Admin Invitation API
+// POST /api/admin/invitations â Send admin invitation via Resend
+// GET /api/admin/invitations â List admin invitations
 
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
@@ -15,7 +15,7 @@ function getSupabaseAdmin() {
   );
 }
 
-async function getAuthUser(request: NextRequest) {
+async function getAuthUser(_request: NextRequest) {
   const cookieStore = await cookies();
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -53,12 +53,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid role' }, { status: 400 });
   }
 
-  // Only super_admin can invite other admins/super_admins
   if (role !== 'support' && authUser.role !== 'super_admin') {
     return NextResponse.json({ error: 'Only super admins can invite administrators' }, { status: 403 });
   }
 
-  // Check if user is already an admin
   const { data: existingProfile } = await supabaseAdmin
     .from('profiles')
     .select('id, role')
@@ -69,7 +67,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'User is already an administrator' }, { status: 409 });
   }
 
-  // Create invitation record
   const token = crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, '');
 
   const { data: invitation, error: createError } = await supabaseAdmin
@@ -90,7 +87,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: createError.message }, { status: 500 });
   }
 
-  // Send email via Resend
   try {
     await sendAdminInvitationEmail({
       to: email,
@@ -107,7 +103,6 @@ export async function POST(request: NextRequest) {
 
   } catch (emailError) {
     console.error('[AdminInvite] Email send failed:', emailError);
-    // Invitation created but email failed
   }
 
   return NextResponse.json({
