@@ -1,13 +1,12 @@
-// Warrantee — Provisional Warranties API
-// GET /api/warranties/provisional — List user's provisional warranties
-// PATCH /api/warranties/provisional — Batch update (not used yet)
+// Warrantee â Provisional Warranties API
+// GET /api/warranties/provisional â List user's provisional warranties
+// PATCH /api/warranties/provisional â Batch update (not used yet)
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
 
-async function getUser(request: NextRequest) {
+async function getUser(_request: NextRequest) {
   const cookieStore = await cookies();
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
