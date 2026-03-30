@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { useAuth } from "@/lib/auth-context";
-import { FileText, Download, Calendar, Filter, ChevronDown, BarChart3, PieChart, TrendingUp, Clock, Shield, AlertTriangle, CheckCircle, FileBarChart } from "lucide-react";
+import { FileText, Download, Calendar, Filter, BarChart3, PieChart, TrendingUp, Clock, Shield, AlertTriangle, CheckCircle, FileBarChart } from "lucide-react";
 
 type ReportType = "warranty_summary" | "expiry_forecast" | "claims_overview" | "supplier_performance";
 type TimeRange = "7d" | "30d" | "90d" | "12m" | "all";
@@ -45,25 +45,25 @@ export default function ReportsPage() {
     load();
   }, [user]);
   const reportTypes = [
-    { id: "warranty_summary" as ReportType, icon: FileBarChart, label: isRTL ? "ملخص الضمانات" : "Warranty Summary", desc: isRTL ? "نظرة عامة على جميع الضمانات" : "Overview of all warranties" },
-    { id: "expiry_forecast" as ReportType, icon: Clock, label: isRTL ? "توقعات الانتهاء" : "Expiry Forecast", desc: isRTL ? "الضمانات التي ستنتهي قريباً" : "Warranties expiring soon" },
-    { id: "claims_overview" as ReportType, icon: Shield, label: isRTL ? "نظرة على المطالبات" : "Claims Overview", desc: isRTL ? "حالة المطالبات والتقدم" : "Claim status and progress" },
-    { id: "supplier_performance" as ReportType, icon: TrendingUp, label: isRTL ? "أداء الموردين" : "Supplier Performance", desc: isRTL ? "تقييم الموردين والبائعين" : "Vendor and seller ratings" },
+    { id: "warranty_summary" as ReportType, icon: FileBarChart, label: isRTL ? "ÙÙØ®Øµ Ø§ÙØ¶ÙØ§ÙØ§Øª" : "Warranty Summary", desc: isRTL ? "ÙØ¸Ø±Ø© Ø¹Ø§ÙØ© Ø¹ÙÙ Ø¬ÙÙØ¹ Ø§ÙØ¶ÙØ§ÙØ§Øª" : "Overview of all warranties" },
+    { id: "expiry_forecast" as ReportType, icon: Clock, label: isRTL ? "ØªÙÙØ¹Ø§Øª Ø§ÙØ§ÙØªÙØ§Ø¡" : "Expiry Forecast", desc: isRTL ? "Ø§ÙØ¶ÙØ§ÙØ§Øª Ø§ÙØªÙ Ø³ØªÙØªÙÙ ÙØ±ÙØ¨Ø§Ù" : "Warranties expiring soon" },
+    { id: "claims_overview" as ReportType, icon: Shield, label: isRTL ? "ÙØ¸Ø±Ø© Ø¹ÙÙ Ø§ÙÙØ·Ø§ÙØ¨Ø§Øª" : "Claims Overview", desc: isRTL ? "Ø­Ø§ÙØ© Ø§ÙÙØ·Ø§ÙØ¨Ø§Øª ÙØ§ÙØªÙØ¯Ù" : "Claim status and progress" },
+    { id: "supplier_performance" as ReportType, icon: TrendingUp, label: isRTL ? "Ø£Ø¯Ø§Ø¡ Ø§ÙÙÙØ±Ø¯ÙÙ" : "Supplier Performance", desc: isRTL ? "ØªÙÙÙÙ Ø§ÙÙÙØ±Ø¯ÙÙ ÙØ§ÙØ¨Ø§Ø¦Ø¹ÙÙ" : "Vendor and seller ratings" },
   ];
 
   const timeRanges: { id: TimeRange; label: string }[] = [
-    { id: "7d", label: isRTL ? "7 أيام" : "7 days" },
-    { id: "30d", label: isRTL ? "30 يوم" : "30 days" },
-    { id: "90d", label: isRTL ? "90 يوم" : "90 days" },
-    { id: "12m", label: isRTL ? "12 شهر" : "12 months" },
-    { id: "all", label: isRTL ? "الكل" : "All time" },
+    { id: "7d", label: isRTL ? "7 Ø£ÙØ§Ù" : "7 days" },
+    { id: "30d", label: isRTL ? "30 ÙÙÙ" : "30 days" },
+    { id: "90d", label: isRTL ? "90 ÙÙÙ" : "90 days" },
+    { id: "12m", label: isRTL ? "12 Ø´ÙØ±" : "12 months" },
+    { id: "all", label: isRTL ? "Ø§ÙÙÙ" : "All time" },
   ];
 
   const summaryCards = [
-    { label: isRTL ? "إجمالي الضمانات" : "Total Warranties", value: stats.total, icon: FileText, color: "#007aff" },
-    { label: isRTL ? "نشطة" : "Active", value: stats.active, icon: CheckCircle, color: "#30d158" },
-    { label: isRTL ? "تنتهي قريباً" : "Expiring Soon", value: stats.expiring, icon: AlertTriangle, color: "#ff9f0a" },
-    { label: isRTL ? "منتهية" : "Expired", value: stats.expired, icon: Clock, color: "#ff453a" },
+    { label: isRTL ? "Ø¥Ø¬ÙØ§ÙÙ Ø§ÙØ¶ÙØ§ÙØ§Øª" : "Total Warranties", value: stats.total, icon: FileText, color: "#007aff" },
+    { label: isRTL ? "ÙØ´Ø·Ø©" : "Active", value: stats.active, icon: CheckCircle, color: "#30d158" },
+    { label: isRTL ? "ØªÙØªÙÙ ÙØ±ÙØ¨Ø§Ù" : "Expiring Soon", value: stats.expiring, icon: AlertTriangle, color: "#ff9f0a" },
+    { label: isRTL ? "ÙÙØªÙÙØ©" : "Expired", value: stats.expired, icon: Clock, color: "#ff453a" },
   ];
 
   return (
@@ -73,15 +73,15 @@ export default function ReportsPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div>
             <h1 className="text-[28px] font-semibold text-[#1d1d1f] tracking-tight">
-              {isRTL ? "التقارير" : "Reports"}
+              {isRTL ? "Ø§ÙØªÙØ§Ø±ÙØ±" : "Reports"}
             </h1>
             <p className="text-[15px] text-[#86868b] mt-1">
-              {isRTL ? "تحليلات ورؤى حول ضماناتك" : "Analytics and insights about your warranties"}
+              {isRTL ? "ØªØ­ÙÙÙØ§Øª ÙØ±Ø¤Ù Ø­ÙÙ Ø¶ÙØ§ÙØ§ØªÙ" : "Analytics and insights about your warranties"}
             </p>
           </div>
           <button className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#1A1A2E] text-white rounded-full text-[14px] font-medium hover:bg-[#2d2d5e] transition-colors">
             <Download className="w-4 h-4" />
-            {isRTL ? "تصدير PDF" : "Export PDF"}
+            {isRTL ? "ØªØµØ¯ÙØ± PDF" : "Export PDF"}
           </button>
         </div>
 
@@ -122,7 +122,7 @@ export default function ReportsPage() {
             <div className="bg-white rounded-2xl ring-1 ring-[#d2d2d7]/40 shadow-sm overflow-hidden">
               <div className="px-5 py-4 border-b border-[#d2d2d7]/30">
                 <h2 className="text-[15px] font-semibold text-[#1d1d1f]">
-                  {isRTL ? "نوع التقرير" : "Report Type"}
+                  {isRTL ? "ÙÙØ¹ Ø§ÙØªÙØ±ÙØ±" : "Report Type"}
                 </h2>
               </div>
               <div className="p-2">
@@ -189,16 +189,16 @@ export default function ReportsPage() {
             <div className="bg-white rounded-2xl ring-1 ring-[#d2d2d7]/40 shadow-sm overflow-hidden">
               <div className="px-5 py-4 border-b border-[#d2d2d7]/30 flex items-center justify-between">
                 <h2 className="text-[15px] font-semibold text-[#1d1d1f]">
-                  {isRTL ? "تفاصيل الحالة" : "Status Breakdown"}
+                  {isRTL ? "ØªÙØ§ØµÙÙ Ø§ÙØ­Ø§ÙØ©" : "Status Breakdown"}
                 </h2>
                 <Filter className="w-4 h-4 text-[#86868b]" />
               </div>
               <div className="divide-y divide-[#d2d2d7]/30">
                 {[
-                  { label: isRTL ? "نشطة" : "Active", count: stats.active, pct: stats.total ? Math.round((stats.active / stats.total) * 100) : 0, color: "#30d158" },
-                  { label: isRTL ? "تنتهي قريباً" : "Expiring Soon", count: stats.expiring, pct: stats.total ? Math.round((stats.expiring / stats.total) * 100) : 0, color: "#ff9f0a" },
-                  { label: isRTL ? "منتهية" : "Expired", count: stats.expired, pct: stats.total ? Math.round((stats.expired / stats.total) * 100) : 0, color: "#ff453a" },
-                  { label: isRTL ? "مطالبات" : "Claimed", count: stats.claimed, pct: stats.total ? Math.round((stats.claimed / stats.total) * 100) : 0, color: "#007aff" },
+                  { label: isRTL ? "ÙØ´Ø·Ø©" : "Active", count: stats.active, pct: stats.total ? Math.round((stats.active / stats.total) * 100) : 0, color: "#30d158" },
+                  { label: isRTL ? "ØªÙØªÙÙ ÙØ±ÙØ¨Ø§Ù" : "Expiring Soon", count: stats.expiring, pct: stats.total ? Math.round((stats.expiring / stats.total) * 100) : 0, color: "#ff9f0a" },
+                  { label: isRTL ? "ÙÙØªÙÙØ©" : "Expired", count: stats.expired, pct: stats.total ? Math.round((stats.expired / stats.total) * 100) : 0, color: "#ff453a" },
+                  { label: isRTL ? "ÙØ·Ø§ÙØ¨Ø§Øª" : "Claimed", count: stats.claimed, pct: stats.total ? Math.round((stats.claimed / stats.total) * 100) : 0, color: "#007aff" },
                 ].map((row, i) => (
                   <div key={i} className="px-5 py-4 flex items-center gap-4">
                     <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: row.color }} />
@@ -220,9 +220,9 @@ export default function ReportsPage() {
             {/* Quick Actions */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {[
-                { icon: BarChart3, label: isRTL ? "تقرير شهري" : "Monthly Report", desc: isRTL ? "ملخص شهري كامل" : "Full monthly summary" },
-                { icon: PieChart, label: isRTL ? "توزيع الفئات" : "Category Split", desc: isRTL ? "تقسيم حسب الفئة" : "Breakdown by category" },
-                { icon: TrendingUp, label: isRTL ? "تحليل الاتجاه" : "Trend Analysis", desc: isRTL ? "اتجاهات الضمان" : "Warranty trends over time" },
+                { icon: BarChart3, label: isRTL ? "ØªÙØ±ÙØ± Ø´ÙØ±Ù" : "Monthly Report", desc: isRTL ? "ÙÙØ®Øµ Ø´ÙØ±Ù ÙØ§ÙÙ" : "Full monthly summary" },
+                { icon: PieChart, label: isRTL ? "ØªÙØ²ÙØ¹ Ø§ÙÙØ¦Ø§Øª" : "Category Split", desc: isRTL ? "ØªÙØ³ÙÙ Ø­Ø³Ø¨ Ø§ÙÙØ¦Ø©" : "Breakdown by category" },
+                { icon: TrendingUp, label: isRTL ? "ØªØ­ÙÙÙ Ø§ÙØ§ØªØ¬Ø§Ù" : "Trend Analysis", desc: isRTL ? "Ø§ØªØ¬Ø§ÙØ§Øª Ø§ÙØ¶ÙØ§Ù" : "Warranty trends over time" },
               ].map((action, i) => (
                 <button key={i} className="bg-white rounded-2xl ring-1 ring-[#d2d2d7]/40 shadow-sm p-5 text-left hover:shadow-md transition-all group">
                   <div className="w-10 h-10 rounded-xl bg-[#f5f5f7] flex items-center justify-center mb-3 group-hover:bg-[#1A1A2E] transition-colors">
