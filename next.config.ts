@@ -46,6 +46,61 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  redirects: async () => {
+    const publicPages = [
+      "about",
+      "features",
+      "pricing",
+      "contact",
+      "faq",
+      "guide",
+      "verify",
+      "auth",
+      "terms",
+      "privacy",
+      "cookies",
+    ];
+
+    const protectedPages = [
+      "dashboard",
+      "seller",
+      "admin",
+      "warranties",
+      "settings",
+      "billing",
+      "notifications",
+      "onboarding",
+      "approval",
+      "reports",
+      "analytics",
+      "documents",
+      "reset-password",
+    ];
+
+    const allPages = [...publicPages, ...protectedPages];
+
+    const redirects = [];
+
+    // Redirect locale-less exact paths to /en/ prefix
+    for (const page of allPages) {
+      redirects.push({
+        source: `/${page}`,
+        destination: `/en/${page}`,
+        permanent: true,
+      });
+    }
+
+    // Redirect locale-less paths with sub-paths to /en/ prefix
+    for (const page of allPages) {
+      redirects.push({
+        source: `/${page}/:path*`,
+        destination: `/en/${page}/:path*`,
+        permanent: true,
+      });
+    }
+
+    return redirects;
+  },
 };
 
 export default nextConfig;
