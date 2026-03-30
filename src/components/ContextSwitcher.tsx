@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 
 type ContextMode = 'buyer' | 'seller';
 
@@ -17,7 +17,6 @@ export default function ContextSwitcher({
   sellerPendingCount = 0,
 }: ContextSwitcherProps) {
   const router = useRouter();
-  const pathname = usePathname();
   const [mode, setMode] = useState<ContextMode>('buyer');
 
   // Only show for dual-role companies
@@ -38,9 +37,7 @@ export default function ContextSwitcher({
     (newMode: ContextMode) => {
       if (newMode === mode) return;
       setMode(newMode);
-      // Save to cookie (expires in 365 days)
       document.cookie = `warrantee_context=${newMode};path=/;max-age=31536000;SameSite=Lax`;
-      // Refresh current page to reload data in new context
       router.refresh();
     },
     [mode, router]
@@ -58,7 +55,7 @@ export default function ContextSwitcher({
         }`}
         aria-pressed={mode === 'buyer'}
       >
-        <span>🏢</span>
+        <span>ð¢</span>
         <span>As Buyer</span>
         {mode !== 'buyer' && buyerPendingCount > 0 && (
           <span className="absolute -top-1 -right-1 w-3 h-3 bg-amber-500 rounded-full animate-pulse" />
@@ -75,7 +72,7 @@ export default function ContextSwitcher({
         }`}
         aria-pressed={mode === 'seller'}
       >
-        <span>🏭</span>
+        <span>ð­</span>
         <span>As Seller</span>
         {mode !== 'seller' && sellerPendingCount > 0 && (
           <span className="absolute -top-1 -right-1 w-3 h-3 bg-amber-500 rounded-full animate-pulse" />
@@ -85,7 +82,6 @@ export default function ContextSwitcher({
   );
 }
 
-// Hook to read the current context mode from cookies (server-compatible)
 export function useContextMode(): ContextMode {
   const [mode, setMode] = useState<ContextMode>('buyer');
 
