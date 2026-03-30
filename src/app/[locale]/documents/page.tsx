@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { FileText, Search, File, Image, FileSpreadsheet, Eye, FolderOpen } from 'lucide-react';
-import { getDictionary } from '@/lib/i18n';
 import { useAuth } from '@/lib/auth-context';
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
 
@@ -30,7 +29,7 @@ export default function DocumentsPage() {
       setLoading(true);
       const { data: userWarrantyIds } = await supabase.from('warranties').select('id').or(`created_by.eq.${user.id},recipient_user_id.eq.${user.id}`);
       if (!userWarrantyIds || userWarrantyIds.length === 0) { setDocs([]); setLoading(false); return; }
-      const ids = userWarrantyIds.map((w) => w.id);
+      const ids = userWarrantyIds.map((w: { id: string }) => w.id);
       let query = supabase.from('warranty_documents').select('id, file_name, file_type, file_size, file_url, version, created_at, warranty_id, warranties(product_name, product_name_ar, reference_number)').in('warranty_id', ids).order('created_at', { ascending: false });
       if (search) query = query.ilike('file_name', `%${search}%`);
       const { data } = await query;
@@ -49,7 +48,7 @@ export default function DocumentsPage() {
   };
 
   const formatSize = (bytes: number | null) => {
-    if (!bytes) return '—';
+    if (!bytes) return 'â';
     if (bytes < 1024) return bytes + ' B';
     if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
     return (bytes / 1048576).toFixed(1) + ' MB';
@@ -72,10 +71,10 @@ export default function DocumentsPage() {
     <div dir={isRTL ? 'rtl' : 'ltr'} className="max-w-[1200px] mx-auto px-4 sm:px-6 py-8 sm:py-12">
       <div className="mb-8">
         <h1 className="text-[32px] sm:text-[40px] font-semibold tracking-tight text-[#1d1d1f]">
-          {isRTL ? '\u0627\u0644\u0645\u0633\u062a\u0646\u062f\u0627\u062a' : 'Documents'}
+          {isRTL ? '\u0627\u0644\u0645\u0633\u062a\u0646\u062d\u0627\u062a' : 'Documents'}
         </h1>
         <p className="text-[15px] text-[#86868b] mt-1">
-          {isRTL ? '\u062c\u0645\u064a\u0639 \u0645\u0633\u062a\u0646\u062f\u0627\u062a \u0627\u0644\u0636\u0645\u0627\u0646' : 'All warranty documents'}
+          {isRTL ? '\u062c\u0645\u064a\u0639 \u0645\u0633\u062a\u0646\u062d\u0627\u062a \u0627\u0644\u0636\u0645\u0627\u0646' : 'All warranty documents'}
         </p>
       </div>
 
