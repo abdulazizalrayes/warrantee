@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Upload, File, Trash2, Download, AlertCircle } from "lucide-react";
+import { Upload, File, Trash2, AlertCircle } from "lucide-react";
 
 const t = {
   en: { title: "Documents", dropzone: "Drag & drop files here", browse: "or click to browse", types: "PDF, JPEG, PNG, DOC, DOCX (max 250MB)", uploading: "Uploading...", noFiles: "No documents uploaded yet", delete: "Delete", download: "Download", error: "Upload failed" },
