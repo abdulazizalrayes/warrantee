@@ -2,7 +2,7 @@
 
 // @ts-nocheck
 import { useState, useEffect } from 'react';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { createBrowserClient } from '@supabase/ssr';
 
 const supabase = createBrowserClient(
@@ -22,7 +22,6 @@ export default function WarrantyExtendPage() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const locale = pathname?.startsWith('/ar') ? 'ar' : 'en';
-  const router = useRouter();
   const isRTL = locale === 'ar';
   const warrantyId = searchParams?.get('id') || '';
   const [warranty, setWarranty] = useState<any>(null);
@@ -61,7 +60,7 @@ export default function WarrantyExtendPage() {
       subtitle: '\u062D\u0627\u0641\u0638 \u0639\u0644\u0649 \u062D\u0645\u0627\u064A\u0629 \u0645\u0646\u062A\u062C\u0643 \u0645\u0639 \u062E\u0637\u0629 \u0636\u0645\u0627\u0646 \u0645\u0645\u062A\u062F\u0629.',
       product: '\u0627\u0644\u0645\u0646\u062A\u062C',
       currentExpiry: '\u0627\u0646\u062A\u0647\u0627\u0621 \u0627\u0644\u0636\u0645\u0627\u0646 \u0627\u0644\u062D\u0627\u0644\u064A',
-      newExpiry: '\u0627\u0646\u062A\u0647\u0627\u0621 \u0627\u0644\u0636\u0645\u0627\u0646 \u0627\u0644\u062C\u062F\u064A\u062F',
+      newExpiry: '\u0627\u0646\u062A\u0647\u0627\u0621 \u0627\u0644\u0636\u0645\u0627\u0646 \u0627\u0644\u062C\u062f\u064A\u062d',
       months: '\u0634\u0647\u0631',
       popular: '\u0627\u0644\u0623\u0643\u062B\u0631 \u0634\u0639\u0628\u064A\u0629',
       perMonth: '/\u0634\u0647\u0631',
@@ -69,8 +68,8 @@ export default function WarrantyExtendPage() {
       selectPlan: '\u0627\u062E\u062A\u0631 \u062E\u0637\u0629',
       proceed: '\u0645\u062A\u0627\u0628\u0639\u0629 \u0627\u0644\u062F\u0641\u0639',
       processing: '\u062C\u0627\u0631\u064A \u0627\u0644\u0645\u0639\u0627\u0644\u062C\u0629...',
-      success: '\u062A\u0645 \u062A\u0645\u062F\u064A\u062F \u0627\u0644\u0636\u0645\u0627\u0646 \u0628\u0646\u062C\u0627\u062D!',
-      successDesc: '\u062A\u0645 \u062A\u0645\u062F\u064A\u062F \u0636\u0645\u0627\u0646\u0643. \u0633\u062A\u062A\u0644\u0642\u0649 \u0628\u0631\u064A\u062F\u064B\u0627 \u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A\u064B\u0627 \u0644\u0644\u062A\u0623\u0643\u064A\u062F \u0642\u0631\u064A\u0628\u064B\u0627.',
+      success: '\u062A\u0645 \u062A\u0645\u062F\u064A\u062D \u0627\u0644\u0636\u0645\u0627\u0646 \u0628\u0646\u062C\u0627\u062D!',
+      successDesc: '\u062A\u0645 \u062A\u0645\u062F\u064A\u062D \u0636\u0645\u0627\u0646\u0643. \u0633\u062A\u062A\u0644\u0642\u0649 \u0628\u0631\u064A\u062F\u064B\u0627 \u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A\u064B\u0627 \u0644\u0644\u062A\u0623\u0643\u064A\u062f \u0642\u0631\u064A\u0628\u064B\u0627.',
       backToDashboard: '\u0627\u0644\u0639\u0648\u062F\u0629 \u0644\u0644\u0648\u062D\u0629 \u0627\u0644\u062A\u062D\u0643\u0645',
       notFound: '\u0644\u0645 \u064A\u062A\u0645 \u0627\u0644\u0639\u062B\u0648\u0631 \u0639\u0644\u0649 \u0627\u0644\u0636\u0645\u0627\u0646',
     },
