@@ -7,6 +7,7 @@ import { getOrganizationJsonLd } from "@/lib/jsonld";
 import "@/app/globals.css";
 import dynamic from "next/dynamic";
 
+const GoogleTagManager = dynamic(() => import("@/components/GoogleTagManager"));
 const GoogleAnalytics = dynamic(() => import("@/components/GoogleAnalytics"));
 const Hotjar = dynamic(() => import("@/components/Hotjar"));
 const CookieConsent = dynamic(() => import("@/components/CookieConsent"));
@@ -97,6 +98,7 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
       </head>
       <body className="bg-[#FAFAFA] text-[#1A1A2E] antialiased">
             <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:bg-white focus:px-4 focus:py-2 focus:rounded focus:shadow-lg focus:text-blue-700 focus:outline-none">Skip to main content</a>
+        <GoogleTagManager />
         <GoogleAnalytics />
           <Hotjar />
         <AuthProvider><main id="main-content">{children}</main></AuthProvider>

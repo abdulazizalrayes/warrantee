@@ -17,6 +17,18 @@ export default function GoogleAnalytics() {
         {`
           window.dataLayer = window.dataLayer || [];
           function gtag(){dataLayer.push(arguments);}
+          window.gtag = window.gtag || gtag;
+          var consent = { analytics: false, marketing: false };
+          try {
+            var saved = window.localStorage.getItem('warrantee_cookie_consent');
+            if (saved) consent = Object.assign(consent, JSON.parse(saved));
+          } catch (e) {}
+          window.gtag('consent', 'default', {
+            analytics_storage: consent.analytics ? 'granted' : 'denied',
+            ad_storage: consent.marketing ? 'granted' : 'denied',
+            ad_user_data: consent.marketing ? 'granted' : 'denied',
+            ad_personalization: consent.marketing ? 'granted' : 'denied',
+          });
           gtag('js', new Date());
           gtag('config', '${GA_ID}', {
             page_title: document.title,
