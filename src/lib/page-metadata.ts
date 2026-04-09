@@ -33,101 +33,105 @@ const PAGE_PATHS: Record<PageKey, string> = {
 
 const PAGE_META: Record<
   PageKey,
-  { en: { title: string; description: string }; ar: { title: string; description: string } }
+  {
+    en: { title: string; description: string };
+    ar: { title: string; description: string };
+  }
 > = {
   home: {
     en: {
-      title: "Warrantee â Warranty Management Platform",
+      title: "Warrantee — Warranty Management Platform",
       description:
-        "Track, approve, and claim warranties in one place. Bilingual Arabic & English. Free to start.",
+        "Track, approve, and claim warranties in one place. Bilingual Arabic and English. Free to start.",
     },
     ar: {
-      title: "ÙØ§Ø±ÙØªÙ â ÙÙØµØ© Ø¥Ø¯Ø§Ø±Ø© Ø§ÙØ¶ÙØ§ÙØ§Øª",
+      title: "وارنتي — منصة إدارة الضمانات",
       description:
-        "ØªØªØ¨Ø¹ Ø¶ÙØ§ÙØ§ØªÙ ÙØ¥Ø¯Ø§Ø±ØªÙØ§ ÙØ§ÙÙØ·Ø§ÙØ¨Ø© Ø¨ÙØ§ ÙÙ ÙÙØ§Ù ÙØ§Ø­Ø¯. Ø¨Ø§ÙÙØ¹ØªÙÙ Ø§ÙØ¹Ø±Ø¨ÙØ© ÙØ§ÙØ¥ÙØ¬ÙÙØ²ÙØ©. Ø§Ø¨Ø¯Ø£ ÙØ¬Ø§ÙØ§Ù.",
+        "تتبّع الضمانات ووافق عليها وقدّم المطالبات من مكان واحد. باللغتين العربية والإنجليزية. ابدأ مجانًا.",
     },
   },
   about: {
     en: {
-      title: "About Warrantee â Our Story",
+      title: "About Warrantee — Our Story",
       description:
         "Learn how Warrantee is transforming warranty management for businesses across Saudi Arabia and the GCC.",
     },
     ar: {
-      title: "Ù¹Ù ÙØ§Ø±ÙØªÙ â ÙØµØªÙØ§",
+      title: "عن وارنتي — قصتنا",
       description:
-        "ØªØ¹Ø±Ù Ø¹ÙÙ ÙÙÙÙØ© ØªØ­ÙÙÙ ÙØ§Ø±ÙØªÙ ÙØ¥Ø¯Ø§Ø±Ø© Ø§ÙØ¶ÙØ§ÙØ§Öª ÙÙØ´Ø±ÙØ§Öª ÙÙ Ø§ÙÙÙÙÙØ© Ø§ÙØ¹Ø±Ø¨ÙØ© Ø§ÙØ³Ø¹ÙØ¯ÙØ© ÙØ¯ÙÙ Ø§ÙØ®ÙÙØ¬.",
+        "تعرّف على كيف تغيّر وارنتي إدارة الضمانات للشركات في المملكة العربية السعودية ودول الخليج.",
     },
   },
   features: {
     en: {
-      title: "Warrantee Features â Smart Warranty Tools",
+      title: "Warrantee Features — Smart Warranty Tools",
       description:
         "Explore Warrantee's approval workflow, expiry reminders, bilingual certificates, and real-time dashboard.",
     },
     ar: {
-      title: "ÙÙØ²Ø§Öª ÙØ§Ø±ÙØªÙ â Ø£Ø¯ÙØ§Øª Ø§ÙØ¶ÙØ§ÙØ§Öª Ø§ÙØ°ÙÙØ©",
+      title: "مزايا وارنتي — أدوات ذكية لإدارة الضمان",
       description:
-        "Ø§Ø³ØªÙØ´Ù Ø³ÙØ± Ø¹ÙÙ Ø§ÙÙÙØ§ÙÙØ© ÙØªØ°ÙÙØ±Ø§Ù Ø§ÙØ§ÙØªÙØ§Ø¡ ÙØ§ÙØ´ÙØ§Ø¯Ø§Ù Ø«ÙØ§Ø¦ÙØ© Ø§ÙÙØºØ© ÙÙÙØ­Ø© Ø§ÙÙØ¹ÙÙØ§Öª ÙÙ ÙØ§Ø±ÙØªÙ.",
+        "استكشف سير عمل الموافقات وتذكيرات انتهاء الضمان والشهادات الثنائية اللغة ولوحة المتابعة الفورية في وارنتي.",
     },
   },
   pricing: {
     en: {
-      title: "Warrantee Pricing â Simple & Transparent Plans",
+      title: "Warrantee Pricing — Simple and Transparent Plans",
       description:
         "Start free, scale as you grow. See Warrantee's pricing plans for individuals and businesses.",
     },
     ar: {
-      title: "Ø£Ø³Ø¹Ø§Ø± ÙØ§Ø±ÙØªÙ" Ø®Ø·Ø· Ø¨Ø³ÙØ·Ø© ÙÙØºØ§Ø§Öª",
+      title: "أسعار وارنتي — خطط بسيطة وواضحة",
       description:
-        "Ø©Ø¨Ø¯Ø£ ÙØ¬Ø§ÙØ§Ù ÙØªÙØ³Ø¹ ÙØ¹ ÙÙÙ Ø¹ÙÙÙ. Ø§Ø·ÙØ¹ Ø¹ÙÙ Ø®Ø·Ø· Ø£Ø³Ø¹Ø§Ø± ÙØ§Ø±ÙØªÙ ÙÙØ£ÙØ±Ø§Ø¯ ÙØ§ÙØ´Ø±ÙØ§Øª.",
+        "ابدأ مجانًا وتوسّع مع نمو أعمالك. اطّلع على خطط أسعار وارنتي للأفراد والشركات.",
     },
   },
   contact: {
     en: {
-      title: "Contact Warrantee â Get in Touch",
+      title: "Contact Warrantee — Get in Touch",
       description:
         "Reach the Warrantee team for support, partnerships, or enterprise inquiries.",
     },
     ar: {
-      title: "ØªÙØ§ØµÙ ÙØ¹ ÙØ§Ø±ÙØªÙ",
+      title: "تواصل مع وارنتي",
       description:
-        "ØªÙØ§ØµÙ ÙØ¹ ÙØµÙÙ ÙØ§Ø±ÙØªÙ ÙÙØ­ØµÙÙ Ø¹ÙÙ Ø§ÙØ¯Ø¸Ù Ø£Ù Ø§ÙØ´Ø±Ø§ÙØ§Øª Ø£Ù Ø§Ø³ØªÙØ³Ø§Ø±Ø§Øª Ø§ÙØ´Ø±ÙØ§Øª.",
+        "تواصل مع فريق وارنتي للدعم أو الشراكات أو استفسارات الشركات.",
     },
   },
   faq: {
     en: {
-      title: "FAQ â Warrantee Frequently Asked Questions",
+      title: "FAQ — Warrantee Frequently Asked Questions",
       description:
         "Find answers to common questions about Warrantee's warranty management platform.",
     },
     ar: {
-      title: "Ø§ÙØ£Ø³Ø¦ÙØ© Ø§ÙØ´Ø§Ø¦Ø¹Ø© â ÙØ§Ø±ÙØªÙ",
+      title: "الأسئلة الشائعة — وارنتي",
       description:
-        "Ø©Ø¹Ø«Ø± Ø¹ÙÙ Ø¥Ø¬Ø§Ø¨Ø§Øª ÙÙØ£Ø³Ø¦ÙØ© Ø§ÙØ´Ø§Ø¦Ø¹Ø© Ø­ÙÙ ÙÙØµØ© ÙØ§Ø±ÙØªÙ ÙØ¥Ø¯Ø§Ø±Ø© Ø§ÙØ¶ÙØ§ÙØ§Øª.",
+        "اعثر على إجابات للأسئلة الشائعة حول منصة وارنتي لإدارة الضمانات.",
     },
   },
   guide: {
     en: {
-      title: "Warrantee User Guide â Getting Started",
+      title: "Warrantee User Guide — Getting Started",
       description:
         "Step-by-step guide to using Warrantee: set up your account, create warranties, and manage approvals.",
     },
     ar: {
-      title: "Ø¯ÙÙÙ ÙØ³ØªØ®Ø¯Ù ÙØ§Ø±ÙØªÙ â Ø§ÙØ¨Ø¯Ø¡",
+      title: "دليل استخدام وارنتي — البداية",
       description:
-        "Ø¯ÙÙÙ Ø®Ø·ÙØ© Ø¨Ø®Ø·ÙØ© ÙØ§Ø³ØªØ®Ø¯Ø§ÙÙ ÙØ§Ø±ÙØªÙ: Ø¥Ø¹Ø¯Ø§Ø¯ Ø­Ø³Ø§Ø¨Ù ÙØ¥ÙØ¬Ø§Ø¡ Ø§ÙØ¶ÙØ§ÙØ§Öª ÙØ¥Ø¯Ø§Ø±Ø© Ø§ÙÙÙØ§ÙÙØ©Ø¯.",
+        "دليل خطوة بخطوة لاستخدام وارنتي: أنشئ حسابك وابدأ الضمانات وأدِر الموافقات بسهولة.",
     },
   },
   verify: {
     en: {
-      title: "Verify a Warranty - Warrantee",
+      title: "Verify a Warranty — Warrantee",
       description:
         "Enter a warranty reference number to verify its authenticity instantly on Warrantee.",
     },
     ar: {
-      title: "ØªØ­ÙÙ ÙÙ Ø§ÙØ¶ÙØ§Ù â ÙØ§Ø±ÙØªÙ",
-      description: "Ø£Ø¯Ø®Ù Ø±ÙÙ ÙØ´Ø¹ Ø§ÙØ¶ÙØ§Ù ÙÙØªØ­ÙÙ ÙÙ ØµØ­ØªÙ ÙÙØ±Ø§Ù Ø¹ÙÙ ÙÙØµØ© ÙØ§Ø±ÙØªÙ.",
+      title: "تحقق من الضمان — وارنتي",
+      description:
+        "أدخل رقم مرجع الضمان للتحقق من صحته فورًا عبر منصة وارنتي.",
     },
   },
   auth: {
@@ -137,53 +141,50 @@ const PAGE_META: Record<
         "Log in or create a free Warrantee account to start managing your warranties today.",
     },
     ar: {
-      title: "ØªØ³Ø¬ÙÙ Ø§ÙØ¯Ø®ÙÙ Ø¥ÙÙ ÙØ§Ø±ÙØªÙ",
+      title: "تسجيل الدخول إلى وارنتي",
       description:
-        "Ø³Ø¬ÙÙ Ø¯Ø®ÙÙÙ Ø£Ù Ø£ÙØ´Ø¦ Ø­Ø³Ø§Ø¨Ø§Ù ÙØ¬Ø§ÙÙØ§Ù ÙÙ ÙØ§Ø±ÙØªÙ ÙØ¨Ø¯Ø¡ Ø¥Ø¯Ø§Ø±Ø© Ø¶ÙØ§ÙØ§ØªÙ Ø§ÙÙÙÙ.",
+        "سجّل دخولك أو أنشئ حسابًا مجانيًا في وارنتي لبدء إدارة ضماناتك اليوم.",
     },
   },
   terms: {
     en: {
-      title: "Terms of Service â Warrantee",
+      title: "Terms of Service — Warrantee",
       description:
         "Read Warrantee's terms of service governing the use of our warranty management platform.",
     },
     ar: {
-      title: "Ø´Ø±ÙØ· Ø§ÙØ®Ø¯ÙØ© â ÙØ§Ø±ÙØªÙ",
+      title: "شروط الخدمة — وارنتي",
       description:
-        "Ø§ÙØ±Ø£ Ø´Ø±ÙØ· Ø®Ø¯ÙØ© ÙØ§Ø±ÙØªÙ Ø§ÙØªÙ ØªØ­ÙÙ Ø§Ø³ØªØ®Ø¯Ø§Ù ÙÙØµØ© Ø¥Ø¯Ø§Ø±Ø© Ø§ÙØ¶ÙØ§ÙØ§Øª.",
+        "اقرأ شروط خدمة وارنتي التي تنظّم استخدام منصة إدارة الضمانات.",
     },
   },
   privacy: {
     en: {
-      title: "Privacy Policy â Warrantee",
+      title: "Privacy Policy — Warrantee",
       description:
         "Learn how Warrantee collects, uses, and protects your personal data and privacy.",
     },
     ar: {
-      title: "Ø³ÙØ§Ø³Ø© Ø§ÙØ®ØµÙØµÙØ© â ÙØ§Ø±ÙØªÙ",
+      title: "سياسة الخصوصية — وارنتي",
       description:
-        "ØªØ¹Ø±Ù Ø¹ÙÙ ÙÙÙÙÙØ© Ø¬ÙØ¹ ÙØ§Ø±ÙØªÙ ÙØ¨ÙØ§ÙØ§ØªÙ Ø§ÙØ´Ø®Ø­ÙØ© ÙØ§Ø³ØªØ®Ø¯Ø§ÙÙØ§ ÙØ­ÙØ§ÙØªÙØ§.",
+        "تعرّف على كيفية جمع وارنتي لبياناتك الشخصية واستخدامها وحمايتها.",
     },
   },
   cookies: {
     en: {
-      title: "Cookie Policy â Warrantee",
+      title: "Cookie Policy — Warrantee",
       description:
         "Understand how Warrantee uses cookies and similar tracking technologies on our platform.",
     },
     ar: {
-      title: "Ø³ÙØ§Ø³Ø© ÙÙÙØ§Øª ØªØ¹Ø±ÙÙ Ø§ÙØ§Ø±ØªØ¨Ø§Ø· â ÙØ§Ø±ÙØªÙ",
+      title: "سياسة ملفات تعريف الارتباط — وارنتي",
       description:
-        "ÙÙÙ ÙÙÙÙØ© Ø§Ø³ØªØ®Ø¯Ø§Ù ÙØ§Ø±ÙØªÙ ÙÙÙÙØ§Øª ØªØ²Ø±ÙÙ Ø§ÙØ§Ø±ØªØ¨Ø§Ø· ÙØªÙÙÙÙØ§Øª Ø§ÙØªØªØ¨Ø¹ Ø§ÙÙÙØ§Ø«ÙØ©.",
+        "افهم كيف تستخدم وارنتي ملفات تعريف الارتباط وتقنيات التتبع المشابهة على منصتها.",
     },
   },
 };
 
-export function buildPageMetadata(
-  page: PageKey,
-  locale: string
-): Metadata {
+export function buildPageMetadata(page: PageKey, locale: string): Metadata {
   const isAr = locale === "ar";
   const lang = isAr ? "ar" : "en";
   const meta = PAGE_META[page][lang];
