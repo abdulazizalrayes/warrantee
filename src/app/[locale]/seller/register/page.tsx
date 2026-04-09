@@ -109,7 +109,7 @@ export default function SellerRegisterPage() {
         throw insertError;
       }
 
-      const leadResponse = await fetch('/api/contact', {
+      const leadResponse = await fetch('/api/forms/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
