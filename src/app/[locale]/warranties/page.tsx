@@ -1,11 +1,10 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
 import { useAuth } from '@/lib/auth-context';
-import { getDictionary } from '@/lib/i18n';
 import { Shield, Plus, Search, ChevronLeft, ChevronRight, MoreHorizontal, Eye, Pencil, Trash2, FileText } from 'lucide-react';
 
 const PAGE_SIZE = 20;
@@ -23,10 +22,8 @@ const statusConfig: Record<string, { bg: string; text: string; dot: string }> = 
 export default function WarrantiesPage() {
   const params = useParams();
   const router = useRouter();
-  const searchParams = useSearchParams();
   const locale = (params?.locale as string) || 'en';
   const isRTL = locale === 'ar';
-  const dictionary = getDictionary(locale);
   const { user } = useAuth();
   const supabase = createSupabaseBrowserClient();
 

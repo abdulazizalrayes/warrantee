@@ -14,6 +14,8 @@ const serverSchema = z.object({
   VAPID_PRIVATE_KEY: z.string().min(1, "VAPID_PRIVATE_KEY is required"),
   CRON_SECRET: z.string().min(1, "CRON_SECRET is required"),
   // Optional
+  HUBSPOT_ACCESS_TOKEN: z.string().optional(),
+  GOOGLE_CLOUD_VISION_API_KEY: z.string().optional(),
   SENTRY_AUTH_TOKEN: z.string().optional(),
 });
 

@@ -1,12 +1,28 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
+function getSupabaseConfig() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!url || !key) {
+    console.warn("Supabase server environment variables not set. Using placeholder.");
+    return {
+      url: "https://placeholder.supabase.co",
+      key: "placeholder-key",
+    };
+  }
+
+  return { url, key };
+}
+
 export async function createServerSupabaseClient() {
   const cookieStore = await cookies();
+  const { url, key } = getSupabaseConfig();
 
   return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    url,
+    key,
     {
       cookies: {
         getAll() {

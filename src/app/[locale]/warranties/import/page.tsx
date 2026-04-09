@@ -7,7 +7,7 @@ import { ArrowLeft, ArrowRight, Upload, FileText, CheckCircle, AlertCircle, Down
 import { getDictionary, DIRECTION } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth-context";
-import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
+import Papa from "papaparse";
 
 interface ParsedRow {
   product_name: string;
@@ -30,7 +30,6 @@ export default function ImportWarrantiesPage() {
   const direction = DIRECTION[locale as Locale];
 
   const { user } = useAuth();
-  const supabase = createSupabaseBrowserClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [file, setFile] = useState<File | null>(null);
@@ -39,28 +38,6 @@ export default function ImportWarrantiesPage() {
   const [importing, setImporting] = useState(false);
   const [imported, setImported] = useState(0);
   const [done, setDone] = useState(false);
-
-  const parseCSV = (text: string): ParsedRow[] => {
-    const lines = text.trim().split("\n");
-    if (lines.length < 2) return [];
-
-    const headers = lines[0].split(",").map((h) => h.trim().toLowerCase().replace(/\s+/g, "_"));
-    const rows: ParsedRow[] = [];
-
-    for (let i = 1; i < lines.length; i++) {
-      const values = lines[i].split(",").map((v) => v.trim().replace(/^"|"$/g, ""));
-      const row: Record<string, string> = {};
-      headers.forEach((h, j) => { row[h] = values[j] || ""; });
-
-      if (row.product_name && row.start_date && row.end_date) {
-        rows.push(row as unknown as ParsedRow);
-      } else {
-        setErrors((prev) => [...prev, `Row ${i + 1}: Missing required fields (product_name, start_date, end_date)`]);
-      }
-    }
-
-    return rows;
-  };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files?.[0];
@@ -74,40 +51,55 @@ export default function ImportWarrantiesPage() {
     setFile(selected);
     setErrors([]);
     const text = await selected.text();
-    const parsed = parseCSV(text);
-    setParsedData(parsed);
+    const result = Papa.parse<ParsedRow>(text, {
+      header: true,
+      skipEmptyLines: true,
+      transformHeader: (header) => header.trim().toLowerCase().replace(/\s+/g, "_"),
+    });
+
+    const nextErrors = [
+      ...result.errors.map((error) => error.message),
+    ];
+    const rows = result.data.filter((row, index) => {
+      const valid = row.product_name && row.start_date && row.end_date;
+      if (!valid) {
+        nextErrors.push(`Row ${index + 2}: Missing required fields (product_name, start_date, end_date)`);
+      }
+      return valid;
+    });
+
+    setErrors(nextErrors);
+    setParsedData(rows);
   };
 
   const handleImport = async () => {
-    if (!user || parsedData.length === 0) return;
+    if (!user || parsedData.length === 0 || !file) return;
     setImporting(true);
     setImported(0);
+    setErrors([]);
 
-    for (const row of parsedData) {
-      const refNum = `WR-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 5).toUpperCase()}`;
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
 
-      const { error } = await supabase.from("warranties").insert({
-        reference_number: refNum,
-        product_name: row.product_name,
-        serial_number: row.serial_number || null,
-        sku: row.sku || null,
-        category: row.category || "other",
-        start_date: row.start_date,
-        end_date: row.end_date,
-        seller_name: row.seller_name || null,
-        seller_email: row.seller_email || null,
-        quantity: parseInt(row.quantity || "1") || 1,
-        status: "active",
-        created_by: user.id,
-        issuer_user_id: user.id,
-        is_self_registered: true,
+      const response = await fetch("/api/warranties/bulk-import", {
+        method: "POST",
+        body: formData,
       });
 
-      if (!error) setImported((prev) => prev + 1);
-    }
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.error || "Bulk import failed");
+      }
 
-    setDone(true);
-    setImporting(false);
+      setImported(result.imported || 0);
+      setErrors((result.errors || []).map((error: { row: number; message: string }) => `Row ${error.row}: ${error.message}`));
+      setDone(true);
+    } catch (error) {
+      setErrors([error instanceof Error ? error.message : "Bulk import failed"]);
+    } finally {
+      setImporting(false);
+    }
   };
 
   const downloadTemplate = () => {

@@ -3,9 +3,9 @@
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { createBrowserClient } from '@supabase/ssr';
+import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
 
-const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
+const supabase = createSupabaseBrowserClient();
 const STATUSES = ['all','draft','submitted','under_review','awaiting_info','approved','rejected','resolved','closed'];
 const statusCfg: Record<string,{l:string;a:string;bg:string;tx:string}> = {
   draft:{l:'Draft',a:'مسودة',bg:'bg-gray-100',tx:'text-gray-700'},

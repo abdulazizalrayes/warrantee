@@ -3,9 +3,10 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { createBrowserClient } from "@supabase/ssr";
+import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 const ROLES = ["owner", "admin", "manager", "viewer"] as const;
+const supabase = createSupabaseBrowserClient();
 
 const dict = {
   en: {
@@ -74,11 +75,6 @@ export default function TeamManagementPage() {
   const [inviteRole, setInviteRole] = useState<string>("viewer");
   const [showInvite, setShowInvite] = useState(false);
   const [message, setMessage] = useState({ type: "", text: "" });
-
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
 
   useEffect(() => {
     loadMembers();

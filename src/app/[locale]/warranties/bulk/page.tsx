@@ -4,16 +4,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { createClient } from '@supabase/supabase-js';
+import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
 import {
   ArrowLeft, CheckSquare, Trash2, RefreshCw, Edit3,
   AlertTriangle, Check, X, Loader2
 } from 'lucide-react';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://erptubrslnfmkuouczgn.supabase.co',
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
-);
+const supabase = createSupabaseBrowserClient();
 
 const translations = {
   en: {

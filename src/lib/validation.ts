@@ -75,6 +75,68 @@ export interface ValidationError {
   message: string;
 }
 
+export function validateContactInput(body: Record<string, unknown>): {
+  valid: boolean;
+  errors: ValidationError[];
+  sanitized?: {
+    name: string;
+    email: string;
+    company: string | null;
+    subject: string;
+    message: string;
+    phone?: string | null;
+    kind?: string;
+  };
+} {
+  const errors: ValidationError[] = [];
+
+  if (!isStringInRange(body.name, 2, 120)) {
+    errors.push({ field: "name", message: "Name must be between 2 and 120 characters" });
+  }
+
+  if (!isValidEmail(body.email)) {
+    errors.push({ field: "email", message: "A valid email address is required" });
+  }
+
+  if (!isStringInRange(body.subject, 2, 120)) {
+    errors.push({ field: "subject", message: "Subject must be between 2 and 120 characters" });
+  }
+
+  if (!isStringInRange(body.message, 10, 4000)) {
+    errors.push({ field: "message", message: "Message must be between 10 and 4000 characters" });
+  }
+
+  if (body.company !== undefined && body.company !== null && !isStringInRange(String(body.company), 0, 200)) {
+    errors.push({ field: "company", message: "Company must be under 200 characters" });
+  }
+
+  if (body.phone !== undefined && body.phone !== null && !isStringInRange(String(body.phone), 3, 40)) {
+    errors.push({ field: "phone", message: "Phone must be between 3 and 40 characters" });
+  }
+
+  if (body.kind !== undefined && body.kind !== null && !isStringInRange(String(body.kind), 2, 60)) {
+    errors.push({ field: "kind", message: "Kind must be between 2 and 60 characters" });
+  }
+
+  if (errors.length > 0) {
+    return { valid: false, errors };
+  }
+
+  return {
+    valid: true,
+    errors: [],
+    sanitized: {
+      name: sanitizeString(body.name as string, 120),
+      email: sanitizeString(body.email as string, 254).toLowerCase(),
+      company: body.company ? sanitizeString(String(body.company), 200) : null,
+      subject: sanitizeString(body.subject as string, 120),
+      message: sanitizeString(body.message as string, 4000),
+      phone: body.phone ? sanitizeString(String(body.phone), 40) : null,
+      kind: body.kind ? sanitizeString(String(body.kind), 60) : "contact_form",
+    },
+  };
+}
+
 export function validateClaimInput(body: Record<string, unknown>): {
   valid: boolean;
   errors: ValidationError[];

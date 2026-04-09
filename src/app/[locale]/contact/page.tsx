@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Mail, MessageCircle, Send } from 'lucide-react';
+import { trackContactForm } from '@/lib/ga4-events';
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -12,18 +13,29 @@ export default function ContactPage() {
     message: '',
   });
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setSubmitting(true);
+    setError('');
     try {
-      await fetch('/api/contact', {
+      const response = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       });
+      if (!response.ok) {
+        throw new Error('Unable to submit form');
+      }
+      trackContactForm();
       setSubmitted(true);
     } catch {
+      setError('We could not submit the form right now. You can still email hello@warrantee.io directly.');
       window.location.href = `mailto:hello@warrantee.io?subject=${encodeURIComponent(formData.subject)}&body=${encodeURIComponent(formData.message)}`;
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -85,6 +97,11 @@ export default function ContactPage() {
         <div className="max-w-2xl mx-auto">
           <h2 className="text-2xl font-bold text-navy mb-6">Send Us a Message</h2>
           <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-navy/5 p-8 space-y-5">
+            {error ? (
+              <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {error}
+              </div>
+            ) : null}
             <div className="grid md:grid-cols-2 gap-5">
               <div>
                 <label className="block text-sm font-semibold text-navy mb-1.5">Full Name *</label>
@@ -149,9 +166,10 @@ export default function ContactPage() {
             </div>
             <button
               type="submit"
+              disabled={submitting}
               className="px-8 py-3 bg-gold text-navy font-semibold rounded-xl hover:bg-gold/90 transition-all inline-flex items-center gap-2"
             >
-              Send Message
+              {submitting ? 'Sending...' : 'Send Message'}
               <Send className="w-4 h-4" />
             </button>
           </form>

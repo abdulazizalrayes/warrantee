@@ -3,12 +3,9 @@
 // @ts-nocheck
 import { useState } from 'react';
 import { usePathname } from 'next/navigation';
-import { createBrowserClient } from '@supabase/ssr';
+import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
 
-const supabase = createBrowserClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+const supabase = createSupabaseBrowserClient();
 
 interface SellerData {
   companyName: string;
@@ -30,6 +27,7 @@ export default function SellerRegisterPage() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState('');
   const [data, setData] = useState<SellerData>({
     companyName: '', crNumber: '', industry: '', website: '',
     contactName: '', contactEmail: '', contactPhone: '',
@@ -90,9 +88,10 @@ export default function SellerRegisterPage() {
 
   const handleSubmit = async () => {
     setLoading(true);
+    setError('');
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      await supabase.from('seller_invitations').insert({
+      const { error: insertError } = await supabase.from('seller_invitations').insert({
         company_name: data.companyName,
         cr_number: data.crNumber,
         industry: data.industry,
@@ -106,9 +105,40 @@ export default function SellerRegisterPage() {
         user_id: user?.id || null,
         status: 'pending',
       });
+      if (insertError) {
+        throw insertError;
+      }
+
+      const leadResponse = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: data.contactName,
+          email: data.contactEmail,
+          phone: data.contactPhone,
+          company: data.companyName,
+          subject: 'Seller registration',
+          message: [
+            `Company: ${data.companyName}`,
+            `CR Number: ${data.crNumber}`,
+            `Industry: ${data.industry}`,
+            `Website: ${data.website || '-'}`,
+            `City: ${data.city || '-'}`,
+            `Address: ${data.address || '-'}`,
+            '',
+            `Warranty policy: ${data.warrantyPolicy || '-'}`,
+          ].join('\n'),
+          kind: 'seller_application',
+        }),
+      });
+      if (!leadResponse.ok) {
+        console.warn('Seller lead sync failed');
+      }
+
       setSubmitted(true);
     } catch (err) {
       console.error(err);
+      setError(locale === 'ar' ? 'تعذر إرسال الطلب حالياً. يرجى المحاولة مرة أخرى.' : 'We could not submit your application right now. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -147,6 +177,7 @@ export default function SellerRegisterPage() {
         </div>
 
         <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
+          {error ? <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
           {step === 1 && <div className="space-y-5">
             <div><label className="block text-sm font-medium text-gray-700 mb-1.5">{t.companyName}</label><input type="text" value={data.companyName} onChange={e => update('companyName', e.target.value)} className={inputClass} /></div>
             <div><label className="block text-sm font-medium text-gray-700 mb-1.5">{t.crNumber}</label><input type="text" value={data.crNumber} onChange={e => update('crNumber', e.target.value)} className={inputClass} dir="ltr" /></div>

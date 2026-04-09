@@ -3,13 +3,10 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { createBrowserClient } from '@supabase/ssr';
+import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
 import Link from 'next/link';
 
-const supabase = createBrowserClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+const supabase = createSupabaseBrowserClient();
 
 // âââ TYPES ââââââââââââââââââââââââââââââââââââââââââââââ
 type TabId = 'overview' | 'users' | 'warranties' | 'companies' | 'claims' | 'support' | 'fraud' | 'ingestion' | 'billing' | 'config' | 'team' | 'audit';

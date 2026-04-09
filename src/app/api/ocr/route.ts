@@ -4,6 +4,35 @@ import { apiRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
 
 const MAX_OCR_TEXT_LENGTH = 50000;
 
+async function extractTextFromImage(dataUri: string) {
+  const apiKey = process.env.GOOGLE_CLOUD_VISION_API_KEY;
+  if (!apiKey) {
+    throw new Error("Image OCR requires GOOGLE_CLOUD_VISION_API_KEY");
+  }
+
+  const base64 = dataUri.includes(",") ? dataUri.split(",")[1] : dataUri;
+  const response = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${apiKey}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      requests: [
+        {
+          image: { content: base64 },
+          features: [{ type: "DOCUMENT_TEXT_DETECTION" }],
+        },
+      ],
+    }),
+  });
+
+  if (!response.ok) {
+    const details = await response.text();
+    throw new Error(`Vision OCR failed: ${details}`);
+  }
+
+  const payload = await response.json();
+  return payload.responses?.[0]?.fullTextAnnotation?.text || payload.responses?.[0]?.textAnnotations?.[0]?.description || "";
+}
+
 // Warranty field extraction from OCR text
 function extractWarrantyFields(text: string) {
   const result: Record<string, any> = { confidence: 0, raw_text: text.substring(0, 500) };
@@ -161,11 +190,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
     }
 
-    const { text } = body;
+    let { text, image } = body;
+
+    if (!text && typeof image === "string") {
+      text = await extractTextFromImage(image);
+    }
 
     if (!text || typeof text !== "string") {
       return NextResponse.json(
-        { error: "Missing 'text' field. Send OCR-extracted text for parsing." },
+        { error: "Missing 'text' field. Send OCR-extracted text or an image data URI for parsing." },
         { status: 400 }
       );
     }
@@ -189,6 +222,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
+      text: trimmedText,
       fields,
       message:
         fields.confidence >= 0.3
@@ -197,14 +231,16 @@ export async function POST(request: NextRequest) {
     });
   } catch (err) {
     console.warn("OCR parsing error:", err);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    const message = err instanceof Error ? err.message : "Internal server error";
+    const status = message.includes("GOOGLE_CLOUD_VISION_API_KEY") ? 400 : 500;
+    return NextResponse.json({ error: message }, { status });
   }
 }
 
 export async function GET() {
   return NextResponse.json({
     status: "OCR parsing endpoint active",
-    usage: "POST with { text: 'extracted OCR text' }",
+    usage: "POST with { text: 'extracted OCR text' } or { image: 'data:image/png;base64,...' }",
     max_text_length: MAX_OCR_TEXT_LENGTH,
     fields: [
       "product_name",

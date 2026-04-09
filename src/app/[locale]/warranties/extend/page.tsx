@@ -3,12 +3,9 @@
 // @ts-nocheck
 import { useState, useEffect } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { createBrowserClient } from '@supabase/ssr';
+import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
 
-const supabase = createBrowserClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+const supabase = createSupabaseBrowserClient();
 
 interface ExtensionPlan {
   id: string;

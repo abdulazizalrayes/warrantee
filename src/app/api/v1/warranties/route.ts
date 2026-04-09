@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
-);
+function getSupabase() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!url || !key) {
+    throw new Error('Supabase client environment variables are not configured');
+  }
+
+  return createClient(url, key);
+}
 
 function validateApiKey(request: NextRequest): string | null {
   const authHeader = request.headers.get('authorization');
@@ -14,6 +20,7 @@ function validateApiKey(request: NextRequest): string | null {
 
 // GET /api/v1/warranties - List warranties
 export async function GET(request: NextRequest) {
+  const supabase = getSupabase();
   const token = validateApiKey(request);
   if (!token) {
     return NextResponse.json({ error: 'Unauthorized. Provide Bearer token.' }, { status: 401 });
@@ -55,6 +62,7 @@ export async function GET(request: NextRequest) {
 
 // POST /api/v1/warranties - Create warranty
 export async function POST(request: NextRequest) {
+  const supabase = getSupabase();
   const token = validateApiKey(request);
   if (!token) {
     return NextResponse.json({ error: 'Unauthorized. Provide Bearer token.' }, { status: 401 });

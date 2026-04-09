@@ -56,6 +56,7 @@ export default function NewWarrantyPage() {
   const [files, setFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
   const [createdWarrantyId, setCreatedWarrantyId] = useState<string | null>(null);
+  const [completionNotice, setCompletionNotice] = useState<string | null>(null);
 
   const [dragOver, setDragOver] = useState(false);
   const [scanning, setScanning] = useState(false);
@@ -175,6 +176,7 @@ export default function NewWarrantyPage() {
   const handleSubmit = async (asDraft: boolean = false) => {
     setLoading(true);
     setError("");
+    setCompletionNotice(null);
     const referenceNumber = generateReferenceNumber();
     const { data: warranty, error: insertError } = await supabase
       .from("warranties")
@@ -200,26 +202,42 @@ export default function NewWarrantyPage() {
       })
       .select().single();
     if (insertError) { setError(insertError.message); setLoading(false); return; }
+    const issues: string[] = [];
     if (files.length > 0 && warranty) {
       setUploading(true);
       for (const file of files) {
         const filePath = `${user!.id}/${warranty.id}/${Date.now()}-${file.name}`;
         const { error: uploadError } = await supabase.storage.from("warranty-documents").upload(filePath, file);
-        if (!uploadError) {
+        if (uploadError) {
+          issues.push(`Attachment upload failed for ${file.name}`);
+        } else {
           const { data: publicUrl } = supabase.storage.from("warranty-documents").getPublicUrl(filePath);
-          await supabase.from("warranty_documents").insert({
+          const { error: documentError } = await supabase.from("warranty_documents").insert({
             warranty_id: warranty.id, file_name: file.name, file_type: file.type,
             file_size: file.size, file_url: publicUrl.publicUrl, uploaded_by: user!.id,
           });
+          if (documentError) {
+            issues.push(`Document record failed for ${file.name}`);
+          }
         }
       }
       setUploading(false);
     }
-    await supabase.from("activity_log").insert({
+    const { error: activityError } = await supabase.from("activity_log").insert({
       actor_id: user!.id, entity_type: "warranty", entity_id: warranty.id,
       action: "warranty_created", metadata: { reference_number: referenceNumber, product_name: productName },
     });
+    if (activityError) {
+      issues.push("Activity log could not be written");
+    }
     setCreatedWarrantyId(warranty.id);
+    if (issues.length > 0) {
+      setCompletionNotice(
+        isRTL
+          ? "تم إنشاء الضمان، لكن بعض الملفات أو السجل لم يكتمل. افتح الضمان وتحقق من المرفقات."
+          : "The warranty was created, but some attachments or logs did not complete. Open the warranty and verify the uploaded documents."
+      );
+    }
     setStep(4);
     setLoading(false);
   };
@@ -387,12 +405,17 @@ export default function NewWarrantyPage() {
       </div>
       <h2 className="text-2xl font-bold text-navy">{isRTL ? "\u062a\u0645 \u0625\u0646\u0634\u0627\u0621 \u0627\u0644\u0636\u0645\u0627\u0646 \u0628\u0646\u062c\u0627\u062d!" : "Warranty Created Successfully!"}</h2>
       <p className="text-gray-600">{isRTL ? "\u064a\u0645\u0643\u0646\u0643 \u0627\u0644\u0622\u0646 \u0639\u0631\u0636 \u0627\u0644\u0636\u0645\u0627\u0646 \u0648\u0625\u062f\u0627\u0631\u062a\u0647 \u0645\u0646 \u0644\u0648\u062d\u0629 \u0627\u0644\u062a\u062d\u0643\u0645." : "You can now view and manage the warranty from your dashboard."}</p>
+      {completionNotice ? (
+        <div className="mx-auto max-w-xl rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          {completionNotice}
+        </div>
+      ) : null}
       <div className="flex gap-3 justify-center">
         <button onClick={() => router.push(`/${locale}/warranties/${createdWarrantyId}`)}
           className="bg-gold hover:bg-yellow-500 text-navy font-semibold py-3 px-6 rounded-lg transition">
           {isRTL ? "\u0639\u0631\u0636 \u0627\u0644\u0636\u0645\u0627\u0646" : "View Warranty"}
         </button>
-        <button onClick={() => { setStep(1); setProductName(""); setProductNameAr(""); setSku(""); setSerialNumber(""); setQuantity(1); setStartDate(new Date().toISOString().split("T")[0]); setEndDate(""); setSellerName(""); setSellerEmail(""); setFiles([]); setCreatedWarrantyId(null); }}
+        <button onClick={() => { setStep(1); setProductName(""); setProductNameAr(""); setSku(""); setSerialNumber(""); setQuantity(1); setStartDate(new Date().toISOString().split("T")[0]); setEndDate(""); setSellerName(""); setSellerEmail(""); setFiles([]); setCreatedWarrantyId(null); setCompletionNotice(null); }}
           className="border border-gray-300 text-navy font-medium py-3 px-6 rounded-lg hover:bg-gray-50 transition">
           {isRTL ? "\u0625\u0646\u0634\u0627\u0621 \u0622\u062e\u0631" : "Create Another"}
         </button>

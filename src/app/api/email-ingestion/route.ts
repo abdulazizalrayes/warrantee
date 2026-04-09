@@ -116,9 +116,8 @@ export async function POST(request: NextRequest) {
     let fromEmail = "";
     let subject = "";
     let textBody = "";
-    let htmlBody = "";
-    let attachmentTexts: string[] = [];
-    let userId: string | null = null;
+      let attachmentTexts: string[] = [];
+      let userId: string | null = null;
 
     // Handle multipart form data (SendGrid/Postmark inbound parse)
     if (contentType.includes("multipart/form-data") || contentType.includes("application/x-www-form-urlencoded")) {
@@ -126,7 +125,10 @@ export async function POST(request: NextRequest) {
       fromEmail = (formData.get("from") as string) || (formData.get("sender") as string) || "";
       subject = (formData.get("subject") as string) || "";
       textBody = (formData.get("text") as string) || (formData.get("TextBody") as string) || "";
-      htmlBody = (formData.get("html") as string) || (formData.get("HtmlBody") as string) || "";
+      const htmlBody = (formData.get("html") as string) || (formData.get("HtmlBody") as string) || "";
+      if (!textBody && htmlBody) {
+        textBody = htmlBody.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+      }
 
       // Extract sender email from "Name <email>" format
       const emailMatch = fromEmail.match(/<([^>]+)>/);
@@ -180,7 +182,7 @@ export async function POST(request: NextRequest) {
               const ocrUrl = new URL("/api/ocr", request.url);
               const ocrRes = await fetch(ocrUrl.toString(), {
                 method: "POST",
-                headers: { "ContentType": "application/json" },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ image: dataUri }),
               });
               if (ocrRes.ok) {

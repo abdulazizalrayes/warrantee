@@ -3,12 +3,9 @@
 
 import { use, useState } from "react";
 import { getDictionary } from "@/lib/i18n";
-import { createBrowserClient } from "@supabase/ssr";
+import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 
-const supabase = createBrowserClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+const supabase = createSupabaseBrowserClient();
 
 export default function ForgotPasswordPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = use(params);

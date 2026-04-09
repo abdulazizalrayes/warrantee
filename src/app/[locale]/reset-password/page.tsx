@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { createBrowserClient } from "@supabase/ssr";
+import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 const dict = {
   en: {
@@ -29,6 +29,8 @@ const dict = {
   },
 };
 
+const supabase = createSupabaseBrowserClient();
+
 export default function ResetPasswordPage() {
   const params = useParams();
   const router = useRouter();
@@ -40,11 +42,6 @@ export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -10,7 +10,7 @@ import {
   isPositiveNumber,
   validateWarrantyInput,
   validateClaimInput,
-  VALID_CLAIM_TYPES,
+  validateContactInput,
   VALID_WARRANTY_STATUSES,
 } from "../validation";
 
@@ -184,5 +184,35 @@ describe("validateClaimInput", () => {
     });
     expect(result.valid).toBe(false);
     expect(result.errors.some((e) => e.field === "description")).toBe(true);
+  });
+});
+
+describe("validateContactInput", () => {
+  it("passes with valid contact input", () => {
+    const result = validateContactInput({
+      name: "Abdulaziz Alrayes",
+      email: "abdulaziz@example.com",
+      company: "Warrantee",
+      subject: "Enterprise demo",
+      message: "We want a walkthrough of the enterprise workflow and integrations.",
+      phone: "+966500000000",
+      kind: "contact_form",
+    });
+
+    expect(result.valid).toBe(true);
+    expect(result.sanitized?.email).toBe("abdulaziz@example.com");
+  });
+
+  it("fails on invalid contact input", () => {
+    const result = validateContactInput({
+      name: "A",
+      email: "bad-email",
+      subject: "",
+      message: "short",
+    });
+
+    expect(result.valid).toBe(false);
+    expect(result.errors.some((error) => error.field === "email")).toBe(true);
+    expect(result.errors.some((error) => error.field === "message")).toBe(true);
   });
 });
