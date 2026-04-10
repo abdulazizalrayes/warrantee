@@ -1,5 +1,6 @@
 // @ts-nocheck
 'use client';
+export const dynamic = 'force-dynamic';
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
