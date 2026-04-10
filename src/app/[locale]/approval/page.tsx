@@ -1,7 +1,7 @@
 // @ts-nocheck
 'use client';
-export const dynamic = 'force-dynamic';
 
+import { Suspense } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
@@ -99,7 +99,7 @@ function formatDate(value: string, locale: string) {
   });
 }
 
-export default function ApprovalPage() {
+function ApprovalPageInner() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -294,5 +294,13 @@ export default function ApprovalPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function ApprovalPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#a06800]" /></div>}>
+      <ApprovalPageInner />
+    </Suspense>
   );
 }
