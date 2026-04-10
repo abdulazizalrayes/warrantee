@@ -26,18 +26,18 @@ export async function GET(request: NextRequest) {
 
       const { data: warranties } = await supabase
         .from("warranties")
-        .select("id, user_id, product_name, warranty_end_date")
+        .select("id, user_id, product_name, end_date")
         .eq("status", "active")
-        .gte("warranty_end_date", dayStart)
-        .lte("warranty_end_date", dayEnd);
+        .gte("end_date", dayStart)
+        .lte("end_date", dayEnd);
 
       if (warranties && warranties.length > 0) {
         const notifications = warranties.map(w => ({
           user_id: w.user_id,
           warranty_id: w.id,
-          type: interval.type,
-          title: "Warranty Expiring Soon",
-          message: w.product_name + " warranty expires in " + interval.days + " days",
+          type: "expiry_reminder",
+          title: `Warranty Expiring in ${interval.days} Days`,
+          body: `${w.product_name} warranty expires in ${interval.days} days`,
         }));
 
         const { error } = await supabase.from("notifications").insert(notifications);
