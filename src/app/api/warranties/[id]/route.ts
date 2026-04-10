@@ -46,14 +46,25 @@ export async function PATCH(
 
     const body = await request.json();
 
-    const ALLOWED_FIELDS = ['product_name', 'brand', 'description', 'serial_number', 'category', 'supplier', 'purchase_price', 'warranty_start_date', 'warranty_end_date', 'status'];
+    if (body.status !== undefined) {
+      return NextResponse.json(
+        { error: "Status cannot be set directly. Use /submit, /approve, or /reject routes." },
+        { status: 422 }
+      );
+    }
+
+    const ALLOWED_FIELDS = ['product_name', 'brand', 'description', 'serial_number', 'category', 'supplier', 'purchase_price', 'start_date', 'end_date'];
     const updateBody = Object.fromEntries(
       Object.entries(body).filter(([key]) => ALLOWED_FIELDS.includes(key))
     );
 
+    if (Object.keys(updateBody).length === 0) {
+      return NextResponse.json({ error: "No updatable fields provided" }, { status: 400 });
+    }
+
     const { data, error } = await supabase
-      .from("wearranties")
-      .update(updateBody)
+      .from("warranties")
+      .update({ ...updateBody, updated_at: new Date().toISOString() })
       .eq("id", id)
       .eq("user_id", user.id)
       .select()
@@ -82,9 +93,10 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Soft-delete: archive instead of hard delete
     const { error } = await supabase
-      .from("wearranties")
-      .delete()
+      .from("warranties")
+      .update({ is_archived: true, archived_at: new Date().toISOString(), archived_by: user.id })
       .eq("id", id)
       .eq("user_id", user.id);
 
