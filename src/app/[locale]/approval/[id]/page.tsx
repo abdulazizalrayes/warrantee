@@ -1,7 +1,7 @@
 // @ts-nocheck
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
@@ -96,7 +96,7 @@ function formatDate(value: string, locale: string) {
   });
 }
 
-export default function ApprovalDetailPage() {
+function ApprovalDetailPageInner() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -331,5 +331,13 @@ export default function ApprovalDetailPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ApprovalDetailPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#a06800]" /></div>}>
+      <ApprovalDetailPageInner />
+    </Suspense>
   );
 }

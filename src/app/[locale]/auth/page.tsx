@@ -1,7 +1,7 @@
 // @ts-nocheck
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { Mail, Apple, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { getDictionary, DIRECTION } from "@/lib/i18n";
@@ -10,7 +10,7 @@ import { useAuth } from "@/lib/auth-context";
 
 type AuthTab = "login" | "signup";
 
-export default function AuthPage() {
+function AuthPageInner() {
   const params = useParams();
   const searchParams = useSearchParams();
   const locale = (params.locale as string) || "en";
@@ -101,5 +101,13 @@ export default function AuthPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function AuthPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#a06800]" /></div>}>
+      <AuthPageInner />
+    </Suspense>
   );
 }

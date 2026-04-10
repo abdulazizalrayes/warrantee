@@ -1,6 +1,7 @@
 // @ts-nocheck
 "use client";
 
+import { Suspense } from "react";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
@@ -122,7 +123,7 @@ function formatDate(dateValue: string, locale: string) {
   });
 }
 
-export default function DashboardPage() {
+function DashboardPageInner() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -451,5 +452,13 @@ export default function DashboardPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#a06800]" /></div>}>
+      <DashboardPageInner />
+    </Suspense>
   );
 }

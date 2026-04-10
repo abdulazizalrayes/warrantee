@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
@@ -123,7 +123,7 @@ function resolveViewMode(searchParams: URLSearchParams): DashboardView {
   return mode === 'seller' ? 'seller' : 'buyer';
 }
 
-export default function WarrantiesPage() {
+function WarrantiesPageInner() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -463,5 +463,13 @@ export default function WarrantiesPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function WarrantiesPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#a06800]" /></div>}>
+      <WarrantiesPageInner />
+    </Suspense>
   );
 }
