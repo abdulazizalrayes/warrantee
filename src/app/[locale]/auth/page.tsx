@@ -40,8 +40,8 @@ function AuthPageInner() {
   const handlePasswordLogin = async (e: React.FormEvent) => {
     e.preventDefault(); setLoading(true); setMessage(""); setErrorMsg("");
     const { error } = await signInWithPassword(email, password);
-    if (error) { setErrorMsg(typeof error === "string" ? error : (error as any).message ?? String(error)); }
-    setLoading(false);
+    if (error) { setErrorMsg(typeof error === "string" ? error : (error as any).message ?? String(error)); setLoading(false); return; }
+    window.location.href = `/${locale}/dashboard`;
   };
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault(); setLoading(true); setMessage(""); setErrorMsg("");
