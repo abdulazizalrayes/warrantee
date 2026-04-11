@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { apiRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
 import { sanitizeString } from "@/lib/validation";
 import Papa from "papaparse";
+import * as XLSX from "xlsx";
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 const MAX_ROWS = 500;
@@ -45,18 +46,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Parse CSV
-    const text = await file.text();
-    const { data: rows, errors: parseErrors } = Papa.parse(text, {
-      header: true,
-      skipEmptyLines: true,
-    });
+    // Parse CSV or XLSX
+    const fileName = file.name.toLowerCase();
+    const isXlsx = fileName.endsWith(".xlsx") || fileName.endsWith(".xls");
+    let rows: Record<string, string>[] = [];
 
-    if (parseErrors.length > 0) {
-      return NextResponse.json(
-        { error: "CSV parse errors", details: parseErrors.slice(0, 10) },
-        { status: 400 }
-      );
+    if (isXlsx) {
+      const buffer = await file.arrayBuffer();
+      const workbook = XLSX.read(buffer, { type: "array" });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      rows = XLSX.utils.sheet_to_json<Record<string, string>>(sheet, { defval: "" });
+    } else {
+      // Default: CSV
+      const text = await file.text();
+      const { data, errors: parseErrors } = Papa.parse<Record<string, string>>(text, {
+        header: true,
+        skipEmptyLines: true,
+      });
+      if (parseErrors.length > 0) {
+        return NextResponse.json(
+          { error: "CSV parse errors", details: parseErrors.slice(0, 10) },
+          { status: 400 }
+        );
+      }
+      rows = data;
     }
 
     // Row count check
@@ -69,7 +82,7 @@ export async function POST(request: NextRequest) {
 
     if (rows.length === 0) {
       return NextResponse.json(
-        { error: "CSV file is empty" },
+        { error: "File is empty or has no data rows" },
         { status: 400 }
       );
     }
@@ -77,7 +90,7 @@ export async function POST(request: NextRequest) {
     const results = { imported: 0, errors: [] as { row: number; message: string }[] };
 
     for (let i = 0; i < rows.length; i++) {
-      const row = rows[i] as Record<string, string>;
+      const row = rows[i];
 
       // Validate required fields
       if (!row.product_name || !row.start_date || !row.end_date) {
