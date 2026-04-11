@@ -19,6 +19,7 @@ import {
   RATE_LIMITS,
 } from '@/lib/ingestion';
 import type { ResendInboundPayload, IngestionJobStatus } from '@/lib/ingestion';
+import { sendEmail } from '@/lib/email';
 
 function getSupabaseAdmin() {
   return createClient<Database>(
@@ -145,6 +146,27 @@ export async function POST(request: NextRequest) {
       status: finalStatus,
       processed_at: new Date().toISOString(),
     }).eq('id', job.id);
+
+    // Send confirmation email when warranty is auto-confirmed via ingestion
+    if (finalStatus === 'auto_confirmed') {
+      await sendEmail({
+        to: fromEmail,
+        subject: "Your warranty has been registered on Warrantee",
+        html: `
+<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <h1 style="color: #1A1A2E; font-size: 22px;">Warrantee</h1>
+  <p>Great news — your warranty document has been successfully processed and registered.</p>
+  <p><strong>Reference:</strong> Job #${job.id}</p>
+  <p>You can view and manage your warranty by logging into your Warrantee account.</p>
+  <div style="text-align: center; margin: 24px 0;">
+    <a href="https://warrantee.io/en/dashboard" style="background: #F5C542; color: #1A1A2E; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+      View Dashboard
+    </a>
+  </div>
+  <p style="color: #999; font-size: 12px;">Warrantee — Trust the Terms™</p>
+</div>`,
+      }).catch((err) => console.error('[Ingest] Confirmation email failed:', err));
+    }
 
     return NextResponse.json({
       status: finalStatus,
@@ -413,5 +435,22 @@ function extractName(fromField: string): string | null {
 }
 
 async function sendNoAttachmentNotification(email: string, subject: string | undefined) {
-  console.log(`[Ingest] No attachments notification for ${email}, subject: ${subject}`);
+  const originalSubject = subject ? `"${subject}"` : "your email";
+  await sendEmail({
+    to: email,
+    subject: "We received your email but found no warranty documents",
+    html: `
+<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <h1 style="color: #1A1A2E; font-size: 22px;">Warrantee</h1>
+  <p>Thank you for emailing <strong>hello@warrantee.io</strong>.</p>
+  <p>We received ${originalSubject} but could not find any warranty documents attached (PDF, JPG, PNG, etc.).</p>
+  <p>To register a warranty via email, please:</p>
+  <ol>
+    <li>Attach the warranty document (PDF or image) to your email</li>
+    <li>Send it to <a href="mailto:hello@warrantee.io">hello@warrantee.io</a></li>
+  </ol>
+  <p>If you have questions, reply to this email or visit <a href="https://warrantee.io">warrantee.io</a>.</p>
+  <p style="color: #999; font-size: 12px;">Warrantee — Trust the Terms™</p>
+</div>`,
+  });
 }
