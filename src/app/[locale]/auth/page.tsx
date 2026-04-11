@@ -34,20 +34,20 @@ function AuthPageInner() {
   const handleMagicLink = async (e: React.FormEvent) => {
     e.preventDefault(); setLoading(true); setMessage(""); setErrorMsg("");
     const { error } = await signInWithMagicLink(email, locale);
-    if (error) { setErrorMsg(error); } else { setMessage(isRTL ? "\u062a\u0645 \u0625\u0631\u0633\u0627\u0644 \u0631\u0627\u0628\u0637 \u0633\u062d\u0631\u064a \u0625\u0644\u0649 \u0628\u0631\u064a\u062f\u0643 \u0627\u0644\u0625\u0644\u0643\u062a\u0631\u0648\u0646\u064a" : "Magic link sent to your email! Check your inbox."); }
+    if (error) { setErrorMsg(typeof error === "string" ? error : (error as any).message ?? String(error)); } else { setMessage(isRTL ? "\u062a\u0645 \u0625\u0631\u0633\u0627\u0644 \u0631\u0627\u0628\u0637 \u0633\u062d\u0631\u064a \u0625\u0644\u0649 \u0628\u0631\u064a\u062f\u0643 \u0627\u0644\u0625\u0644\u0643\u062a\u0631\u0648\u0646\u064a" : "Magic link sent to your email! Check your inbox."); }
     setLoading(false);
   };
   const handlePasswordLogin = async (e: React.FormEvent) => {
     e.preventDefault(); setLoading(true); setMessage(""); setErrorMsg("");
     const { error } = await signInWithPassword(email, password);
-    if (error) { setErrorMsg(error); }
+    if (error) { setErrorMsg(typeof error === "string" ? error : (error as any).message ?? String(error)); }
     setLoading(false);
   };
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault(); setLoading(true); setMessage(""); setErrorMsg("");
     if (password.length < 8) { setErrorMsg(isRTL ? "\u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631 \u064a\u062c\u0628 \u0623\u0646 \u062a\u0643\u0648\u0646 8 \u0623\u062d\u0631\u0641 \u0639\u0644\u0649 \u0627\u0644\u0623\u0642\u0644" : "Password must be at least 8 characters"); setLoading(false); return; }
     const { error } = await signUp(email, password, { full_name: fullName, account_type: accountType, company_name: accountType === "business" ? companyName : undefined });
-    if (error) { setErrorMsg(error); } else { setMessage(isRTL ? "\u062a\u0645 \u0625\u0646\u0634\u0627\u0621 \u062d\u0633\u0627\u0628\u0643! \u062a\u062d\u0642\u0642 \u0645\u0646 \u0628\u0631\u064a\u062f\u0643 \u0627\u0644\u0625\u0644\u0643\u062a\u0631\u0648\u0646\u064a \u0644\u062a\u0623\u0643\u064a\u062f \u062d\u0633\u0627\u0628\u0643." : "Account created! Check your email to confirm your account."); }
+    if (error) { setErrorMsg(typeof error === "string" ? error : (error as any).message ?? String(error)); } else { setMessage(isRTL ? "\u062a\u0645 \u0625\u0646\u0634\u0627\u0621 \u062d\u0633\u0627\u0628\u0643! \u062a\u062d\u0642\u0642 \u0645\u0646 \u0628\u0631\u064a\u062f\u0643 \u0627\u0644\u0625\u0644\u0643\u062a\u0631\u0648\u0646\u064a \u0644\u062a\u0623\u0643\u064a\u062f \u062d\u0633\u0627\u0628\u0643." : "Account created! Check your email to confirm your account."); }
     setLoading(false);
   };
   const handleAppleAuth = async () => { await signInWithApple(locale); };
