@@ -18,16 +18,14 @@ export function Footer({ locale, dictionary }: FooterProps) {
       title: dictionary.footer.product,
       links: [
         { label: dictionary.nav.features, href: `/${locale}#features` },
-        { label: locale === 'en' ? 'How It Works' : 'كيف يعمل', href: `/${locale}#how-it-works` },
+        { label: dictionary.how_it_works.title, href: `/${locale}#how-it-works` },
         { label: dictionary.nav.pricing, href: `/${locale}#pricing` },
       ],
     },
     {
       title: dictionary.footer.company,
       links: [
-        { label: locale === 'en' ? 'About' : 'عن الشركة', href: `/${locale}#about` },
         { label: dictionary.nav.contact, href: `/${locale}#contact` },
-        { label: locale === 'en' ? 'Blog' : 'المدونة', href: `/${locale}#blog` },
       ],
     },
     {
