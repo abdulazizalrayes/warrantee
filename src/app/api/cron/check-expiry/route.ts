@@ -1,5 +1,6 @@
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
+import { sendEmail, warrantyExpiryEmail } from "@/lib/email";
 
 export async function GET(request: NextRequest) {
   try {
@@ -11,13 +12,16 @@ export async function GET(request: NextRequest) {
 
     const supabase = await createServerSupabaseClient();
     const now = new Date();
+
+    // BRD requires 30/60/90 day expiry reminder emails
     const intervals = [
-      { days: 30, type: "expiry_30_days" },
-      { days: 15, type: "expiry_15_days" },
-      { days: 7, type: "expiry_7_days" },
+      { days: 30, type: "expiry_reminder" },
+      { days: 60, type: "expiry_reminder" },
+      { days: 90, type: "expiry_reminder" },
     ];
 
     let notificationsCreated = 0;
+    let emailsSent = 0;
 
     for (const interval of intervals) {
       const targetDate = new Date(now.getTime() + interval.days * 24 * 60 * 60 * 1000);
@@ -26,31 +30,65 @@ export async function GET(request: NextRequest) {
 
       const { data: warranties } = await supabase
         .from("warranties")
-        .select("id, user_id, product_name, warranty_end_date")
+        .select("id, user_id, product_name, end_date, language")
         .eq("status", "active")
-        .gte("warranty_end_date", dayStart)
-        .lte("warranty_end_date", dayEnd);
+        .gte("end_date", dayStart)
+        .lte("end_date", dayEnd);
 
-      if (warranties && warranties.length > 0) {
-        const notifications = warranties.map(w => ({
+      if (!warranties || warranties.length === 0) continue;
+
+      for (const w of warranties) {
+        // Dedup: skip if notification already created for this warranty + interval today
+        const todayStart = now.toISOString().split("T")[0];
+        const { data: existing } = await supabase
+          .from("notifications")
+          .select("id")
+          .eq("warranty_id", w.id)
+          .eq("type", interval.type)
+          .gte("created_at", todayStart)
+          .limit(1)
+          .maybeSingle();
+
+        if (existing) continue;
+
+        // Create in-app notification
+        const { error: notifError } = await supabase.from("notifications").insert({
           user_id: w.user_id,
           warranty_id: w.id,
           type: interval.type,
-          title: "Warranty Expiring Soon",
-          message: w.product_name + " warranty expires in " + interval.days + " days",
-        }));
+          title: `Warranty Expiring in ${interval.days} Days`,
+          body: `${w.product_name} warranty expires in ${interval.days} days`,
+        });
+        if (!notifError) notificationsCreated++;
 
-        const { error } = await supabase.from("notifications").insert(notifications);
-        if (!error) notificationsCreated += notifications.length;
+        // Send email via Resend
+        try {
+          const { data: userData } = await supabase.auth.admin.getUserById(w.user_id);
+          const userEmail = userData?.user?.email;
+          const userMeta = userData?.user?.user_metadata;
+          const userName = userMeta?.full_name || userMeta?.name || userEmail?.split("@")[0] || "User";
+          const locale = w.language || "en";
+          const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://warrantee.io";
+          const warrantyUrl = `${baseUrl}/${locale}/warranties/${w.id}`;
+
+          if (userEmail) {
+            const { subject, html } = warrantyExpiryEmail(userName, w.product_name, interval.days, warrantyUrl, locale);
+            const result = await sendEmail({ to: userEmail, subject, html });
+            if (result.success) emailsSent++;
+          }
+        } catch {
+          // Non-fatal: in-app notification was still created
+        }
       }
     }
 
     return NextResponse.json({
       success: true,
       notifications_created: notificationsCreated,
+      emails_sent: emailsSent,
       checked_at: now.toISOString(),
     });
-  } catch (err) {
+  } catch {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

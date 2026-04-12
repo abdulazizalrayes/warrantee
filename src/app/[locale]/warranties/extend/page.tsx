@@ -1,7 +1,7 @@
 'use client';
 
 // @ts-nocheck
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
 
@@ -15,7 +15,7 @@ interface ExtensionPlan {
   popular?: boolean;
 }
 
-export default function WarrantyExtendPage() {
+function WarrantyExtendPageInner() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const locale = pathname?.startsWith('/ar') ? 'ar' : 'en';
@@ -191,5 +191,13 @@ export default function WarrantyExtendPage() {
         </button>
       </div>
     </div>
+  );
+}
+
+export default function WarrantyExtendPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#a06800]" /></div>}>
+      <WarrantyExtendPageInner />
+    </Suspense>
   );
 }

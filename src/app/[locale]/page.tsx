@@ -27,9 +27,8 @@ export default async function HomePage({ params }: HomePageProps) {
   };
 
   return (
-    <html lang={locale === 'ar' ? 'ar-SA' : 'en-US'} dir={isRTL ? 'rtl' : 'ltr'}>
-      <body className="bg-white text-[#1d1d1f] font-sans">
-        <Navbar locale={locale} dictionary={dictionary} />
+    <>
+      <Navbar locale={locale} dictionary={dictionary} />
 
         {/* Hero Section - Apple style: centered, clean, massive typography */}
         <section className="relative overflow-hidden pt-24 pb-20 px-4 sm:px-6">
@@ -291,7 +290,6 @@ export default async function HomePage({ params }: HomePageProps) {
         </section>
 
         <Footer locale={locale} dictionary={dictionary} />
-      </body>
-    </html>
+    </>
   );
 }

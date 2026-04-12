@@ -1,23 +1,23 @@
 // @ts-nocheck
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
-import { Mail, Apple, Chrome, Eye, EyeOff, AlertCircle } from "lucide-react";
+import { Mail, Apple, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { getDictionary, DIRECTION } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth-context";
 
 type AuthTab = "login" | "signup";
 
-export default function AuthPage() {
+function AuthPageInner() {
   const params = useParams();
   const searchParams = useSearchParams();
   const locale = (params.locale as string) || "en";
   const dict = getDictionary(locale);
   const isRTL = locale === "ar";
   const direction = DIRECTION[locale as Locale];
-  const { signInWithGoogle, signInWithApple, signInWithMagicLink, signInWithPassword, signUp, loading: authLoading } = useAuth();
+  const { signInWithApple, signInWithMagicLink, signInWithPassword, signUp, loading: authLoading } = useAuth();
   const [activeTab, setActiveTab] = useState<AuthTab>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -34,23 +34,22 @@ export default function AuthPage() {
   const handleMagicLink = async (e: React.FormEvent) => {
     e.preventDefault(); setLoading(true); setMessage(""); setErrorMsg("");
     const { error } = await signInWithMagicLink(email, locale);
-    if (error) { setErrorMsg(error); } else { setMessage(isRTL ? "\u062a\u0645 \u0625\u0631\u0633\u0627\u0644 \u0631\u0627\u0628\u0637 \u0633\u062d\u0631\u064a \u0625\u0644\u0649 \u0628\u0631\u064a\u062f\u0643 \u0627\u0644\u0625\u0644\u0643\u062a\u0631\u0648\u0646\u064a" : "Magic link sent to your email! Check your inbox."); }
+    if (error) { setErrorMsg(typeof error === "string" ? error : (error as any).message ?? String(error)); } else { setMessage(isRTL ? "\u062a\u0645 \u0625\u0631\u0633\u0627\u0644 \u0631\u0627\u0628\u0637 \u0633\u062d\u0631\u064a \u0625\u0644\u0649 \u0628\u0631\u064a\u062f\u0643 \u0627\u0644\u0625\u0644\u0643\u062a\u0631\u0648\u0646\u064a" : "Magic link sent to your email! Check your inbox."); }
     setLoading(false);
   };
   const handlePasswordLogin = async (e: React.FormEvent) => {
     e.preventDefault(); setLoading(true); setMessage(""); setErrorMsg("");
     const { error } = await signInWithPassword(email, password);
-    if (error) { setErrorMsg(error); }
-    setLoading(false);
+    if (error) { setErrorMsg(typeof error === "string" ? error : (error as any).message ?? String(error)); setLoading(false); return; }
+    window.location.href = `/${locale}/dashboard`;
   };
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault(); setLoading(true); setMessage(""); setErrorMsg("");
     if (password.length < 8) { setErrorMsg(isRTL ? "\u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631 \u064a\u062c\u0628 \u0623\u0646 \u062a\u0643\u0648\u0646 8 \u0623\u062d\u0631\u0641 \u0639\u0644\u0649 \u0627\u0644\u0623\u0642\u0644" : "Password must be at least 8 characters"); setLoading(false); return; }
     const { error } = await signUp(email, password, { full_name: fullName, account_type: accountType, company_name: accountType === "business" ? companyName : undefined });
-    if (error) { setErrorMsg(error); } else { setMessage(isRTL ? "\u062a\u0645 \u0625\u0646\u0634\u0627\u0621 \u062d\u0633\u0627\u0628\u0643! \u062a\u062d\u0642\u0642 \u0645\u0646 \u0628\u0631\u064a\u062f\u0643 \u0627\u0644\u0625\u0644\u0643\u062a\u0631\u0648\u0646\u064a \u0644\u062a\u0623\u0643\u064a\u062f \u062d\u0633\u0627\u0628\u0643." : "Account created! Check your email to confirm your account."); }
+    if (error) { setErrorMsg(typeof error === "string" ? error : (error as any).message ?? String(error)); } else { setMessage(isRTL ? "\u062a\u0645 \u0625\u0646\u0634\u0627\u0621 \u062d\u0633\u0627\u0628\u0643! \u062a\u062d\u0642\u0642 \u0645\u0646 \u0628\u0631\u064a\u062f\u0643 \u0627\u0644\u0625\u0644\u0643\u062a\u0631\u0648\u0646\u064a \u0644\u062a\u0623\u0643\u064a\u062f \u062d\u0633\u0627\u0628\u0643." : "Account created! Check your email to confirm your account."); }
     setLoading(false);
   };
-  const handleGoogleAuth = async () => { await signInWithGoogle(locale); };
   const handleAppleAuth = async () => { await signInWithApple(locale); };
   const isFormLoading = loading || authLoading;
 
@@ -77,7 +76,7 @@ export default function AuthPage() {
                 {message && (<div className="p-3 bg-green-50 border border-green-200 rounded-lg text-green-800 text-sm">{message}</div>)}
                 {errorMsg && (<div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-800 text-sm flex items-center gap-2"><AlertCircle size={16} className="shrink-0" />{errorMsg}</div>)}
                 <div className="relative"><div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-300"></div></div><div className="relative flex justify-center text-sm"><span className="px-2 bg-white text-gray-600">{isRTL ? "\u0623\u0648" : "OR"}</span></div></div>
-                <button type="button" onClick={handleGoogleAuth} disabled={isFormLoading} className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition disabled:opacity-50"><Chrome size={18} className="text-red-500" /><span className="font-medium text-navy">{dict.auth.google}</span></button>
+
                 <button type="button" onClick={handleAppleAuth} disabled={isFormLoading} className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition disabled:opacity-50"><Apple size={18} className="text-gray-900" /><span className="font-medium text-navy">{dict.auth.apple}</span></button>
               </form>
             ) : (
@@ -91,7 +90,7 @@ export default function AuthPage() {
                 {message && (<div className="p-3 bg-green-50 border border-green-200 rounded-lg text-green-800 text-sm">{message}</div>)}
                 {errorMsg && (<div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-800 text-sm flex items-center gap-2"><AlertCircle size={16} className="shrink-0" />{errorMsg}</div>)}
                 <div className="relative"><div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-300"></div></div><div className="relative flex justify-center text-sm"><span className="px-2 bg-white text-gray-600">{isRTL ? "\u0623\u0648" : "OR"}</span></div></div>
-                <button type="button" onClick={handleGoogleAuth} disabled={isFormLoading} className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition disabled:opacity-50"><Chrome size={18} className="text-red-500" /><span className="font-medium text-navy">{dict.auth.google}</span></button>
+
                 <button type="button" onClick={handleAppleAuth} disabled={isFormLoading} className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition disabled:opacity-50"><Apple size={18} className="text-gray-900" /><span className="font-medium text-navy">{dict.auth.apple}</span></button>
               </form>
             )}
@@ -102,5 +101,13 @@ export default function AuthPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function AuthPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#a06800]" /></div>}>
+      <AuthPageInner />
+    </Suspense>
   );
 }

@@ -95,6 +95,7 @@ export async function POST(request: NextRequest) {
     await getResend().emails.send({
       from: 'Warrantee <noreply@warrantee.io>',
       to: seller_email,
+      bcc: 'hello@warrantee.io',
       subject: `${inviterProfile?.full_name || 'A customer'} invited you to Warrantee`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">

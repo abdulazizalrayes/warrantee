@@ -18,6 +18,7 @@
     "lucide-react": "^0.503.0",
     "next": "^15.3.0",
     "papaparse": "^5.4.1",
+    "pdfkit": "^0.18.0",
     "qrcode": "^1.5.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -25,12 +26,14 @@
     "stripe": "^18.0.0",
     "tesseract.js": "^5.1.1",
     "web-push": "^3.6.7",
+    "xlsx": "^0.18.5",
     "zod": "^4.3.6"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.0.0",
     "@types/node": "^22.0.0",
     "@types/papaparse": "^5.3.15",
+    "@types/pdfkit": "^0.17.5",
     "@types/qrcode": "^1.5.5",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",

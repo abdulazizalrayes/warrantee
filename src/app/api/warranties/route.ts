@@ -168,6 +168,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 
+    // Audit log — non-blocking
+    supabase.from("activity_log").insert({
+      actor_id: user.id,
+      entity_type: "warranty",
+      entity_id: data.id,
+      action: "created",
+      new_state: { status: data.status, product_name: data.product_name },
+    }).then(() => {});
+
     return NextResponse.json({ data }, { status: 201 });
   } catch (err) {
     console.warn("Warranties POST error:", err);
