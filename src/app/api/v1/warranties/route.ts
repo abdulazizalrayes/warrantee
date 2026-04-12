@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { buildWarrantyAccessOrClause, buildWarrantyOwnershipInsert } from '@/lib/warranty-access';
 
 function getSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -38,7 +39,7 @@ export async function GET(request: NextRequest) {
   const category = searchParams.get('category');
   const offset = (page - 1) * limit;
 
-  let query = supabase.from('warranties').select('*', { count: 'exact' }).eq('user_id', user.id);
+  let query = supabase.from('warranties').select('*', { count: 'exact' }).or(buildWarrantyAccessOrClause(user.id));
   if (status === 'active') query = query.gt('end_date', new Date().toISOString());
   else if (status === 'expired') query = query.lte('end_date', new Date().toISOString());
   if (category) query = query.eq('category', category);
@@ -82,7 +83,7 @@ export async function POST(request: NextRequest) {
     }
 
     const warrantyData = {
-      user_id: user.id,
+      ...buildWarrantyOwnershipInsert(user.id),
       product_name: body.product_name,
       description: body.description || null,
       serial_number: body.serial_number || null,

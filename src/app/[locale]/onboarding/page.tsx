@@ -70,6 +70,28 @@ export default function OnboardingPage() {
       </div>
 
       <div className="max-w-3xl mx-auto px-6 py-10">
+        <div className="mb-8 rounded-3xl bg-gradient-to-br from-[#1A1A2E] via-[#242446] to-[#2f2f5f] px-6 py-7 text-white shadow-lg">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div className="max-w-xl">
+              <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[12px] font-medium text-white/85">
+                <Sparkles className="w-4 h-4" />
+                {isAr ? "تهيئة الحساب" : "Account setup"}
+              </div>
+              <h1 className="mt-4 text-[28px] font-semibold tracking-tight">
+                {isAr ? "لنجهّز حسابك قبل الانطلاق" : "Let’s prepare your account before you launch"}
+              </h1>
+              <p className="mt-3 text-[15px] text-white/70">
+                {isAr
+                  ? "أكمل بيانات الاتصال والتنبيهات الأساسية حتى تصبح تجربة الضمانات جاهزة للاستخدام اليومي."
+                  : "Complete your core contact and notification preferences so the warranty experience is ready for daily use."}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-[13px] text-white/75">
+              {isAr ? "خطوات قصيرة، ثم تبدأ مباشرة" : "A short setup, then you’re ready"}
+            </div>
+          </div>
+        </div>
+
         {/* Stepper */}
         <div className="flex items-center justify-center gap-2 mb-10">
           {steps.map((s, i) => (

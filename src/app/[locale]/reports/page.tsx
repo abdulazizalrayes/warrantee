@@ -67,10 +67,10 @@ export default function ReportsPage() {
   ];
 
   return (
-    <div dir={isRTL ? "rtl" : "ltr"} className="min-h-screen bg-[#f5f5f7]">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+    <div dir={isRTL ? "rtl" : "ltr"} className="space-y-8">
+      <div className="max-w-6xl">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between mb-8">
           <div>
             <h1 className="text-[28px] font-semibold text-[#1d1d1f] tracking-tight">
               {isRTL ? "Ø§ÙØªÙØ§Ø±ÙØ±" : "Reports"}

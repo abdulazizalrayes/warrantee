@@ -3,6 +3,7 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import { validateWarrantyInput, isValidDate, sanitizeString, isOneOf, VALID_WARRANTY_STATUSES } from "@/lib/validation";
 import { apiRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
+import { buildWarrantyAccessOrClause, buildWarrantyOwnershipInsert } from "@/lib/warranty-access";
 
 export async function GET(request: NextRequest) {
   try {
@@ -45,7 +46,7 @@ export async function GET(request: NextRequest) {
     let query = supabase
       .from("warranties")
       .select("*", { count: "exact" })
-      .eq("user_id", user.id)
+      .or(buildWarrantyAccessOrClause(user.id))
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);
 
@@ -100,8 +101,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate required fields
-    const required = ["product_name", "purchase_date", "warranty_start_date", "warranty_end_date"];
-    const missing = required.filter((f) => !body[f]);
+    const purchaseDate = body.purchase_date || body.start_date;
+    const warrantyStartDate = body.warranty_start_date || body.start_date;
+    const warrantyEndDate = body.warranty_end_date || body.end_date;
+
+    const required = [
+      ["product_name", body.product_name],
+      ["purchase_date", purchaseDate],
+      ["warranty_start_date", warrantyStartDate],
+      ["warranty_end_date", warrantyEndDate],
+    ] as const;
+    const missing = required.filter(([, value]) => !value).map(([field]) => field);
     if (missing.length > 0) {
       return NextResponse.json(
         { error: "Missing required fields: " + missing.join(", ") },
@@ -119,17 +129,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate dates
-    if (!isValidDate(body.purchase_date)) {
+    if (!isValidDate(purchaseDate)) {
       return NextResponse.json({ error: "Invalid purchase_date format" }, { status: 400 });
     }
-    if (!isValidDate(body.warranty_start_date)) {
+    if (!isValidDate(warrantyStartDate)) {
       return NextResponse.json({ error: "Invalid warranty_start_date format" }, { status: 400 });
     }
-    if (!isValidDate(body.warranty_end_date)) {
+    if (!isValidDate(warrantyEndDate)) {
       return NextResponse.json({ error: "Invalid warranty_end_date format" }, { status: 400 });
     }
 
-    if (new Date(body.warranty_end_date) <= new Date(body.warranty_start_date)) {
+    if (new Date(warrantyEndDate) <= new Date(warrantyStartDate)) {
       return NextResponse.json(
         { error: "warranty_end_date must be after warranty_start_date" },
         { status: 400 }
@@ -140,15 +150,15 @@ export async function POST(request: NextRequest) {
     const sanitizedBody = {
       product_name: sanitizeString(body.product_name, 200),
       brand: body.brand ? sanitizeString(body.brand, 200) : undefined,
-      purchase_date: body.purchase_date,
-      warranty_start_date: body.warranty_start_date,
-      warranty_end_date: body.warranty_end_date,
+      purchase_date: purchaseDate,
+      warranty_start_date: warrantyStartDate,
+      warranty_end_date: warrantyEndDate,
       description: body.description ? sanitizeString(body.description, 5000) : undefined,
       serial_number: body.serial_number ? sanitizeString(body.serial_number, 100) : undefined,
       category: body.category ? sanitizeString(body.category, 50) : undefined,
       supplier: body.supplier ? sanitizeString(body.supplier, 200) : undefined,
       purchase_price: body.purchase_price,
-      user_id: user.id,
+      ...buildWarrantyOwnershipInsert(user.id),
       status: "active",
     };
 

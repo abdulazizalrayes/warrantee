@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { buildWarrantyAccessOrClause } from '@/lib/warranty-access';
 
 function getSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -32,7 +33,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     .from('warranties')
     .select('*')
     .eq('id', id)
-    .eq('user_id', user.id)
+    .or(buildWarrantyAccessOrClause(user.id))
     .single();
 
   if (error || !data) return NextResponse.json({ error: 'Warranty not found' }, { status: 404 });
@@ -61,7 +62,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       .from('warranties')
       .update(updateData)
       .eq('id', id)
-      .eq('user_id', user.id)
+      .or(buildWarrantyAccessOrClause(user.id))
       .select()
       .single();
 
@@ -86,7 +87,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     .from('warranties')
     .delete()
     .eq('id', id)
-    .eq('user_id', user.id);
+    .or(buildWarrantyAccessOrClause(user.id));
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ message: 'Warranty deleted successfully' });

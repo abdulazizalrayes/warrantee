@@ -426,11 +426,36 @@ export default function NewWarrantyPage() {
   return (
     <div dir={direction}>
       <div className="max-w-3xl mx-auto">
+        <div className="mb-6 rounded-3xl bg-gradient-to-br from-[#1A1A2E] via-[#242446] to-[#2f2f5f] px-6 py-7 text-white shadow-lg">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[12px] font-medium text-white/85">
+                <Sparkles size={14} />
+                {isRTL ? "إنشاء ضمان جديد" : "Create a new warranty"}
+              </div>
+              <h1 className="mt-4 text-[30px] font-semibold tracking-tight">{dict.warranty.create}</h1>
+              <p className="mt-3 max-w-xl text-[15px] text-white/70">
+                {isRTL
+                  ? "أدخل بيانات المنتج والضمان والمرفقات ضمن تدفق واضح من ثلاث خطوات قبل النشر."
+                  : "Capture product details, warranty terms, and supporting documents in a guided three-step flow before publishing."}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-[13px] text-white/75">
+              {isRTL ? "جاهز للمسح الذكي والمرفقات" : "Supports smart scan and attachments"}
+            </div>
+          </div>
+        </div>
+
         <div className="flex items-center gap-4 mb-6">
           <button onClick={() => router.back()} className="p-2 hover:bg-gray-100 rounded-lg transition">
             {isRTL ? <ArrowRight size={20} /> : <ArrowLeft size={20} />}
           </button>
-          <h1 className="text-2xl font-bold text-navy">{dict.warranty.create}</h1>
+          <div>
+            <h2 className="text-2xl font-bold text-navy">{dict.warranty.create}</h2>
+            <p className="text-sm text-gray-500 mt-1">
+              {isRTL ? "أكمل الحقول الأساسية ثم راجع المستندات قبل الإنشاء." : "Complete the core fields, then review documents before creation."}
+            </p>
+          </div>
         </div>
         
         {step < 4 && (

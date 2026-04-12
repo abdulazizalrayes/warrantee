@@ -193,6 +193,7 @@ export function buildPageMetadata(page: PageKey, locale: string): Metadata {
   return {
     title: meta.title,
     description: meta.description,
+    metadataBase: new URL(BASE_URL),
     alternates: {
       canonical: `${BASE_URL}/${locale}${pagePath}`,
       languages: {

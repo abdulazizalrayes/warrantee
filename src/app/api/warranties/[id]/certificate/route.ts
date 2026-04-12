@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { buildWarrantyAccessOrClause } from "@/lib/warranty-access";
 
 export async function GET(
   _request: NextRequest,
@@ -21,7 +22,7 @@ export async function GET(
     .from("warranties")
     .select("*")
     .eq("id", id)
-    .eq("user_id", user.id)
+    .or(buildWarrantyAccessOrClause(user.id))
     .single();
 
   // Fall back to party_warranties membership (sellers/partners)

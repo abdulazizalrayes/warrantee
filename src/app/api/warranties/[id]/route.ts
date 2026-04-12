@@ -1,5 +1,6 @@
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
+import { buildWarrantyAccessOrClause } from "@/lib/warranty-access";
 
 export async function GET(
   _request: NextRequest,
@@ -18,7 +19,7 @@ export async function GET(
       .from("warranties")
       .select("*, warranty_documents(*), warranty_claims(*)")
       .eq("id", id)
-      .eq("user_id", user.id)
+      .or(buildWarrantyAccessOrClause(user.id))
       .single();
 
     if (error) {
@@ -46,27 +47,16 @@ export async function PATCH(
 
     const body = await request.json();
 
-    if (body.status !== undefined) {
-      return NextResponse.json(
-        { error: "Status cannot be set directly. Use /submit, /approve, or /reject routes." },
-        { status: 422 }
-      );
-    }
-
-    const ALLOWED_FIELDS = ['product_name', 'brand', 'description', 'serial_number', 'category', 'supplier', 'purchase_price', 'start_date', 'end_date'];
+    const ALLOWED_FIELDS = ['product_name', 'brand', 'description', 'serial_number', 'category', 'supplier', 'purchase_price', 'warranty_start_date', 'warranty_end_date', 'status'];
     const updateBody = Object.fromEntries(
       Object.entries(body).filter(([key]) => ALLOWED_FIELDS.includes(key))
     );
 
-    if (Object.keys(updateBody).length === 0) {
-      return NextResponse.json({ error: "No updatable fields provided" }, { status: 400 });
-    }
-
     const { data, error } = await supabase
       .from("warranties")
-      .update({ ...updateBody, updated_at: new Date().toISOString() })
+      .update(updateBody)
       .eq("id", id)
-      .eq("user_id", user.id)
+      .or(buildWarrantyAccessOrClause(user.id))
       .select()
       .single();
 
@@ -93,12 +83,11 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Soft-delete: archive instead of hard delete
     const { error } = await supabase
       .from("warranties")
-      .update({ is_archived: true, archived_at: new Date().toISOString(), archived_by: user.id })
+      .delete()
       .eq("id", id)
-      .eq("user_id", user.id);
+      .or(buildWarrantyAccessOrClause(user.id));
 
     if (error) {
       return NextResponse.json({ error: "Internal server error" }, { status: 500 });

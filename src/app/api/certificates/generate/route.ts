@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { createClient } from "@supabase/supabase-js";
 import crypto from "crypto";
+import { buildWarrantyAccessOrClause } from "@/lib/warranty-access";
 
 function getSupabaseAdmin() {
   return createClient(
@@ -140,6 +141,7 @@ export async function POST(request: Request) {
       .from("warranties")
       .select("*, companies(*)")
       .eq("id", warrantyId)
+      .or(buildWarrantyAccessOrClause(user.id))
       .single();
 
     if (wError || !warranty) {

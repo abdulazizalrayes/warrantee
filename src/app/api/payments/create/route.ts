@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { buildWarrantyAccessOrClause } from '@/lib/warranty-access';
 
 const STRIPE_SECRET = process.env.STRIPE_SECRET_KEY;
 const MOYASAR_SECRET = process.env.MOYASAR_SECRET_KEY;
@@ -13,7 +14,15 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { warrantyId, extensionMonths, provider, returnUrl } = body;
+    const {
+      warrantyId,
+      extensionMonths,
+      provider,
+      returnUrl,
+      successUrl,
+      cancelUrl,
+      locale = 'en',
+    } = body;
 
     if (!warrantyId || !provider) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -26,9 +35,9 @@ export async function POST(request: NextRequest) {
     // Verify the warranty belongs to this user
     const { data: warranty } = await supabase
       .from('warranties')
-      .select('id, product_name')
+      .select('id, product_name, end_date')
       .eq('id', warrantyId)
-      .eq('user_id', user.id)
+      .or(buildWarrantyAccessOrClause(user.id))
       .single();
 
     if (!warranty) {
@@ -42,6 +51,38 @@ export async function POST(request: NextRequest) {
     const PRICE_PER_MONTH_SAR = 49;
     const amount = months * PRICE_PER_MONTH_SAR;
     const currency = 'SAR';
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || new URL(request.url).origin;
+    const safeBaseUrl = typeof returnUrl === 'string' && returnUrl.startsWith('http')
+      ? returnUrl
+      : appUrl;
+    const resolvedSuccessUrl =
+      typeof successUrl === 'string' && successUrl.startsWith('http')
+        ? successUrl
+        : `${safeBaseUrl}/${locale}/warranties/${warrantyId}?extension=success`;
+    const resolvedCancelUrl =
+      typeof cancelUrl === 'string' && cancelUrl.startsWith('http')
+        ? cancelUrl
+        : `${safeBaseUrl}/${locale}/warranties/${warrantyId}?extension=cancelled`;
+    const newEndDate = new Date(warranty.end_date);
+    newEndDate.setMonth(newEndDate.getMonth() + months);
+
+    const { data: extension, error: extensionError } = await supabase
+      .from('warranty_extensions')
+      .insert({
+        warranty_id: warrantyId,
+        new_end_date: newEndDate.toISOString().split('T')[0],
+        price: amount,
+        currency,
+        commission_rate: 8.0,
+        commission_amount: amount * 0.08,
+        is_purchased: false,
+      })
+      .select('id')
+      .single();
+
+    if (extensionError || !extension) {
+      return NextResponse.json({ error: 'Failed to create extension request' }, { status: 500 });
+    }
 
     if (provider === 'stripe') {
       if (!STRIPE_SECRET) {
@@ -56,12 +97,13 @@ export async function POST(request: NextRequest) {
         },
         body: new URLSearchParams({
           'mode': 'payment',
-          'success_url': (returnUrl || process.env.NEXT_PUBLIC_APP_URL || '') + '/payment/success?session_id={CHECKOUT_SESSION_ID}',
-          'cancel_url': (returnUrl || process.env.NEXT_PUBLIC_APP_URL || '') + '/payment/cancel',
+          'success_url': resolvedSuccessUrl,
+          'cancel_url': resolvedCancelUrl,
           'line_items[0][price_data][currency]': currency.toLowerCase(),
           'line_items[0][price_data][product_data][name]': 'Warranty Extension - ' + months + ' months',
           'line_items[0][price_data][unit_amount]': String(amount * 100),
           'line_items[0][quantity]': '1',
+          'metadata[extension_id]': extension.id,
           'metadata[warranty_id]': warrantyId,
           'metadata[extension_months]': String(months),
           'metadata[user_id]': user.id,
@@ -90,8 +132,8 @@ export async function POST(request: NextRequest) {
           amount: amount * 100,
           currency,
           description: 'Warranty Extension - ' + months + ' months',
-          callback_url: (returnUrl || process.env.NEXT_PUBLIC_APP_URL || '') + '/api/payments/moyasar/callback',
-          metadata: { warranty_id: warrantyId, extension_months: months, user_id: user.id },
+          callback_url: `${safeBaseUrl}/api/payments/moyasar/callback`,
+          metadata: { extension_id: extension.id, warranty_id: warrantyId, extension_months: months, user_id: user.id },
         }),
       });
 

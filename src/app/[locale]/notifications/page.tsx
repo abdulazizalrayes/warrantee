@@ -146,7 +146,7 @@ export default function NotificationsPage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-[#f5f5f7] flex items-center justify-center p-6" dir={isRtl ? "rtl" : "ltr"}>
+      <div className="min-h-[60vh] flex items-center justify-center p-6" dir={isRtl ? "rtl" : "ltr"}>
         <div className="bg-white rounded-2xl ring-1 ring-[#d2d2d7]/40 shadow-sm p-8 text-center max-w-md">
           <BellOff className="w-12 h-12 text-[#86868b] mx-auto mb-4" />
           <p className="text-[#1d1d1f] font-medium">{l.loginRequired}</p>
@@ -156,8 +156,8 @@ export default function NotificationsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f5f5f7]" dir={isRtl ? "rtl" : "ltr"}>
-      <div className="max-w-2xl mx-auto px-4 py-8">
+    <div className="max-w-3xl space-y-6" dir={isRtl ? "rtl" : "ltr"}>
+      <div>
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>

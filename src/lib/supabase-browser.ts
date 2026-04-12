@@ -10,7 +10,9 @@ export function createSupabaseBrowserClient() {
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!url || !key) {
-    console.warn("Supabase browser environment variables not set. Using placeholder.");
+    if (typeof window !== "undefined") {
+      console.warn("Supabase browser environment variables not set. Using placeholder.");
+    }
     browserClient = createBrowserClient(
       "https://placeholder.supabase.co",
       "placeholder-key"

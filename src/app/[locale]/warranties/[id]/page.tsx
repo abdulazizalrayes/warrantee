@@ -1,7 +1,7 @@
 // @ts-nocheck
 "use client";
 import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { getDictionary, DIRECTION } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
@@ -11,6 +11,7 @@ import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 export default function WarrantyDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const locale = (params.locale as string) || "en";
   const warrantyId = params.id as string;
   const dict = getDictionary(locale);
@@ -23,6 +24,7 @@ export default function WarrantyDetailPage() {
   const [documents, setDocuments] = useState<any[]>([]);
   const [claims, setClaims] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [feedback, setFeedback] = useState<string | null>(searchParams.get("extension"));
 
   useEffect(() => {
     (async () => {
@@ -39,10 +41,14 @@ export default function WarrantyDetailPage() {
 
   const handleStatusChange = async (newStatus: string) => {
     if (!warranty) return;
-    const { error } = await supabase.from("warranties").update({ status: newStatus, approved_by: newStatus === "active" ? user!.id : null }).eq("id", warranty.id);
-    if (!error) {
+    const endpoint = newStatus === "active"
+      ? `/api/warranties/${warranty.id}/approve`
+      : `/api/warranties/${warranty.id}/reject`;
+
+    const response = await fetch(endpoint, { method: "POST" });
+    if (response.ok) {
       setWarranty({ ...warranty, status: newStatus });
-      await supabase.from("activity_log").insert({ actor_id: user!.id, entity_type: "warranty", entity_id: warranty.id, action: newStatus === "active" ? "warranty_approved" : "warranty_status_changed", metadata: { new_status: newStatus } });
+      setFeedback(newStatus === "active" ? "approved" : "updated");
     }
   };
 
@@ -68,6 +74,18 @@ export default function WarrantyDetailPage() {
           {warranty.status === "active" && <Link href={`/${locale}/warranties/${warranty.id}/claim`} className="bg-[#F5C542] text-[#1A1A2E] font-semibold py-2 px-4 rounded-lg text-sm">{dict.warranty.actions.claim}</Link>}
         </div>
       </div>
+
+      {feedback ? (
+        <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+          {feedback === "success"
+            ? (isRTL ? "تم استلام الدفع وسيتم تطبيق التمديد تلقائيًا." : "Payment was received and the extension will be applied automatically.")
+            : feedback === "cancelled"
+              ? (isRTL ? "تم إلغاء الدفع ولم يتم تغيير الضمان." : "Payment was cancelled and the warranty was not changed.")
+              : feedback === "approved"
+                ? (isRTL ? "تمت الموافقة على الضمان بنجاح." : "Warranty approved successfully.")
+                : (isRTL ? "تم تحديث الضمان." : "Warranty updated successfully.")}
+        </div>
+      ) : null}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">

@@ -3,7 +3,7 @@
 
 import { useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, Upload, FileText, CheckCircle, AlertCircle, Download } from "lucide-react";
+import { ArrowLeft, ArrowRight, Upload, FileText, CheckCircle, AlertCircle, Download, FileSpreadsheet, ShieldCheck, Sparkles } from "lucide-react";
 import { getDictionary, DIRECTION } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth-context";
@@ -38,6 +38,8 @@ export default function ImportWarrantiesPage() {
   const [importing, setImporting] = useState(false);
   const [imported, setImported] = useState(0);
   const [done, setDone] = useState(false);
+  const requiredColumns = ["product_name", "start_date", "end_date"];
+  const recommendedColumns = ["serial_number", "sku", "category", "seller_name", "seller_email", "quantity"];
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files?.[0];
@@ -132,16 +134,59 @@ export default function ImportWarrantiesPage() {
   }
 
   return (
-    <div dir={direction} className="max-w-3xl mx-auto">
-      <div className="flex items-center gap-4 mb-6">
+    <div dir={direction} className="max-w-5xl space-y-8">
+      <div className="rounded-3xl bg-gradient-to-br from-[#1A1A2E] via-[#242446] to-[#2f2f5f] px-6 py-7 text-white shadow-lg">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+          <div className="max-w-2xl">
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[12px] font-medium text-white/85">
+              <Sparkles size={14} />
+              {isRTL ? "استيراد جماعي جاهز للتشغيل" : "Production-ready bulk import"}
+            </div>
+            <h1 className="mt-4 text-[30px] font-semibold tracking-tight">
+              {isRTL ? "استيراد الضمانات من CSV" : "Import Warranties from CSV"}
+            </h1>
+            <p className="mt-3 max-w-xl text-[15px] text-white/70">
+              {isRTL
+                ? "حمّل ملفاً واحداً، راجع الصفوف قبل التنفيذ، ثم ادخل الضمانات دفعة واحدة مع تقليل الاخطاء اليدوية."
+                : "Upload a single CSV, validate the rows before commit, and bring large warranty batches into Warrantee with less manual work."}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:w-[420px]">
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <FileSpreadsheet className="mb-3 h-5 w-5 text-[#f5d76e]" />
+              <p className="text-[13px] font-medium">{isRTL ? "ملف واحد" : "Single source file"}</p>
+              <p className="mt-1 text-[12px] text-white/60">{isRTL ? "CSV فقط لتدفق واضح وقابل للتدقيق" : "CSV-only for a clear, auditable workflow"}</p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <ShieldCheck className="mb-3 h-5 w-5 text-[#30d158]" />
+              <p className="text-[13px] font-medium">{isRTL ? "مراجعة قبل التنفيذ" : "Preview before commit"}</p>
+              <p className="mt-1 text-[12px] text-white/60">{isRTL ? "راجع الصفوف والاخطاء قبل الاستيراد" : "Check rows and validation issues before import"}</p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <Upload className="mb-3 h-5 w-5 text-[#5ac8fa]" />
+              <p className="text-[13px] font-medium">{isRTL ? "دخول سريع" : "Fast ingestion"}</p>
+              <p className="mt-1 text-[12px] text-white/60">{isRTL ? "مثالي للدفعات الاولية والانتقال من ملفات خارجية" : "Great for onboarding legacy warranty lists"}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-4">
         <button onClick={() => router.back()} className="p-2 hover:bg-gray-100 rounded-lg transition">
           {isRTL ? <ArrowRight size={20} /> : <ArrowLeft size={20} />}
         </button>
-        <h1 className="text-2xl font-bold text-navy">{isRTL ? "\u0627\u0633\u062A\u064A\u0631\u0627\u062F \u0636\u0645\u0627\u0646\u0627\u062A \u0645\u0646 CSV" : "Import Warranties from CSV"}</h1>
+        <div>
+          <h2 className="text-2xl font-bold text-navy">{isRTL ? "\u0627\u0633\u062A\u064A\u0631\u0627\u062F \u0636\u0645\u0627\u0646\u0627\u062A \u0645\u0646 CSV" : "Import Warranties from CSV"}</h2>
+          <p className="text-sm text-gray-500 mt-1">
+            {isRTL ? "الخطوة 1: نزّل القالب ثم ارفع ملفك وراجع المعاينة." : "Step 1: download the template, upload your file, and verify the preview."}
+          </p>
+        </div>
       </div>
 
-      <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-6">
-        <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-between">
+      <div className="grid gap-6 lg:grid-cols-[1.3fr_0.7fr]">
+        <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-6 shadow-sm">
+        <div className="p-4 bg-blue-50 border border-blue-200 rounded-2xl flex items-center justify-between">
           <p className="text-sm text-blue-800">
             {isRTL ? "\u062D\u0645\u0644 \u0627\u0644\u0642\u0627\u0644\u0628 \u0644\u0631\u0624\u064A\u0629 \u0627\u0644\u062A\u0646\u0633\u064A\u0642 \u0627\u0644\u0645\u0637\u0644\u0648\u0628" : "Download the template to see the required format"}
           </p>
@@ -152,17 +197,20 @@ export default function ImportWarrantiesPage() {
 
         <div
           onClick={() => fileInputRef.current?.click()}
-          className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-gold transition"
+          className="border-2 border-dashed border-gray-300 rounded-2xl p-10 text-center cursor-pointer hover:border-gold hover:bg-[#fffdf5] transition"
         >
           <Upload size={32} className="mx-auto text-gray-400 mb-2" />
           <p className="text-sm text-gray-600">
             {file ? file.name : isRTL ? "\u0627\u0636\u063A\u0637 \u0644\u0631\u0641\u0639 \u0645\u0644\u0641 CSV" : "Click to upload CSV file"}
           </p>
+          <p className="mt-2 text-xs text-gray-400">
+            {isRTL ? "سيتم تحليل الملف محلياً وعرض الصفوف الصالحة قبل التنفيذ." : "The file is parsed first so you can review valid rows before import."}
+          </p>
           <input ref={fileInputRef} type="file" accept=".csv" onChange={handleFileSelect} className="hidden" />
         </div>
 
         {errors.length > 0 && (
-          <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+          <div className="p-3 bg-red-50 border border-red-200 rounded-2xl">
             {errors.map((err, i) => (
               <p key={i} className="text-sm text-red-800 flex items-center gap-1">
                 <AlertCircle size={14} /> {err}
@@ -176,7 +224,7 @@ export default function ImportWarrantiesPage() {
             <h3 className="font-bold text-navy mb-3">
               {isRTL ? `\u0645\u0639\u0627\u064A\u0646\u0629: ${parsedData.length} \u0636\u0645\u0627\u0646` : `Preview: ${parsedData.length} warranties`}
             </h3>
-            <div className="overflow-x-auto border border-gray-200 rounded-lg">
+            <div className="overflow-x-auto border border-gray-200 rounded-2xl">
               <table className="w-full text-sm">
                 <thead className="bg-gray-50">
                   <tr>
@@ -207,7 +255,7 @@ export default function ImportWarrantiesPage() {
             <button
               onClick={handleImport}
               disabled={importing}
-              className="mt-4 w-full bg-gold hover:bg-yellow-500 text-navy font-semibold py-3 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+              className="mt-4 w-full bg-gold hover:bg-yellow-500 text-navy font-semibold py-3 rounded-full transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {importing
                 ? `${isRTL ? "\u062C\u0627\u0631\u064A \u0627\u0644\u0627\u0633\u062A\u064A\u0631\u0627\u062F..." : "Importing..."} (${imported}/${parsedData.length})`
@@ -215,6 +263,49 @@ export default function ImportWarrantiesPage() {
             </button>
           </div>
         )}
+        </div>
+
+        <aside className="space-y-4">
+          <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+            <h3 className="text-[15px] font-semibold text-navy">
+              {isRTL ? "الأعمدة المطلوبة" : "Required columns"}
+            </h3>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {requiredColumns.map((column) => (
+                <span key={column} className="rounded-full bg-[#1A1A2E]/6 px-3 py-1 text-[12px] font-medium text-[#1A1A2E]">
+                  {column}
+                </span>
+              ))}
+            </div>
+            <p className="mt-4 text-[12px] text-gray-500">
+              {isRTL ? "أي صف لا يحتوي على هذه الحقول لن يدخل في الاستيراد." : "Rows missing these fields will be excluded from the import preview."}
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+            <h3 className="text-[15px] font-semibold text-navy">
+              {isRTL ? "أعمدة موصى بها" : "Recommended columns"}
+            </h3>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {recommendedColumns.map((column) => (
+                <span key={column} className="rounded-full bg-gold/15 px-3 py-1 text-[12px] font-medium text-navy">
+                  {column}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+            <h3 className="text-[15px] font-semibold text-navy">
+              {isRTL ? "متى تستخدم هذا التدفق" : "Best use cases"}
+            </h3>
+            <ul className="mt-4 space-y-3 text-[13px] text-gray-600">
+              <li>{isRTL ? "نقل الضمانات من ملف خارجي أو ERP" : "Migrating warranties from spreadsheets or ERP exports"}</li>
+              <li>{isRTL ? "إدخال دفعات أولية لعميل جديد" : "Loading a first batch for a new client or seller"}</li>
+              <li>{isRTL ? "توحيد البيانات قبل التشغيل اليومي" : "Standardizing warranty data before daily operations"}</li>
+            </ul>
+          </div>
+        </aside>
       </div>
     </div>
   );

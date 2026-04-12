@@ -3,6 +3,7 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import { validateClaimInput } from "@/lib/validation";
 import { apiRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
+import { buildWarrantyAccessOrClause } from "@/lib/warranty-access";
 
 export async function GET(request: NextRequest) {
   try {
@@ -92,7 +93,7 @@ export async function POST(request: NextRequest) {
       .from("warranties")
       .select("id, status")
       .eq("id", warranty_id)
-      .eq("user_id", user.id)
+      .or(buildWarrantyAccessOrClause(user.id))
       .single();
 
     if (warrantyError || !warranty) {

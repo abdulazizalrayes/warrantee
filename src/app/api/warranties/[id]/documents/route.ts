@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { buildWarrantyAccessOrClause } from "@/lib/warranty-access";
 
 const ALLOWED_TYPES = [
   "application/pdf",
@@ -26,7 +27,7 @@ async function getAuthorizedContext(warrantyId: string) {
     .from("warranties")
     .select("id")
     .eq("id", warrantyId)
-    .eq("user_id", user.id)
+    .or(buildWarrantyAccessOrClause(user.id))
     .single();
 
   return { supabase, user: warranty ? user : null };

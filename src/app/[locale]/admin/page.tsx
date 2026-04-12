@@ -1,7 +1,7 @@
 // @ts-nocheck
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
 import Link from 'next/link';
@@ -26,9 +26,9 @@ interface Stats {
 }
 
 // âââ TRANSLATIONS ââââââââââââââââââââââââââââââââââââââ
-const t = {
+const rawTranslations = {
   en: {
-    title: 'Warrantee Admin', subtitle: 'Trust the Termsâ¢', overview: 'Overview', usersTab: 'Users',
+    title: 'Warrantee Admin', subtitle: 'Operations, risk, and service control center', overview: 'Overview', usersTab: 'Users',
     warrantiesTab: 'Warranties', companiesTab: 'Companies', claimsTab: 'Claims', supportTab: 'Support',
     fraudTab: 'Fraud', ingestionTab: 'Ingestion', billingTab: 'Billing', configTab: 'Config',
     teamTab: 'Team', auditTab: 'Audit Trail',
@@ -135,6 +135,27 @@ const t = {
     all: 'Ø§ÙÙÙ', filter: 'ØªØµÙÙØ©',
     legalHold: 'Ø­Ø¬Ø² ÙØ§ÙÙÙÙ', archived: 'ÙØ¤Ø±Ø´Ù',
   },
+};
+
+const EM_DASH = '\u2014';
+
+function decodeMojibake(value: string) {
+  try {
+    return decodeURIComponent(escape(value));
+  } catch {
+    return value;
+  }
+}
+
+function decodeTranslationMap<T extends Record<string, string>>(translations: T): T {
+  return Object.fromEntries(
+    Object.entries(translations).map(([key, value]) => [key, decodeMojibake(value)])
+  ) as T;
+}
+
+const t = {
+  en: rawTranslations.en,
+  ar: decodeTranslationMap(rawTranslations.ar),
 };
 
 // âââ MINI CHART COMPONENTS âââââââââââââââââââââââââââââ
@@ -421,8 +442,8 @@ export default function AdminPage() {
   };
 
   // âââ HELPERS ââââââââââââââââââââââââââââââââââââââââââ
-  const fmtDate = (d: string) => d ? new Date(d).toLocaleDateString(locale === 'ar' ? 'ar-SA' : 'en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : 'â';
-  const fmtDateTime = (d: string) => d ? new Date(d).toLocaleString(locale === 'ar' ? 'ar-SA' : 'en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'â';
+  const fmtDate = (d: string) => d ? new Date(d).toLocaleDateString(locale === 'ar' ? 'ar-SA' : 'en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : EM_DASH;
+  const fmtDateTime = (d: string) => d ? new Date(d).toLocaleString(locale === 'ar' ? 'ar-SA' : 'en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : EM_DASH;
   const fmtMoney = (n: number) => `$${(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   const roleLabel = (r: string) => ({ super_admin: text.superAdmin, admin: text.admin, support: text.support, user: text.user }[r] || r);
@@ -473,6 +494,21 @@ export default function AdminPage() {
     { id: 'audit', label: text.auditTab, icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01' },
   ];
   const tabs = isSuperAdmin ? [...baseTabs, ...superTabs] : baseTabs;
+  const activeTabLabel = tabs.find(tab => tab.id === activeTab)?.label || text.overview;
+  const activeTabDescription = ({
+    overview: locale === 'ar' ? 'عرض سريع لصحة المنصة والنشاط والمخاطر المفتوحة.' : 'High-level view of platform health, activity, and open risk.',
+    users: locale === 'ar' ? 'مراجعة المستخدمين والادوار والهواتف وحالة الحسابات.' : 'Review users, roles, phones, and account mix.',
+    warranties: locale === 'ar' ? 'متابعة الضمانات والحالة والمصدر والتنبيهات القانونية.' : 'Track warranty status, source, and legal holds.',
+    companies: locale === 'ar' ? 'مراجعة الشركات المسجلة وبيانات التواصل والسجل التجاري.' : 'Review registered companies and contact details.',
+    claims: locale === 'ar' ? 'مراقبة المطالبات والشدة والحالة والقرارات المفتوحة.' : 'Monitor claims, severity, status, and unresolved decisions.',
+    support: locale === 'ar' ? 'متابعة تذاكر الدعم والاولوية وسرعة الاستجابة.' : 'Track support queues, priority, and response flow.',
+    fraud: locale === 'ar' ? 'متابعة اشارات الاحتيال والعناصر التي تحتاج تدقيقا عاجلا.' : 'Watch fraud signals and investigate urgent cases.',
+    ingestion: locale === 'ar' ? 'مراقبة ادخال البريد وجودة الاستخراج ونسب النجاح.' : 'Monitor email ingestion, extraction quality, and success rates.',
+    billing: locale === 'ar' ? 'مراجعة الايرادات والاحداث المالية والاشتراكات.' : 'Review revenue events, subscriptions, and billing health.',
+    config: locale === 'ar' ? 'ادارة مفاتيح النظام والاعدادات الحساسة بعناية.' : 'Manage sensitive system settings and operational config.',
+    team: locale === 'ar' ? 'التحكم في صلاحيات الفريق والادوار التشغيلية.' : 'Control admin team access and operating roles.',
+    audit: locale === 'ar' ? 'فحص سجل التدقيق والعمليات عالية المخاطر.' : 'Inspect the audit trail and high-risk operations.',
+  } as Record<TabId, string>)[activeTab];
 
   // âââ LOADING / UNAUTHORIZED âââââââââââââââââââââââââââ
   if (loading) return (
@@ -578,6 +614,43 @@ export default function AdminPage() {
 
         {/* âââ CONTENT AREA âââ */}
         <main className="flex-1 min-w-0 p-4 lg:p-6">
+          <section className="mb-6 rounded-2xl border border-[#1a1a3a] bg-gradient-to-br from-[#0e0e20] via-[#12122a] to-[#171733] p-5 lg:p-6">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div className="space-y-3">
+                <Link href={`/${locale}/dashboard`} className="inline-flex items-center gap-2 text-xs font-medium text-[#D4AF37] hover:text-[#f5d76e] transition">
+                  <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d={isRTL ? 'M13 5l7 7-7 7M5 12h15' : 'M11 19l-7-7 7-7m-7 7h16'} />
+                  </svg>
+                  {text.backToDashboard}
+                </Link>
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[#D4AF37]/70">
+                    {locale === 'ar' ? 'مركز قيادة الادمن' : 'Admin Command Center'}
+                  </p>
+                  <h2 className="mt-2 text-2xl font-semibold tracking-tight text-white">{activeTabLabel}</h2>
+                  <p className="mt-2 max-w-3xl text-sm text-gray-400">{activeTabDescription}</p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={loadAllData}
+                  className="inline-flex items-center gap-2 rounded-full border border-[#2a2a4a] bg-[#12122a] px-4 py-2 text-xs font-medium text-gray-200 transition hover:border-[#D4AF37]/30 hover:text-white"
+                >
+                  <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m14.836 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  {text.refresh}
+                </button>
+                <button
+                  onClick={() => router.push(`/${locale}/dashboard`)}
+                  className="inline-flex items-center gap-2 rounded-full bg-[#D4AF37] px-4 py-2 text-xs font-semibold text-[#1A1A2E] transition hover:bg-[#f5d76e]"
+                >
+                  {locale === 'ar' ? 'فتح تجربة العميل' : 'Open customer app'}
+                </button>
+              </div>
+            </div>
+          </section>
 
           {/* âââ OVERVIEW TAB âââ */}
           {activeTab === 'overview' && (
@@ -682,11 +755,11 @@ export default function AdminPage() {
                     <tbody className="divide-y divide-[#1a1a3a]">
                       {applySearch(users.filter(u => userFilter === 'all' || u.account_type === userFilter), ['full_name', 'email', 'phone']).slice(0, 100).map(u => (
                         <tr key={u.id} className="hover:bg-[#12122a]/50 transition">
-                          <td className="px-4 py-3 font-medium text-gray-200">{u.full_name || 'â'}</td>
-                          <td className="px-4 py-3 text-gray-400" dir="ltr">{u.email || 'â'}</td>
+                          <td className="px-4 py-3 font-medium text-gray-200">{u.full_name || EM_DASH}</td>
+                          <td className="px-4 py-3 text-gray-400" dir="ltr">{u.email || EM_DASH}</td>
                           <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded-full text-[10px] ${u.account_type === 'business' ? 'bg-purple-500/15 text-purple-400' : 'bg-blue-500/15 text-blue-400'}`}>{u.account_type || 'personal'}</span></td>
                           <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded-full text-[10px] border ${roleBadge(u.role || 'user')}`}>{roleLabel(u.role || 'user')}</span></td>
-                          <td className="px-4 py-3 text-gray-500 font-mono" dir="ltr">{u.phone || 'â'}</td>
+                          <td className="px-4 py-3 text-gray-500 font-mono" dir="ltr">{u.phone || EM_DASH}</td>
                           <td className="px-4 py-3 text-gray-500">{fmtDate(u.created_at)}</td>
                         </tr>
                       ))}
@@ -725,14 +798,14 @@ export default function AdminPage() {
                         return true;
                       }), ['product_name', 'seller_name', 'category', 'reference_number']).slice(0, 100).map(w => (
                         <tr key={w.id} className="hover:bg-[#12122a]/50 transition">
-                          <td className="px-4 py-3 font-medium text-gray-200">{w.product_name || 'â'}</td>
-                          <td className="px-4 py-3 text-gray-400">{w.category || 'â'}</td>
-                          <td className="px-4 py-3 text-gray-400">{w.seller_name || 'â'}</td>
+                          <td className="px-4 py-3 font-medium text-gray-200">{w.product_name || EM_DASH}</td>
+                          <td className="px-4 py-3 text-gray-400">{w.category || EM_DASH}</td>
+                          <td className="px-4 py-3 text-gray-400">{w.seller_name || EM_DASH}</td>
                           <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded-full text-[10px] ${statusBadge(w.status)}`}>{w.status}</span></td>
                           <td className="px-4 py-3 text-gray-500">{fmtDate(w.start_date)}</td>
                           <td className="px-4 py-3 text-gray-500">{fmtDate(w.end_date)}</td>
                           <td className="px-4 py-3 text-gray-500">{w.source || 'manual'}</td>
-                          <td className="px-4 py-3">{w.legal_hold ? <span className="px-2 py-0.5 rounded-full text-[10px] bg-red-500/15 text-red-400">HOLD</span> : 'â'}</td>
+                          <td className="px-4 py-3">{w.legal_hold ? <span className="px-2 py-0.5 rounded-full text-[10px] bg-red-500/15 text-red-400">{text.legalHold}</span> : EM_DASH}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -758,9 +831,9 @@ export default function AdminPage() {
                       {applySearch(companies, ['name', 'cr_number', 'email']).slice(0, 100).map(c => (
                         <tr key={c.id} className="hover:bg-[#12122a]/50 transition">
                           <td className="px-4 py-3 font-medium text-gray-200">{c.name}</td>
-                          <td className="px-4 py-3 text-gray-400 font-mono">{c.cr_number || 'â'}</td>
-                          <td className="px-4 py-3 text-gray-400" dir="ltr">{c.email || 'â'}</td>
-                          <td className="px-4 py-3 text-gray-500 font-mono" dir="ltr">{c.phone || 'â'}</td>
+                          <td className="px-4 py-3 text-gray-400 font-mono">{c.cr_number || EM_DASH}</td>
+                          <td className="px-4 py-3 text-gray-400" dir="ltr">{c.email || EM_DASH}</td>
+                          <td className="px-4 py-3 text-gray-500 font-mono" dir="ltr">{c.phone || EM_DASH}</td>
                           <td className="px-4 py-3 text-gray-500">{fmtDate(c.created_at)}</td>
                         </tr>
                       ))}
@@ -796,13 +869,13 @@ export default function AdminPage() {
                       {applySearch(claims.filter(c => claimFilter === 'all' || c.status === claimFilter || (claimFilter === 'pending' && c.status === 'filed')), ['claim_number', 'title', 'description']).slice(0, 100).map(c => (
                         <tr key={c.id} className="hover:bg-[#12122a]/50 transition">
                           <td className="px-4 py-3 font-mono text-gray-300">{c.claim_number || c.id?.substring(0, 8)}</td>
-                          <td className="px-4 py-3 text-gray-200 max-w-[200px] truncate">{c.title || 'â'}</td>
+                          <td className="px-4 py-3 text-gray-200 max-w-[200px] truncate">{c.title || EM_DASH}</td>
                           <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded-full text-[10px] ${statusBadge(c.status)}`}>{c.status}</span></td>
-                          <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded-full text-[10px] ${c.severity === 'high' ? 'bg-red-500/15 text-red-400' : c.severity === 'medium' ? 'bg-yellow-500/15 text-yellow-400' : 'bg-gray-500/15 text-gray-400'}`}>{c.severity || 'â'}</span></td>
-                          <td className="px-4 py-3 text-gray-400">{c.claim_amount ? fmtMoney(c.claim_amount) : 'â'}</td>
+                          <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded-full text-[10px] ${c.severity === 'high' ? 'bg-red-500/15 text-red-400' : c.severity === 'medium' ? 'bg-yellow-500/15 text-yellow-400' : 'bg-gray-500/15 text-gray-400'}`}>{c.severity || EM_DASH}</span></td>
+                          <td className="px-4 py-3 text-gray-400">{c.claim_amount ? fmtMoney(c.claim_amount) : EM_DASH}</td>
                           <td className="px-4 py-3 text-gray-500">{fmtDate(c.filed_at || c.created_at)}</td>
-                          <td className="px-4 py-3 text-gray-500">{c.resolved_at ? fmtDate(c.resolved_at) : 'â'}</td>
-                          <td className="px-4 py-3">{c.legal_hold ? <span className="px-2 py-0.5 rounded-full text-[10px] bg-red-500/15 text-red-400">HOLD</span> : 'â'}</td>
+                          <td className="px-4 py-3 text-gray-500">{c.resolved_at ? fmtDate(c.resolved_at) : EM_DASH}</td>
+                          <td className="px-4 py-3">{c.legal_hold ? <span className="px-2 py-0.5 rounded-full text-[10px] bg-red-500/15 text-red-400">{text.legalHold}</span> : EM_DASH}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -837,9 +910,9 @@ export default function AdminPage() {
                       {applySearch(tickets.filter(t => ticketFilter === 'all' || t.status === ticketFilter), ['ticket_number', 'subject', 'category']).slice(0, 100).map(tk => (
                         <tr key={tk.id} className="hover:bg-[#12122a]/50 transition">
                           <td className="px-4 py-3 font-mono text-gray-300">{tk.ticket_number || tk.id?.substring(0, 8)}</td>
-                          <td className="px-4 py-3 text-gray-200 max-w-[250px] truncate">{tk.subject || 'â'}</td>
-                          <td className="px-4 py-3 text-gray-400">{tk.category || 'â'}</td>
-                          <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded-full text-[10px] ${tk.priority === 'high' || tk.priority === 'urgent' ? 'bg-red-500/15 text-red-400' : tk.priority === 'medium' ? 'bg-yellow-500/15 text-yellow-400' : 'bg-gray-500/15 text-gray-400'}`}>{tk.priority || 'â'}</span></td>
+                          <td className="px-4 py-3 text-gray-200 max-w-[250px] truncate">{tk.subject || EM_DASH}</td>
+                          <td className="px-4 py-3 text-gray-400">{tk.category || EM_DASH}</td>
+                          <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded-full text-[10px] ${tk.priority === 'high' || tk.priority === 'urgent' ? 'bg-red-500/15 text-red-400' : tk.priority === 'medium' ? 'bg-yellow-500/15 text-yellow-400' : 'bg-gray-500/15 text-gray-400'}`}>{tk.priority || EM_DASH}</span></td>
                           <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded-full text-[10px] ${statusBadge(tk.status)}`}>{tk.status}</span></td>
                           <td className="px-4 py-3 text-gray-500">{fmtDate(tk.created_at)}</td>
                         </tr>
@@ -866,10 +939,10 @@ export default function AdminPage() {
                     <tbody className="divide-y divide-[#1a1a3a]">
                       {applySearch(fraudSignals, ['signal_type', 'description', 'entity_type']).slice(0, 100).map(f => (
                         <tr key={f.id} className="hover:bg-[#12122a]/50 transition">
-                          <td className="px-4 py-3 font-medium text-gray-200">{f.signal_type || 'â'}</td>
-                          <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded-full text-[10px] ${f.severity === 'critical' || f.severity === 'high' ? 'bg-red-500/15 text-red-400' : f.severity === 'medium' ? 'bg-yellow-500/15 text-yellow-400' : 'bg-gray-500/15 text-gray-400'}`}>{f.severity || 'â'}</span></td>
+                          <td className="px-4 py-3 font-medium text-gray-200">{f.signal_type || EM_DASH}</td>
+                          <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded-full text-[10px] ${f.severity === 'critical' || f.severity === 'high' ? 'bg-red-500/15 text-red-400' : f.severity === 'medium' ? 'bg-yellow-500/15 text-yellow-400' : 'bg-gray-500/15 text-gray-400'}`}>{f.severity || EM_DASH}</span></td>
                           <td className="px-4 py-3 text-gray-400">{f.entity_type}: {f.entity_id?.substring(0, 8)}</td>
-                          <td className="px-4 py-3 text-gray-300 max-w-[300px] truncate">{f.description || 'â'}</td>
+                          <td className="px-4 py-3 text-gray-300 max-w-[300px] truncate">{f.description || EM_DASH}</td>
                           <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded-full text-[10px] ${statusBadge(f.status)}`}>{f.status}</span></td>
                           <td className="px-4 py-3 text-gray-500">{fmtDate(f.created_at)}</td>
                         </tr>
@@ -889,15 +962,15 @@ export default function AdminPage() {
               <div className="grid grid-cols-3 gap-3 mb-4">
                 <div className="bg-[#0e0e20] rounded-xl border border-[#1a1a3a] p-4 text-center">
                   <p className="text-2xl font-bold text-emerald-400">{stats.ingestionSuccess}</p>
-                  <p className="text-[10px] text-gray-500">Successful</p>
+                  <p className="text-[10px] text-gray-500">{locale === 'ar' ? 'ناجح' : 'Successful'}</p>
                 </div>
                 <div className="bg-[#0e0e20] rounded-xl border border-[#1a1a3a] p-4 text-center">
                   <p className="text-2xl font-bold text-red-400">{stats.ingestionTotal - stats.ingestionSuccess}</p>
-                  <p className="text-[10px] text-gray-500">Failed</p>
+                  <p className="text-[10px] text-gray-500">{locale === 'ar' ? 'فشل' : 'Failed'}</p>
                 </div>
                 <div className="bg-[#0e0e20] rounded-xl border border-[#1a1a3a] p-4 text-center">
                   <p className="text-2xl font-bold text-[#D4AF37]">{stats.ingestionTotal > 0 ? Math.round((stats.ingestionSuccess / stats.ingestionTotal) * 100) : 0}%</p>
-                  <p className="text-[10px] text-gray-500">Success Rate</p>
+                  <p className="text-[10px] text-gray-500">{locale === 'ar' ? 'نسبة النجاح' : 'Success Rate'}</p>
                 </div>
               </div>
               <div className="bg-[#0e0e20] rounded-xl border border-[#1a1a3a] overflow-hidden">
@@ -911,10 +984,10 @@ export default function AdminPage() {
                     <tbody className="divide-y divide-[#1a1a3a]">
                       {applySearch(ingestions, ['from_email', 'subject']).slice(0, 100).map(ig => (
                         <tr key={ig.id} className="hover:bg-[#12122a]/50 transition">
-                          <td className="px-4 py-3 text-gray-300" dir="ltr">{ig.from_email || 'â'}</td>
-                          <td className="px-4 py-3 text-gray-200 max-w-[250px] truncate">{ig.subject || 'â'}</td>
+                          <td className="px-4 py-3 text-gray-300" dir="ltr">{ig.from_email || EM_DASH}</td>
+                          <td className="px-4 py-3 text-gray-200 max-w-[250px] truncate">{ig.subject || EM_DASH}</td>
                           <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded-full text-[10px] ${statusBadge(ig.status)}`}>{ig.status}</span></td>
-                          <td className="px-4 py-3 text-gray-400">{ig.confidence_score != null ? `${(ig.confidence_score * 100).toFixed(0)}%` : 'â'}</td>
+                          <td className="px-4 py-3 text-gray-400">{ig.confidence_score != null ? `${(ig.confidence_score * 100).toFixed(0)}%` : EM_DASH}</td>
                           <td className="px-4 py-3 text-gray-500">{fmtDate(ig.created_at)}</td>
                         </tr>
                       ))}
@@ -947,7 +1020,7 @@ export default function AdminPage() {
                     <tbody className="divide-y divide-[#1a1a3a]">
                       {revenueEvents.slice(0, 100).map(r => (
                         <tr key={r.id} className="hover:bg-[#12122a]/50 transition">
-                          <td className="px-4 py-3 text-gray-200">{r.event_type || 'â'}</td>
+                          <td className="px-4 py-3 text-gray-200">{r.event_type || EM_DASH}</td>
                           <td className="px-4 py-3 text-emerald-400 font-medium">{fmtMoney(r.amount)}</td>
                           <td className="px-4 py-3 text-gray-400">{r.currency || 'USD'}</td>
                           <td className="px-4 py-3 text-gray-500">{fmtDate(r.created_at)}</td>
@@ -969,7 +1042,7 @@ export default function AdminPage() {
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs">
                     <thead className="bg-[#12122a] border-b border-[#1a1a3a]"><tr>
-                      {[text.key, text.value, text.description, 'Updated'].map(h => (
+                      {[text.key, text.value, text.description, locale === 'ar' ? 'آخر تحديث' : 'Updated'].map(h => (
                         <th key={h} className="px-4 py-3 text-start font-medium text-gray-500">{h}</th>
                       ))}
                     </tr></thead>
@@ -978,7 +1051,7 @@ export default function AdminPage() {
                         <tr key={c.id || c.key} className="hover:bg-[#12122a]/50 transition">
                           <td className="px-4 py-3 font-mono text-[#D4AF37]">{c.key}</td>
                           <td className="px-4 py-3 text-gray-200 font-mono">{typeof c.value === 'object' ? JSON.stringify(c.value) : String(c.value)}</td>
-                          <td className="px-4 py-3 text-gray-500">{c.description || 'â'}</td>
+                          <td className="px-4 py-3 text-gray-500">{c.description || EM_DASH}</td>
                           <td className="px-4 py-3 text-gray-500">{fmtDate(c.updated_at)}</td>
                         </tr>
                       ))}
@@ -1035,13 +1108,13 @@ export default function AdminPage() {
                     <tbody className="divide-y divide-[#1a1a3a]">
                       {teamMembers.map(m => (
                         <tr key={m.id} className="hover:bg-[#12122a]/50 transition">
-                          <td className="px-4 py-3 font-medium text-gray-200">{m.full_name || 'â'}</td>
+                          <td className="px-4 py-3 font-medium text-gray-200">{m.full_name || EM_DASH}</td>
                           <td className="px-4 py-3 text-gray-400" dir="ltr">{m.email}</td>
                           <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded-full text-[10px] border ${roleBadge(m.role)}`}>{roleLabel(m.role)}</span></td>
                           <td className="px-4 py-3 text-gray-500">{fmtDate(m.created_at)}</td>
                           <td className="px-4 py-3">
-                            {m.role === 'super_admin' ? <span className="text-[10px] text-gray-600">â</span>
-                            : m.id === currentUserId ? <span className="text-[10px] text-gray-600">You</span>
+                            {m.role === 'super_admin' ? <span className="text-[10px] text-gray-600">{EM_DASH}</span>
+                            : m.id === currentUserId ? <span className="text-[10px] text-gray-600">{locale === 'ar' ? 'أنت' : 'You'}</span>
                             : (
                               <div className="flex gap-1.5 flex-wrap">
                                 {m.role !== 'admin' && <button onClick={() => handleChangeRole(m.id, 'admin')} className="px-2.5 py-1 text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-md hover:bg-blue-500/20 transition">{text.makeAdmin}</button>}
@@ -1083,7 +1156,7 @@ export default function AdminPage() {
                             <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{fmtDateTime(log.created_at)}</td>
                             <td className="px-4 py-3 font-medium text-gray-200">{log.action?.replace(/_/g, ' ')}</td>
                             <td className="px-4 py-3 text-gray-400">{log.entity_type}: {log.entity_id?.substring(0, 8)}...</td>
-                            <td className="px-4 py-3 text-gray-500 max-w-xs truncate">{log.details ? (log.details.email || log.details.reason || JSON.stringify(log.details).substring(0, 80)) : 'â'}</td>
+                            <td className="px-4 py-3 text-gray-500 max-w-xs truncate">{log.details ? (log.details.email || log.details.reason || JSON.stringify(log.details).substring(0, 80)) : EM_DASH}</td>
                             <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded-full text-[10px] ${log.risk_level === 'high' ? 'bg-red-500/15 text-red-400' : log.risk_level === 'medium' ? 'bg-yellow-500/15 text-yellow-400' : 'bg-emerald-500/15 text-emerald-400'}`}>{log.risk_level === 'high' ? text.high : log.risk_level === 'medium' ? text.medium : text.low}</span></td>
                           </tr>
                         ))}

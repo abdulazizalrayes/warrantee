@@ -5,7 +5,9 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/en/dashboard";
+  const requestedNext = searchParams.get("next");
+  const next = requestedNext && requestedNext.startsWith("/") ? requestedNext : "/en/dashboard";
+  const fallbackLocale = next.startsWith("/ar") ? "ar" : "en";
 
   if (code) {
     const supabase = await createSupabaseServerClient();
@@ -23,5 +25,5 @@ export async function GET(request: Request) {
     }
   }
 
-  return NextResponse.redirect(`${origin}/en/auth?error=auth_callback_error`);
+  return NextResponse.redirect(`${origin}/${fallbackLocale}/auth?error=auth_callback_error`);
 }

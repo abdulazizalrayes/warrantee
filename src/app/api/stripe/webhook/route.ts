@@ -68,6 +68,7 @@ export async function POST(request: Request) {
         const session = event.data.object;
         const userId = session.metadata?.user_id;
         const planId = session.metadata?.plan_id;
+        const extensionId = session.metadata?.extension_id;
 
         if (userId && planId) {
           const { error } = await supabaseAdmin
@@ -76,6 +77,34 @@ export async function POST(request: Request) {
             .eq("id", userId);
 
           if (error) console.warn("Profile update failed:", error.message);
+        }
+
+        if (extensionId) {
+          const { error: extError } = await supabaseAdmin
+            .from("warranty_extensions")
+            .update({ is_purchased: true })
+            .eq("id", extensionId);
+
+          if (extError) {
+            console.warn("Extension update failed:", extError.message);
+            break;
+          }
+
+          const { data: extension } = await supabaseAdmin
+            .from("warranty_extensions")
+            .select("warranty_id, new_end_date")
+            .eq("id", extensionId)
+            .single();
+
+          if (extension) {
+            await supabaseAdmin
+              .from("warranties")
+              .update({
+                end_date: extension.new_end_date,
+                status: "renewed",
+              })
+              .eq("id", extension.warranty_id);
+          }
         }
         break;
       }
@@ -114,7 +143,7 @@ export async function POST(request: Request) {
           }
 
           const { data: extension } = await supabaseAdmin
-            .from("webranty_extensions")
+            .from("warranty_extensions")
             .select("warranty_id, new_end_date")
             .eq("id", metadata.extension_id)
             .single();
