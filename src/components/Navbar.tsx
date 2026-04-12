@@ -17,7 +17,7 @@ export function Navbar({ locale, dictionary }: NavbarProps) {
 
   const navLinks = [
     { href: '#features', label: dictionary.nav.features },
-    { href: '#how-it-works', label: 'How It Works' },
+    { href: '#how-it-works', label: dictionary.how_it_works.title },
     { href: '#pricing', label: dictionary.nav.pricing },
     { href: '#contact', label: dictionary.nav.contact },
   ];

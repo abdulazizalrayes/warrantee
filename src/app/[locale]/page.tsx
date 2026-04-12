@@ -285,6 +285,13 @@ export default async function HomePage({ params }: HomePageProps) {
                 {locale === 'en' ? 'Get Started' : '\u0627\u0628\u062f\u0623 \u0627\u0644\u0622\u0646'}
                 <ChevronRight className="w-4 h-4 ml-1.5" />
               </a>
+              <a
+                href="mailto:hello@warrantee.io"
+                className="inline-flex items-center justify-center px-7 py-3 text-[#0071e3] hover:text-[#0077ED] font-normal text-[17px] transition-colors"
+              >
+                <Mail className="w-4 h-4 mr-1.5" />
+                hello@warrantee.io
+              </a>
             </div>
           </div>
         </section>
