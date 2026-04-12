@@ -34,7 +34,7 @@ export async function middleware(request: NextRequest) {
           );
           response = NextResponse.next({ request });
           cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, { ...options, sameSite: "lax", secure: true })
+            response.cookies.set(name, value, { ...options, sameSite: "strict", secure: true })
           );
         },
       },
@@ -71,11 +71,12 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
-  // Protect /admin routes - require authentication and admin role
+  // Protect /admin and /approval routes - require authentication and admin role
   if (
     pathname.startsWith("/admin") ||
     pathname.startsWith("/dashboard/admin") ||
-    pathname.match(/^\/(en|ar)\/admin/)
+    pathname.match(/^\/(en|ar)\/admin/) ||
+    pathname.match(/^\/(en|ar)\/approval/)
   ) {
     if (!user) {
       const url = request.nextUrl.clone();
