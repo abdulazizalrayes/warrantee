@@ -245,6 +245,11 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET() {
+  const supabase = await createServerSupabaseClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   return NextResponse.json({
     status: "OCR parsing endpoint active",
     usage: "POST with { text: 'extracted OCR text' } or { image: 'data:image/png;base64,...' }",
