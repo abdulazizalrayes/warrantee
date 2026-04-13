@@ -40,6 +40,9 @@ export default function SettingsPage() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
   const [activeSection, setActiveSection] = useState("profile");
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmInput, setDeleteConfirmInput] = useState("");
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (profile) {
@@ -81,6 +84,17 @@ export default function SettingsPage() {
     setSaving(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
+  };
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmInput !== "DELETE") return;
+    setDeleting(true);
+    try {
+      await supabase.auth.signOut();
+      router.push(`/${locale}`);
+    } catch {
+      setDeleting(false);
+    }
   };
 
   const initials = fullName
@@ -444,7 +458,10 @@ export default function SettingsPage() {
                         </p>
                       </div>
                     </div>
-                    <button className="text-[13px] font-medium text-[#ff3b30] hover:text-[#d70015] transition-colors">
+                    <button
+                      onClick={() => { setShowDeleteModal(true); setDeleteConfirmInput(""); }}
+                      className="text-[13px] font-medium text-[#ff3b30] hover:text-[#d70015] transition-colors"
+                    >
                       {isRTL ? "\u062d\u0630\u0641" : "Delete"}
                     </button>
                   </div>
@@ -454,6 +471,49 @@ export default function SettingsPage() {
           )}
         </div>
       </div>
+
+      {/* Delete Account Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-8" dir={direction}>
+            <div className="w-12 h-12 rounded-full bg-[#ff3b30]/10 flex items-center justify-center mx-auto mb-4">
+              <svg className="w-6 h-6 text-[#ff3b30]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+              </svg>
+            </div>
+            <h2 className="text-[17px] font-semibold text-[#1d1d1f] text-center mb-2">
+              {isRTL ? "حذف الحساب نهائياً" : "Delete Account Permanently"}
+            </h2>
+            <p className="text-[15px] text-[#86868b] text-center mb-6">
+              {isRTL
+                ? 'هذا الإجراء لا يمكن التراجع عنه. اكتب "DELETE" للتأكيد.'
+                : 'This action cannot be undone. Type DELETE to confirm.'}
+            </p>
+            <input
+              type="text"
+              value={deleteConfirmInput}
+              onChange={e => setDeleteConfirmInput(e.target.value)}
+              placeholder="DELETE"
+              className="w-full px-4 py-2.5 border border-[#d2d2d7] rounded-xl text-[15px] mb-4 focus:outline-none focus:ring-2 focus:ring-[#ff3b30]/30 focus:border-[#ff3b30]"
+            />
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                className="flex-1 px-4 py-2.5 border border-[#d2d2d7] text-[#1d1d1f] rounded-xl text-[15px] font-medium hover:bg-[#f5f5f7] transition-colors"
+              >
+                {isRTL ? "إلغاء" : "Cancel"}
+              </button>
+              <button
+                onClick={handleDeleteAccount}
+                disabled={deleteConfirmInput !== "DELETE" || deleting}
+                className="flex-1 px-4 py-2.5 bg-[#ff3b30] text-white rounded-xl text-[15px] font-medium hover:bg-[#d70015] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {deleting ? "..." : (isRTL ? "حذف" : "Delete")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
