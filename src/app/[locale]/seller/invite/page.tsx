@@ -8,7 +8,7 @@ import { useAuth } from "@/lib/auth-context";
 import { getDictionary } from "@/lib/i18n";
 
 export default function SellerInvitePage() {
-  const { locale } = useParams();
+  const { locale } = useParams() ?? {};
   const router = useRouter();
   const { user } = useAuth();
   const dict = getDictionary((locale as string) || "en");

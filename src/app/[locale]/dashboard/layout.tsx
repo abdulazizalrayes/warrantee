@@ -31,7 +31,7 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const params = useParams();
+  const params = useParams() ?? {};
   const locale = (params.locale as string) || "en";
   const pathname = usePathname();
   const router = useRouter();
@@ -48,7 +48,7 @@ export default function DashboardLayout({
   const isActive = (href: string) => {
     const basePath = `/${locale}/dashboard`;
     if (href === "/dashboard") return pathname === basePath;
-    return pathname.includes(href);
+    return pathname === `/${locale}${href}` || pathname.startsWith(`/${locale}${href}/`);
   };
 
   const handleSignOut = async () => {
@@ -61,7 +61,7 @@ export default function DashboardLayout({
     { href: "/warranties", label: dict.nav.warranties, icon: Shield },
     { href: "/approval", label: isRTL ? "الموافقات" : "Approvals", icon: CheckSquare },
     { href: "/dashboard/claims", label: isRTL ? "\u0627\u0644\u0627\u062f\u0639\u0627\u0621\u0627\u062a" : "Claims", icon: FileText },
-    { href: "/warranties/extensions", label: isRTL ? "\u0627\u0644\u062a\u0645\u062f\u064a\u062f\u0627\u062a" : "Extensions", icon: Clock },
+    { href: "/extensions", label: isRTL ? "\u0627\u0644\u062a\u0645\u062f\u064a\u062f\u0627\u062a" : "Extensions", icon: Clock },
     { href: "/documents", label: isRTL ? "\u0627\u0644\u0645\u0633\u062a\u0646\u062f\u0627\u062a" : "Documents", icon: Boxes },
     { href: "/seller", label: isRTL ? "\u0627\u0644\u0628\u0627\u0626\u0639" : "Seller", icon: Store },
     { href: "/analytics", label: isRTL ? "\u0627\u0644\u062a\u062d\u0644\u064a\u0644\u0627\u062a" : "Analytics", icon: PieChart },

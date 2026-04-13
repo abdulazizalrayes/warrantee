@@ -74,7 +74,7 @@ const faqs = {
 };
 
 export default function FAQPage() {
-  const params = useParams();
+  const params = useParams() ?? {};
   const locale = (params?.locale as string) || "en";
   const isRTL = locale === "ar";
   const items = faqs[locale as keyof typeof faqs] || faqs.en;

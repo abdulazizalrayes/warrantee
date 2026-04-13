@@ -6,6 +6,8 @@ import { useParams } from "next/navigation";
 import { createBrowserClient } from "@/lib/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import PushNotificationManager from "@/components/PushNotificationManager";
+import { DashboardPageShell } from "@/components/dashboard/DashboardPageShell";
+import { PageViewTracker } from "@/components/PageViewTracker";
 import {
   Bell, Check, CheckCheck, Trash2, AlertTriangle,
   CheckCircle, XCircle, ClipboardList, BellOff,
@@ -64,7 +66,7 @@ const iconForType = (type: string) => {
 };
 
 export default function NotificationsPage() {
-  const params = useParams();
+  const params = useParams() ?? {};
   const locale = (params?.locale as string) || "en";
   const l = t[locale] || t.en;
   const isRtl = locale === "ar";
@@ -146,17 +148,51 @@ export default function NotificationsPage() {
 
   if (!user) {
     return (
-      <div className="min-h-[60vh] flex items-center justify-center p-6" dir={isRtl ? "rtl" : "ltr"}>
-        <div className="bg-white rounded-2xl ring-1 ring-[#d2d2d7]/40 shadow-sm p-8 text-center max-w-md">
-          <BellOff className="w-12 h-12 text-[#86868b] mx-auto mb-4" />
-          <p className="text-[#1d1d1f] font-medium">{l.loginRequired}</p>
-        </div>
+      <div dir={isRtl ? "rtl" : "ltr"}>
+        <DashboardPageShell
+          eyebrow={isRtl ? "\u0645\u0631\u0643\u0632 \u0627\u0644\u062a\u0646\u0628\u064a\u0647\u0627\u062a" : "Notification center"}
+          title={l.title}
+          subtitle={l.pushDesc}
+          crumbs={[
+            { label: "Dashboard", href: `/${locale}/dashboard` },
+            { label: l.title },
+          ]}
+        >
+          <div className="min-h-[60vh] flex items-center justify-center p-6">
+            <div className="bg-white rounded-2xl ring-1 ring-[#d2d2d7]/40 shadow-sm p-8 text-center max-w-md">
+              <BellOff className="w-12 h-12 text-[#86868b] mx-auto mb-4" />
+              <p className="text-[#1d1d1f] font-medium">{l.loginRequired}</p>
+            </div>
+          </div>
+        </DashboardPageShell>
       </div>
     );
   }
 
   return (
-    <div className="max-w-3xl space-y-6" dir={isRtl ? "rtl" : "ltr"}>
+    <div dir={isRtl ? "rtl" : "ltr"}>
+      <PageViewTracker
+        pageName="notifications_center"
+        pageType="operations"
+        locale={locale}
+        extra={{ unread_count: unreadCount }}
+      />
+      <DashboardPageShell
+        eyebrow={isRtl ? "\u0645\u0631\u0643\u0632 \u0627\u0644\u062a\u0646\u0628\u064a\u0647\u0627\u062a" : "Notification center"}
+        title={l.title}
+        subtitle={l.pushDesc}
+        crumbs={[
+          { label: "Dashboard", href: `/${locale}/dashboard` },
+          { label: l.title },
+        ]}
+        stats={[
+          { label: isRtl ? "\u063a\u064a\u0631 \u0645\u0642\u0631\u0648\u0621" : "Unread", value: unreadCount, tone: unreadCount ? "warning" : "default" },
+          { label: isRtl ? "\u0627\u0644\u064a\u0648\u0645" : "Today", value: todayNotifs.length },
+          { label: isRtl ? "\u0623\u0633\u0628\u0642" : "Earlier", value: earlierNotifs.length },
+        ]}
+        auditNote={isRtl ? "\u064a\u062c\u0628 \u0623\u0646 \u062a\u0643\u0648\u0646 \u0647\u0630\u0647 \u0627\u0644\u0635\u0641\u062d\u0629 \u0645\u0631\u0643\u0632 \u0627\u0644\u062a\u0646\u0628\u064a\u0647\u0627\u062a \u0627\u0644\u062d\u0631\u062c\u0629 \u0648\u0627\u0644\u0623\u062d\u062f\u0627\u062b \u0627\u0644\u0645\u0647\u0645\u0629." : "This should function as the operating inbox for expiry alerts, claims, approvals, and customer-critical events."}
+      >
+      <div className="max-w-3xl space-y-6">
       <div>
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
@@ -273,6 +309,8 @@ export default function NotificationsPage() {
           </div>
         )}
       </div>
+      </div>
+      </DashboardPageShell>
     </div>
   );
 }

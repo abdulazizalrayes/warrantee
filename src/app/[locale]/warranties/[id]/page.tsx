@@ -9,7 +9,7 @@ import { useAuth } from "@/lib/auth-context";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 export default function WarrantyDetailPage() {
-  const params = useParams();
+  const params = useParams() ?? {};
   const router = useRouter();
   const searchParams = useSearchParams();
   const locale = (params.locale as string) || "en";
@@ -24,7 +24,7 @@ export default function WarrantyDetailPage() {
   const [documents, setDocuments] = useState<any[]>([]);
   const [claims, setClaims] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [feedback, setFeedback] = useState<string | null>(searchParams.get("extension"));
+  const [feedback, setFeedback] = useState<string | null>(searchParams?.get("extension"));
 
   useEffect(() => {
     (async () => {

@@ -7,7 +7,10 @@ import Link from 'next/link';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
 import { useAuth } from '@/lib/auth-context';
+import { trackApprovalAction } from '@/lib/ga4-events';
 import { CheckCircle2, Clock, ExternalLink, FileWarning, Send } from 'lucide-react';
+import { DashboardPageShell } from '@/components/dashboard/DashboardPageShell';
+import { PageViewTracker } from '@/components/PageViewTracker';
 
 const APPROVER_ROLES = new Set(['approver', 'company_admin', 'platform_admin', 'admin', 'super_admin']);
 
@@ -19,6 +22,8 @@ const pageText = {
     loading: 'Loading approval items...',
     loginRequired: 'Please log in to access approvals.',
     empty: 'No approval items found.',
+    loadFailed: 'Approval data is unavailable right now. Please retry or check the environment configuration.',
+    retry: 'Retry',
     statuses: {
       all: 'All',
       pending: 'Pending Approval',
@@ -55,6 +60,8 @@ const pageText = {
     loading: '\u062c\u0627\u0631\u064a \u062a\u062d\u0645\u064a\u0644 \u0639\u0646\u0627\u0635\u0631 \u0627\u0644\u0645\u0648\u0627\u0641\u0642\u0627\u062a...',
     loginRequired: '\u064a\u0631\u062c\u0649 \u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062f\u062e\u0648\u0644 \u0644\u0644\u0648\u0635\u0648\u0644 \u0625\u0644\u0649 \u0627\u0644\u0645\u0648\u0627\u0641\u0642\u0627\u062a.',
     empty: '\u0644\u0627 \u062a\u0648\u062c\u062f \u0639\u0646\u0627\u0635\u0631 \u0644\u0644\u0645\u0648\u0627\u0641\u0642\u0629.',
+    loadFailed: '\u0628\u064a\u0627\u0646\u0627\u062a \u0627\u0644\u0645\u0648\u0627\u0641\u0642\u0627\u062a \u063a\u064a\u0631 \u0645\u062a\u0627\u062d\u0629 \u062d\u0627\u0644\u064a\u064b\u0627. \u062d\u0627\u0648\u0644 \u0645\u0631\u0629 \u0623\u062e\u0631\u0649 \u0623\u0648 \u062a\u062d\u0642\u0642 \u0645\u0646 \u0625\u0639\u062f\u0627\u062f\u0627\u062a \u0627\u0644\u0628\u064a\u0626\u0629.',
+    retry: '\u0625\u0639\u0627\u062f\u0629 \u0627\u0644\u0645\u062d\u0627\u0648\u0644\u0629',
     statuses: {
       all: '\u0627\u0644\u0643\u0644',
       pending: '\u0628\u0627\u0646\u062a\u0638\u0627\u0631 \u0627\u0644\u0645\u0648\u0627\u0641\u0642\u0629',
@@ -87,7 +94,7 @@ const pageText = {
 };
 
 function resolveViewMode(searchParams: URLSearchParams): 'buyer' | 'seller' {
-  const view = searchParams.get('view');
+  const view = searchParams?.get('view');
   return view === 'seller' ? 'seller' : 'buyer';
 }
 
@@ -100,7 +107,7 @@ function formatDate(value: string, locale: string) {
 }
 
 function ApprovalPageInner() {
-  const params = useParams();
+  const params = useParams() ?? {};
   const router = useRouter();
   const searchParams = useSearchParams();
   const locale = (params?.locale as string) || 'en';
@@ -112,7 +119,8 @@ function ApprovalPageInner() {
   const { user, profile, loading: authLoading } = useAuth();
 
   const [loading, setLoading] = useState(true);
-  const [items, setItems] = useState<any[]>([]);
+  const [allItems, setAllItems] = useState<any[]>([]);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'draft' | 'approved' | 'rejected'>('pending');
   const [processingId, setProcessingId] = useState<string | null>(null);
 
@@ -131,34 +139,55 @@ function ApprovalPageInner() {
   const fetchItems = async () => {
     if (!user) return;
     setLoading(true);
+    setLoadError(null);
 
-    let query = supabase
-      .from('warranties')
-      .select('id, reference_number, product_name, product_name_ar, status, created_at, seller_name, issuer_user_id, created_by')
-      .order('created_at', { ascending: false })
-      .limit(100);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
 
-    const mappedStatus = mapFilterToStatus(statusFilter);
-    if (mappedStatus) query = query.eq('status', mappedStatus);
+    try {
+      let query = supabase
+        .from('warranties')
+        .select('id, reference_number, product_name, product_name_ar, status, created_at, seller_name, issuer_user_id, created_by')
+        .order('created_at', { ascending: false })
+        .limit(100)
+        .abortSignal(controller.signal);
 
-    if (!canApprove) {
-      query = query.or(`issuer_user_id.eq.${user.id},created_by.eq.${user.id}`);
+      if (!canApprove) {
+        query = query.or(`issuer_user_id.eq.${user.id},created_by.eq.${user.id}`);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        throw error;
+      }
+
+      setAllItems(data || []);
+    } catch (error) {
+      console.error('Failed to load approval items', error);
+      setAllItems([]);
+      setLoadError(t.loadFailed);
+    } finally {
+      clearTimeout(timeout);
+      setLoading(false);
     }
-
-    const { data } = await query;
-    setItems(data || []);
-    setLoading(false);
   };
 
   useEffect(() => {
     if (authLoading) return;
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      setAllItems([]);
+      setLoadError(null);
+      return;
+    }
     fetchItems();
   }, [authLoading, user, profile?.role, statusFilter]);
 
   const approveItem = async (id: string) => {
     setProcessingId(id);
     await fetch(`/api/warranties/${id}/approve`, { method: 'POST' });
+    trackApprovalAction('approve', { warranty_id: id, view_mode: viewMode });
     setProcessingId(null);
     fetchItems();
   };
@@ -166,9 +195,23 @@ function ApprovalPageInner() {
   const submitItem = async (id: string) => {
     setProcessingId(id);
     await fetch(`/api/warranties/${id}/submit`, { method: 'POST' });
+    trackApprovalAction('submit', { warranty_id: id, view_mode: viewMode });
     setProcessingId(null);
     fetchItems();
   };
+
+  const visibleItems = useMemo(() => {
+    const mappedStatus = mapFilterToStatus(statusFilter);
+    if (!mappedStatus) return allItems;
+    return allItems.filter((item) => item.status === mappedStatus);
+  }, [allItems, statusFilter]);
+
+  const summaryStats = [
+    { label: t.statuses.pending, value: allItems.filter((item) => item.status === 'pending_approval').length, tone: 'warning' as const },
+    { label: t.statuses.draft, value: allItems.filter((item) => item.status === 'draft').length },
+    { label: t.statuses.approved, value: allItems.filter((item) => item.status === 'active').length, tone: 'success' as const },
+    { label: t.statuses.rejected, value: allItems.filter((item) => item.status === 'cancelled').length, tone: 'danger' as const },
+  ];
 
   const statusBadge = (status: string) => {
     const label = (t.badges as Record<string, string>)[status] || status;
@@ -203,11 +246,53 @@ function ApprovalPageInner() {
   }
 
   return (
-    <div dir={isRTL ? 'rtl' : 'ltr'} className="space-y-6">
-      <div>
-        <h1 className="text-[32px] sm:text-[40px] font-semibold tracking-tight text-[#1d1d1f]">{t.title}</h1>
-        <p className="text-[15px] text-[#86868b] mt-1">{canApprove ? t.subtitleApprover : t.subtitleAuthor}</p>
-      </div>
+    <div dir={isRTL ? 'rtl' : 'ltr'}>
+      <PageViewTracker
+        pageName="approval_workflow"
+        pageType="workflow"
+        locale={locale}
+        extra={{ can_approve: canApprove, view_mode: viewMode }}
+      />
+      <DashboardPageShell
+        eyebrow={canApprove ? 'Review lane' : 'Author lane'}
+        title={t.title}
+        subtitle={canApprove ? t.subtitleApprover : t.subtitleAuthor}
+        crumbs={[
+          { label: 'Dashboard', href: `/${locale}/dashboard` },
+          { label: t.title },
+        ]}
+        stats={summaryStats}
+        auditNote={canApprove
+          ? 'Audit-first mode: approvals should only move forward after the submission is complete, attachments are present, and workflow evidence is clear.'
+          : 'This workflow surface now carries tracked page-view and action events so draft, approval, and rejection friction can be audited before rollout.'}
+        actions={
+          <>
+            {loadError ? (
+              <button
+                onClick={fetchItems}
+                className="inline-flex items-center gap-2 rounded-full border border-[#d2d2d7] bg-white px-5 py-3 text-sm font-medium text-[#1A1A2E] transition hover:bg-[#f5f5f7]"
+              >
+                <Clock className="h-4 w-4" />
+                <span>{t.retry}</span>
+              </button>
+            ) : null}
+            <Link
+              href={withView(`/${locale}/warranties`)}
+              className="inline-flex items-center gap-2 rounded-full bg-[#1A1A2E] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#2b2b57]"
+            >
+              <ExternalLink className="h-4 w-4" />
+              <span>Open warranties</span>
+            </Link>
+          </>
+        }
+      >
+      <div className="space-y-6">
+
+      {loadError ? (
+        <div className="rounded-2xl border border-[#fed7aa] bg-[#fff7ed] px-5 py-4 text-sm text-[#9a3412]">
+          {loadError}
+        </div>
+      ) : null}
 
       <div className="flex flex-wrap gap-2">
         {[
@@ -231,10 +316,19 @@ function ApprovalPageInner() {
         ))}
       </div>
 
-      {items.length === 0 ? (
+      {visibleItems.length === 0 ? (
         <div className="bg-white rounded-2xl ring-1 ring-[#d2d2d7]/40 shadow-sm p-10 text-center">
           <FileWarning className="w-8 h-8 text-[#86868b] mx-auto mb-3" />
           <p className="text-[15px] text-[#86868b]">{t.empty}</p>
+          <div className="mt-4">
+            <Link
+              href={withView(`/${locale}/warranties`)}
+              className="inline-flex items-center gap-2 rounded-full bg-[#f5f5f7] px-4 py-2 text-sm font-medium text-[#1d1d1f] transition hover:bg-[#e8e8ed]"
+            >
+              <ExternalLink className="h-4 w-4" />
+              <span>Go to warranties</span>
+            </Link>
+          </div>
         </div>
       ) : (
         <div className="bg-white rounded-2xl ring-1 ring-[#d2d2d7]/40 shadow-sm overflow-hidden">
@@ -248,7 +342,7 @@ function ApprovalPageInner() {
           </div>
 
           <div className="divide-y divide-[#d2d2d7]/20">
-            {items.map((item) => (
+            {visibleItems.map((item) => (
               <div key={item.id} className="grid grid-cols-1 md:grid-cols-12 gap-4 px-5 py-4 items-center">
                 <div className="md:col-span-3">
                   <p className="text-[14px] font-medium text-[#1d1d1f]">{isRTL && item.product_name_ar ? item.product_name_ar : item.product_name}</p>
@@ -293,6 +387,8 @@ function ApprovalPageInner() {
           </div>
         </div>
       )}
+      </div>
+      </DashboardPageShell>
     </div>
   );
 }

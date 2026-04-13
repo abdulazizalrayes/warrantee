@@ -220,7 +220,7 @@ export async function GET(request: NextRequest) {
   try {
     const supabase = getSupabaseAdmin();
     const { searchParams } = new URL(request.url);
-    const warranty_id = searchParams.get('warranty_id');
+    const warranty_id = searchParams?.get('warranty_id');
 
     if (!warranty_id) {
       return NextResponse.json(

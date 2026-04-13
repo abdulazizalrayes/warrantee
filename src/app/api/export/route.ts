@@ -19,8 +19,8 @@ export async function GET(request: NextRequest) {
   }
 
   const { searchParams } = new URL(request.url);
-  const format = searchParams.get("format") || "csv";
-  const type = searchParams.get("type") || "warranties";
+  const format = searchParams?.get("format") || "csv";
+  const type = searchParams?.get("type") || "warranties";
 
   try {
     let data: any[] = [];

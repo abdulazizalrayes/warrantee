@@ -17,9 +17,9 @@ interface InvitationData {
 
 function AcceptSellerInviteContent() {
   const searchParams = useSearchParams();
-  const token = searchParams.get('token');
+  const token = searchParams?.get('token');
   const { user, loading: authLoading } = useAuth();
-  const params = useParams();
+  const params = useParams() ?? {};
   const locale = (params?.locale as string) || 'en';
   const isRtl = locale === 'ar';
 

@@ -19,7 +19,7 @@ export function LanguageToggle({
 
   const getToggleHref = () => {
     const newLocale = currentLocale === 'en' ? 'ar' : 'en';
-    const pathWithoutLocale = pathname.replace(`/${currentLocale}`, '');
+    const pathWithoutLocale = (pathname ?? '').replace(`/${currentLocale}`, '');
     return `/${newLocale}${pathWithoutLocale || ''}`;
   };
 

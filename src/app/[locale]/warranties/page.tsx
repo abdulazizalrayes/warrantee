@@ -118,13 +118,13 @@ const statusLabels: Record<string, Record<string, string>> = {
   },
 };
 
-function resolveViewMode(searchParams: URLSearchParams): DashboardView {
-  const mode = searchParams.get('view');
+function resolveViewMode(searchParams: URLSearchParams | null): DashboardView {
+  const mode = searchParams?.get('view');
   return mode === 'seller' ? 'seller' : 'buyer';
 }
 
 function WarrantiesPageInner() {
-  const params = useParams();
+  const params = useParams() ?? {};
   const router = useRouter();
   const searchParams = useSearchParams();
   const locale = (params?.locale as string) || 'en';

@@ -15,7 +15,7 @@ interface ExtensionRow {
 }
 
 export default function ExtensionsPage() {
-  const params = useParams();
+  const params = useParams() ?? {};
   const locale = (params.locale as string) || 'en';
   const isRTL = locale === 'ar';
   const { user, loading: authLoading } = useAuth();

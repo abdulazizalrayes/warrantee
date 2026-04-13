@@ -5,12 +5,15 @@ import { useParams } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { useAuth } from "@/lib/auth-context";
 import { FileText, Download, Calendar, Filter, BarChart3, PieChart, TrendingUp, Clock, Shield, AlertTriangle, CheckCircle, FileBarChart } from "lucide-react";
+import { DashboardPageShell } from "@/components/dashboard/DashboardPageShell";
+import { PageViewTracker } from "@/components/PageViewTracker";
+import { trackReportExport } from "@/lib/ga4-events";
 
 type ReportType = "warranty_summary" | "expiry_forecast" | "claims_overview" | "supplier_performance";
 type TimeRange = "7d" | "30d" | "90d" | "12m" | "all";
 
 export default function ReportsPage() {
-  const params = useParams();
+  const params = useParams() ?? {};
   const locale = params?.locale as string || "en";
   const isRTL = locale === "ar";
   const { user } = useAuth();
@@ -68,6 +71,37 @@ export default function ReportsPage() {
 
   return (
     <div dir={isRTL ? "rtl" : "ltr"} className="space-y-8">
+      <PageViewTracker
+        pageName="reports_hub"
+        pageType="analytics"
+        locale={locale}
+        extra={{ report_type: activeReport, time_range: timeRange }}
+      />
+      <DashboardPageShell
+        eyebrow={isRTL ? "\u0645\u0631\u0643\u0632 \u0627\u0644\u062a\u0642\u0627\u0631\u064a\u0631" : "Reporting hub"}
+        title={isRTL ? "\u0627\u0644\u062a\u0642\u0627\u0631\u064a\u0631" : "Reports"}
+        subtitle={isRTL ? "\u062a\u0642\u0627\u0631\u064a\u0631 \u062a\u0634\u063a\u064a\u0644\u064a\u0629 \u0644\u0644\u0636\u0645\u0627\u0646\u0627\u062a \u0648\u0627\u0644\u0627\u0646\u062a\u0647\u0627\u0621 \u0648\u0627\u0644\u0645\u0637\u0627\u0644\u0628\u0627\u062a." : "Operational reporting for warranty coverage, expiries, claims, and portfolio health."}
+        crumbs={[
+          { label: "Dashboard", href: `/${locale}/dashboard` },
+          { label: isRTL ? "\u0627\u0644\u062a\u0642\u0627\u0631\u064a\u0631" : "Reports" },
+        ]}
+        stats={[
+          { label: isRTL ? "\u0625\u062c\u0645\u0627\u0644\u064a" : "Total", value: stats.total },
+          { label: isRTL ? "\u0646\u0634\u0637\u0629" : "Active", value: stats.active, tone: "success" },
+          { label: isRTL ? "\u062a\u0646\u062a\u0647\u064a \u0642\u0631\u064a\u0628\u0627\u064b" : "Expiring", value: stats.expiring, tone: "warning" },
+          { label: isRTL ? "\u0645\u0637\u0627\u0644\u0628\u0627\u062a" : "Claimed", value: stats.claimed },
+        ]}
+        auditNote={isRTL ? "\u062d\u0631\u0643\u0629 \u0627\u0644\u062a\u0642\u0627\u0631\u064a\u0631 \u0648\u0627\u0644\u062a\u0635\u062f\u064a\u0631 \u0645\u0631\u0635\u0648\u062f\u0629 \u0644\u062a\u062d\u0644\u064a\u0644 \u0627\u0633\u062a\u062e\u062f\u0627\u0645 \u0627\u0644\u0625\u062f\u0627\u0631\u0629." : "Report navigation and export intent are now tracked so this surface can be audited before rollout."}
+        actions={
+          <button
+            onClick={() => trackReportExport({ locale, source: "reports_hub", report_type: activeReport, time_range: timeRange })}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#1A1A2E] text-white rounded-full text-[14px] font-medium hover:bg-[#2d2d5e] transition-colors"
+          >
+            <Download className="w-4 h-4" />
+            {isRTL ? "Export PDF" : "Export PDF"}
+          </button>
+        }
+      >
       <div className="max-w-6xl">
         {/* Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between mb-8">
@@ -79,10 +113,6 @@ export default function ReportsPage() {
               {isRTL ? "ØªØ­ÙÙÙØ§Øª ÙØ±Ø¤Ù Ø­ÙÙ Ø¶ÙØ§ÙØ§ØªÙ" : "Analytics and insights about your warranties"}
             </p>
           </div>
-          <button className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#1A1A2E] text-white rounded-full text-[14px] font-medium hover:bg-[#2d2d5e] transition-colors">
-            <Download className="w-4 h-4" />
-            {isRTL ? "ØªØµØ¯ÙØ± PDF" : "Export PDF"}
-          </button>
         </div>
 
         {/* Time Range Pills */}
@@ -236,6 +266,7 @@ export default function ReportsPage() {
           </div>
         </div>
       </div>
+      </DashboardPageShell>
     </div>
   );
 }

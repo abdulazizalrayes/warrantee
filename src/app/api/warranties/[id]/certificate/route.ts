@@ -59,7 +59,7 @@ export async function GET(
   const endDate = new Date(warranty_data.end_date);
   const isActive = endDate > now && warranty_data.status === "active";
 
-  const format = _request.nextUrl.searchParams.get("format");
+  const format = _request.nextUrl.searchParams?.get("format");
 
   if (format === "pdf") {
     return generatePdf(warranty_data, isAr, isActive, verifyUrl, id, supabase);

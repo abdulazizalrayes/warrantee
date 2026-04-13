@@ -32,6 +32,10 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
+const hasSupabaseConfig = Boolean(
+  process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+);
+const missingConfigError = "Authentication is unavailable until Supabase environment variables are configured.";
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -62,9 +66,25 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     let mounted = true;
 
+    if (!hasSupabaseConfig) {
+      setSession(null);
+      setUser(null);
+      setProfile(null);
+      setLoading(false);
+      return () => {
+        mounted = false;
+      };
+    }
+
     const initAuth = async () => {
       try {
-        const { data: { session: s } } = await supabase.auth.getSession();
+        const sessionResult = await Promise.race([
+          supabase.auth.getSession(),
+          new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error("Auth session request timed out")), 8000)
+          ),
+        ]);
+        const { data: { session: s } } = sessionResult;
         if (!mounted) return;
         setSession(s);
         setUser(s?.user ?? null);
@@ -108,6 +128,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const signInWithGoogle = async () => {
+    if (!hasSupabaseConfig) return;
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo: getRedirectURL() },
@@ -115,6 +136,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const signInWithApple = async () => {
+    if (!hasSupabaseConfig) return;
     await supabase.auth.signInWithOAuth({
       provider: "apple",
       options: { redirectTo: getRedirectURL() },
@@ -122,6 +144,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const signInWithMagicLink = async (email: string) => {
+    if (!hasSupabaseConfig) return { error: missingConfigError };
     return supabase.auth.signInWithOtp({
       email,
       options: { emailRedirectTo: getRedirectURL() },
@@ -129,10 +152,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const signInWithPassword = async (email: string, password: string) => {
+    if (!hasSupabaseConfig) return { error: missingConfigError };
     return supabase.auth.signInWithPassword({ email, password });
   };
 
   const signUp = async (email: string, password: string, metadata?: any) => {
+    if (!hasSupabaseConfig) return { error: missingConfigError };
     return supabase.auth.signUp({
       email,
       password,
@@ -145,6 +170,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signOut = async () => {
     setProfile(null);
+    if (!hasSupabaseConfig) return;
     await supabase.auth.signOut();
   };
 

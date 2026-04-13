@@ -7,7 +7,7 @@ import { Shield, Phone, Bell, ChevronRight, ChevronLeft, Check, Sparkles } from 
 import Link from "next/link";
 
 export default function OnboardingPage() {
-  const { locale } = useParams();
+  const { locale } = useParams() ?? {};
   const router = useRouter();
   const supabase = createSupabaseBrowserClient();
   const { user, refreshProfile } = useAuth();

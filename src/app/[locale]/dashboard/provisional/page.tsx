@@ -31,7 +31,7 @@ interface ProvisionalWarranty {
 
 export default function ProvisionalInboxPage() {
   const { user } = useAuth();
-  const params = useParams();
+  const params = useParams() ?? {};
   const locale = (params?.locale as string) || 'en';
   const isRtl = locale === 'ar';
 

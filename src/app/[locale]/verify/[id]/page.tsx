@@ -11,7 +11,7 @@ const t = {
 };
 
 export default function VerifyPage() {
-  const params = useParams();
+  const params = useParams() ?? {};
   const locale = (params.locale as string) || "en";
   const id = params.id as string;
   const l = t[locale as keyof typeof t] || t.en;

@@ -67,7 +67,7 @@ const methodColors: Record<string, string> = {
 };
 
 export default function ApiDocsPage() {
-  const params = useParams();
+  const params = useParams() ?? {};
   const locale = (params?.locale as string) || 'en';
   const isRTL = locale === 'ar';
   const t = translations[locale as keyof typeof translations] || translations.en;

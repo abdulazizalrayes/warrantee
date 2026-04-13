@@ -6,7 +6,7 @@ import { Headphones, Mail, MessageCircle, Clock, Send, ChevronRight, BookOpen, S
 import Link from "next/link";
 
 export default function SupportPage() {
-  const params = useParams();
+  const params = useParams() ?? {};
   const locale = params?.locale as string || "en";
   const isRTL = locale === "ar";
   const [name, setName] = useState("");

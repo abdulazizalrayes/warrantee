@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Mail, MessageCircle, Send } from 'lucide-react';
 import { trackContactForm } from '@/lib/ga4-events';
+import { PageViewTracker } from '@/components/PageViewTracker';
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -29,7 +30,7 @@ export default function ContactPage() {
       if (!response.ok) {
         throw new Error('Unable to submit form');
       }
-      trackContactForm();
+      trackContactForm(formData.subject);
       setSubmitted(true);
     } catch {
       setError('We could not submit the form right now. You can still email hello@warrantee.io directly.');
@@ -65,6 +66,7 @@ export default function ContactPage() {
 
   return (
     <div className="min-h-screen bg-warm-white">
+      <PageViewTracker pageName="contact_page" pageType="marketing" locale="en" />
       <section className="pt-24 pb-12 px-4 sm:px-6 lg:px-8 text-center bg-gradient-to-b from-gold/5 to-transparent">
         <div className="max-w-3xl mx-auto">
           <h1 className="text-5xl font-bold text-navy tracking-tight mb-4">Contact Us</h1>

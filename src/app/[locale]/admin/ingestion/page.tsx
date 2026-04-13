@@ -61,7 +61,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 export default function AdminIngestionPage() {
   const { user } = useAuth();
-  const params = useParams();
+  const params = useParams() ?? {};
   const locale = (params?.locale as string) || 'en';
   const isRtl = locale === 'ar';
 

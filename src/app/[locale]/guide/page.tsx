@@ -6,7 +6,7 @@ import { BookOpen, Shield, FileText, Upload, Bell, ChevronRight, Sparkles, Arrow
 import Link from "next/link";
 
 export default function GuidePage() {
-  const params = useParams();
+  const params = useParams() ?? {};
   const locale = params?.locale as string || "en";
   const isRTL = locale === "ar";
   const [openFaq, setOpenFaq] = useState<number | null>(null);

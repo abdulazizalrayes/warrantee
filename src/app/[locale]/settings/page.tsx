@@ -8,6 +8,8 @@ import { getDictionary, DIRECTION } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth-context";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { DashboardPageShell } from "@/components/dashboard/DashboardPageShell";
+import { PageViewTracker } from "@/components/PageViewTracker";
 import {
   User,
   Mail,
@@ -22,7 +24,7 @@ import {
 } from "lucide-react";
 
 export default function SettingsPage() {
-  const params = useParams();
+  const params = useParams() ?? {};
   const router = useRouter();
   const locale = (params.locale as string) || "en";
   const dict = getDictionary(locale);
@@ -111,6 +113,26 @@ export default function SettingsPage() {
 
   return (
     <div dir={direction} className="min-h-[80vh]">
+      <PageViewTracker
+        pageName="account_settings"
+        pageType="account"
+        locale={locale}
+        extra={{ active_section: activeSection }}
+      />
+      <DashboardPageShell
+        eyebrow={isRTL ? "\u062a\u0641\u0636\u064a\u0644\u0627\u062a \u0627\u0644\u062d\u0633\u0627\u0628" : "Account preferences"}
+        title={dict.common.settings}
+        subtitle={isRTL ? "\u0645\u0633\u0627\u062d\u0629 \u0648\u0627\u062d\u062f\u0629 \u0644\u0644\u0645\u0644\u0641 \u0627\u0644\u0634\u062e\u0635\u064a \u0648\u0627\u0644\u0625\u0634\u0639\u0627\u0631\u0627\u062a \u0648\u0627\u0644\u0644\u063a\u0629 \u0648\u0627\u0644\u0627\u0634\u062a\u0631\u0627\u0643." : "One place to manage identity, notifications, language, billing, and account controls."}
+        crumbs={[
+          { label: "Dashboard", href: `/${locale}/dashboard` },
+          { label: dict.common.settings },
+        ]}
+        stats={[
+          { label: isRTL ? "\u0627\u0644\u0628\u0631\u064a\u062f" : "Email", value: user?.email || "—" },
+          { label: isRTL ? "\u0627\u0644\u0642\u0633\u0645" : "Section", value: sections.find((section) => section.id === activeSection)?.label || activeSection },
+        ]}
+        auditNote={isRTL ? "\u064a\u062c\u0628 \u0623\u0644\u0627 \u062a\u0641\u0631\u0636 \u0627\u0644\u0625\u0639\u062f\u0627\u062f\u0627\u062a \u0639\u0644\u0649 \u0627\u0644\u0645\u0633\u062a\u062e\u062f\u0645 \u0631\u062d\u0644\u0629 \u0645\u0639\u0642\u062f\u0629: \u0647\u0630\u0647 \u0627\u0644\u0635\u0641\u062d\u0629 \u062a\u062c\u0645\u0639 \u0623\u0647\u0645 \u0627\u0644\u062a\u063a\u064a\u064a\u0631\u0627\u062a \u0641\u064a \u0633\u064a\u0627\u0642 \u0648\u0627\u062d\u062f." : "Settings should reduce friction, not create it. This page keeps the main account controls in one auditable surface."}
+      >
       {/* Header */}
       <div className="mb-10">
         <button
@@ -514,6 +536,7 @@ export default function SettingsPage() {
           </div>
         </div>
       )}
+      </DashboardPageShell>
     </div>
   );
 }

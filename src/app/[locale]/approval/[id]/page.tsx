@@ -6,7 +6,10 @@ import Link from 'next/link';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
 import { useAuth } from '@/lib/auth-context';
+import { trackApprovalAction } from '@/lib/ga4-events';
 import { CheckCircle2, ExternalLink, FileText, Send, XCircle } from 'lucide-react';
+import { DashboardPageShell } from '@/components/dashboard/DashboardPageShell';
+import { PageViewTracker } from '@/components/PageViewTracker';
 
 const APPROVER_ROLES = new Set(['approver', 'company_admin', 'platform_admin', 'admin', 'super_admin']);
 
@@ -84,7 +87,7 @@ const detailText = {
 };
 
 function resolveViewMode(searchParams: URLSearchParams): 'buyer' | 'seller' {
-  const view = searchParams.get('view');
+  const view = searchParams?.get('view');
   return view === 'seller' ? 'seller' : 'buyer';
 }
 
@@ -97,7 +100,7 @@ function formatDate(value: string, locale: string) {
 }
 
 function ApprovalDetailPageInner() {
-  const params = useParams();
+  const params = useParams() ?? {};
   const router = useRouter();
   const searchParams = useSearchParams();
   const locale = (params?.locale as string) || 'en';
@@ -165,6 +168,12 @@ function ApprovalDetailPageInner() {
       await fetch(`/api/warranties/${itemId}/submit`, { method: 'POST' });
     }
 
+    trackApprovalAction(action, {
+      warranty_id: itemId,
+      status_before: warranty?.status,
+      view_mode: viewMode,
+    });
+
     setActionState(null);
     loadData();
   };
@@ -206,19 +215,38 @@ function ApprovalDetailPageInner() {
         : 'bg-[#f5f5f7] text-[#86868b]';
 
   return (
-    <div dir={isRTL ? 'rtl' : 'ltr'} className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-[30px] sm:text-[36px] font-semibold tracking-tight text-[#1d1d1f]">{t.title}</h1>
-          <p className="text-[14px] text-[#86868b] mt-1">{warranty.reference_number || warranty.id}</p>
-        </div>
-        <Link
-          href={withView(`/${locale}/approval`)}
-          className="px-4 py-2 rounded-lg bg-[#f5f5f7] text-[#1d1d1f] text-sm font-medium hover:bg-[#e8e8ed] transition"
-        >
-          {t.actions.back}
-        </Link>
-      </div>
+    <div dir={isRTL ? 'rtl' : 'ltr'}>
+      <PageViewTracker
+        pageName="approval_detail"
+        pageType="workflow_detail"
+        locale={locale}
+        extra={{ warranty_id: itemId, status: warranty.status, view_mode: viewMode }}
+      />
+      <DashboardPageShell
+        eyebrow="Decision surface"
+        title={t.title}
+        subtitle="Review attachments, state, and context before any approval action. This page is treated as a tracked release surface."
+        crumbs={[
+          { label: 'Dashboard', href: `/${locale}/dashboard` },
+          { label: 'Approval workflow', href: withView(`/${locale}/approval`) },
+          { label: warranty.reference_number || warranty.id },
+        ]}
+        stats={[
+          { label: t.labels.status, value: statusLabel, tone: warranty.status === 'active' ? 'success' : warranty.status === 'cancelled' ? 'danger' : warranty.status === 'pending_approval' ? 'warning' : 'default' },
+          { label: t.labels.documents, value: documents.length },
+          { label: t.labels.createdAt, value: formatDate(warranty.created_at, locale) },
+        ]}
+        auditNote="Approval actions on this page are now tracked so review friction and decision quality can be audited before release."
+        actions={
+          <Link
+            href={withView(`/${locale}/approval`)}
+            className="px-4 py-2 rounded-full bg-[#f5f5f7] text-[#1d1d1f] text-sm font-medium hover:bg-[#e8e8ed] transition"
+          >
+            {t.actions.back}
+          </Link>
+        }
+      >
+      <div className="space-y-6">
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
@@ -330,6 +358,8 @@ function ApprovalDetailPageInner() {
           )}
         </div>
       </div>
+      </div>
+      </DashboardPageShell>
     </div>
   );
 }

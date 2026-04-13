@@ -84,7 +84,7 @@ const content = {
 };
 
 export default function TermsPage() {
-  const params = useParams();
+  const params = useParams() ?? {};
   const locale = (params.locale as string) || "en";
   const t = content[locale as keyof typeof content] || content.en;
 

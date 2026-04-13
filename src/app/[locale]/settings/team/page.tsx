@@ -64,7 +64,7 @@ const dict = {
 };
 
 export default function TeamManagementPage() {
-  const params = useParams();
+  const params = useParams() ?? {};
   const router = useRouter();
   const locale = (params?.locale as string) || "en";
   const t = dict[locale as keyof typeof dict] || dict.en;

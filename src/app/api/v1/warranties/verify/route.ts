@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
   );
 
   const { searchParams } = new URL(request.url);
-  const query = searchParams.get("q");
+  const query = searchParams?.get("q");
 
   if (!query) {
     return NextResponse.json({ success: false, error: "Query parameter 'q' is required" }, { status: 400 });

@@ -33,10 +33,10 @@ export async function GET(request: NextRequest) {
   }
 
   const { searchParams } = new URL(request.url);
-  const page = parseInt(searchParams.get('page') || '1');
-  const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 100);
-  const status = searchParams.get('status');
-  const category = searchParams.get('category');
+  const page = parseInt(searchParams?.get('page') || '1');
+  const limit = Math.min(parseInt(searchParams?.get('limit') || '20'), 100);
+  const status = searchParams?.get('status');
+  const category = searchParams?.get('category');
   const offset = (page - 1) * limit;
 
   let query = supabase.from('warranties').select('*', { count: 'exact' }).or(buildWarrantyAccessOrClause(user.id));

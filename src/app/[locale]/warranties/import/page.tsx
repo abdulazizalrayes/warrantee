@@ -22,7 +22,7 @@ interface ParsedRow {
 }
 
 export default function ImportWarrantiesPage() {
-  const params = useParams();
+  const params = useParams() ?? {};
   const router = useRouter();
   const locale = (params.locale as string) || "en";
   const dict = getDictionary(locale);

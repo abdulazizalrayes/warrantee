@@ -147,7 +147,7 @@ export async function DELETE(request: NextRequest, { params }: Params) {
   }
 
   const { searchParams } = new URL(request.url);
-  const itemId = searchParams.get("item_id");
+  const itemId = searchParams?.get("item_id");
   if (!itemId) {
     return NextResponse.json({ error: "item_id query param required" }, { status: 400 });
   }

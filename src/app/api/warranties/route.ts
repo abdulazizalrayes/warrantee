@@ -27,9 +27,9 @@ export async function GET(request: NextRequest) {
     }
 
     const searchParams = request.nextUrl.searchParams;
-    const status = searchParams.get("status");
-    const limitParam = parseInt(searchParams.get("limit") || "50");
-    const offsetParam = parseInt(searchParams.get("offset") || "0");
+    const status = searchParams?.get("status");
+    const limitParam = parseInt(searchParams?.get("limit") || "50");
+    const offsetParam = parseInt(searchParams?.get("offset") || "0");
 
     // Validate pagination params
     const limit = Math.min(Math.max(1, isNaN(limitParam) ? 50 : limitParam), 100);

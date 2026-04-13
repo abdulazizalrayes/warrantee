@@ -51,7 +51,7 @@ const plans = [
 ];
 
 export default function PricingPage() {
-  const params = useParams();
+  const params = useParams() ?? {};
   const locale = (params.locale as string) || "en";
   const dict = getDictionary(locale);
   const isRTL = locale === "ar";

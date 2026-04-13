@@ -37,7 +37,7 @@ const statusConfig: Record<string, { color: string; bg: string; dot: string; lab
 };
 
 export default function SellerDashboardPage() {
-  const params = useParams();
+  const params = useParams() ?? {};
   const router = useRouter();
   const locale = (params.locale as string) || "en";
   const dict = getDictionary(locale);

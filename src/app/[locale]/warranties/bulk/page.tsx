@@ -74,7 +74,7 @@ const translations = {
 type BulkAction = 'none' | 'status' | 'delete' | 'extend';
 
 export default function BulkOperationsPage() {
-  const params = useParams();
+  const params = useParams() ?? {};
   const locale = (params?.locale as string) || 'en';
   const isRTL = locale === 'ar';
   const t = translations[locale as keyof typeof translations] || translations.en;

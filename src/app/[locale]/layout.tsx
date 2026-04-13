@@ -70,40 +70,41 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
   if (!isValidLocale(locale)) notFound();
   const direction = DIRECTION[locale];
   const langCode = locale === "ar" ? "ar-SA" : "en-US";
+  // Inline script runs before React hydration to set lang/dir on <html> synchronously,
+  // preventing a flash of wrong direction on RTL locales. suppressHydrationWarning on
+  // <html>/<body> in the root layout tells React to ignore the expected attribute mismatch.
+  const localeScript = `document.documentElement.lang="${langCode}";document.documentElement.dir="${direction}";`;
 
   return (
-    <html lang={langCode} dir={direction}>
-      <head>
-        <link rel="icon" href="/favicon.ico" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet" />
-        <meta name="theme-color" content="#1A1A2E" />
-        <link rel="alternate" hrefLang="en" href="https://warrantee.io/en" />
-        <link rel="alternate" hrefLang="ar" href="https://warrantee.io/ar" />
-        <link rel="alternate" hrefLang="x-default" href="https://warrantee.io/en" />
-        {/* Bing Webmaster verification */}
-        <meta name="msvalidate.01" content="E1C23BBDB660B5FBF84E7E6B1AE1B743" />
-        {/* Geo meta tags for Saudi Arabia */}
-        <meta name="geo.region" content="SA" />
-        <meta name="geo.placename" content="Saudi Arabia" />
-        <meta name="geo.position" content="24.7136;46.6753" />
-        <meta name="ICBM" content="24.7136, 46.6753" />
-        {/* Additional SEO meta */}
-        <meta name="distribution" content="global" />
-        <meta name="rating" content="general" />
-        <meta name="revisit-after" content="7 days" />
-        <meta name="apple-mobile-web-app-title" content="Warrantee" />
-        <meta name="application-name" content="Warrantee" />
-        <meta name="mobile-web-app-capable" content="yes" />
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(getOrganizationJsonLd()) }} />
-      </head>
-      <body className="bg-[#FAFAFA] text-[#1A1A2E] antialiased">
-            <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:bg-white focus:px-4 focus:py-2 focus:rounded focus:shadow-lg focus:text-blue-700 focus:outline-none">Skip to main content</a>
-        <GoogleTagManager />
-        <GoogleAnalytics />
-          <Hotjar />
-        <AuthProvider><main id="main-content">{children}</main></AuthProvider>
-        <CookieConsent />
-      </body>
-    </html>
+    <>
+      <script dangerouslySetInnerHTML={{ __html: localeScript }} />
+      <link rel="icon" href="/favicon.ico" />
+      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet" />
+      <meta name="theme-color" content="#1A1A2E" />
+      <link rel="alternate" hrefLang="en" href="https://warrantee.io/en" />
+      <link rel="alternate" hrefLang="ar" href="https://warrantee.io/ar" />
+      <link rel="alternate" hrefLang="x-default" href="https://warrantee.io/en" />
+      {/* Bing Webmaster verification */}
+      <meta name="msvalidate.01" content="E1C23BBDB660B5FBF84E7E6B1AE1B743" />
+      {/* Geo meta tags for Saudi Arabia */}
+      <meta name="geo.region" content="SA" />
+      <meta name="geo.placename" content="Saudi Arabia" />
+      <meta name="geo.position" content="24.7136;46.6753" />
+      <meta name="ICBM" content="24.7136, 46.6753" />
+      {/* Additional SEO meta */}
+      <meta name="distribution" content="global" />
+      <meta name="rating" content="general" />
+      <meta name="revisit-after" content="7 days" />
+      <meta name="apple-mobile-web-app-title" content="Warrantee" />
+      <meta name="application-name" content="Warrantee" />
+      <meta name="mobile-web-app-capable" content="yes" />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(getOrganizationJsonLd()) }} />
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:bg-white focus:px-4 focus:py-2 focus:rounded focus:shadow-lg focus:text-blue-700 focus:outline-none">Skip to main content</a>
+      <GoogleTagManager />
+      <GoogleAnalytics />
+      <Hotjar />
+      <AuthProvider><main id="main-content">{children}</main></AuthProvider>
+      <CookieConsent />
+    </>
   );
 }

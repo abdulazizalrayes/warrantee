@@ -51,7 +51,7 @@ const actionBtnCfg: Record<string,{bg:string;hover:string}> = {
 
 export default function ClaimDetailPage() {
   const pathname = usePathname();
-  const params = useParams();
+  const params = useParams() ?? {};
   const router = useRouter();
   const locale = pathname?.startsWith('/ar') ? 'ar' : 'en';
   const isRTL = locale === 'ar';

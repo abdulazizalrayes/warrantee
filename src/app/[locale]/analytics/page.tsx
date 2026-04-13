@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
+import { trackReportExport } from '@/lib/ga4-events';
 import {
   BarChart3,
   TrendingUp,
@@ -17,6 +18,8 @@ import {
   CheckCircle2,
   Shield,
 } from 'lucide-react';
+import { DashboardPageShell } from '@/components/dashboard/DashboardPageShell';
+import { PageViewTracker } from '@/components/PageViewTracker';
 
 const supabase = createSupabaseBrowserClient();
 
@@ -99,7 +102,7 @@ const statusColors: Record<string, { dot: string; bg: string; text: string }> = 
 };
 
 export default function AnalyticsPage() {
-  const params = useParams();
+  const params = useParams() ?? {};
   const locale = (params?.locale as string) || 'en';
   const isRTL = locale === 'ar';
   const t = translations[locale as keyof typeof translations] || translations.en;
@@ -223,23 +226,35 @@ export default function AnalyticsPage() {
   }
 
   return (
-    <div dir={isRTL ? 'rtl' : 'ltr'} className="space-y-8">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-        <div>
-          <h1 className="text-[32px] sm:text-[40px] font-semibold tracking-tight text-[#1d1d1f]">
-            {t.title}
-          </h1>
-          <p className="text-[15px] text-[#86868b] mt-1">{t.subtitle}</p>
-        </div>
-        <Link
-          href={`/${locale}/reports`}
-          className="inline-flex items-center gap-2 px-6 py-3 bg-[#1A1A2E] hover:bg-[#2d2d5e] text-white text-[15px] font-medium rounded-full transition-colors w-fit"
-        >
-          <Download size={16} />
-          {t.exportReport}
-        </Link>
-      </div>
+    <div dir={isRTL ? 'rtl' : 'ltr'}>
+      <PageViewTracker pageName="analytics_dashboard" pageType="analytics" locale={locale} />
+      <DashboardPageShell
+        eyebrow="Metrics and attribution"
+        title={t.title}
+        subtitle={t.subtitle}
+        crumbs={[
+          { label: 'Dashboard', href: `/${locale}/dashboard` },
+          { label: t.title },
+        ]}
+        stats={data ? [
+          { label: t.totalWarranties, value: data.totalWarranties },
+          { label: t.totalClaims, value: data.totalClaims, tone: data.pendingClaims > 0 ? 'warning' : 'default' },
+          { label: t.coverageValue, value: `SAR ${data.coverageValue.toLocaleString()}`, tone: 'success' },
+          { label: 'Top risk', value: data.expiringThisMonth > 0 ? `${data.expiringThisMonth} expiring` : 'Stable', tone: data.expiringThisMonth > 0 ? 'warning' : 'success' },
+        ] : []}
+        auditNote="This surface should answer founder-level questions, not just display counts. Export actions are now tracked and this page is treated as a release-signoff metric surface."
+        actions={
+          <Link
+            href={`/${locale}/reports`}
+            onClick={() => trackReportExport({ locale, source: 'analytics_dashboard' })}
+            className="inline-flex items-center gap-2 px-6 py-3 bg-[#1A1A2E] hover:bg-[#2d2d5e] text-white text-[15px] font-medium rounded-full transition-colors w-fit"
+          >
+            <Download size={16} />
+            {t.exportReport}
+          </Link>
+        }
+      >
+      <div className="space-y-8">
 
       {!data || data.totalWarranties === 0 ? (
         <div className="bg-white rounded-2xl ring-1 ring-[#d2d2d7]/40 shadow-sm p-16 text-center">
@@ -390,6 +405,8 @@ export default function AnalyticsPage() {
           </div>
         </>
       )}
+      </div>
+      </DashboardPageShell>
     </div>
   );
 }

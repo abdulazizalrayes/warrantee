@@ -10,7 +10,7 @@ import { useAuth } from "@/lib/auth-context";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 export default function FileClaimPage() {
-  const params = useParams();
+  const params = useParams() ?? {};
   const router = useRouter();
   const locale = (params.locale as string) || "en";
   const warrantyId = params.id as string;

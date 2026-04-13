@@ -1,7 +1,7 @@
 // @ts-nocheck
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import {
@@ -20,11 +20,13 @@ import {
 import { getDictionary, DIRECTION } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth-context";
+import { PageViewTracker } from "@/components/PageViewTracker";
+import { trackAuthIntent, trackSignup } from "@/lib/ga4-events";
 
 type AuthTab = "login" | "signup";
 
 export default function AuthPage() {
-  const params = useParams();
+  const params = useParams() ?? {};
   const searchParams = useSearchParams();
   const locale = (params.locale as string) || "en";
   const dict = getDictionary(locale);
@@ -42,16 +44,23 @@ export default function AuthPage() {
   const [message, setMessage] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [authMode, setAuthMode] = useState<"magic" | "password">("magic");
-  const errorFromUrl = searchParams.get("error");
+  const errorFromUrl = searchParams?.get("error");
+  const requestedTab = searchParams?.get("tab");
+
+  useEffect(() => {
+    setActiveTab(requestedTab === "signup" ? "signup" : "login");
+  }, [requestedTab]);
 
   const handleMagicLink = async (e: React.FormEvent) => {
     e.preventDefault(); setLoading(true); setMessage(""); setErrorMsg("");
+    trackAuthIntent("magic_link_start", "email", { locale, tab: activeTab });
     const { error } = await signInWithMagicLink(email, locale);
     if (error) { setErrorMsg(error); } else { setMessage(isRTL ? "\u062a\u0645 \u0625\u0631\u0633\u0627\u0644 \u0631\u0627\u0628\u0637 \u0633\u062d\u0631\u064a \u0625\u0644\u0649 \u0628\u0631\u064a\u062f\u0643 \u0627\u0644\u0625\u0644\u0643\u062a\u0631\u0648\u0646\u064a" : "Magic link sent to your email! Check your inbox."); }
     setLoading(false);
   };
   const handlePasswordLogin = async (e: React.FormEvent) => {
     e.preventDefault(); setLoading(true); setMessage(""); setErrorMsg("");
+    trackAuthIntent("password_start", "password", { locale, tab: activeTab });
     const { error } = await signInWithPassword(email, password);
     if (error) { setErrorMsg(error); }
     setLoading(false);
@@ -60,11 +69,20 @@ export default function AuthPage() {
     e.preventDefault(); setLoading(true); setMessage(""); setErrorMsg("");
     if (password.length < 8) { setErrorMsg(isRTL ? "\u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631 \u064a\u062c\u0628 \u0623\u0646 \u062a\u0643\u0648\u0646 8 \u0623\u062d\u0631\u0641 \u0639\u0644\u0649 \u0627\u0644\u0623\u0642\u0644" : "Password must be at least 8 characters"); setLoading(false); return; }
     const { error } = await signUp(email, password, { full_name: fullName, account_type: accountType, company_name: accountType === "business" ? companyName : undefined });
-    if (error) { setErrorMsg(error); } else { setMessage(isRTL ? "\u062a\u0645 \u0625\u0646\u0634\u0627\u0621 \u062d\u0633\u0627\u0628\u0643! \u062a\u062d\u0642\u0642 \u0645\u0646 \u0628\u0631\u064a\u062f\u0643 \u0627\u0644\u0625\u0644\u0643\u062a\u0631\u0648\u0646\u064a \u0644\u062a\u0623\u0643\u064a\u062f \u062d\u0633\u0627\u0628\u0643." : "Account created! Check your email to confirm your account."); }
+    if (error) { setErrorMsg(error); } else {
+      trackSignup(accountType === "business" ? "business_email" : "consumer_email");
+      setMessage(isRTL ? "\u062a\u0645 \u0625\u0646\u0634\u0627\u0621 \u062d\u0633\u0627\u0628\u0643! \u062a\u062d\u0642\u0642 \u0645\u0646 \u0628\u0631\u064a\u062f\u0643 \u0627\u0644\u0625\u0644\u0643\u062a\u0631\u0648\u0646\u064a \u0644\u062a\u0623\u0643\u064a\u062f \u062d\u0633\u0627\u0628\u0643." : "Account created! Check your email to confirm your account.");
+    }
     setLoading(false);
   };
-  const handleGoogleAuth = async () => { await signInWithGoogle(locale); };
-  const handleAppleAuth = async () => { await signInWithApple(locale); };
+  const handleGoogleAuth = async () => {
+    trackAuthIntent("oauth_start", "google", { locale, tab: activeTab });
+    await signInWithGoogle(locale);
+  };
+  const handleAppleAuth = async () => {
+    trackAuthIntent("oauth_start", "apple", { locale, tab: activeTab });
+    await signInWithApple(locale);
+  };
   const isFormLoading = loading || authLoading;
   const trustPoints = isRTL
     ? [
@@ -80,6 +98,12 @@ export default function AuthPage() {
 
   return (
     <div className="min-h-screen bg-[#f5f5f7]" dir={direction}>
+      <PageViewTracker
+        pageName="auth_portal"
+        pageType="authentication"
+        locale={locale}
+        extra={{ tab: activeTab, auth_mode: authMode }}
+      />
       <div className="mx-auto flex min-h-screen max-w-7xl items-center px-4 py-10 sm:px-6 lg:px-8">
         <div className="grid w-full gap-6 lg:grid-cols-[1.05fr_0.95fr]">
           <section className="relative overflow-hidden rounded-[36px] bg-[#1A1A2E] px-7 py-8 text-white shadow-[0_30px_80px_rgba(15,23,42,0.18)] sm:px-10 sm:py-10">

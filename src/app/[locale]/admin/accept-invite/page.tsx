@@ -10,9 +10,9 @@ import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
 
 function AdminAcceptInviteContent() {
   const searchParams = useSearchParams();
-  const token = searchParams.get('token');
+  const token = searchParams?.get('token') ?? null;
   const { user, loading: authLoading } = useAuth();
-  const params = useParams();
+  const params = useParams() ?? {};
   const locale = (params?.locale as string) || 'en';
   const isRtl = locale === 'ar';
   const supabase = createSupabaseBrowserClient();

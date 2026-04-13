@@ -24,9 +24,9 @@ export async function GET(request: NextRequest) {
   }
 
   const { searchParams } = new URL(request.url);
-  const status = searchParams.get('status') || 'pending';
-  const page = parseInt(searchParams.get('page') || '1', 10);
-  const limit = Math.min(parseInt(searchParams.get('limit') || '20', 10), 50);
+  const status = searchParams?.get('status') || 'pending';
+  const page = parseInt(searchParams?.get('page') || '1', 10);
+  const limit = Math.min(parseInt(searchParams?.get('limit') || '20', 10), 50);
   const offset = (page - 1) * limit;
 
   const { data, error, count } = await supabase

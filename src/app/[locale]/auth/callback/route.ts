@@ -4,8 +4,8 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
-  const code = searchParams.get("code");
-  const requestedNext = searchParams.get("next");
+  const code = searchParams?.get("code");
+  const requestedNext = searchParams?.get("next");
   const next = requestedNext && requestedNext.startsWith("/") ? requestedNext : "/en/dashboard";
   const fallbackLocale = next.startsWith("/ar") ? "ar" : "en";
 

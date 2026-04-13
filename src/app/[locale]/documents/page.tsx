@@ -6,6 +6,8 @@ import Link from 'next/link';
 import { FileText, Search, File, Image, FileSpreadsheet, Eye, FolderOpen } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
+import { DashboardPageShell } from '@/components/dashboard/DashboardPageShell';
+import { PageViewTracker } from '@/components/PageViewTracker';
 
 interface DocRow {
   id: string; file_name: string; file_type: string | null; file_size: number | null;
@@ -14,7 +16,7 @@ interface DocRow {
 }
 
 export default function DocumentsPage() {
-  const params = useParams();
+  const params = useParams() ?? {};
   const locale = (params.locale as string) || 'en';
   const isRTL = locale === 'ar';
   const { user, loading: authLoading } = useAuth();
@@ -68,15 +70,28 @@ export default function DocumentsPage() {
   }
 
   return (
-    <div dir={isRTL ? 'rtl' : 'ltr'} className="max-w-[1200px] mx-auto px-4 sm:px-6 py-8 sm:py-12">
-      <div className="mb-8">
-        <h1 className="text-[32px] sm:text-[40px] font-semibold tracking-tight text-[#1d1d1f]">
-          {isRTL ? '\u0627\u0644\u0645\u0633\u062a\u0646\u062d\u0627\u062a' : 'Documents'}
-        </h1>
-        <p className="text-[15px] text-[#86868b] mt-1">
-          {isRTL ? '\u062c\u0645\u064a\u0639 \u0645\u0633\u062a\u0646\u062d\u0627\u062a \u0627\u0644\u0636\u0645\u0627\u0646' : 'All warranty documents'}
-        </p>
-      </div>
+    <div dir={isRTL ? 'rtl' : 'ltr'}>
+      <PageViewTracker
+        pageName="documents_library"
+        pageType="operations"
+        locale={locale}
+        extra={{ document_count: docs.length }}
+      />
+      <DashboardPageShell
+        eyebrow={isRTL ? '\u0645\u0643\u062a\u0628\u0629 \u0627\u0644\u0645\u0633\u062a\u0646\u062f\u0627\u062a' : 'Document library'}
+        title={isRTL ? '\u0627\u0644\u0645\u0633\u062a\u0646\u062f\u0627\u062a' : 'Documents'}
+        subtitle={isRTL ? '\u0645\u0643\u0627\u0646 \u0648\u0627\u062d\u062f \u0644\u0645\u0631\u0627\u062c\u0639\u0629 \u0645\u0631\u0641\u0642\u0627\u062a \u0627\u0644\u0636\u0645\u0627\u0646 \u0648\u0645\u0644\u0641\u0627\u062a \u0627\u0644\u062f\u0639\u0645.' : 'One operating surface for warranty attachments, certificates, and supporting files.'}
+        crumbs={[
+          { label: 'Dashboard', href: `/${locale}/dashboard` },
+          { label: isRTL ? '\u0627\u0644\u0645\u0633\u062a\u0646\u062f\u0627\u062a' : 'Documents' },
+        ]}
+        stats={[
+          { label: isRTL ? '\u0627\u0644\u0645\u0644\u0641\u0627\u062a' : 'Files', value: docs.length },
+          { label: isRTL ? '\u0627\u0644\u0645\u0628\u062d\u0648\u062b' : 'Filtered', value: search ? docs.length : 'All' },
+        ]}
+        auditNote={isRTL ? '\u062a\u062d\u0642\u0642 \u0645\u0646 \u0627\u0644\u0645\u0631\u0641\u0642\u0627\u062a \u0627\u0644\u0645\u0637\u0644\u0648\u0628\u0629 \u0642\u0628\u0644 \u0627\u0644\u0645\u0648\u0627\u0641\u0642\u0627\u062a \u0623\u0648 \u0627\u0644\u0645\u0637\u0627\u0644\u0628\u0627\u062a.' : 'Use this surface to verify required files are present before approvals, claims, or customer handoff.'}
+      >
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-8 sm:py-12">
 
       <div className="bg-white rounded-2xl ring-1 ring-[#d2d2d7]/40 shadow-sm mb-6">
         <div className="p-4 sm:p-6">
@@ -128,6 +143,8 @@ export default function DocumentsPage() {
           </div>
         </div>
       )}
+      </div>
+      </DashboardPageShell>
     </div>
   );
 }

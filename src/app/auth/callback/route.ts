@@ -4,8 +4,8 @@ import { sendEmail, welcomeEmail } from "@/lib/email";
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
-  const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/en/dashboard";
+  const code = searchParams?.get("code");
+  const next = searchParams?.get("next") ?? "/en/dashboard";
 
   if (code) {
     const supabase = await createServerSupabaseClient();
