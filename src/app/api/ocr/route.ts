@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { NextRequest, NextResponse } from "next/server";
 import { apiRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 const MAX_OCR_TEXT_LENGTH = 50000;
 
@@ -181,6 +182,12 @@ export async function POST(request: NextRequest) {
         { error: "Too many requests" },
         { status: 429, headers: getRateLimitHeaders(rateLimitResult) }
       );
+    }
+
+    const supabase = await createServerSupabaseClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     let body;
