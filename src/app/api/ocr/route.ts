@@ -2,36 +2,97 @@
 import { NextRequest, NextResponse } from "next/server";
 import { apiRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { extractTextFromPdfBuffer } from "@/lib/ocr/pdf";
+import { recognizeImageDataUriWithTesseract } from "@/lib/ocr/tesseract";
 
 const MAX_OCR_TEXT_LENGTH = 50000;
+const MAX_IMAGE_DATA_URI_BYTES = 4 * 1024 * 1024;
+const VISION_TIMEOUT_MS = 8000;
+const LOCAL_OCR_TIMEOUT_MS = 22000;
 
-async function extractTextFromImage(dataUri: string) {
+class OCRTimeoutError extends Error {
+  constructor(message = "OCR processing timed out. Please try a clearer or smaller image.") {
+    super(message);
+    this.name = "OCRTimeoutError";
+  }
+}
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message?: string) {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) => {
+      setTimeout(() => reject(new OCRTimeoutError(message)), timeoutMs);
+    }),
+  ]);
+}
+
+function getDataUriMeta(dataUri: string) {
+  const header = dataUri.split(",")[0] || "";
+  const mimeType = header.startsWith("data:") ? header.slice(5).split(";")[0] || "application/octet-stream" : "application/octet-stream";
+  const base64 = dataUri.includes(",") ? dataUri.split(",")[1] : dataUri;
+  return { mimeType, base64 };
+}
+
+async function extractTextFromDocument(dataUri: string) {
+  if (Buffer.byteLength(dataUri, "utf8") > MAX_IMAGE_DATA_URI_BYTES) {
+    throw new Error("Image is too large for OCR. Please upload a file under 4MB or use a compressed image/PDF.");
+  }
+
+  const { mimeType, base64 } = getDataUriMeta(dataUri);
+
+  if (mimeType === "application/pdf") {
+    const result = await withTimeout(
+      extractTextFromPdfBuffer(Buffer.from(base64, "base64")),
+      LOCAL_OCR_TIMEOUT_MS,
+      "PDF OCR timed out. Please try a smaller or clearer PDF."
+    );
+    return result.text;
+  }
+
   const apiKey = process.env.GOOGLE_CLOUD_VISION_API_KEY;
   if (!apiKey) {
-    throw new Error("Image OCR requires GOOGLE_CLOUD_VISION_API_KEY");
+    const fallback = await withTimeout(
+      recognizeImageDataUriWithTesseract(dataUri, ["eng", "ara"]),
+      LOCAL_OCR_TIMEOUT_MS,
+      "Image OCR timed out. Please try a clearer or smaller image."
+    );
+    return fallback.text;
   }
 
-  const base64 = dataUri.includes(",") ? dataUri.split(",")[1] : dataUri;
-  const response = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${apiKey}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      requests: [
-        {
-          image: { content: base64 },
-          features: [{ type: "DOCUMENT_TEXT_DETECTION" }],
-        },
-      ],
-    }),
-  });
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), VISION_TIMEOUT_MS);
+    const response = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${apiKey}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      signal: controller.signal,
+      body: JSON.stringify({
+        requests: [
+          {
+            image: { content: base64 },
+            features: [{ type: "DOCUMENT_TEXT_DETECTION" }],
+          },
+        ],
+      }),
+    });
+    clearTimeout(timeout);
 
-  if (!response.ok) {
-    const details = await response.text();
-    throw new Error(`Vision OCR failed: ${details}`);
+    if (!response.ok) {
+      const details = await response.text();
+      throw new Error(`Vision OCR failed: ${details}`);
+    }
+
+    const payload = await response.json();
+    return payload.responses?.[0]?.fullTextAnnotation?.text || payload.responses?.[0]?.textAnnotations?.[0]?.description || "";
+  } catch (error) {
+    console.warn("Vision OCR unavailable, falling back to in-house Tesseract OCR:", error);
+    const fallback = await withTimeout(
+      recognizeImageDataUriWithTesseract(dataUri, ["eng", "ara"]),
+      LOCAL_OCR_TIMEOUT_MS,
+      "Image OCR timed out after Vision fallback. Please try a clearer or smaller image."
+    );
+    return fallback.text;
   }
-
-  const payload = await response.json();
-  return payload.responses?.[0]?.fullTextAnnotation?.text || payload.responses?.[0]?.textAnnotations?.[0]?.description || "";
 }
 
 // Warranty field extraction from OCR text
@@ -200,7 +261,11 @@ export async function POST(request: NextRequest) {
     let { text, image } = body;
 
     if (!text && typeof image === "string") {
-      text = await extractTextFromImage(image);
+      text = await withTimeout(
+        extractTextFromDocument(image),
+        LOCAL_OCR_TIMEOUT_MS + VISION_TIMEOUT_MS + 2000,
+        "OCR timed out. Please try a clearer image, smaller file, or paste the text manually."
+      );
     }
 
     if (!text || typeof text !== "string") {
@@ -239,7 +304,7 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     console.warn("OCR parsing error:", err);
     const message = err instanceof Error ? err.message : "Internal server error";
-    const status = message.includes("GOOGLE_CLOUD_VISION_API_KEY") ? 400 : 500;
+    const status = err instanceof OCRTimeoutError ? 504 : message.includes("GOOGLE_CLOUD_VISION_API_KEY") ? 400 : 500;
     return NextResponse.json({ error: message }, { status });
   }
 }
@@ -252,7 +317,9 @@ export async function GET() {
   }
   return NextResponse.json({
     status: "OCR parsing endpoint active",
-    usage: "POST with { text: 'extracted OCR text' } or { image: 'data:image/png;base64,...' }",
+    usage: "POST with { text: 'extracted OCR text' } or { image: 'data:image/png;base64,...' | 'data:application/pdf;base64,...' }",
+    engines: ["google_vision", "tesseract_fallback", "pdfjs_local", "pdf_tesseract_fallback"],
+    note: "Google Cloud Vision is optional. Warrantee can process supported images and PDFs with the local OCR fallback stack when the Google key is not configured.",
     max_text_length: MAX_OCR_TEXT_LENGTH,
     fields: [
       "product_name",
