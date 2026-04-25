@@ -1,9 +1,54 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { createClient } from "@supabase/supabase-js";
 import { apiRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
 import { validateContactInput } from "@/lib/validation";
 import { upsertHubSpotContact } from "@/lib/hubspot";
 import { sendEmail } from "@/lib/email";
+
+function createSupabaseAdminClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
+
+function buildTicketNumber() {
+  return `SUP-${Date.now().toString(36).toUpperCase()}`;
+}
+
+function normalizeSupportCategory(kind?: string) {
+  const normalized = (kind || "").toLowerCase();
+
+  if (normalized.includes("billing") || normalized.includes("payment")) {
+    return "billing";
+  }
+
+  if (
+    normalized.includes("technical") ||
+    normalized.includes("bug") ||
+    normalized.includes("issue") ||
+    normalized.includes("support")
+  ) {
+    return "technical";
+  }
+
+  return "other";
+}
+
+function normalizeSupportPriority(kind?: string) {
+  const normalized = (kind || "").toLowerCase();
+
+  if (
+    normalized.includes("seller") ||
+    normalized.includes("enterprise") ||
+    normalized.includes("partnership")
+  ) {
+    return "medium";
+  }
+
+  return "low";
+}
 
 function buildNotificationHtml(input: {
   name: string;
@@ -73,6 +118,63 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createServerSupabaseClient();
     const { data: auth } = await supabase.auth.getUser();
+    const supabaseAdmin = createSupabaseAdminClient();
+
+    let ticket: { id: string; ticket_number?: string | null } | null = null;
+    const ticketNumber = buildTicketNumber();
+    const ticketCategory = normalizeSupportCategory(input.kind);
+    const ticketPriority = normalizeSupportPriority(input.kind);
+    const { data: richTicket, error: richTicketError } = await supabaseAdmin
+      .from("support_tickets")
+      .insert({
+        ticket_number: ticketNumber,
+        user_id: auth.user?.id || null,
+        requester_email: input.email,
+        requester_name: input.name,
+        company: input.company,
+        subject: input.subject,
+        description: input.message,
+        category: ticketCategory,
+        priority: ticketPriority,
+        status: "open",
+        source: "contact_form",
+        metadata: {
+          phone: input.phone || null,
+          original_kind: input.kind || "contact_form",
+          hubspot: hubspotResult,
+        },
+      })
+      .select("id, ticket_number")
+      .single();
+
+    if (richTicket) {
+      ticket = richTicket;
+    } else if (richTicketError) {
+      const { data: basicTicket } = await supabaseAdmin
+        .from("support_tickets")
+        .insert({
+          ticket_number: ticketNumber,
+          user_id: auth.user?.id || null,
+          subject: input.subject,
+          description: input.message,
+          category: ticketCategory,
+          priority: ticketPriority,
+          status: "open",
+          metadata: {
+            requester_email: input.email,
+            requester_name: input.name,
+            company: input.company,
+            phone: input.phone || null,
+            source: "contact_form",
+            original_kind: input.kind || "contact_form",
+            hubspot: hubspotResult,
+            rich_insert_error: richTicketError.message,
+          },
+        })
+        .select("id, ticket_number")
+        .single();
+      ticket = basicTicket || null;
+    }
 
     const emailResult = await sendEmail({
       to: "hello@warrantee.io",
@@ -84,6 +186,7 @@ export async function POST(request: NextRequest) {
       {
         success: true,
         submittedBy: auth.user?.id || null,
+        ticket: ticket || null,
         hubspot: hubspotResult,
         emailed: emailResult.success,
       },
