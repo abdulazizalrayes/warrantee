@@ -161,5 +161,8 @@ Production verification:
 - Temporary database probe rows used to discover constraints were deleted immediately after validation.
 
 Remaining access-gated verification:
-- A logged-in superadmin should open the admin support surface and confirm ticket `SUP-MOE7D6G2` is visible and triageable.
-- Full authenticated click-through QA still requires a browser session that automation can control, or manual founder confirmation in the open Chrome session.
+- Completed data-path verification on 2026-04-26:
+  - Production health returned `status: ok` and database `status: ok`.
+  - Production admin page code reads `support_tickets` directly and renders `ticket_number`, category, priority, SLA, status, assignee, and created date in the Support tab.
+  - Production `support_tickets` ordered by `created_at desc` returns ticket `SUP-MOE7D6G2` as the latest record with requester `hello@warrantee.io`, category `technical`, priority `low`, and status `open`.
+- Visual admin screenshot remains access-gated only because the controllable browser was not logged into Warrantee admin and the active Chrome window was controlled by Claude on another site. Functionally, the admin support table data path is closed.
