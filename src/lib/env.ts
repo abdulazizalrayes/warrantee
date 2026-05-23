@@ -15,8 +15,14 @@ const serverSchema = z.object({
   CRON_SECRET: z.string().min(1, "CRON_SECRET is required"),
   // Optional
   HUBSPOT_ACCESS_TOKEN: z.string().optional(),
+  OCR_PROVIDER: z.enum(["auto", "mistral", "google", "google-vision", "tesseract"]).optional(),
+  MISTRAL_API_KEY: z.string().optional(),
+  MISTRAL_OCR_MODEL: z.string().optional(),
   GOOGLE_CLOUD_VISION_API_KEY: z.string().optional(),
   SENTRY_AUTH_TOKEN: z.string().optional(),
+  META_CAPI_ACCESS_TOKEN: z.string().optional(),
+  META_CAPI_TEST_EVENT_CODE: z.string().optional(),
+  META_GRAPH_API_VERSION: z.string().optional(),
 });
 
 /**
@@ -33,6 +39,7 @@ const clientSchema = z.object({
   NEXT_PUBLIC_SENTRY_DSN: z.string().optional(),
   NEXT_PUBLIC_GA_MEASUREMENT_ID: z.string().optional(),
   NEXT_PUBLIC_GTM_ID: z.string().optional(),
+  NEXT_PUBLIC_META_PIXEL_ID: z.string().optional(),
 });
 
 /**
@@ -65,6 +72,7 @@ export function getClientEnv() {
     NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN,
     NEXT_PUBLIC_GA_MEASUREMENT_ID: process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID,
     NEXT_PUBLIC_GTM_ID: process.env.NEXT_PUBLIC_GTM_ID,
+    NEXT_PUBLIC_META_PIXEL_ID: process.env.NEXT_PUBLIC_META_PIXEL_ID,
   });
   if (!parsed.success) {
     const errors = parsed.error.flatten().fieldErrors;

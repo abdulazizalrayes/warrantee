@@ -4,9 +4,16 @@ import { apiRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { extractTextFromPdfBuffer } from "@/lib/ocr/pdf";
 import { recognizeImageDataUriWithTesseract } from "@/lib/ocr/tesseract";
+import {
+  hasMistralOCRConfig,
+  MistralOCRConfigurationError,
+  MistralOCRUnsupportedFileError,
+  recognizeDataUriWithMistral,
+} from "@/lib/ocr/mistral";
 
 const MAX_OCR_TEXT_LENGTH = 50000;
 const MAX_IMAGE_DATA_URI_BYTES = 4 * 1024 * 1024;
+const MISTRAL_TIMEOUT_MS = 15000;
 const VISION_TIMEOUT_MS = 8000;
 const LOCAL_OCR_TIMEOUT_MS = 22000;
 
@@ -14,6 +21,13 @@ class OCRTimeoutError extends Error {
   constructor(message = "OCR processing timed out. Please try a clearer or smaller image.") {
     super(message);
     this.name = "OCRTimeoutError";
+  }
+}
+
+class OCRServiceConfigurationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "OCRServiceConfigurationError";
   }
 }
 
@@ -33,24 +47,86 @@ function getDataUriMeta(dataUri: string) {
   return { mimeType, base64 };
 }
 
+function getOCRProviderPreference() {
+  return (process.env.OCR_PROVIDER || "auto").trim().toLowerCase();
+}
+
+function shouldTryMistral() {
+  const provider = getOCRProviderPreference();
+  return provider === "mistral" || (provider === "auto" && hasMistralOCRConfig());
+}
+
+function shouldTryGoogleVision() {
+  const provider = getOCRProviderPreference();
+  return provider === "google" || provider === "google-vision" || (provider === "auto" && Boolean(process.env.GOOGLE_CLOUD_VISION_API_KEY));
+}
+
+async function extractTextWithMistral(dataUri: string) {
+  const result = await withTimeout(
+    recognizeDataUriWithMistral(dataUri, { timeoutMs: MISTRAL_TIMEOUT_MS }),
+    MISTRAL_TIMEOUT_MS + 1000,
+    "Mistral OCR timed out. Please try a clearer or smaller document."
+  );
+  return result.text;
+}
+
 async function extractTextFromDocument(dataUri: string) {
   if (Buffer.byteLength(dataUri, "utf8") > MAX_IMAGE_DATA_URI_BYTES) {
     throw new Error("Image is too large for OCR. Please upload a file under 4MB or use a compressed image/PDF.");
   }
 
   const { mimeType, base64 } = getDataUriMeta(dataUri);
+  const provider = getOCRProviderPreference();
+  const tryMistral = shouldTryMistral();
 
   if (mimeType === "application/pdf") {
     const result = await withTimeout(
-      extractTextFromPdfBuffer(Buffer.from(base64, "base64")),
+      extractTextFromPdfBuffer(Buffer.from(base64, "base64"), 5, { enableImageOcr: !tryMistral }),
       LOCAL_OCR_TIMEOUT_MS,
       "PDF OCR timed out. Please try a smaller or clearer PDF."
     );
-    return result.text;
+    if (result.text.trim() || !tryMistral) {
+      return result.text;
+    }
+
+    try {
+      return await extractTextWithMistral(dataUri);
+    } catch (error) {
+      if (provider === "mistral" || error instanceof MistralOCRConfigurationError) {
+        throw new OCRServiceConfigurationError(error instanceof Error ? error.message : "Mistral OCR is unavailable.");
+      }
+      console.warn("Mistral PDF OCR unavailable, falling back to local PDF OCR:", error);
+      const fallback = await withTimeout(
+        extractTextFromPdfBuffer(Buffer.from(base64, "base64"), 5, { enableImageOcr: true }),
+        LOCAL_OCR_TIMEOUT_MS,
+        "PDF OCR timed out after Mistral fallback. Please try a smaller or clearer PDF."
+      );
+      return fallback.text;
+    }
+  }
+
+  if (tryMistral) {
+    try {
+      return await extractTextWithMistral(dataUri);
+    } catch (error) {
+      if (provider === "mistral" || error instanceof MistralOCRConfigurationError) {
+        throw new OCRServiceConfigurationError(error instanceof Error ? error.message : "Mistral OCR is unavailable.");
+      }
+      if (error instanceof MistralOCRUnsupportedFileError && !shouldTryGoogleVision()) {
+        throw error;
+      }
+      console.warn("Mistral OCR unavailable, trying next OCR provider:", error);
+    }
   }
 
   const apiKey = process.env.GOOGLE_CLOUD_VISION_API_KEY;
-  if (!apiKey) {
+  if (!apiKey || !shouldTryGoogleVision()) {
+    if (process.env.VERCEL === "1") {
+      throw new OCRServiceConfigurationError(
+        "Image OCR requires MISTRAL_API_KEY or GOOGLE_CLOUD_VISION_API_KEY in production."
+      );
+    }
+
     const fallback = await withTimeout(
       recognizeImageDataUriWithTesseract(dataUri, ["eng", "ara"]),
       LOCAL_OCR_TIMEOUT_MS,
@@ -79,12 +155,22 @@ async function extractTextFromDocument(dataUri: string) {
 
     if (!response.ok) {
       const details = await response.text();
+      if ([400, 401, 403].includes(response.status)) {
+        console.warn("Vision OCR configuration error:", details);
+        throw new OCRServiceConfigurationError(
+          "Google Vision OCR is configured but unavailable. Enable billing/API access for the configured Google Cloud project."
+        );
+      }
       throw new Error(`Vision OCR failed: ${details}`);
     }
 
     const payload = await response.json();
     return payload.responses?.[0]?.fullTextAnnotation?.text || payload.responses?.[0]?.textAnnotations?.[0]?.description || "";
   } catch (error) {
+    if (error instanceof OCRServiceConfigurationError) {
+      throw error;
+    }
+
     console.warn("Vision OCR unavailable, falling back to in-house Tesseract OCR:", error);
     const fallback = await withTimeout(
       recognizeImageDataUriWithTesseract(dataUri, ["eng", "ara"]),
@@ -304,7 +390,15 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     console.warn("OCR parsing error:", err);
     const message = err instanceof Error ? err.message : "Internal server error";
-    const status = err instanceof OCRTimeoutError ? 504 : message.includes("GOOGLE_CLOUD_VISION_API_KEY") ? 400 : 500;
+    const status = err instanceof OCRTimeoutError
+      ? 504
+      : err instanceof MistralOCRUnsupportedFileError
+        ? 400
+        : err instanceof OCRServiceConfigurationError
+          ? 503
+          : message.includes("GOOGLE_CLOUD_VISION_API_KEY") || message.includes("MISTRAL_API_KEY")
+            ? 400
+            : 500;
     return NextResponse.json({ error: message }, { status });
   }
 }
@@ -318,8 +412,8 @@ export async function GET() {
   return NextResponse.json({
     status: "OCR parsing endpoint active",
     usage: "POST with { text: 'extracted OCR text' } or { image: 'data:image/png;base64,...' | 'data:application/pdf;base64,...' }",
-    engines: ["google_vision", "tesseract_fallback", "pdfjs_local", "pdf_tesseract_fallback"],
-    note: "Google Cloud Vision is optional. Warrantee can process supported images and PDFs with the local OCR fallback stack when the Google key is not configured.",
+    engines: ["mistral_ocr", "google_vision_fallback", "pdfjs_local", "tesseract_dev_fallback"],
+    note: "Warrantee prefers Mistral OCR when MISTRAL_API_KEY is configured, keeps embedded-text PDFs local, and can fall back to Google Vision or local development OCR when configured.",
     max_text_length: MAX_OCR_TEXT_LENGTH,
     fields: [
       "product_name",

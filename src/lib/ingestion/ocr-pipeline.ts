@@ -2,6 +2,14 @@
 // Google Cloud Vision API integration with confidence scoring
 
 import type { OCRResult, OCRExtractedFields, ExtractedField } from './types';
+import { extractTextFromPdfBuffer } from '@/lib/ocr/pdf';
+import { recognizeImageBufferWithTesseract } from '@/lib/ocr/tesseract';
+import {
+  hasMistralOCRConfig,
+  MistralOCRConfigurationError,
+  MistralOCRUnsupportedFileError,
+  recognizeBase64WithMistral,
+} from '@/lib/ocr/mistral';
 
 const VISION_API_URL = 'https://vision.googleapis.com/v1/images:annotate';
 
@@ -31,56 +39,183 @@ interface VisionAnnotation {
  */
 export async function processDocument(
   imageBase64: string,
-  _mimeType: string
+  mimeType: string
 ): Promise<OCRResult> {
-  const apiKey = process.env.GOOGLE_CLOUD_VISION_API_KEY;
-  if (!apiKey) throw new Error('GOOGLE_CLOUD_VISION_API_KEY not configured');
+  const provider = getOCRProviderPreference();
+  const tryMistral = shouldTryMistral();
 
-  // Call Google Cloud Vision API
-  const response = await fetch(`${VISION_API_URL}?key=${apiKey}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      requests: [{
-        image: { content: imageBase64 },
-        features: [{ type: 'DOCUMENT_TEXT_DETECTION' }],
-        imageContext: {
-          languageHints: ['ar', 'en'],
-        },
-      }],
-    }),
-  });
+  if (mimeType === 'application/pdf') {
+    const localResult = await processPdfWithLocalStack(imageBase64, !tryMistral);
+    if (localResult.raw_text.trim() || !tryMistral) {
+      return localResult;
+    }
 
-  if (!response.ok) {
-    throw new Error(`Vision API error: ${response.status} ${response.statusText}`);
+    try {
+      return await processWithMistral(imageBase64, mimeType);
+    } catch (error) {
+      if (provider === 'mistral' || error instanceof MistralOCRConfigurationError) {
+        throw error;
+      }
+      console.warn('Mistral PDF OCR unavailable, falling back to local PDF OCR:', error);
+      return processPdfWithLocalStack(imageBase64, true);
+    }
   }
 
-  const data = await response.json();
-  const annotation: VisionAnnotation = data.responses?.[0] || {};
+  if (tryMistral) {
+    try {
+      return await processWithMistral(imageBase64, mimeType);
+    } catch (error) {
+      if (provider === 'mistral' || error instanceof MistralOCRConfigurationError) {
+        throw error;
+      }
+      if (error instanceof MistralOCRUnsupportedFileError && !shouldTryGoogleVision()) {
+        throw error;
+      }
+      console.warn('Mistral OCR unavailable, trying next OCR provider:', error);
+    }
+  }
 
-  if (!annotation.fullTextAnnotation) {
+  const apiKey = process.env.GOOGLE_CLOUD_VISION_API_KEY;
+  if (!apiKey || !mimeType.startsWith('image/') || !shouldTryGoogleVision()) {
+    return processWithTesseract(imageBase64, mimeType);
+  }
+
+  try {
+    // Call Google Cloud Vision API
+    const response = await fetch(`${VISION_API_URL}?key=${apiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        requests: [{
+          image: { content: imageBase64 },
+          features: [{ type: 'DOCUMENT_TEXT_DETECTION' }],
+          imageContext: {
+            languageHints: ['ar', 'en'],
+          },
+        }],
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Vision API error: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    const annotation: VisionAnnotation = data.responses?.[0] || {};
+
+    if (!annotation.fullTextAnnotation) {
+      return {
+        raw_text: '',
+        language_detected: 'unknown',
+        confidence: 0,
+        extracted_fields: emptyFields(),
+        aggregate_confidence: 0,
+      };
+    }
+
+    const rawText = annotation.fullTextAnnotation.text;
+    const pages = annotation.fullTextAnnotation.pages;
+
+    // Detect primary language
+    const languageDetected = detectPrimaryLanguage(pages);
+
+    // Calculate average word confidence
+    const wordConfidence = calculateWordConfidence(pages);
+
+    // Extract structured fields
+    const extractedFields = extractFields(rawText, languageDetected);
+
+    // Calculate aggregate confidence
+    const aggregateConfidence = calculateAggregateConfidence(
+      wordConfidence,
+      extractedFields
+    );
+
+    return {
+      raw_text: rawText,
+      language_detected: languageDetected,
+      confidence: wordConfidence,
+      extracted_fields: extractedFields,
+      aggregate_confidence: aggregateConfidence,
+    };
+  } catch (error) {
+    console.warn('Vision OCR unavailable, falling back to in-house Tesseract OCR:', error);
+    return processWithTesseract(imageBase64, mimeType);
+  }
+}
+
+function getOCRProviderPreference() {
+  return (process.env.OCR_PROVIDER || 'auto').trim().toLowerCase();
+}
+
+function shouldTryMistral() {
+  const provider = getOCRProviderPreference();
+  return provider === 'mistral' || (provider === 'auto' && hasMistralOCRConfig());
+}
+
+function shouldTryGoogleVision() {
+  const provider = getOCRProviderPreference();
+  return provider === 'google' || provider === 'google-vision' || (provider === 'auto' && Boolean(process.env.GOOGLE_CLOUD_VISION_API_KEY));
+}
+
+async function processWithMistral(
+  imageBase64: string,
+  mimeType: string
+): Promise<OCRResult> {
+  const result = await recognizeBase64WithMistral(imageBase64, mimeType);
+  const rawText = result.text;
+  if (!rawText) {
     return {
       raw_text: '',
       language_detected: 'unknown',
+      confidence: result.confidence,
+      extracted_fields: emptyFields(),
+      aggregate_confidence: 0,
+    };
+  }
+
+  const languageDetected = /[\u0600-\u06FF]/.test(rawText) ? 'ar' : 'en';
+  const extractedFields = extractFields(rawText, languageDetected);
+  const aggregateConfidence = calculateAggregateConfidence(
+    result.confidence,
+    extractedFields
+  );
+
+  return {
+    raw_text: rawText,
+    language_detected: languageDetected,
+    confidence: result.confidence,
+    extracted_fields: extractedFields,
+    aggregate_confidence: aggregateConfidence,
+  };
+}
+
+async function processWithTesseract(
+  imageBase64: string,
+  mimeType: string
+): Promise<OCRResult> {
+  if (!mimeType.startsWith('image/')) {
+    throw new Error(`In-house OCR fallback only supports image attachments right now: ${mimeType}`);
+  }
+
+  const result = await recognizeImageBufferWithTesseract(
+    Buffer.from(imageBase64, 'base64'),
+    ['eng', 'ara']
+  );
+  const rawText = result.text;
+  if (!rawText) {
+    return {
+      raw_text: '',
+      language_detected: 'mixed',
       confidence: 0,
       extracted_fields: emptyFields(),
       aggregate_confidence: 0,
     };
   }
 
-  const rawText = annotation.fullTextAnnotation.text;
-  const pages = annotation.fullTextAnnotation.pages;
-
-  // Detect primary language
-  const languageDetected = detectPrimaryLanguage(pages);
-
-  // Calculate average word confidence
-  const wordConfidence = calculateWordConfidence(pages);
-
-  // Extract structured fields
+  const languageDetected = result.language.includes('ara') ? 'ar' : 'en';
+  const wordConfidence = result.confidence;
   const extractedFields = extractFields(rawText, languageDetected);
-
-  // Calculate aggregate confidence
   const aggregateConfidence = calculateAggregateConfidence(
     wordConfidence,
     extractedFields
@@ -90,6 +225,38 @@ export async function processDocument(
     raw_text: rawText,
     language_detected: languageDetected,
     confidence: wordConfidence,
+    extracted_fields: extractedFields,
+    aggregate_confidence: aggregateConfidence,
+  };
+}
+
+async function processPdfWithLocalStack(
+  imageBase64: string,
+  enableImageOcr = true
+): Promise<OCRResult> {
+  const result = await extractTextFromPdfBuffer(Buffer.from(imageBase64, 'base64'), 5, { enableImageOcr });
+  const rawText = result.text;
+  if (!rawText) {
+    return {
+      raw_text: '',
+      language_detected: 'mixed',
+      confidence: 0,
+      extracted_fields: emptyFields(),
+      aggregate_confidence: 0,
+    };
+  }
+
+  const languageDetected = /[\u0600-\u06FF]/.test(rawText) ? 'ar' : 'en';
+  const extractedFields = extractFields(rawText, languageDetected);
+  const aggregateConfidence = calculateAggregateConfidence(
+    result.confidence,
+    extractedFields
+  );
+
+  return {
+    raw_text: rawText,
+    language_detected: languageDetected,
+    confidence: result.confidence,
     extracted_fields: extractedFields,
     aggregate_confidence: aggregateConfidence,
   };

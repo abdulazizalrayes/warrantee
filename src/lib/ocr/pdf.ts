@@ -8,6 +8,10 @@ type PdfExtractionResult = {
   pageCount: number;
 };
 
+type PdfExtractionOptions = {
+  enableImageOcr?: boolean;
+};
+
 async function loadPdfJs() {
   return import("pdfjs-dist/legacy/build/pdf.mjs");
 }
@@ -15,7 +19,9 @@ async function loadPdfJs() {
 export async function extractTextFromPdfBuffer(
   pdfBuffer: Buffer,
   maxPages = 5,
+  options: PdfExtractionOptions = {},
 ): Promise<PdfExtractionResult> {
+  const enableImageOcr = options.enableImageOcr ?? true;
   const pdfjs = await loadPdfJs();
   const loadingTask = pdfjs.getDocument({
     data: new Uint8Array(pdfBuffer),
@@ -45,6 +51,15 @@ export async function extractTextFromPdfBuffer(
     return {
       text: extracted,
       confidence: 0.85,
+      engine: "pdf_text",
+      pageCount,
+    };
+  }
+
+  if (!enableImageOcr) {
+    return {
+      text: extracted,
+      confidence: extracted ? 0.5 : 0,
       engine: "pdf_text",
       pageCount,
     };
