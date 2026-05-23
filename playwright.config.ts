@@ -4,6 +4,17 @@ const localPort = process.env.E2E_PORT || "3100";
 const baseURL = process.env.E2E_BASE_URL || `http://127.0.0.1:${localPort}`;
 const useExternalTarget = Boolean(process.env.E2E_BASE_URL);
 
+if (
+  process.env.CI &&
+  !useExternalTarget &&
+  (!process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+) {
+  throw new Error(
+    "CI E2E requires NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY repository secrets.",
+  );
+}
+
 export default defineConfig({
   testDir: "./tests/e2e",
   fullyParallel: true,
