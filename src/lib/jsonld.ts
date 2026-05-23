@@ -1,19 +1,40 @@
 export function getOrganizationJsonLd() {
   return {
     "@context": "https://schema.org",
-    "@type": "SoftwareApplication",
-    name: "Warrantee",
-    alternateName: "Warrantee \u2014 Trust the Terms\u2122",
-    description: "Warranty management platform for businesses and consumers. Track, approve, and extend warranties with confidence.",
-    url: "https://warrantee.io",
-    applicationCategory: "BusinessApplication",
-    operatingSystem: "Web",
-    offers: [
-      { "@type": "Offer", name: "Free", price: "0", priceCurrency: "USD", description: "Up to 10 warranties, basic dashboard" },
-      { "@type": "Offer", name: "Professional", price: "1", priceCurrency: "USD", description: "Unlimited warranties, advanced features, first month free" },
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://warrantee.io/#organization",
+        name: "Warrantee",
+        url: "https://warrantee.io",
+        email: "hello@warrantee.io",
+        slogan: "Trust the Terms",
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://warrantee.io/#website",
+        name: "Warrantee",
+        url: "https://warrantee.io",
+        inLanguage: ["en", "ar"],
+        publisher: { "@id": "https://warrantee.io/#organization" },
+      },
+      {
+        "@type": "SoftwareApplication",
+        "@id": "https://warrantee.io/#software",
+        name: "Warrantee",
+        alternateName: "Warrantee \u2014 Trust the Terms\u2122",
+        description: "Warranty management software and platform for businesses and consumers. Track, approve, extend, and claim warranties with confidence.",
+        url: "https://warrantee.io",
+        applicationCategory: "BusinessApplication",
+        operatingSystem: "Web",
+        inLanguage: ["en", "ar"],
+        author: { "@id": "https://warrantee.io/#organization" },
+        offers: [
+          { "@type": "Offer", name: "Free", price: "0", priceCurrency: "USD", description: "Up to 10 warranties, basic dashboard" },
+          { "@type": "Offer", name: "Professional", price: "1", priceCurrency: "USD", description: "Unlimited warranties, advanced features, first month free" },
+        ],
+      },
     ],
-    inLanguage: ["en", "ar"],
-    author: { "@type": "Organization", name: "Warrantee", url: "https://warrantee.io", email: "hello@warrantee.io" },
   };
 }
 

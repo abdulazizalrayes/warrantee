@@ -60,11 +60,14 @@ export type ClaimType = (typeof VALID_CLAIM_TYPES)[number];
 
 // Warranty statuses
 export const VALID_WARRANTY_STATUSES = [
+  "draft",
   "active",
   "expired",
   "pending",
+  "pending_approval",
   "renewed",
   "cancelled",
+  "rejected",
 ] as const;
 
 export type WarrantyStatus = (typeof VALID_WARRANTY_STATUSES)[number];

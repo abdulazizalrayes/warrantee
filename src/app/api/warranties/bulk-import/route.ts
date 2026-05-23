@@ -2,11 +2,41 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import { apiRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
 import { sanitizeString } from "@/lib/validation";
+import { buildWarrantyOwnershipInsert } from "@/lib/warranty-access";
 import Papa from "papaparse";
-import * as XLSX from "xlsx";
+import { readSheet } from "read-excel-file/browser";
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 const MAX_ROWS = 500;
+
+function generateReferenceNumber(rowIndex: number) {
+  const timestamp = Date.now().toString(36).toUpperCase();
+  const suffix = Math.random().toString(36).slice(2, 6).toUpperCase();
+  return `WR-IMP-${timestamp}-${rowIndex + 1}-${suffix}`;
+}
+
+function normalizeSpreadsheetValue(value: unknown) {
+  if (value == null) return "";
+  if (value instanceof Date) return value.toISOString().slice(0, 10);
+  return String(value).trim();
+}
+
+function rowsFromSheet(sheetRows: unknown[][]) {
+  const [rawHeaders, ...dataRows] = sheetRows;
+  if (!rawHeaders) return [];
+
+  const headers = rawHeaders.map((header) =>
+    normalizeSpreadsheetValue(header).toLowerCase()
+  );
+
+  return dataRows
+    .filter((row) => row.some((cell) => normalizeSpreadsheetValue(cell) !== ""))
+    .map((row) =>
+      Object.fromEntries(
+        headers.map((header, index) => [header, normalizeSpreadsheetValue(row[index])])
+      )
+    );
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -48,14 +78,17 @@ export async function POST(request: NextRequest) {
 
     // Parse CSV or XLSX
     const fileName = file.name.toLowerCase();
-    const isXlsx = fileName.endsWith(".xlsx") || fileName.endsWith(".xls");
+    const isXlsx = fileName.endsWith(".xlsx");
     let rows: Record<string, string>[] = [];
 
     if (isXlsx) {
-      const buffer = await file.arrayBuffer();
-      const workbook = XLSX.read(buffer, { type: "array" });
-      const sheet = workbook.Sheets[workbook.SheetNames[0]];
-      rows = XLSX.utils.sheet_to_json<Record<string, string>>(sheet, { defval: "" });
+      const sheetRows = await readSheet(await file.arrayBuffer());
+      rows = rowsFromSheet(sheetRows);
+    } else if (fileName.endsWith(".xls")) {
+      return NextResponse.json(
+        { error: "Legacy .xls files are not supported. Please upload CSV or .xlsx." },
+        { status: 400 }
+      );
     } else {
       // Default: CSV
       const text = await file.text();
@@ -120,12 +153,16 @@ export async function POST(request: NextRequest) {
         continue;
       }
 
+      const parsedQuantity = Number.parseInt(String(row.quantity || "1"), 10);
+
       const { error } = await supabase.from("warranties").insert({
-        user_id: user.id,
+        ...buildWarrantyOwnershipInsert(user.id),
+        reference_number: generateReferenceNumber(i),
         product_name: sanitizeString(row.product_name, 200),
         product_name_ar: row.product_name_ar ? sanitizeString(row.product_name_ar, 200) : null,
         serial_number: row.serial_number ? sanitizeString(row.serial_number, 100) : null,
         sku: row.sku ? sanitizeString(row.sku, 100) : null,
+        quantity: Number.isFinite(parsedQuantity) && parsedQuantity > 0 ? parsedQuantity : 1,
         category: row.category ? sanitizeString(row.category, 50) : null,
         start_date: row.start_date,
         end_date: row.end_date,

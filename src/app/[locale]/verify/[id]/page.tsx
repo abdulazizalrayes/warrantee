@@ -2,7 +2,6 @@
 // @ts-nocheck
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import { Shield, CheckCircle2, XCircle, Calendar, Package, Hash, Download } from "lucide-react";
 
 const t = {
@@ -15,15 +14,19 @@ export default function VerifyPage() {
   const locale = (params.locale as string) || "en";
   const id = params.id as string;
   const l = t[locale as keyof typeof t] || t.en;
-  const supabase = createClient();
   const [warranty, setWarranty] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
     async function load() {
-      const { data, error } = await supabase.from("warranties").select("*").eq("id", id).single();
-      if (error || !data) { setNotFound(true); } else { setWarranty(data); }
+      const res = await fetch(`/api/v1/warranties/verify?q=${encodeURIComponent(id)}`);
+      const payload = await res.json().catch(() => null);
+      if (!res.ok || !payload?.success || !payload?.data) {
+        setNotFound(true);
+      } else {
+        setWarranty(payload.data);
+      }
       setLoading(false);
     }
     load();

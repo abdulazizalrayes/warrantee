@@ -1,8 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server';
+import crypto from 'crypto';
 import { emailTemplates } from '@/lib/email-templates';
+
+function safeCompare(a: string, b: string) {
+  const aBuffer = Buffer.from(a);
+  const bBuffer = Buffer.from(b);
+  return aBuffer.length === bBuffer.length && crypto.timingSafeEqual(aBuffer, bBuffer);
+}
+
+function authorizeEmailSend(request: NextRequest) {
+  const configuredSecret = process.env.EMAIL_SEND_API_SECRET || process.env.EMAIL_SEND_SECRET;
+  if (!configuredSecret) {
+    return NextResponse.json(
+      { error: 'Email send endpoint is not configured for authenticated use' },
+      { status: 500 }
+    );
+  }
+
+  const authHeader = request.headers.get('authorization') || '';
+  const bearerToken = authHeader.startsWith('Bearer ') ? authHeader.slice('Bearer '.length) : '';
+  const sharedSecret = bearerToken || request.headers.get('x-email-send-secret') || '';
+
+  if (!sharedSecret || !safeCompare(sharedSecret, configuredSecret)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  return null;
+}
 
 export async function POST(request: NextRequest) {
   try {
+    const authError = authorizeEmailSend(request);
+    if (authError) return authError;
+
     const { to, templateKey, data, locale = 'en' } = await request.json();
 
     if (!to || !templateKey) {

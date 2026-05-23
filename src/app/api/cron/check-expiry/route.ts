@@ -1,14 +1,12 @@
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import { sendEmail, warrantyExpiryEmail } from "@/lib/email";
+import { requireInternalBearer } from "@/lib/internal-auth";
 
 export async function GET(request: NextRequest) {
   try {
-    // Verify cron secret
-    const authHeader = request.headers.get("authorization");
-    if (authHeader !== "Bearer " + process.env.CRON_SECRET) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const authError = requireInternalBearer(request, process.env.CRON_SECRET);
+    if (authError) return authError;
 
     const supabase = await createServerSupabaseClient();
     const now = new Date();
@@ -24,6 +22,7 @@ export async function GET(request: NextRequest) {
     let emailsSent = 0;
 
     for (const interval of intervals) {
+      const notificationType = `warranty_expiring_${interval.days}d`;
       const targetDate = new Date(now.getTime() + interval.days * 24 * 60 * 60 * 1000);
       const dayStart = targetDate.toISOString().split("T")[0];
       const dayEnd = dayStart + "T23:59:59.999Z";
@@ -44,7 +43,7 @@ export async function GET(request: NextRequest) {
           .from("notifications")
           .select("id")
           .eq("warranty_id", w.id)
-          .eq("type", interval.type)
+          .eq("type", notificationType)
           .gte("created_at", todayStart)
           .limit(1)
           .maybeSingle();
@@ -55,7 +54,7 @@ export async function GET(request: NextRequest) {
         const { error: notifError } = await supabase.from("notifications").insert({
           user_id: w.user_id,
           warranty_id: w.id,
-          type: interval.type,
+          type: notificationType,
           title: `Warranty Expiring in ${interval.days} Days`,
           body: `${w.product_name} warranty expires in ${interval.days} days`,
         });

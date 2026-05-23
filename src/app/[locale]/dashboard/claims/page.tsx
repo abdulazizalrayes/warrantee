@@ -3,9 +3,10 @@
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { useAuth } from '@/lib/auth-context';
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
+import { ProtectedRouteNotice } from '@/components/dashboard/ProtectedRouteNotice';
 
-const supabase = createSupabaseBrowserClient();
 const STATUSES = ['all','draft','submitted','under_review','awaiting_info','approved','rejected','resolved','closed'];
 const statusCfg: Record<string,{l:string;a:string;bg:string;tx:string}> = {
   draft:{l:'Draft',a:'مسودة',bg:'bg-gray-100',tx:'text-gray-700'},
@@ -25,6 +26,8 @@ export default function ClaimsListPage() {
   const pathname = usePathname();
   const locale = pathname?.startsWith('/ar') ? 'ar' : 'en';
   const isRTL = locale === 'ar';
+  const { user, loading: authLoading } = useAuth();
+  const supabase = createSupabaseBrowserClient();
   const [claims, setClaims] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -38,7 +41,22 @@ export default function ClaimsListPage() {
   const load = async () => {
     setLoading(true); setError('');
     try {
+      if (!user) {
+        setClaims([]);
+        setLoading(false);
+        return;
+      }
+      const { data: userWarrantyIds } = await supabase
+        .from('warranties')
+        .select('id')
+        .or(`created_by.eq.${user.id},recipient_user_id.eq.${user.id},issuer_user_id.eq.${user.id}`);
+      const ids = (userWarrantyIds || []).map((w: { id: string }) => w.id);
       let q = supabase.from('warranty_claims').select('*, warranty:warranties(id,product_name,product_name_ar,reference_number)').order('created_at',{ascending:false}).range(pg*PS,(pg+1)*PS-1);
+      if (ids.length > 0) {
+        q = q.or(`filed_by.eq.${user.id},warranty_id.in.(${ids.join(',')})`);
+      } else {
+        q = q.eq('filed_by', user.id);
+      }
       if (statusFilter !== 'all') q = q.eq('status', statusFilter);
       if (search.trim()) q = q.or('title.ilike.%'+search+'%,claim_number.ilike.%'+search+'%');
       const { data, error: e } = await q;
@@ -47,11 +65,32 @@ export default function ClaimsListPage() {
     } catch (e: any) { setError(e.message); }
     setLoading(false);
   };
-  useEffect(() => { load(); }, [statusFilter, pg]);
-  useEffect(() => { const tm = setTimeout(() => { setPg(0); load(); }, 300); return () => clearTimeout(tm); }, [search]);
+  useEffect(() => {
+    if (authLoading) return;
+    load();
+  }, [authLoading, user, statusFilter, pg]);
+  useEffect(() => {
+    if (authLoading) return;
+    const tm = setTimeout(() => { setPg(0); load(); }, 300);
+    return () => clearTimeout(tm);
+  }, [authLoading, user, search]);
   const fmtD = (d: string) => d ? new Date(d).toLocaleDateString(isRTL?'ar-SA':'en-US',{year:'numeric',month:'short',day:'numeric'}) : '-';
   const Badge = ({s}: {s:string}) => { const c = statusCfg[s]||statusCfg.draft; return <span className={'px-2.5 py-1 rounded-full text-xs font-medium '+c.bg+' '+c.tx}>{isRTL?c.a:c.l}</span>; };
   if (error) return (<div className="min-h-[60vh] flex items-center justify-center" dir={isRTL?'rtl':'ltr'}><div className="text-center"><p className="text-red-600 mb-2">{t.err}</p><p className="text-sm text-gray-500 mb-4">{error}</p><button onClick={load} className="px-4 py-2 bg-[#4169E1] text-white rounded-lg text-sm">{t.retry}</button></div></div>);
+  if (!user && !authLoading) return (
+    <ProtectedRouteNotice
+      locale={locale}
+      isRTL={isRTL}
+      eyebrow={isRTL ? 'مركز المطالبات' : 'Claims workspace'}
+      title={t.title}
+      subtitle={isRTL ? 'الاطلاع على المطالبات وسجل الحالات يتطلب جلسة نشطة.' : 'Claims history and status tracking require an active session.'}
+      message={isRTL ? 'سجل الدخول للوصول إلى المطالبات المرتبطة بحسابك ومتابعة حالتها من لوحة التحكم.' : 'Sign in to review the claims tied to your account and track their progress from the dashboard.'}
+      crumbs={[
+        { label: 'Dashboard', href: `/${locale}/dashboard` },
+        { label: t.title },
+      ]}
+    />
+  );
   return (
     <div className="max-w-6xl mx-auto px-4 py-6" dir={isRTL?'rtl':'ltr'}>
       <div className="flex items-center justify-between mb-6"><div><h1 className="text-2xl font-bold text-[#1A1A2E]">{t.title}</h1><Link href={'/'+locale+'/dashboard'} className="text-sm text-[#4169E1] hover:underline">{t.back}</Link></div></div>

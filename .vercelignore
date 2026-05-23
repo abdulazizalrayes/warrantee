@@ -1,0 +1,10 @@
+.git
+.next
+node_modules
+.env
+.env.*
+*.local
+*.log
+*.tsbuildinfo
+*.timeout-backup-*
+package-lock.json.local-backup

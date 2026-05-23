@@ -2,6 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import {
+  buildAuthEmailErrorMessage,
+  normalizeAuthEmail,
+  rememberAuthEmailSend,
+} from '@/lib/auth-email-guard';
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
 
 const supabase = createSupabaseBrowserClient();
@@ -17,6 +22,7 @@ const translations = {
     sent: 'Magic link sent! Check your inbox.',
     error: 'Failed to send magic link. Please try again.',
     unauthorized: 'This email is not authorized for admin access.',
+    invalidEmail: 'Please enter the approved admin email exactly as authorized.',
     footer: '© 2026 Warrantee. All rights reserved.',
     alreadyLoggedIn: 'You are already logged in.',
     goToAdmin: 'Go to Admin Dashboard',
@@ -31,6 +37,7 @@ const translations = {
     sent: 'تم إرسال الرابط! تحقق من بريدك الإلكتروني.',
     error: 'فشل في إرسال الرابط. يرجى المحاولة مرة أخرى.',
     unauthorized: 'هذا البريد الإلكتروني غير مصرح له بالوصول.',
+    invalidEmail: 'يرجى إدخال البريد الإداري المعتمد كما هو مصرح به.',
     footer: '© 2026 وارنتي. جميع الحقوق محفوظة.',
     alreadyLoggedIn: 'أنت مسجل الدخول بالفعل.',
     goToAdmin: 'الذهاب إلى لوحة الإدارة',
@@ -48,6 +55,7 @@ export default function AdminLoginPage() {
   const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error' | 'unauthorized'>('idle');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [checking, setChecking] = useState(true);
+  const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
     const checkSession = async () => {
@@ -71,7 +79,19 @@ export default function AdminLoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const trimmed = email.toLowerCase().trim();
+    setErrorMessage('');
+    const trimmed = normalizeAuthEmail(email);
+    const guardError = buildAuthEmailErrorMessage(trimmed, 'admin-magic-link', {
+      allowedEmails: AUTHORIZED_ADMIN_EMAILS,
+    });
+
+    if (guardError) {
+      setErrorMessage(
+        AUTHORIZED_ADMIN_EMAILS.includes(trimmed) ? guardError : t.invalidEmail
+      );
+      setStatus(AUTHORIZED_ADMIN_EMAILS.includes(trimmed) ? 'error' : 'unauthorized');
+      return;
+    }
 
     if (!AUTHORIZED_ADMIN_EMAILS.includes(trimmed)) {
       setStatus('unauthorized');
@@ -88,8 +108,10 @@ export default function AdminLoginPage() {
     });
 
     if (error) {
+      setErrorMessage(error.message || t.error);
       setStatus('error');
     } else {
+      rememberAuthEmailSend(trimmed, 'admin-magic-link');
       setStatus('sent');
     }
   };
@@ -264,7 +286,7 @@ export default function AdminLoginPage() {
             fontSize: '14px',
             textAlign: 'center',
           }}>
-            {t.unauthorized}
+            {errorMessage || t.unauthorized}
           </div>
         )}
 
@@ -279,7 +301,7 @@ export default function AdminLoginPage() {
             fontSize: '14px',
             textAlign: 'center',
           }}>
-            {t.error}
+            {errorMessage || t.error}
           </div>
         )}
       </div>

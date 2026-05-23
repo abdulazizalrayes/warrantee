@@ -6,6 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { useAuth } from "@/lib/auth-context";
 import { getDictionary } from "@/lib/i18n";
+import { ProtectedRouteNotice } from "@/components/dashboard/ProtectedRouteNotice";
 
 export default function SellerInvitePage() {
   const { locale } = useParams() ?? {};
@@ -37,6 +38,24 @@ export default function SellerInvitePage() {
       </div>
     </div>
   );
+
+  if (!user) {
+    return (
+      <ProtectedRouteNotice
+        locale={(locale as string) || "en"}
+        isRTL={isRTL}
+        eyebrow={isRTL ? "\u0625\u062f\u0627\u0631\u0629 \u0627\u0644\u0628\u0627\u0626\u0639\u064a\u0646" : "Seller onboarding"}
+        title={isRTL ? "\u062f\u0639\u0648\u0629 \u0628\u0627\u0626\u0639" : "Invite Seller"}
+        subtitle={isRTL ? "\u0625\u0631\u0633\u0627\u0644 \u062f\u0639\u0648\u0627\u062a \u0628\u0627\u0626\u0639\u064a\u0646 \u062c\u062f\u062f \u064a\u062a\u0637\u0644\u0628 \u062d\u0633\u0627\u0628\u0627\u064b \u0645\u0633\u062c\u0644\u0627\u064b." : "Sending seller invitations requires an authenticated workspace session."}
+        message={isRTL ? "\u0633\u062c\u0644 \u0627\u0644\u062f\u062e\u0648\u0644 \u0623\u0648\u0644\u0627\u064b \u0642\u0628\u0644 \u0625\u0631\u0633\u0627\u0644 \u062f\u0639\u0648\u0629 \u0628\u0627\u0626\u0639 \u062c\u062f\u064a\u062f." : "Sign in before creating or sending a seller invitation."}
+        crumbs={[
+          { label: "Dashboard", href: `/${locale}/dashboard` },
+          { label: isRTL ? "\u0627\u0644\u0628\u0627\u0626\u0639" : "Seller", href: `/${locale}/seller` },
+          { label: isRTL ? "\u062f\u0639\u0648\u0629" : "Invite" },
+        ]}
+      />
+    );
+  }
 
   return (
     <div className="max-w-lg mx-auto p-6">

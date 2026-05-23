@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
         warranty_id: warranty.id,
         type: "whatsapp",
         title: "WhatsApp Notification Sent",
-        message: messageText,
+        body: messageText,
       });
 
       return NextResponse.json({ success: true, sid: result.sid });

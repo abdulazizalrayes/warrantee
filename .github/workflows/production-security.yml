@@ -1,0 +1,54 @@
+name: Production Security Gates
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 3 * * *"
+
+jobs:
+  production-security:
+    name: Warrantee production smoke and RLS probe
+    runs-on: ubuntu-latest
+
+    env:
+      SMOKE_BASE_URL: https://warrantee.io
+      OPERATIONAL_BASE_URL: https://warrantee.io
+      NEXT_PUBLIC_APP_URL: https://warrantee.io
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+      HUBSPOT_ACCESS_TOKEN: ${{ secrets.HUBSPOT_ACCESS_TOKEN }}
+      STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+      NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
+      LOAD_DURATION_SECONDS: "20"
+      LOAD_CONCURRENCY: "6"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Guard against loopback links
+        run: npm run guard:loopback
+
+      - name: Production smoke test
+        run: npm run smoke:prod
+
+      - name: Supabase anonymous RLS probe
+        run: npm run security:rls-probe
+
+      - name: Operational readiness check
+        run: npm run readiness:operational
+
+      - name: Controlled production load check
+        run: npm run load:prod

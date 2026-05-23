@@ -3,6 +3,7 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { createClient } from "@supabase/supabase-js";
 import crypto from "crypto";
 import { buildWarrantyAccessOrClause } from "@/lib/warranty-access";
+import { escapeHtml } from "@/lib/html-escape";
 
 function getSupabaseAdmin() {
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
@@ -25,7 +26,9 @@ function generateCertificateHTML(warranty: any, company: any, locale: string = "
   const isAr = locale === "ar";
   const dir = isAr ? "rtl" : "ltr";
   const lang = isAr ? "ar" : "en";
-  const fontFamily = isAr ? "'IBM Plex Sans Arabic'" : "'Inter'";
+  const fontFamily = isAr
+    ? "'Geeza Pro', 'SF Arabic', 'Noto Sans Arabic', Tahoma, system-ui"
+    : "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Segoe UI', system-ui";
   const startDate = new Date(warranty.start_date).toLocaleDateString(isAr ? "ar-SA" : "en-US", { year: "numeric", month: "long", day: "numeric" });
   const endDate = new Date(warranty.end_date).toLocaleDateString(isAr ? "ar-SA" : "en-US", { year: "numeric", month: "long", day: "numeric" });
   const certNumber = warranty.certificate_number || generateCertificateNumber();
@@ -47,14 +50,14 @@ function generateCertificateHTML(warranty: any, company: any, locale: string = "
   const textAlign = isAr ? "left" : "right";
 
   const statusColor = warranty.status === "active" ? "#16a34a" : "#dc2626";
-  const statusValue = warranty.status?.toUpperCase() || "ACTIVE";
-  const productName = warranty.product_name || "N/A";
-  const serialNumber = warranty.serial_number || "N/A";
-  const customerName = warranty.customer_name || warranty.customer_email || "N/A";
-  const companyName = company?.name || "Warrantee";
+  const statusValue = escapeHtml(warranty.status?.toUpperCase() || "ACTIVE");
+  const productName = escapeHtml(warranty.product_name || "N/A");
+  const serialNumber = escapeHtml(warranty.serial_number || "N/A");
+  const customerName = escapeHtml(warranty.customer_name || warranty.customer_email || "N/A");
+  const companyName = escapeHtml(company?.name || "Warrantee");
 
   const coverageSection = warranty.coverage_details
-    ? '<div class="coverage"><div class="coverage-title">' + coverageLabel + '</div><div class="coverage-text">' + warranty.coverage_details + '</div></div>'
+    ? '<div class="coverage"><div class="coverage-title">' + coverageLabel + '</div><div class="coverage-text">' + escapeHtml(warranty.coverage_details) + '</div></div>'
     : "";
 
   const parts = [
@@ -63,7 +66,6 @@ function generateCertificateHTML(warranty: any, company: any, locale: string = "
     "<head>",
     '<meta charset="UTF-8">',
     "<style>",
-    "@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap');",
     "* { margin: 0; padding: 0; box-sizing: border-box; }",
     "body { font-family: " + fontFamily + ", sans-serif; background: #f8f9fa; padding: 40px; direction: " + dir + "; }",
     ".certificate { max-width: 800px; margin: 0 auto; background: white; border: 3px solid #1A1A2E; border-radius: 12px; padding: 48px; position: relative; overflow: hidden; }",

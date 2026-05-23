@@ -26,10 +26,25 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const { data: visibleWarranties, error: warrantyListError } = await supabase
+      .from("warranties")
+      .select("id")
+      .or(buildWarrantyAccessOrClause(user.id));
+
+    if (warrantyListError) {
+      console.warn("Claim warranty scope fetch error:", warrantyListError.message);
+      return NextResponse.json({ error: warrantyListError.message }, { status: 500 });
+    }
+
+    const warrantyIds = (visibleWarranties || []).map((warranty) => warranty.id);
+    if (warrantyIds.length === 0) {
+      return NextResponse.json({ data: [] });
+    }
+
     const { data, error } = await supabase
       .from("warranty_claims")
-      .select("*, warranties(product_name, brand)")
-      .eq("user_id", user.id)
+      .select("*, warranties(product_name)")
+      .in("warranty_id", warrantyIds)
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -91,7 +106,7 @@ export async function POST(request: NextRequest) {
     // Verify the warranty belongs to the user
     const { data: warranty, error: warrantyError } = await supabase
       .from("warranties")
-      .select("id, status")
+      .select("id, status, user_id, buyer_id, recipient_user_id")
       .eq("id", warranty_id)
       .or(buildWarrantyAccessOrClause(user.id))
       .single();
@@ -107,6 +122,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: "Claims can only be filed against active warranties" },
         { status: 400 }
+      );
+    }
+
+    const canFileClaim =
+      warranty.user_id === user.id ||
+      warranty.buyer_id === user.id ||
+      warranty.recipient_user_id === user.id;
+
+    if (!canFileClaim) {
+      return NextResponse.json(
+        { error: "Only the warranty holder or recipient can file a claim" },
+        { status: 403 }
       );
     }
 

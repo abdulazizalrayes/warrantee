@@ -91,7 +91,19 @@ export default function BulkOperationsPage() {
   const fetchWarranties = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    const { data } = await supabase.from('warranties').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
+    const accessFilter = [
+      `user_id.eq.${user.id}`,
+      `created_by.eq.${user.id}`,
+      `recipient_user_id.eq.${user.id}`,
+      `buyer_id.eq.${user.id}`,
+      `seller_id.eq.${user.id}`,
+      `issuer_user_id.eq.${user.id}`,
+    ].join(',');
+    const { data } = await supabase
+      .from('warranties')
+      .select('*')
+      .or(accessFilter)
+      .order('created_at', { ascending: false });
     setWarranties(data || []);
     setLoading(false);
   }, []);

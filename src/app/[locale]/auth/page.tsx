@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useParams, useSearchParams } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import {
   Apple,
   ArrowUpRight,
@@ -27,12 +27,13 @@ type AuthTab = "login" | "signup";
 
 export default function AuthPage() {
   const params = useParams() ?? {};
+  const router = useRouter();
   const searchParams = useSearchParams();
   const locale = (params.locale as string) || "en";
   const dict = getDictionary(locale);
   const isRTL = locale === "ar";
   const direction = DIRECTION[locale as Locale];
-  const { signInWithGoogle, signInWithApple, signInWithMagicLink, signInWithPassword, signUp, loading: authLoading } = useAuth();
+  const { user, signInWithGoogle, signInWithApple, signInWithMagicLink, signInWithPassword, signUp, signOut, loading: authLoading } = useAuth();
   const [activeTab, setActiveTab] = useState<AuthTab>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -46,6 +47,11 @@ export default function AuthPage() {
   const [authMode, setAuthMode] = useState<"magic" | "password">("magic");
   const errorFromUrl = searchParams?.get("error");
   const requestedTab = searchParams?.get("tab");
+  const requestedRedirect = searchParams?.get("redirect");
+  const nextPath =
+    requestedRedirect && requestedRedirect.startsWith("/") && !requestedRedirect.startsWith("//")
+      ? requestedRedirect
+      : `/${locale}/dashboard`;
 
   useEffect(() => {
     setActiveTab(requestedTab === "signup" ? "signup" : "login");
@@ -54,7 +60,7 @@ export default function AuthPage() {
   const handleMagicLink = async (e: React.FormEvent) => {
     e.preventDefault(); setLoading(true); setMessage(""); setErrorMsg("");
     trackAuthIntent("magic_link_start", "email", { locale, tab: activeTab });
-    const { error } = await signInWithMagicLink(email, locale);
+    const { error } = await signInWithMagicLink(email, locale, nextPath);
     if (error) { setErrorMsg(error); } else { setMessage(isRTL ? "\u062a\u0645 \u0625\u0631\u0633\u0627\u0644 \u0631\u0627\u0628\u0637 \u0633\u062d\u0631\u064a \u0625\u0644\u0649 \u0628\u0631\u064a\u062f\u0643 \u0627\u0644\u0625\u0644\u0643\u062a\u0631\u0648\u0646\u064a" : "Magic link sent to your email! Check your inbox."); }
     setLoading(false);
   };
@@ -63,12 +69,21 @@ export default function AuthPage() {
     trackAuthIntent("password_start", "password", { locale, tab: activeTab });
     const { error } = await signInWithPassword(email, password);
     if (error) { setErrorMsg(error); }
+    else {
+      router.push(nextPath);
+      router.refresh();
+    }
     setLoading(false);
   };
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault(); setLoading(true); setMessage(""); setErrorMsg("");
+    if (user) {
+      setErrorMsg(isRTL ? "\u0623\u0646\u062a \u0645\u0633\u062c\u0644 \u0627\u0644\u062f\u062e\u0648\u0644 \u062d\u0627\u0644\u064a\u0627. \u0633\u062c\u0644 \u0627\u0644\u062e\u0631\u0648\u062c \u0623\u0648\u0644\u0627 \u0644\u0625\u0646\u0634\u0627\u0621 \u062d\u0633\u0627\u0628 \u062c\u062f\u064a\u062f." : "You are already signed in. Sign out first to create a different account.");
+      setLoading(false);
+      return;
+    }
     if (password.length < 8) { setErrorMsg(isRTL ? "\u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631 \u064a\u062c\u0628 \u0623\u0646 \u062a\u0643\u0648\u0646 8 \u0623\u062d\u0631\u0641 \u0639\u0644\u0649 \u0627\u0644\u0623\u0642\u0644" : "Password must be at least 8 characters"); setLoading(false); return; }
-    const { error } = await signUp(email, password, { full_name: fullName, account_type: accountType, company_name: accountType === "business" ? companyName : undefined });
+    const { error } = await signUp(email, password, { full_name: fullName, account_type: accountType, company_name: accountType === "business" ? companyName : undefined }, locale, nextPath);
     if (error) { setErrorMsg(error); } else {
       trackSignup(accountType === "business" ? "business_email" : "consumer_email");
       setMessage(isRTL ? "\u062a\u0645 \u0625\u0646\u0634\u0627\u0621 \u062d\u0633\u0627\u0628\u0643! \u062a\u062d\u0642\u0642 \u0645\u0646 \u0628\u0631\u064a\u062f\u0643 \u0627\u0644\u0625\u0644\u0643\u062a\u0631\u0648\u0646\u064a \u0644\u062a\u0623\u0643\u064a\u062f \u062d\u0633\u0627\u0628\u0643." : "Account created! Check your email to confirm your account.");
@@ -76,12 +91,21 @@ export default function AuthPage() {
     setLoading(false);
   };
   const handleGoogleAuth = async () => {
+    setMessage(""); setErrorMsg("");
     trackAuthIntent("oauth_start", "google", { locale, tab: activeTab });
-    await signInWithGoogle(locale);
+    const { error } = await signInWithGoogle(locale, nextPath);
+    if (error) setErrorMsg(error.message || error);
   };
   const handleAppleAuth = async () => {
+    setMessage(""); setErrorMsg("");
     trackAuthIntent("oauth_start", "apple", { locale, tab: activeTab });
-    await signInWithApple(locale);
+    const { error } = await signInWithApple(locale, nextPath);
+    if (error) setErrorMsg(error.message || error);
+  };
+  const handleSignOutForSignup = async () => {
+    setLoading(true); setMessage(""); setErrorMsg("");
+    await signOut();
+    setLoading(false);
   };
   const isFormLoading = loading || authLoading;
   const trustPoints = isRTL
@@ -166,6 +190,35 @@ export default function AuthPage() {
                 </div>
               )}
 
+              {user && activeTab === "signup" && (
+                <div className="mb-4 rounded-2xl border border-[#D4A853]/35 bg-[#fff8e5] p-4 text-sm text-[#1A1A2E]">
+                  <p className="font-semibold">
+                    {isRTL ? "\u0623\u0646\u062a \u0645\u0633\u062c\u0644 \u0627\u0644\u062f\u062e\u0648\u0644 \u0628\u0627\u0644\u0641\u0639\u0644" : "You are already signed in"}
+                  </p>
+                  <p className="mt-1 text-[#5f5f6a]">
+                    {isRTL
+                      ? "\u0644\u0625\u0646\u0634\u0627\u0621 \u062d\u0633\u0627\u0628 \u062c\u062f\u064a\u062f\u060c \u0633\u062c\u0644 \u0627\u0644\u062e\u0631\u0648\u062c \u0623\u0648\u0644\u0627. \u0623\u0648 \u064a\u0645\u0643\u0646\u0643 \u0627\u0644\u0627\u0633\u062a\u0645\u0631\u0627\u0631 \u0625\u0644\u0649 \u0644\u0648\u062d\u0629 \u0627\u0644\u062a\u062d\u0643\u0645."
+                      : "To create a new account, sign out first. Or continue to your current dashboard."}
+                  </p>
+                  <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                    <Link
+                      href={`/${locale}/dashboard`}
+                      className="inline-flex justify-center rounded-full bg-[#1A1A2E] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[#2d2d5e]"
+                    >
+                      {isRTL ? "\u0627\u0644\u0630\u0647\u0627\u0628 \u0644\u0644\u0648\u062d\u0629" : "Go to dashboard"}
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={handleSignOutForSignup}
+                      disabled={isFormLoading}
+                      className="inline-flex justify-center rounded-full border border-[#D4A853]/60 px-4 py-2 text-xs font-semibold text-[#1A1A2E] transition hover:bg-white disabled:opacity-50"
+                    >
+                      {isRTL ? "\u0633\u062c\u0644 \u0627\u0644\u062e\u0631\u0648\u062c \u0644\u0625\u0646\u0634\u0627\u0621 \u062d\u0633\u0627\u0628" : "Sign out to create account"}
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <div className="overflow-hidden rounded-[28px] border border-[#e5e5ea] bg-white">
                 <div className="flex border-b border-[#e5e5ea] bg-[#fbfbfd]">
                   <button onClick={() => { setActiveTab("login"); setMessage(""); setErrorMsg(""); }} className={`flex-1 px-6 py-4 font-medium transition-colors ${activeTab === "login" ? "border-b-2 border-[#D4A853] bg-white text-[#1A1A2E]" : "text-[#6e6e73] hover:text-[#1A1A2E]"}`}>{dict.auth.login}</button>
@@ -175,8 +228,8 @@ export default function AuthPage() {
                 <div className="p-7">
                   {activeTab === "login" ? (
                     <form onSubmit={authMode === "magic" ? handleMagicLink : handlePasswordLogin} className="space-y-5">
-                      <div><label className="mb-2 block text-sm font-medium text-[#1A1A2E]">{dict.auth.email}</label><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" className="w-full rounded-2xl border border-[#d2d2d7] px-4 py-3 text-[#1d1d1f] outline-none transition focus:border-[#D4A853] focus:ring-2 focus:ring-[#D4A853]/20" required dir="ltr" /></div>
-                      {authMode === "password" && (<div><label className="mb-2 block text-sm font-medium text-[#1A1A2E]">{dict.auth.password}</label><div className="relative"><input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022" className="w-full rounded-2xl border border-[#d2d2d7] px-4 py-3 text-[#1d1d1f] outline-none transition focus:border-[#D4A853] focus:ring-2 focus:ring-[#D4A853]/20" required dir="ltr" /><button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 transition hover:text-gray-600">{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button></div></div>)}
+                      <div><label htmlFor="login-email" className="mb-2 block text-sm font-medium text-[#1A1A2E]">{dict.auth.email}</label><input id="login-email" name="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" className="w-full rounded-2xl border border-[#d2d2d7] px-4 py-3 text-[#1d1d1f] outline-none transition focus:border-[#D4A853] focus:ring-2 focus:ring-[#D4A853]/20" required dir="ltr" /></div>
+                      {authMode === "password" && (<div><label htmlFor="login-password" className="mb-2 block text-sm font-medium text-[#1A1A2E]">{dict.auth.password}</label><div className="relative"><input id="login-password" name="password" type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022" className="w-full rounded-2xl border border-[#d2d2d7] px-4 py-3 text-[#1d1d1f] outline-none transition focus:border-[#D4A853] focus:ring-2 focus:ring-[#D4A853]/20" required dir="ltr" /><button type="button" aria-label={showPassword ? "Hide password" : "Show password"} onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 transition hover:text-gray-600">{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button></div></div>)}
                       <button type="submit" disabled={isFormLoading} className="flex w-full items-center justify-center gap-2 rounded-full bg-[#1A1A2E] py-3 text-sm font-semibold text-white transition hover:bg-[#2d2d5e] disabled:cursor-not-allowed disabled:opacity-50"><Mail size={18} />{isFormLoading ? dict.common.loading : authMode === "magic" ? dict.auth.magic_link : dict.auth.sign_in}</button>
                       <div className="text-center"><button type="button" onClick={() => setAuthMode(authMode === "magic" ? "password" : "magic")} className="text-sm font-medium text-[#D4A853] transition hover:text-[#c39534]">{authMode === "magic" ? (isRTL ? "\u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062f\u062e\u0648\u0644 \u0628\u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631" : "Sign in with password instead") : (isRTL ? "\u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062f\u062e\u0648\u0644 \u0628\u0627\u0644\u0631\u0627\u0628\u0637 \u0627\u0644\u0633\u062d\u0631\u064a" : "Sign in with magic link instead")}</button></div>
                       {authMode === "password" && (
@@ -194,11 +247,11 @@ export default function AuthPage() {
                     </form>
                   ) : (
                     <form onSubmit={handleSignUp} className="space-y-5">
-                      <div><label className="mb-2 block text-sm font-medium text-[#1A1A2E]">{isRTL ? "\u0627\u0644\u0627\u0633\u0645 \u0627\u0644\u0643\u0627\u0645\u0644" : "Full Name"}</label><input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} className="w-full rounded-2xl border border-[#d2d2d7] px-4 py-3 text-[#1d1d1f] outline-none transition focus:border-[#D4A853] focus:ring-2 focus:ring-[#D4A853]/20" required /></div>
-                      <div><label className="mb-2 block text-sm font-medium text-[#1A1A2E]">{dict.auth.email}</label><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" className="w-full rounded-2xl border border-[#d2d2d7] px-4 py-3 text-[#1d1d1f] outline-none transition focus:border-[#D4A853] focus:ring-2 focus:ring-[#D4A853]/20" required dir="ltr" /></div>
-                      <div><label className="mb-2 block text-sm font-medium text-[#1A1A2E]">{dict.auth.password}</label><div className="relative"><input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} className="w-full rounded-2xl border border-[#d2d2d7] px-4 py-3 text-[#1d1d1f] outline-none transition focus:border-[#D4A853] focus:ring-2 focus:ring-[#D4A853]/20" required minLength={8} dir="ltr" /><button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 transition hover:text-gray-600">{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button></div><p className="mt-1 text-xs text-[#86868b]">{isRTL ? "8 \u0623\u062d\u0631\u0641 \u0639\u0644\u0649 \u0627\u0644\u0623\u0642\u0644" : "Minimum 8 characters"}</p></div>
+                      <div><label htmlFor="signup-full-name" className="mb-2 block text-sm font-medium text-[#1A1A2E]">{isRTL ? "\u0627\u0644\u0627\u0633\u0645 \u0627\u0644\u0643\u0627\u0645\u0644" : "Full Name"}</label><input id="signup-full-name" name="fullName" type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} className="w-full rounded-2xl border border-[#d2d2d7] px-4 py-3 text-[#1d1d1f] outline-none transition focus:border-[#D4A853] focus:ring-2 focus:ring-[#D4A853]/20" required /></div>
+                      <div><label htmlFor="signup-email" className="mb-2 block text-sm font-medium text-[#1A1A2E]">{dict.auth.email}</label><input id="signup-email" name="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" className="w-full rounded-2xl border border-[#d2d2d7] px-4 py-3 text-[#1d1d1f] outline-none transition focus:border-[#D4A853] focus:ring-2 focus:ring-[#D4A853]/20" required dir="ltr" /></div>
+                      <div><label htmlFor="signup-password" className="mb-2 block text-sm font-medium text-[#1A1A2E]">{dict.auth.password}</label><div className="relative"><input id="signup-password" name="password" type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} className="w-full rounded-2xl border border-[#d2d2d7] px-4 py-3 text-[#1d1d1f] outline-none transition focus:border-[#D4A853] focus:ring-2 focus:ring-[#D4A853]/20" required minLength={8} dir="ltr" /><button type="button" aria-label={showPassword ? "Hide password" : "Show password"} onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 transition hover:text-gray-600">{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button></div><p className="mt-1 text-xs text-[#86868b]">{isRTL ? "8 \u0623\u062d\u0631\u0641 \u0639\u0644\u0649 \u0627\u0644\u0623\u0642\u0644" : "Minimum 8 characters"}</p></div>
                       <div><label className="mb-2 block text-sm font-medium text-[#1A1A2E]">{isRTL ? "\u0646\u0648\u0639 \u0627\u0644\u062d\u0633\u0627\u0628" : "Account Type"}</label><div className="grid grid-cols-2 gap-3"><label className={`cursor-pointer rounded-2xl border px-4 py-3 transition ${accountType === "consumer" ? "border-[#D4A853] bg-[#D4A853]/8" : "border-[#d2d2d7] bg-white"}`}><input type="radio" name="accountType" value="consumer" checked={accountType === "consumer"} onChange={(e) => setAccountType(e.target.value as "consumer" | "business")} className="sr-only" /><span className="text-sm font-medium text-[#1A1A2E]">{isRTL ? "\u0645\u0633\u062a\u0647\u0644\u0643" : "Consumer"}</span></label><label className={`cursor-pointer rounded-2xl border px-4 py-3 transition ${accountType === "business" ? "border-[#D4A853] bg-[#D4A853]/8" : "border-[#d2d2d7] bg-white"}`}><input type="radio" name="accountType" value="business" checked={accountType === "business"} onChange={(e) => setAccountType(e.target.value as "consumer" | "business")} className="sr-only" /><span className="text-sm font-medium text-[#1A1A2E]">{isRTL ? "\u0634\u0631\u0643\u0629" : "Business"}</span></label></div></div>
-                      {accountType === "business" && (<div><label className="mb-2 block text-sm font-medium text-[#1A1A2E]">{isRTL ? "\u0627\u0633\u0645 \u0627\u0644\u0634\u0631\u0643\u0629" : "Company Name"}</label><input type="text" value={companyName} onChange={(e) => setCompanyName(e.target.value)} className="w-full rounded-2xl border border-[#d2d2d7] px-4 py-3 text-[#1d1d1f] outline-none transition focus:border-[#D4A853] focus:ring-2 focus:ring-[#D4A853]/20" required={accountType === "business"} /></div>)}
+                      {accountType === "business" && (<div><label htmlFor="signup-company-name" className="mb-2 block text-sm font-medium text-[#1A1A2E]">{isRTL ? "\u0627\u0633\u0645 \u0627\u0644\u0634\u0631\u0643\u0629" : "Company Name"}</label><input id="signup-company-name" name="companyName" type="text" value={companyName} onChange={(e) => setCompanyName(e.target.value)} className="w-full rounded-2xl border border-[#d2d2d7] px-4 py-3 text-[#1d1d1f] outline-none transition focus:border-[#D4A853] focus:ring-2 focus:ring-[#D4A853]/20" required={accountType === "business"} /></div>)}
                       <button type="submit" disabled={isFormLoading} className="w-full rounded-full bg-[#1A1A2E] py-3 text-sm font-semibold text-white transition hover:bg-[#2d2d5e] disabled:cursor-not-allowed disabled:opacity-50">{isFormLoading ? dict.common.loading : dict.auth.create_account}</button>
                       {message && (<div className="rounded-2xl border border-green-200 bg-green-50 p-3 text-sm text-green-800">{message}</div>)}
                       {errorMsg && (<div className="flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-800"><AlertCircle size={16} className="shrink-0" />{errorMsg}</div>)}

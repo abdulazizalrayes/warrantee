@@ -6,6 +6,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
+import { ProtectedRouteNotice } from '@/components/dashboard/ProtectedRouteNotice';
 
 interface InvitationData {
   invitation_id: string;
@@ -125,6 +126,23 @@ function AcceptSellerInviteContent() {
     );
   }
 
+  if (!user) {
+    return (
+      <ProtectedRouteNotice
+        locale={locale}
+        isRTL={isRtl}
+        eyebrow={isRtl ? 'دعوة بائع' : 'Seller invitation'}
+        title={isRtl ? 'قبول دعوة البائع' : 'Accept Seller Invitation'}
+        subtitle={isRtl ? 'تم العثور على الدعوة بنجاح، ويتبقى تسجيل الدخول أو إنشاء حساب لإكمال القبول.' : 'The invitation is valid. Sign in or register to complete acceptance.'}
+        message={isRtl ? 'سجل الدخول أو أنشئ حسابا بنفس البريد المدعو لإكمال تفعيل دور البائع.' : 'Sign in or create an account with the invited email to activate seller access.'}
+        primaryLabel={isRtl ? 'تسجيل الدخول / إنشاء حساب' : 'Sign In / Register'}
+        primaryHref={`/${locale}/auth?redirect=/seller/accept-invite?token=${token}`}
+        secondaryLabel={isRtl ? 'العودة للرئيسية' : 'Back to home'}
+        secondaryHref={`/${locale}`}
+      />
+    );
+  }
+
   return (
     <div dir={isRtl ? 'rtl' : 'ltr'} style={{
       minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center',
@@ -163,47 +181,27 @@ function AcceptSellerInviteContent() {
           </p>
         </div>
 
-        {!user ? (
-          <div>
-            <p style={{ color: '#64748B', marginBottom: '16px' }}>
-              {isRtl
-                ? 'يرجى تسجيل الدخول أو إنشاء حساب لقبول الدعوة.'
-                : 'Please sign in or create an account to accept this invitation.'}
-            </p>
-            <a
-              href={`/${locale}/auth?redirect=/seller/accept-invite?token=${token}`}
-              style={{
-                display: 'block', textAlign: 'center', padding: '12px',
-                borderRadius: '8px', background: '#2563EB', color: 'white',
-                textDecoration: 'none', fontWeight: 600,
-              }}
-            >
-              {isRtl ? 'تسجيل الدخول / إنشاء حساب' : 'Sign In / Register'}
-            </a>
-          </div>
-        ) : (
-          <div>
-            <p style={{ color: '#64748B', marginBottom: '20px' }}>
-              {isRtl
-                ? 'بقبول هذه الدعوة، سيتم ترقية حسابك إلى حساب بائع ويمكنك إدارة ضمانات عملائك.'
-                : 'By accepting this invitation, your account will be upgraded to a seller account and you can manage your customer warranties.'}
-            </p>
-            <button
-              onClick={handleAccept}
-              disabled={accepting}
-              style={{
-                width: '100%', padding: '14px', borderRadius: '8px', border: 'none',
-                background: '#2563EB', color: 'white', fontSize: '16px',
-                fontWeight: 600, cursor: accepting ? 'not-allowed' : 'pointer',
-                opacity: accepting ? 0.7 : 1,
-              }}
-            >
-              {accepting
-                ? (isRtl ? 'جارٍ القبول...' : 'Accepting...')
-                : (isRtl ? 'قبول الدعوة' : 'Accept Invitation')}
-            </button>
-          </div>
-        )}
+        <div>
+          <p style={{ color: '#64748B', marginBottom: '20px' }}>
+            {isRtl
+              ? 'بقبول هذه الدعوة، سيتم ترقية حسابك إلى حساب بائع ويمكنك إدارة ضمانات عملائك.'
+              : 'By accepting this invitation, your account will be upgraded to a seller account and you can manage your customer warranties.'}
+          </p>
+          <button
+            onClick={handleAccept}
+            disabled={accepting}
+            style={{
+              width: '100%', padding: '14px', borderRadius: '8px', border: 'none',
+              background: '#2563EB', color: 'white', fontSize: '16px',
+              fontWeight: 600, cursor: accepting ? 'not-allowed' : 'pointer',
+              opacity: accepting ? 0.7 : 1,
+            }}
+          >
+            {accepting
+              ? (isRtl ? 'جارٍ القبول...' : 'Accepting...')
+              : (isRtl ? 'قبول الدعوة' : 'Accept Invitation')}
+          </button>
+        </div>
       </div>
     </div>
   );

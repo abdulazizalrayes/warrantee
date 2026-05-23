@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { Resend } from "resend";
+import { getEmailFromAddress } from "@/lib/email-config";
 
 let _resend: Resend | null = null;
 function getResend() {
@@ -9,7 +10,7 @@ function getResend() {
   return _resend;
 }
 
-const FROM_EMAIL = "Warrantee <hello@warrantee.io>";
+const FROM_EMAIL = getEmailFromAddress();
 
 export async function sendEmail({
   to,

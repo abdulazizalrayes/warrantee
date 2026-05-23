@@ -9,10 +9,10 @@ import { useState } from 'react';
 const translations = {
   en: {
     title: 'API Documentation',
-    subtitle: 'Integrate Warrantee with your systems',
+    subtitle: 'Integrate Warrantee with ERP, ecommerce, and internal systems',
     back: 'Back to Dashboard',
     auth: 'Authentication',
-    authDesc: 'All API requests require a Bearer token. Use your Supabase access token.',
+    authDesc: 'Use either a user Bearer token or a dedicated integration token via x-api-key for ERP/server-to-server use.',
     baseUrl: 'Base URL',
     endpoints: 'Endpoints',
     listWarranties: 'List Warranties',
@@ -27,13 +27,15 @@ const translations = {
     copied: 'Copied!',
     rateLimit: 'Rate Limiting',
     rateLimitDesc: '100 requests per minute per API key',
+    integrationNotes: 'Integration Notes',
+    integrationDesc: 'Use Idempotency-Key on create requests, keep a stable reference number when possible, and prefer server-to-server integration tokens for ERP sync jobs.',
   },
   ar: {
     title: '\u0648\u062b\u0627\u0626\u0642 API',
-    subtitle: '\u062f\u0645\u062c Warrantee \u0645\u0639 \u0623\u0646\u0638\u0645\u062a\u0643',
+    subtitle: '\u062f\u0645\u062c Warrantee \u0645\u0639 \u0623\u0646\u0638\u0645\u0629 ERP \u0648\u0627\u0644\u0645\u062A\u0627\u062C\u0631 \u0648\u0627\u0644\u0623\u0646\u0638\u0645\u0629 \u0627\u0644\u062F\u0627\u062E\u0644\u064A\u0629',
     back: '\u0627\u0644\u0639\u0648\u062f\u0629 \u0625\u0644\u0649 \u0644\u0648\u062d\u0629 \u0627\u0644\u062a\u062d\u0643\u0645',
     auth: '\u0627\u0644\u0645\u0635\u0627\u062f\u0642\u0629',
-    authDesc: '\u062c\u0645\u064a\u0639 \u0637\u0644\u0628\u0627\u062a API \u062a\u062a\u0637\u0644\u0628 \u0631\u0645\u0632 Bearer.',
+    authDesc: '\u064a\u0645\u0643\u0646 \u0627\u0633\u062a\u062e\u062f\u0627\u0645 \u0631\u0645\u0632 Bearer \u0644\u0644\u0645\u0633\u062a\u062e\u062f\u0645 \u0623\u0648 \u0631\u0645\u0632 \u062a\u0643\u0627\u0645\u0644 \u0645\u062e\u0635\u0635 \u0639\u0628\u0631 x-api-key \u0644\u062A\u0643\u0627\u0645\u0644\u0627\u062a ERP \u0648\u0627\u0644\u062e\u0627\u062f\u0645 \u0625\u0644\u0649 \u0627\u0644\u062e\u0627\u062f\u0645.',
     baseUrl: '\u0627\u0644\u0631\u0627\u0628\u0637 \u0627\u0644\u0623\u0633\u0627\u0633\u064a',
     endpoints: '\u0646\u0642\u0627\u0637 \u0627\u0644\u0648\u0635\u0648\u0644',
     listWarranties: '\u0642\u0627\u0626\u0645\u0629 \u0627\u0644\u0636\u0645\u0627\u0646\u0627\u062a',
@@ -48,12 +50,14 @@ const translations = {
     copied: '\u062a\u0645 \u0627\u0644\u0646\u0633\u062e!',
     rateLimit: '\u062d\u062f\u0648\u062f \u0627\u0644\u0637\u0644\u0628\u0627\u062a',
     rateLimitDesc: '100 \u0637\u0644\u0628 \u0641\u064a \u0627\u0644\u062f\u0642\u064a\u0642\u0629',
+    integrationNotes: '\u0645\u0644\u0627\u062d\u0638\u0627\u062a \u0627\u0644\u062a\u0643\u0627\u0645\u0644',
+    integrationDesc: '\u0627\u0633\u062A\u062E\u062F\u0645 Idempotency-Key \u0645\u0639 \u0637\u0644\u0628\u0627\u062A \u0627\u0644\u0625\u0646\u0634\u0627\u0621\u060c \u0648\u062d\u0627\u0641\u0638 \u0639\u0644\u0649 \u0631\u0642\u0645 \u0645\u0631\u062c\u0639\u064a \u062B\u0627\u0628\u062A \u0645\u062A\u0649 \u0623\u0645\u0643\u0646\u060c \u0648\u0627\u0633\u062A\u062E\u062F\u0645 \u0631\u0645\u0648\u0632 \u0627\u0644\u062A\u0643\u0627\u0645\u0644 \u0644\u0645\u0632\u0627\u0645\u0646\u0629 ERP \u0627\u0644\u062E\u0627\u062F\u0645\u064A\u0629.',
   }
 };
 
 const endpoints = [
   { method: 'GET', path: '/api/v1/warranties', desc: 'listWarranties', params: 'page, limit, status, category' },
-  { method: 'POST', path: '/api/v1/warranties', desc: 'createWarranty', params: 'product_name*, start_date*, end_date*, description, serial_number, category, supplier' },
+  { method: 'POST', path: '/api/v1/warranties', desc: 'createWarranty', params: 'product_name*, start_date*, end_date*, description, serial_number, category, supplier, seller_name, seller_email' },
   { method: 'GET', path: '/api/v1/warranties/:id', desc: 'getWarranty', params: 'id (path)' },
   { method: 'PUT', path: '/api/v1/warranties/:id', desc: 'updateWarranty', params: 'product_name, start_date, end_date, status, category, supplier' },
   { method: 'DELETE', path: '/api/v1/warranties/:id', desc: 'deleteWarranty', params: 'id (path)' },
@@ -116,11 +120,26 @@ export default function ApiDocsPage() {
               Authorization: Bearer YOUR_SUPABASE_ACCESS_TOKEN
             </code>
           </div>
+          <div className="bg-gray-900 rounded-lg p-3 mt-3">
+            <code className="text-sm text-gray-300" dir="ltr">
+              x-api-key: YOUR_SERVER_INTEGRATION_TOKEN
+            </code>
+          </div>
         </div>
 
         {/* Rate Limiting */}
         <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-6">
           <p className="text-sm text-yellow-800 font-medium">{t.rateLimit}: {t.rateLimitDesc}</p>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+          <h3 className="font-semibold text-gray-900 mb-2">{t.integrationNotes}</h3>
+          <p className="text-gray-600 text-sm mb-3">{t.integrationDesc}</p>
+          <div className="bg-gray-900 rounded-lg p-3">
+            <code className="text-sm text-gray-300" dir="ltr">
+              Idempotency-Key: 8f5d07d0-erp-order-102044
+            </code>
+          </div>
         </div>
 
         {/* Endpoints */}

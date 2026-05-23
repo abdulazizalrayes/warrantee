@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { buildWarrantyAccessOrClause } from "@/lib/warranty-access";
+import { escapeHtml } from "@/lib/html-escape";
 
 export async function GET(
   _request: NextRequest,
@@ -254,6 +255,14 @@ function buildHtml(
   verifyUrl: string,
   locale: string
 ): string {
+  const productName = escapeHtml(warranty.product_name);
+  const referenceNumber = escapeHtml(warranty.reference_number);
+  const serialNumber = escapeHtml(warranty.serial_number || "-");
+  const category = escapeHtml(warranty.category || "-");
+  const startDate = escapeHtml(warranty.start_date);
+  const endDate = escapeHtml(warranty.end_date);
+  const safeVerifyUrl = escapeHtml(verifyUrl);
+
   return `<!DOCTYPE html>
 <html dir="${isAr ? "rtl" : "ltr"}" lang="${locale}">
 <head><meta charset="UTF-8"><title>${isAr ? "شهادة ضمان" : "Warranty Certificate"}</title>
@@ -283,16 +292,16 @@ function buildHtml(
     <div class="badge ${isActive ? "active" : "expired"}">${isActive ? (isAr ? "نشط" : "Active") : (isAr ? "منتهي" : "Expired")}</div>
   </div>
   <div class="details">
-    <div class="field"><label>${isAr ? "المنتج" : "Product"}</label><p>${warranty.product_name}</p></div>
-    <div class="field"><label>${isAr ? "الرقم المرجعي" : "Reference"}</label><p>${warranty.reference_number}</p></div>
-    <div class="field"><label>${isAr ? "الرقم التسلسلي" : "Serial Number"}</label><p>${warranty.serial_number || "-"}</p></div>
-    <div class="field"><label>${isAr ? "الفئة" : "Category"}</label><p>${warranty.category || "-"}</p></div>
-    <div class="field"><label>${isAr ? "تاريخ البداية" : "Start Date"}</label><p>${warranty.start_date}</p></div>
-    <div class="field"><label>${isAr ? "تاريخ الانتهاء" : "End Date"}</label><p>${warranty.end_date}</p></div>
+    <div class="field"><label>${isAr ? "المنتج" : "Product"}</label><p>${productName}</p></div>
+    <div class="field"><label>${isAr ? "الرقم المرجعي" : "Reference"}</label><p>${referenceNumber}</p></div>
+    <div class="field"><label>${isAr ? "الرقم التسلسلي" : "Serial Number"}</label><p>${serialNumber}</p></div>
+    <div class="field"><label>${isAr ? "الفئة" : "Category"}</label><p>${category}</p></div>
+    <div class="field"><label>${isAr ? "تاريخ البداية" : "Start Date"}</label><p>${startDate}</p></div>
+    <div class="field"><label>${isAr ? "تاريخ الانتهاء" : "End Date"}</label><p>${endDate}</p></div>
   </div>
   <div class="qr">
     <img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(verifyUrl)}" alt="QR Code" />
-    <div class="ref">${isAr ? "امسح للتحقق" : "Scan to verify"} | ${verifyUrl}</div>
+    <div class="ref">${isAr ? "امسح للتحقق" : "Scan to verify"} | ${safeVerifyUrl}</div>
   </div>
   <div class="footer">${isAr ? "صادر عن منصة ضمانتي" : "Issued by Warrantee Platform"} | warrantee.io</div>
 </div>

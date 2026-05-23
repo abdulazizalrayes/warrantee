@@ -1,7 +1,7 @@
 // @ts-nocheck
 'use client';
 
-import { useState, useEffect } from 'react';
+import { Fragment, useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
 import Link from 'next/link';
@@ -265,6 +265,10 @@ export default function AdminPage() {
   const [revenueEvents, setRevenueEvents] = useState<any[]>([]);
   const [subscriptions, setSubscriptions] = useState<any[]>([]);
   const [systemConfig, setSystemConfig] = useState<any[]>([]);
+  const [extensionPolicies, setExtensionPolicies] = useState<any[]>([]);
+  const [extensionPoliciesLoading, setExtensionPoliciesLoading] = useState(false);
+  const [extensionPoliciesMsg, setExtensionPoliciesMsg] = useState('');
+  const [extensionPoliciesError, setExtensionPoliciesError] = useState('');
 
   // Team state
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
@@ -284,6 +288,7 @@ export default function AdminPage() {
   const [warrantyFilter, setWarrantyFilter] = useState('all');
   const [claimFilter, setClaimFilter] = useState('all');
   const [ticketFilter, setTicketFilter] = useState('all');
+  const [expandedUserId, setExpandedUserId] = useState('');
 
   const isSuperAdmin = currentUserRole === 'super_admin';
 
@@ -324,7 +329,11 @@ export default function AdminPage() {
       supabase.from('activity_log').select('*').order('created_at', { ascending: false }).limit(30),
       supabase.from('support_tickets').select('*').order('created_at', { ascending: false }).limit(200),
       supabase.from('fraud_signals').select('*').order('created_at', { ascending: false }).limit(100),
-      supabase.from('email_ingestion').select('*').order('created_at', { ascending: false }).limit(100),
+      supabase
+        .from('ingestion_jobs')
+        .select('id, from_email, subject, status, trust_score, trust_level, attachment_count, created_at, processed_at')
+        .order('created_at', { ascending: false })
+        .limit(200),
       supabase.from('revenue_events').select('*').order('created_at', { ascending: false }).limit(200),
       supabase.from('subscriptions').select('*').order('created_at', { ascending: false }).limit(100),
     ]);
@@ -371,7 +380,7 @@ export default function AdminPage() {
       fraudSignals: fr.filter(x => x.status === 'open' || x.status === 'investigating').length,
       totalRevenue: rv.reduce((s, r) => s + (r.amount || 0), 0),
       activeSubscriptions: sb.filter(x => x.status === 'active' || x.status === 'trialing').length,
-      ingestionSuccess: ig.filter(x => x.status === 'completed' || x.status === 'processed').length,
+      ingestionSuccess: ig.filter(x => ['auto_confirmed', 'confirmed', 'ocr_complete'].includes(x.status)).length,
       ingestionTotal: ig.length,
       recentActivity: actR.data || [],
       usersByMonth, warrantiesByCategory, claimsByStatus, revenueByMonth,
@@ -399,10 +408,30 @@ export default function AdminPage() {
     setSystemConfig(data || []);
   };
 
+  const loadExtensionPolicies = async () => {
+    setExtensionPoliciesLoading(true);
+    setExtensionPoliciesError('');
+    try {
+      const response = await fetch('/api/admin/extension-policies', { cache: 'no-store' });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(payload.error || 'Failed to load extension policies');
+      }
+      setExtensionPolicies(payload.data || []);
+    } catch (error: any) {
+      setExtensionPoliciesError(error?.message || 'Failed to load extension policies');
+    } finally {
+      setExtensionPoliciesLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (activeTab === 'team' && isSuperAdmin) loadTeam();
     if (activeTab === 'audit' && isSuperAdmin) loadAudit();
-    if (activeTab === 'config' && isSuperAdmin) loadConfig();
+    if (activeTab === 'config' && isSuperAdmin) {
+      loadConfig();
+      loadExtensionPolicies();
+    }
   }, [activeTab]);
 
   const logAudit = async (action: string, entityType: string, entityId: string, details: any, prev?: any, next?: any, risk?: string) => {
@@ -445,6 +474,102 @@ export default function AdminPage() {
   const fmtDate = (d: string) => d ? new Date(d).toLocaleDateString(locale === 'ar' ? 'ar-SA' : 'en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : EM_DASH;
   const fmtDateTime = (d: string) => d ? new Date(d).toLocaleString(locale === 'ar' ? 'ar-SA' : 'en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : EM_DASH;
   const fmtMoney = (n: number) => `$${(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const userMetrics = (userId: string) => {
+    const userWarranties = warranties.filter((w: any) =>
+      [w.user_id, w.buyer_id, w.recipient_user_id, w.created_by].includes(userId)
+    );
+    const userClaims = claims.filter((c: any) => [c.user_id, c.created_by, c.claimant_id].includes(userId));
+    const userTickets = tickets.filter((ticket: any) => ticket.user_id === userId);
+    const userIngestion = ingestions.filter((job: any) => job.matched_user_id === userId || job.buyer_id === userId);
+    const latestActivity = [
+      ...userWarranties.map((w: any) => w.created_at),
+      ...userClaims.map((c: any) => c.created_at || c.filed_at),
+      ...userTickets.map((ticket: any) => ticket.created_at),
+      ...userIngestion.map((job: any) => job.created_at),
+    ].filter(Boolean).sort().pop();
+    return {
+      warranties: userWarranties.length,
+      claims: userClaims.length,
+      tickets: userTickets.length,
+      ingestion: userIngestion.length,
+      latestActivity,
+      warrantyItems: userWarranties.slice(0, 5),
+      claimItems: userClaims.slice(0, 5),
+      ticketItems: userTickets.slice(0, 5),
+      ingestionItems: userIngestion.slice(0, 5),
+    };
+  };
+  const supportSla = (ticket: any) => {
+    const priority = String(ticket.priority || 'normal').toLowerCase();
+    const hours = priority === 'urgent' ? 4 : priority === 'high' ? 8 : priority === 'medium' ? 24 : priority === 'low' ? 72 : 48;
+    const openedAt = ticket.created_at ? new Date(ticket.created_at) : null;
+    const dueAt = openedAt ? new Date(openedAt.getTime() + hours * 60 * 60 * 1000) : null;
+    const closed = ['closed', 'resolved'].includes(String(ticket.status || '').toLowerCase());
+    const breached = Boolean(dueAt && !closed && Date.now() > dueAt.getTime());
+    return { hours, dueAt, breached, closed };
+  };
+  const fraudEvidenceSummary = (signal: any) => {
+    const evidence = signal.evidence || signal.metadata || signal.details || {};
+    if (typeof evidence === 'string') return evidence || EM_DASH;
+    const pairs = Object.entries(evidence).filter(([, value]) => value !== null && value !== undefined && value !== '').slice(0, 3);
+    return pairs.length ? pairs.map(([key, value]) => `${key}: ${String(value).slice(0, 42)}`).join(' | ') : EM_DASH;
+  };
+  const userIdentityLabel = (userId: string) => {
+    const user = users.find((item: any) => item.id === userId);
+    return user?.email || user?.full_name || userId?.slice?.(0, 8) || EM_DASH;
+  };
+  const warrantyOwnerLabel = (warranty: any) => {
+    const ownerId = warranty.user_id || warranty.buyer_id || warranty.recipient_user_id || warranty.created_by;
+    const owner = users.find((user: any) => user.id === ownerId);
+    return owner?.email || owner?.full_name || ownerId?.slice?.(0, 8) || EM_DASH;
+  };
+  const updateExtensionPolicyField = (warrantyId: string, field: string, value: string) => {
+    setExtensionPolicies((current: any[]) =>
+      current.map((entry) =>
+        entry.warranty?.id === warrantyId
+          ? { ...entry, policy: { ...entry.policy, [field]: value } }
+          : entry
+      )
+    );
+  };
+
+  const saveExtensionPolicy = async (warrantyId: string) => {
+    const entry = extensionPolicies.find((item: any) => item.warranty?.id === warrantyId);
+    if (!entry) return;
+
+    setExtensionPoliciesMsg('');
+    setExtensionPoliciesError('');
+
+    try {
+      const response = await fetch('/api/admin/extension-policies', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          warrantyId,
+          source: entry.policy?.source || 'none',
+          status: entry.policy?.status || 'not_configured',
+          providerLabel: entry.policy?.providerLabel || null,
+          providerEmail: entry.policy?.providerEmail || null,
+          providerReference: entry.policy?.providerReference || null,
+          pricingMode: entry.policy?.pricingMode || 'quote_required',
+          price: entry.policy?.price || null,
+          currency: entry.policy?.currency || null,
+          coverageTerms: entry.policy?.coverageTerms || null,
+          underwritingStatus: entry.policy?.underwritingStatus || 'not_started',
+          slaHours: entry.policy?.slaHours || null,
+          notes: entry.policy?.notes || null,
+        }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(payload.error || 'Failed to save extension policy');
+      }
+      setExtensionPoliciesMsg(locale === 'ar' ? 'تم حفظ سياسة التمديد.' : 'Extension policy saved.');
+      await loadExtensionPolicies();
+    } catch (error: any) {
+      setExtensionPoliciesError(error?.message || 'Failed to save extension policy');
+    }
+  };
 
   const roleLabel = (r: string) => ({ super_admin: text.superAdmin, admin: text.admin, support: text.support, user: text.user }[r] || r);
   const roleBadge = (r: string) => ({
@@ -748,21 +873,54 @@ export default function AdminPage() {
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs">
                     <thead className="bg-[#12122a] border-b border-[#1a1a3a]"><tr>
-                      {[text.name, text.email, text.accountType, text.role, text.phone, text.joined].map(h => (
+                      {[text.name, text.email, 'Country', text.accountType, text.role, 'Warranties', 'Claims', 'Support', 'Last Active', text.joined].map(h => (
                         <th key={h} className="px-4 py-3 text-start font-medium text-gray-500">{h}</th>
                       ))}
                     </tr></thead>
                     <tbody className="divide-y divide-[#1a1a3a]">
-                      {applySearch(users.filter(u => userFilter === 'all' || u.account_type === userFilter), ['full_name', 'email', 'phone']).slice(0, 100).map(u => (
-                        <tr key={u.id} className="hover:bg-[#12122a]/50 transition">
-                          <td className="px-4 py-3 font-medium text-gray-200">{u.full_name || EM_DASH}</td>
-                          <td className="px-4 py-3 text-gray-400" dir="ltr">{u.email || EM_DASH}</td>
-                          <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded-full text-[10px] ${u.account_type === 'business' ? 'bg-purple-500/15 text-purple-400' : 'bg-blue-500/15 text-blue-400'}`}>{u.account_type || 'personal'}</span></td>
-                          <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded-full text-[10px] border ${roleBadge(u.role || 'user')}`}>{roleLabel(u.role || 'user')}</span></td>
-                          <td className="px-4 py-3 text-gray-500 font-mono" dir="ltr">{u.phone || EM_DASH}</td>
-                          <td className="px-4 py-3 text-gray-500">{fmtDate(u.created_at)}</td>
-                        </tr>
-                      ))}
+                      {applySearch(users.filter(u => userFilter === 'all' || u.account_type === userFilter), ['full_name', 'email', 'phone']).slice(0, 100).map(u => {
+                        const metrics = userMetrics(u.id);
+                        return (
+                          <Fragment key={u.id}>
+                            <tr onClick={() => setExpandedUserId(expandedUserId === u.id ? '' : u.id)} className="hover:bg-[#12122a]/50 transition cursor-pointer">
+                              <td className="px-4 py-3 font-medium text-gray-200">{u.full_name || EM_DASH}</td>
+                              <td className="px-4 py-3 text-gray-400" dir="ltr">{u.email || EM_DASH}</td>
+                              <td className="px-4 py-3 text-gray-500">{u.country || u.locale || EM_DASH}</td>
+                              <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded-full text-[10px] ${u.account_type === 'business' ? 'bg-purple-500/15 text-purple-400' : 'bg-blue-500/15 text-blue-400'}`}>{u.account_type || 'personal'}</span></td>
+                              <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded-full text-[10px] border ${roleBadge(u.role || 'user')}`}>{roleLabel(u.role || 'user')}</span></td>
+                              <td className="px-4 py-3 text-gray-300 font-mono">{metrics.warranties}</td>
+                              <td className="px-4 py-3 text-gray-300 font-mono">{metrics.claims}</td>
+                              <td className="px-4 py-3 text-gray-300 font-mono">{metrics.tickets}</td>
+                              <td className="px-4 py-3 text-gray-500">{metrics.latestActivity ? fmtDate(metrics.latestActivity) : EM_DASH}</td>
+                              <td className="px-4 py-3 text-gray-500">{fmtDate(u.created_at)}</td>
+                            </tr>
+                            {expandedUserId === u.id && (
+                              <tr>
+                                <td colSpan={10} className="px-4 py-4 bg-[#090914]">
+                                  <div className="grid grid-cols-1 lg:grid-cols-4 gap-3">
+                                    <div className="rounded-xl border border-[#1a1a3a] bg-[#0e0e20] p-3">
+                                      <p className="text-[10px] uppercase tracking-[0.2em] text-gray-500 mb-2">Warranty portfolio</p>
+                                      {metrics.warrantyItems.length ? metrics.warrantyItems.map((item: any) => <p key={item.id} className="text-xs text-gray-300 truncate">{item.product_name || item.reference_number || item.id}</p>) : <p className="text-xs text-gray-600">{text.noData}</p>}
+                                    </div>
+                                    <div className="rounded-xl border border-[#1a1a3a] bg-[#0e0e20] p-3">
+                                      <p className="text-[10px] uppercase tracking-[0.2em] text-gray-500 mb-2">Claims</p>
+                                      {metrics.claimItems.length ? metrics.claimItems.map((item: any) => <p key={item.id} className="text-xs text-gray-300 truncate">{item.claim_number || item.title || item.id}</p>) : <p className="text-xs text-gray-600">{text.noData}</p>}
+                                    </div>
+                                    <div className="rounded-xl border border-[#1a1a3a] bg-[#0e0e20] p-3">
+                                      <p className="text-[10px] uppercase tracking-[0.2em] text-gray-500 mb-2">Support</p>
+                                      {metrics.ticketItems.length ? metrics.ticketItems.map((item: any) => <p key={item.id} className="text-xs text-gray-300 truncate">{item.ticket_number || item.subject || item.id}</p>) : <p className="text-xs text-gray-600">{text.noData}</p>}
+                                    </div>
+                                    <div className="rounded-xl border border-[#1a1a3a] bg-[#0e0e20] p-3">
+                                      <p className="text-[10px] uppercase tracking-[0.2em] text-gray-500 mb-2">Ingestion</p>
+                                      {metrics.ingestionItems.length ? metrics.ingestionItems.map((item: any) => <p key={item.id} className="text-xs text-gray-300 truncate">{item.subject || item.from_email || item.id}</p>) : <p className="text-xs text-gray-600">{text.noData}</p>}
+                                    </div>
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+                          </Fragment>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -787,7 +945,7 @@ export default function AdminPage() {
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs">
                     <thead className="bg-[#12122a] border-b border-[#1a1a3a]"><tr>
-                      {[text.product, text.category, text.sellerName, text.status, text.startDate, text.endDate, text.source, text.legalHold].map(h => (
+                      {[text.product, 'Owner', text.category, text.sellerName, text.status, text.startDate, text.endDate, text.source, text.legalHold].map(h => (
                         <th key={h} className="px-4 py-3 text-start font-medium text-gray-500">{h}</th>
                       ))}
                     </tr></thead>
@@ -799,6 +957,7 @@ export default function AdminPage() {
                       }), ['product_name', 'seller_name', 'category', 'reference_number']).slice(0, 100).map(w => (
                         <tr key={w.id} className="hover:bg-[#12122a]/50 transition">
                           <td className="px-4 py-3 font-medium text-gray-200">{w.product_name || EM_DASH}</td>
+                          <td className="px-4 py-3 text-gray-400" dir="ltr">{warrantyOwnerLabel(w)}</td>
                           <td className="px-4 py-3 text-gray-400">{w.category || EM_DASH}</td>
                           <td className="px-4 py-3 text-gray-400">{w.seller_name || EM_DASH}</td>
                           <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded-full text-[10px] ${statusBadge(w.status)}`}>{w.status}</span></td>
@@ -902,21 +1061,32 @@ export default function AdminPage() {
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs">
                     <thead className="bg-[#12122a] border-b border-[#1a1a3a]"><tr>
-                      {[text.ticketNumber, text.subject, text.category, text.priority, text.status, text.createdAt].map(h => (
+                      {[text.ticketNumber, text.subject, 'Requester', text.category, text.priority, 'SLA', text.status, text.assignee, text.createdAt].map(h => (
                         <th key={h} className="px-4 py-3 text-start font-medium text-gray-500">{h}</th>
                       ))}
                     </tr></thead>
                     <tbody className="divide-y divide-[#1a1a3a]">
-                      {applySearch(tickets.filter(t => ticketFilter === 'all' || t.status === ticketFilter), ['ticket_number', 'subject', 'category']).slice(0, 100).map(tk => (
-                        <tr key={tk.id} className="hover:bg-[#12122a]/50 transition">
-                          <td className="px-4 py-3 font-mono text-gray-300">{tk.ticket_number || tk.id?.substring(0, 8)}</td>
-                          <td className="px-4 py-3 text-gray-200 max-w-[250px] truncate">{tk.subject || EM_DASH}</td>
-                          <td className="px-4 py-3 text-gray-400">{tk.category || EM_DASH}</td>
-                          <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded-full text-[10px] ${tk.priority === 'high' || tk.priority === 'urgent' ? 'bg-red-500/15 text-red-400' : tk.priority === 'medium' ? 'bg-yellow-500/15 text-yellow-400' : 'bg-gray-500/15 text-gray-400'}`}>{tk.priority || EM_DASH}</span></td>
-                          <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded-full text-[10px] ${statusBadge(tk.status)}`}>{tk.status}</span></td>
-                          <td className="px-4 py-3 text-gray-500">{fmtDate(tk.created_at)}</td>
-                        </tr>
-                      ))}
+                      {applySearch(tickets.filter(t => ticketFilter === 'all' || t.status === ticketFilter), ['ticket_number', 'subject', 'category']).slice(0, 100).map(tk => {
+                        const sla = supportSla(tk);
+                        return (
+                          <tr key={tk.id} className="hover:bg-[#12122a]/50 transition">
+                            <td className="px-4 py-3 font-mono text-gray-300">{tk.ticket_number || tk.id?.substring(0, 8)}</td>
+                            <td className="px-4 py-3 text-gray-200 max-w-[250px] truncate">{tk.subject || EM_DASH}</td>
+                            <td className="px-4 py-3 text-gray-400" dir="ltr">{tk.requester_email || tk.email || tk.metadata?.requester_email || userIdentityLabel(tk.user_id)}</td>
+                            <td className="px-4 py-3 text-gray-400">{tk.category || EM_DASH}</td>
+                            <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded-full text-[10px] ${tk.priority === 'high' || tk.priority === 'urgent' ? 'bg-red-500/15 text-red-400' : tk.priority === 'medium' ? 'bg-yellow-500/15 text-yellow-400' : 'bg-gray-500/15 text-gray-400'}`}>{tk.priority || EM_DASH}</span></td>
+                            <td className="px-4 py-3">
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] ${sla.breached ? 'bg-red-500/15 text-red-400' : sla.closed ? 'bg-emerald-500/15 text-emerald-400' : 'bg-blue-500/15 text-blue-400'}`}>
+                                {sla.breached ? 'Breached' : sla.closed ? 'Closed' : `${sla.hours}h`}
+                              </span>
+                              <div className="text-[10px] text-gray-600 mt-1">{sla.dueAt ? fmtDateTime(sla.dueAt.toISOString()) : EM_DASH}</div>
+                            </td>
+                            <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded-full text-[10px] ${statusBadge(tk.status)}`}>{tk.status}</span></td>
+                            <td className="px-4 py-3 text-gray-400">{userIdentityLabel(tk.assignee_id) || tk.assignee || EM_DASH}</td>
+                            <td className="px-4 py-3 text-gray-500">{fmtDate(tk.created_at)}</td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -932,7 +1102,7 @@ export default function AdminPage() {
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs">
                     <thead className="bg-[#12122a] border-b border-[#1a1a3a]"><tr>
-                      {[text.signalType, text.severity, text.entity, text.description, text.status, text.date].map(h => (
+                      {[text.signalType, text.severity, text.entity, text.description, text.evidence, 'Owner', text.status, text.date].map(h => (
                         <th key={h} className="px-4 py-3 text-start font-medium text-gray-500">{h}</th>
                       ))}
                     </tr></thead>
@@ -943,11 +1113,13 @@ export default function AdminPage() {
                           <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded-full text-[10px] ${f.severity === 'critical' || f.severity === 'high' ? 'bg-red-500/15 text-red-400' : f.severity === 'medium' ? 'bg-yellow-500/15 text-yellow-400' : 'bg-gray-500/15 text-gray-400'}`}>{f.severity || EM_DASH}</span></td>
                           <td className="px-4 py-3 text-gray-400">{f.entity_type}: {f.entity_id?.substring(0, 8)}</td>
                           <td className="px-4 py-3 text-gray-300 max-w-[300px] truncate">{f.description || EM_DASH}</td>
+                          <td className="px-4 py-3 text-gray-500 max-w-[300px] truncate">{fraudEvidenceSummary(f)}</td>
+                          <td className="px-4 py-3 text-gray-400" dir="ltr">{userIdentityLabel(f.user_id || f.owner_id || f.actor_id)}</td>
                           <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded-full text-[10px] ${statusBadge(f.status)}`}>{f.status}</span></td>
                           <td className="px-4 py-3 text-gray-500">{fmtDate(f.created_at)}</td>
                         </tr>
                       ))}
-                      {fraudSignals.length === 0 && <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-600">{text.noData}</td></tr>}
+                      {fraudSignals.length === 0 && <tr><td colSpan={8} className="px-4 py-8 text-center text-gray-600">{text.noData}</td></tr>}
                     </tbody>
                   </table>
                 </div>
@@ -987,7 +1159,10 @@ export default function AdminPage() {
                           <td className="px-4 py-3 text-gray-300" dir="ltr">{ig.from_email || EM_DASH}</td>
                           <td className="px-4 py-3 text-gray-200 max-w-[250px] truncate">{ig.subject || EM_DASH}</td>
                           <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded-full text-[10px] ${statusBadge(ig.status)}`}>{ig.status}</span></td>
-                          <td className="px-4 py-3 text-gray-400">{ig.confidence_score != null ? `${(ig.confidence_score * 100).toFixed(0)}%` : EM_DASH}</td>
+                          <td className="px-4 py-3 text-gray-400">
+                            {ig.trust_score != null ? `${(ig.trust_score * 100).toFixed(0)}%` : EM_DASH}
+                            {ig.trust_level ? <span className="ml-2 text-gray-600">{ig.trust_level}</span> : null}
+                          </td>
                           <td className="px-4 py-3 text-gray-500">{fmtDate(ig.created_at)}</td>
                         </tr>
                       ))}
@@ -1038,6 +1213,172 @@ export default function AdminPage() {
           {activeTab === 'config' && isSuperAdmin && (
             <div>
               <h2 className="text-lg font-bold mb-4">{text.configTitle}</h2>
+              <div className="bg-[#0e0e20] rounded-xl border border-[#1a1a3a] p-4 mb-4">
+                <div className="flex items-start justify-between gap-4 mb-4">
+                  <div>
+                    <h3 className="text-sm font-semibold text-white">
+                      {locale === 'ar' ? 'سياسات تمديد الضمان' : 'Extension Policy Controls'}
+                    </h3>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {locale === 'ar'
+                        ? 'اعتمد لكل منتج ما إذا كان التمديد يتم عبر البائع أو Warrantee أو طرف ثالث، وتابع عدد العملاء الذين أبدوا اهتمامهم.'
+                        : 'Approve per product whether extensions should come from the seller, Warrantee, or a third party, and track wishlist demand.'}
+                    </p>
+                  </div>
+                  <button onClick={loadExtensionPolicies} className="text-xs text-[#D4AF37] hover:underline">
+                    {text.refresh}
+                  </button>
+                </div>
+                {extensionPoliciesMsg && <p className="mb-3 text-xs text-emerald-400">{extensionPoliciesMsg}</p>}
+                {extensionPoliciesError && <p className="mb-3 text-xs text-red-400">{extensionPoliciesError}</p>}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead className="bg-[#12122a] border-b border-[#1a1a3a]">
+                      <tr>
+                        {[
+                          locale === 'ar' ? 'المنتج' : 'Product',
+                          locale === 'ar' ? 'البائع' : 'Seller',
+                          locale === 'ar' ? 'المصدر' : 'Source',
+                          locale === 'ar' ? 'الحالة' : 'Status',
+                          locale === 'ar' ? 'المزود / ملاحظة' : 'Provider / Notes',
+                          locale === 'ar' ? 'الاهتمام' : 'Wishlist',
+                          text.actions,
+                        ].map((h) => (
+                          <th key={h} className="px-4 py-3 text-start font-medium text-gray-500">{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#1a1a3a]">
+                      {extensionPoliciesLoading ? (
+                        <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-500">{locale === 'ar' ? 'جارٍ التحميل...' : 'Loading...'}</td></tr>
+                      ) : extensionPolicies.map((entry: any) => (
+                        <tr key={entry.warranty?.id} className="hover:bg-[#12122a]/50 transition">
+                          <td className="px-4 py-3">
+                            <div className="font-medium text-gray-200">{entry.warranty?.product_name || EM_DASH}</div>
+                            <div className="text-[10px] text-gray-500 font-mono">{entry.warranty?.id?.slice(0, 8)}</div>
+                          </td>
+                          <td className="px-4 py-3 text-gray-400">
+                            {entry.warranty?.seller_name || entry.warranty?.seller_email || EM_DASH}
+                          </td>
+                          <td className="px-4 py-3">
+                            <select
+                              value={entry.policy?.source || 'none'}
+                              onChange={e => updateExtensionPolicyField(entry.warranty.id, 'source', e.target.value)}
+                              className="px-2 py-1.5 bg-[#12122a] border border-[#2a2a4a] rounded-lg text-xs text-gray-200 outline-none"
+                            >
+                              <option value="none">{locale === 'ar' ? 'لا يوجد' : 'None'}</option>
+                              <option value="seller">{locale === 'ar' ? 'البائع' : 'Seller'}</option>
+                              <option value="platform">{locale === 'ar' ? 'Warrantee' : 'Warrantee'}</option>
+                              <option value="third_party">{locale === 'ar' ? 'طرف ثالث' : 'Third Party'}</option>
+                              <option value="seller_then_platform">{locale === 'ar' ? 'البائع ثم Warrantee' : 'Seller then Warrantee'}</option>
+                            </select>
+                          </td>
+                          <td className="px-4 py-3">
+                            <select
+                              value={entry.policy?.status || 'not_configured'}
+                              onChange={e => updateExtensionPolicyField(entry.warranty.id, 'status', e.target.value)}
+                              className="px-2 py-1.5 bg-[#12122a] border border-[#2a2a4a] rounded-lg text-xs text-gray-200 outline-none"
+                            >
+                              <option value="not_configured">{locale === 'ar' ? 'غير مهيأ' : 'Not Configured'}</option>
+                              <option value="pending">{locale === 'ar' ? 'قيد المراجعة' : 'Pending'}</option>
+                              <option value="approved">{locale === 'ar' ? 'معتمد' : 'Approved'}</option>
+                              <option value="rejected">{locale === 'ar' ? 'مرفوض' : 'Rejected'}</option>
+                            </select>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="grid grid-cols-1 xl:grid-cols-2 gap-2 min-w-[360px]">
+                              <input
+                                value={entry.policy?.providerLabel || ''}
+                                onChange={e => updateExtensionPolicyField(entry.warranty.id, 'providerLabel', e.target.value)}
+                                placeholder={locale === 'ar' ? 'اسم المزود' : 'Provider label'}
+                                className="px-2 py-1.5 bg-[#12122a] border border-[#2a2a4a] rounded-lg text-xs text-gray-200 outline-none"
+                              />
+                              <input
+                                value={entry.policy?.providerEmail || ''}
+                                onChange={e => updateExtensionPolicyField(entry.warranty.id, 'providerEmail', e.target.value)}
+                                placeholder={locale === 'ar' ? 'بريد المزود' : 'Provider email'}
+                                className="px-2 py-1.5 bg-[#12122a] border border-[#2a2a4a] rounded-lg text-xs text-gray-200 outline-none"
+                                dir="ltr"
+                              />
+                              <select
+                                value={entry.policy?.pricingMode || 'quote_required'}
+                                onChange={e => updateExtensionPolicyField(entry.warranty.id, 'pricingMode', e.target.value)}
+                                className="px-2 py-1.5 bg-[#12122a] border border-[#2a2a4a] rounded-lg text-xs text-gray-200 outline-none"
+                              >
+                                <option value="quote_required">Quote required</option>
+                                <option value="fixed_price">Fixed price</option>
+                                <option value="admin_review">Admin review</option>
+                              </select>
+                              <select
+                                value={entry.policy?.underwritingStatus || 'not_started'}
+                                onChange={e => updateExtensionPolicyField(entry.warranty.id, 'underwritingStatus', e.target.value)}
+                                className="px-2 py-1.5 bg-[#12122a] border border-[#2a2a4a] rounded-lg text-xs text-gray-200 outline-none"
+                              >
+                                <option value="not_started">Underwriting not started</option>
+                                <option value="requires_review">Requires review</option>
+                                <option value="approved">Underwriting approved</option>
+                                <option value="rejected">Underwriting rejected</option>
+                              </select>
+                              <input
+                                type="number"
+                                min="0"
+                                value={entry.policy?.price || ''}
+                                onChange={e => updateExtensionPolicyField(entry.warranty.id, 'price', e.target.value)}
+                                placeholder={locale === 'ar' ? 'السعر' : 'Approved price'}
+                                className="px-2 py-1.5 bg-[#12122a] border border-[#2a2a4a] rounded-lg text-xs text-gray-200 outline-none"
+                              />
+                              <input
+                                value={entry.policy?.currency || ''}
+                                onChange={e => updateExtensionPolicyField(entry.warranty.id, 'currency', e.target.value)}
+                                placeholder={locale === 'ar' ? 'العملة' : 'Currency'}
+                                className="px-2 py-1.5 bg-[#12122a] border border-[#2a2a4a] rounded-lg text-xs text-gray-200 outline-none"
+                              />
+                              <input
+                                type="number"
+                                min="1"
+                                value={entry.policy?.slaHours || ''}
+                                onChange={e => updateExtensionPolicyField(entry.warranty.id, 'slaHours', e.target.value)}
+                                placeholder={locale === 'ar' ? 'SLA بالساعات' : 'SLA hours'}
+                                className="px-2 py-1.5 bg-[#12122a] border border-[#2a2a4a] rounded-lg text-xs text-gray-200 outline-none"
+                              />
+                              <input
+                                value={entry.policy?.providerReference || ''}
+                                onChange={e => updateExtensionPolicyField(entry.warranty.id, 'providerReference', e.target.value)}
+                                placeholder={locale === 'ar' ? 'مرجع المزود' : 'Provider reference'}
+                                className="px-2 py-1.5 bg-[#12122a] border border-[#2a2a4a] rounded-lg text-xs text-gray-200 outline-none"
+                              />
+                              <input
+                                value={entry.policy?.notes || ''}
+                                onChange={e => updateExtensionPolicyField(entry.warranty.id, 'notes', e.target.value)}
+                                placeholder={locale === 'ar' ? 'ملاحظات داخلية' : 'Internal notes'}
+                                className="xl:col-span-2 px-2 py-1.5 bg-[#12122a] border border-[#2a2a4a] rounded-lg text-xs text-gray-200 outline-none"
+                              />
+                              <input
+                                value={entry.policy?.coverageTerms || ''}
+                                onChange={e => updateExtensionPolicyField(entry.warranty.id, 'coverageTerms', e.target.value)}
+                                placeholder={locale === 'ar' ? 'شروط التغطية المعتمدة' : 'Approved coverage terms'}
+                                className="xl:col-span-2 px-2 py-1.5 bg-[#12122a] border border-[#2a2a4a] rounded-lg text-xs text-gray-200 outline-none"
+                              />
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-[#D4AF37] font-semibold">
+                            {entry.wishlistCount || 0}
+                          </td>
+                          <td className="px-4 py-3">
+                            <button
+                              onClick={() => saveExtensionPolicy(entry.warranty.id)}
+                              className="px-3 py-1.5 bg-[#D4AF37] text-[#1A1A2E] rounded-lg text-xs font-semibold hover:bg-yellow-500 transition"
+                            >
+                              {text.save}
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                      {!extensionPoliciesLoading && extensionPolicies.length === 0 && <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-600">{text.noData}</td></tr>}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
               <div className="bg-[#0e0e20] rounded-xl border border-[#1a1a3a] overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs">

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import webpush from "web-push";
+import { requireInternalBearer } from "@/lib/internal-auth";
 
 function getSupabaseAdmin() {
   return createClient(
@@ -32,6 +33,9 @@ interface PushPayload {
 
 export async function POST(req: NextRequest) {
   try {
+    const authError = requireInternalBearer(req, process.env.INTERNAL_API_SECRET);
+    if (authError) return authError;
+
     ensureVapid();
 
     if (!vapidConfigured) {
@@ -39,11 +43,6 @@ export async function POST(req: NextRequest) {
         { error: "Push notifications not configured" },
         { status: 503 }
       );
-    }
-
-    const authHeader = req.headers.get("authorization");
-    if (authHeader !== `Bearer ${process.env.INTERNAL_API_SECRET}`) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const payload: PushPayload = await req.json();

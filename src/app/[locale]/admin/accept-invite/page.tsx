@@ -1,12 +1,13 @@
 'use client';
 
-// Warrantee â Admin Invitation Acceptance Page
+// Warrantee - Admin Invitation Acceptance Page
 // Allows invited users to accept admin role
 
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
+import { ProtectedRouteNotice } from '@/components/dashboard/ProtectedRouteNotice';
 
 function AdminAcceptInviteContent() {
   const searchParams = useSearchParams();
@@ -25,7 +26,7 @@ function AdminAcceptInviteContent() {
 
   useEffect(() => {
     if (!token) {
-      setError(isRtl ? 'Ø±Ø§Ø¨Ø· Ø¯Ø¹ÙØ© ØºÙØ± ØµØ§ÙØ­' : 'Invalid invitation link');
+      setError(isRtl ? 'رابط الدعوة غير صالح' : 'Invalid invitation link');
       setLoading(false);
       return;
     }
@@ -38,11 +39,11 @@ function AdminAcceptInviteContent() {
         .single();
 
       if (fetchError || !data) {
-        setError(isRtl ? 'Ø§ÙØ¯Ø¹ÙØ© ØºÙØ± ÙÙØ¬ÙØ¯Ø©' : 'Invitation not found');
+        setError(isRtl ? 'الدعوة غير موجودة' : 'Invitation not found');
       } else if (data.status === 'accepted') {
-        setError(isRtl ? 'ØªÙ ÙØ¨ÙÙ Ø§ÙØ¯Ø¹ÙØ© ÙØ³Ø¨ÙØ§Ù' : 'Invitation already accepted');
+        setError(isRtl ? 'تم قبول الدعوة مسبقا' : 'Invitation already accepted');
       } else if (data.status === 'expired' || new Date(data.expires_at) < new Date()) {
-        setError(isRtl ? 'Ø§ÙØªÙØª ØµÙØ§Ø­ÙØ© Ø§ÙØ¯Ø¹ÙØ©' : 'Invitation has expired');
+        setError(isRtl ? 'انتهت صلاحية الدعوة' : 'Invitation has expired');
       } else {
         setInvitation(data);
       }
@@ -82,16 +83,16 @@ function AdminAcceptInviteContent() {
   };
 
   const roleLabels: Record<string, { en: string; ar: string }> = {
-    admin: { en: 'Administrator', ar: 'ÙØ¯ÙØ±' },
-    support: { en: 'Support Agent', ar: 'ÙÙÙÙ Ø¯Ø¹Ù' },
-    super_admin: { en: 'Super Administrator', ar: 'ÙØ¯ÙØ± Ø£Ø¹ÙÙ' },
+    admin: { en: 'Administrator', ar: 'مدير' },
+    support: { en: 'Support Agent', ar: 'وكيل دعم' },
+    super_admin: { en: 'Super Administrator', ar: 'مدير أعلى' },
   };
 
   if (authLoading || loading) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#F8FAFC' }}>
         <div style={{ textAlign: 'center', color: '#64748B' }}>
-          {isRtl ? 'Ø¬Ø§Ø±Ù Ø§ÙØªØ­ÙÙÙ...' : 'Loading...'}
+          {isRtl ? 'جار التحميل...' : 'Loading...'}
         </div>
       </div>
     );
@@ -104,9 +105,9 @@ function AdminAcceptInviteContent() {
           maxWidth: '440px', textAlign: 'center', padding: '48px',
           background: 'white', borderRadius: '16px', boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
         }}>
-          <div style={{ fontSize: '48px', marginBottom: '16px' }}>â</div>
+          <div style={{ fontSize: '48px', marginBottom: '16px' }}>X</div>
           <h2 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '8px', color: '#0F172A' }}>
-            {isRtl ? 'Ø®Ø·Ø£' : 'Error'}
+            {isRtl ? 'خطأ' : 'Error'}
           </h2>
           <p style={{ color: '#64748B' }}>{error}</p>
           <a
@@ -117,7 +118,7 @@ function AdminAcceptInviteContent() {
               textDecoration: 'none', fontWeight: 600, fontSize: '14px',
             }}
           >
-            {isRtl ? 'ØªØ³Ø¬ÙÙ Ø§ÙØ¯Ø®ÙÙ' : 'Sign In'}
+            {isRtl ? 'تسجيل الدخول' : 'Sign In'}
           </a>
         </div>
       </div>
@@ -133,11 +134,11 @@ function AdminAcceptInviteContent() {
         }}>
           <div style={{ fontSize: '48px', marginBottom: '16px' }}>ð</div>
           <h2 style={{ fontSize: '24px', fontWeight: 700, marginBottom: '8px', color: '#0F172A' }}>
-            {isRtl ? 'ØªÙ Ø§ÙÙØ¨ÙÙ!' : 'Accepted!'}
+            {isRtl ? 'تم القبول!' : 'Accepted!'}
           </h2>
           <p style={{ color: '#64748B', marginBottom: '24px' }}>
             {isRtl
-              ? `ØªÙ ØªØ±ÙÙØ© Ø­Ø³Ø§Ø¨Ù Ø¥ÙÙ ${roleLabels[invitation?.role]?.ar || invitation?.role}. ÙÙÙÙÙ Ø§ÙØ¢Ù Ø§ÙÙØµÙÙ Ø¥ÙÙ ÙÙØ­Ø© Ø§ÙØ¥Ø¯Ø§Ø±Ø©.`
+              ? `تمت ترقية حسابك إلى ${roleLabels[invitation?.role]?.ar || invitation?.role}. يمكنك الآن الوصول إلى لوحة الإدارة.`
               : `Your account has been upgraded to ${roleLabels[invitation?.role]?.en || invitation?.role}. You now have access to the admin panel.`}
           </p>
           <a
@@ -148,10 +149,27 @@ function AdminAcceptInviteContent() {
               fontWeight: 600, fontSize: '14px',
             }}
           >
-            {isRtl ? 'Ø§ÙØ°ÙØ§Ø¨ Ø¥ÙÙ ÙÙØ­Ø© Ø§ÙØ¥Ø¯Ø§Ø±Ø©' : 'Go to Admin Panel'}
+            {isRtl ? 'الذهاب إلى لوحة الإدارة' : 'Go to Admin Panel'}
           </a>
         </div>
       </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <ProtectedRouteNotice
+        locale={locale}
+        isRTL={isRtl}
+        eyebrow={isRtl ? 'دعوة إدارية' : 'Admin invitation'}
+        title={isRtl ? 'قبول الدعوة الإدارية' : 'Accept Admin Invitation'}
+        subtitle={isRtl ? 'الدعوة صالحة، ويتبقى تسجيل الدخول بالحساب المناسب لإتمام قبول الصلاحية.' : 'The invitation is valid. Sign in with the invited account to complete role acceptance.'}
+        message={isRtl ? 'سجل الدخول لمتابعة قبول الدعوة وتفعيل الدور الإداري على حسابك.' : 'Sign in to continue accepting this invitation and activate the admin role on your account.'}
+        primaryHref={`/${locale}/auth?redirect=/admin/accept-invite?token=${token}`}
+        primaryLabel={isRtl ? 'تسجيل الدخول' : 'Sign In'}
+        secondaryHref={`/${locale}`}
+        secondaryLabel={isRtl ? 'العودة للرئيسية' : 'Back to home'}
+      />
     );
   }
 
@@ -166,11 +184,11 @@ function AdminAcceptInviteContent() {
       }}>
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
           <h1 style={{ fontSize: '28px', fontWeight: 800, color: '#0F172A' }}>Warrantee</h1>
-          <p style={{ color: '#94A3B8', fontSize: '14px' }}>Trust the Termsâ¢</p>
+          <p style={{ color: '#94A3B8', fontSize: '14px' }}>Trust the Terms™</p>
         </div>
 
         <h2 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '16px', color: '#0F172A' }}>
-          {isRtl ? 'Ø¯Ø¹ÙØ© Ø¥Ø¯Ø§Ø±ÙØ©' : 'Admin Invitation'}
+          {isRtl ? 'دعوة إدارية' : 'Admin Invitation'}
         </h2>
 
         <div style={{
@@ -178,51 +196,31 @@ function AdminAcceptInviteContent() {
           border: '1px solid #BBF7D0',
         }}>
           <p style={{ marginBottom: '8px' }}>
-            {isRtl ? 'ØªÙØª Ø¯Ø¹ÙØªÙ ÙÙ ÙØ¨Ù ' : 'You have been invited by '}
-            <strong>{invitation?.invited_by_name || (isRtl ? 'ÙØ¯ÙØ±' : 'an administrator')}</strong>
+            {isRtl ? 'تمت دعوتك من قبل ' : 'You have been invited by '}
+            <strong>{invitation?.invited_by_name || (isRtl ? 'مدير' : 'an administrator')}</strong>
             {isRtl
-              ? ` ÙÙØ§ÙØ¶ÙØ§Ù ÙÙ ${roleLabels[invitation?.role]?.ar || invitation?.role}`
+              ? ` للانضمام كـ ${roleLabels[invitation?.role]?.ar || invitation?.role}`
               : ` to join as ${roleLabels[invitation?.role]?.en || invitation?.role}`}
           </p>
           <p style={{ color: '#64748B', fontSize: '14px' }}>
-            {isRtl ? 'Ø§ÙØ¨Ø±ÙØ¯: ' : 'Email: '}{invitation?.email}
+            {isRtl ? 'البريد: ' : 'Email: '}{invitation?.email}
           </p>
         </div>
 
-        {!user ? (
-          <div>
-            <p style={{ color: '#64748B', marginBottom: '16px' }}>
-              {isRtl
-                ? 'ÙØ±Ø¬Ù ØªØ³Ø¬ÙÙ Ø§ÙØ¯Ø®ÙÙ ÙÙØ¨ÙÙ Ø§ÙØ¯Ø¹ÙØ©.'
-                : 'Please sign in to accept this invitation.'}
-            </p>
-            <a
-              href={`/${locale}/auth?redirect=/admin/accept-invite?token=${token}`}
-              style={{
-                display: 'block', textAlign: 'center', padding: '12px',
-                borderRadius: '8px', background: '#2563EB', color: 'white',
-                textDecoration: 'none', fontWeight: 600,
-              }}
-            >
-              {isRtl ? 'ØªØ³Ø¬ÙÙ Ø§ÙØ¯Ø®ÙÙ' : 'Sign In'}
-            </a>
-          </div>
-        ) : (
-          <button
-            onClick={handleAccept}
-            disabled={accepting}
-            style={{
-              width: '100%', padding: '14px', borderRadius: '8px', border: 'none',
-              background: '#2563EB', color: 'white', fontSize: '16px',
-              fontWeight: 600, cursor: accepting ? 'not-allowed' : 'pointer',
-              opacity: accepting ? 0.7 : 1,
-            }}
-          >
-            {accepting
-              ? (isRtl ? 'Ø¬Ø§Ø±Ù Ø§ÙÙØ¨ÙÙ...' : 'Accepting...')
-              : (isRtl ? 'ÙØ¨ÙÙ Ø§ÙØ¯Ø¹ÙØ©' : 'Accept Invitation')}
-          </button>
-        )}
+        <button
+          onClick={handleAccept}
+          disabled={accepting}
+          style={{
+            width: '100%', padding: '14px', borderRadius: '8px', border: 'none',
+            background: '#2563EB', color: 'white', fontSize: '16px',
+            fontWeight: 600, cursor: accepting ? 'not-allowed' : 'pointer',
+            opacity: accepting ? 0.7 : 1,
+          }}
+        >
+          {accepting
+            ? (isRtl ? 'جار القبول...' : 'Accepting...')
+            : (isRtl ? 'قبول الدعوة' : 'Accept Invitation')}
+        </button>
       </div>
     </div>
   );

@@ -1,0 +1,98 @@
+{
+  "version": 1,
+  "status": "active_policy_config",
+  "sourceOfTruth": "../AGENT_ADAPTER_CLASSIFICATION_GUIDE.md",
+  "defaultLane": "core_default",
+  "lanes": {
+    "cheap_default": {
+      "adapter": "opencode",
+      "classification": "default",
+      "intendedFor": [
+        "summarization",
+        "extraction",
+        "classification",
+        "translation",
+        "OCR cleanup",
+        "note cleanup",
+        "inbox triage",
+        "FAQ",
+        "formatting",
+        "CRM/admin cleanup",
+        "parsing",
+        "chunking",
+        "invoice field extraction",
+        "first-pass cleanup"
+      ],
+      "requiresScarcityRationale": false,
+      "escalatesTo": "core_default"
+    },
+    "core_default": {
+      "adapter": "opencode",
+      "classification": "default",
+      "intendedFor": [
+        "procurement",
+        "HR operations",
+        "finance operations",
+        "PMO/project controls",
+        "tendering",
+        "internal analysts",
+        "sales operations research",
+        "document control",
+        "first-pass contract review",
+        "implementation preparation",
+        "multilingual operations"
+      ],
+      "requiresScarcityRationale": false,
+      "escalatesTo": "premium_reasoning_or_coding"
+    },
+    "premium_coding": {
+      "adapter": "codex",
+      "classification": "scarce",
+      "intendedFor": [
+        "final implementation agents",
+        "critical code refactoring",
+        "architecture-sensitive coding tasks",
+        "final code sign-off",
+        "high-risk engineering changes"
+      ],
+      "requiresScarcityRationale": true
+    },
+    "premium_reasoning": {
+      "adapter": "claude_code",
+      "classification": "scarce",
+      "intendedFor": [
+        "CEO/executive reasoning",
+        "board or strategy support",
+        "legal/commercial wording",
+        "final proposal wording",
+        "high-stakes financial judgment",
+        "final review and executive exceptions"
+      ],
+      "requiresScarcityRationale": true
+    },
+    "optional_autonomy": {
+      "adapter": "hermes_agent",
+      "classification": "optional",
+      "intendedFor": [
+        "always-on autonomous agents",
+        "persistent long-running operations",
+        "stateful back-office orchestration",
+        "autonomous coordination"
+      ],
+      "requiresScarcityRationale": true
+    }
+  },
+  "futureAgentValidation": {
+    "requestTemplate": "../NEW_AGENT_REQUEST_TEMPLATE.md",
+    "probationRequired": true,
+    "ownerRequired": true,
+    "reviewCadenceRequired": true,
+    "riskClassificationRequired": true,
+    "providerModelRequired": true,
+    "fallbackRequired": true,
+    "escalationPathRequired": true,
+    "premiumJustificationRequired": true,
+    "splitMixedPurposeAgents": true,
+    "failureAction": "pause_correct_downgrade_or_retire"
+  }
+}

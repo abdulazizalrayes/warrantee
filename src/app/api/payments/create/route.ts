@@ -1,9 +1,87 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { buildWarrantyAccessOrClause } from '@/lib/warranty-access';
+import { getExtensionEligibility } from '@/lib/extension-eligibility';
+import { getLatestExtensionPolicy } from '@/lib/extension-policy';
 
 const STRIPE_SECRET = process.env.STRIPE_SECRET_KEY;
 const MOYASAR_SECRET = process.env.MOYASAR_SECRET_KEY;
+
+type PaymentWarranty = {
+  id: string;
+  product_name: string | null;
+  status: string;
+  end_date: string;
+  currency?: string | null;
+  user_id?: string | null;
+  buyer_id?: string | null;
+  recipient_user_id?: string | null;
+  seller_id?: string | null;
+  issuer_user_id?: string | null;
+};
+
+function isMissingColumnError(error: unknown, column: string) {
+  const message = String((error as { message?: unknown })?.message || "");
+  return (
+    message.includes(`'${column}' column`) ||
+    message.includes(`column ${column}`) ||
+    message.includes(`column "${column}"`) ||
+    message.includes(`.${column}`)
+  );
+}
+
+function sameOriginUrl(pathOrUrl: unknown, appUrl: string, fallbackPath: string) {
+  const base = new URL(appUrl);
+  if (typeof pathOrUrl !== 'string' || !pathOrUrl.trim()) {
+    return new URL(fallbackPath, base).toString();
+  }
+
+  try {
+    const parsed = new URL(pathOrUrl, base);
+    if (parsed.origin !== base.origin) {
+      return new URL(fallbackPath, base).toString();
+    }
+    return parsed.toString();
+  } catch {
+    return new URL(fallbackPath, base).toString();
+  }
+}
+
+async function getPaymentWarranty(
+  supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>,
+  warrantyId: string,
+  userId: string
+) {
+  const access = buildWarrantyAccessOrClause(userId);
+  const result = await supabase
+    .from('warranties')
+    .select('id, product_name, status, end_date, currency, user_id, buyer_id, recipient_user_id, seller_id, issuer_user_id')
+    .eq('id', warrantyId)
+    .or(access)
+    .single();
+
+  if (!result.error) return result as { data: PaymentWarranty; error: null };
+
+  if (isMissingColumnError(result.error, 'currency')) {
+    const fallback = await supabase
+      .from('warranties')
+      .select('id, product_name, status, end_date, user_id, buyer_id, recipient_user_id, seller_id, issuer_user_id')
+      .eq('id', warrantyId)
+      .or(access)
+      .single();
+
+    if (!fallback.error && fallback.data) {
+      return {
+        data: { ...(fallback.data as PaymentWarranty), currency: null },
+        error: null,
+      };
+    }
+
+    return fallback as { data: null; error: unknown };
+  }
+
+  return result as { data: null; error: unknown };
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,6 +94,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const {
       warrantyId,
+      extensionId,
       extensionMonths,
       provider,
       returnUrl,
@@ -24,7 +103,7 @@ export async function POST(request: NextRequest) {
       locale = 'en',
     } = body;
 
-    if (!warrantyId || !provider) {
+    if ((!warrantyId && !extensionId) || !provider) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
@@ -33,55 +112,103 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify the warranty belongs to this user
-    const { data: warranty } = await supabase
-      .from('warranties')
-      .select('id, product_name, end_date')
-      .eq('id', warrantyId)
-      .or(buildWarrantyAccessOrClause(user.id))
-      .single();
+    const { data: warranty, error: warrantyError } = await getPaymentWarranty(supabase, warrantyId, user.id);
 
     if (!warranty) {
+      if (warrantyError) {
+        console.error('Payment warranty lookup error:', warrantyError);
+      }
       return NextResponse.json({ error: 'Warranty not found' }, { status: 404 });
     }
 
-    // Derive pricing server-side — reject client-supplied amounts
-    const months = typeof extensionMonths === 'number' && extensionMonths > 0
+    const canPurchaseExtension =
+      warranty.user_id === user.id ||
+      warranty.buyer_id === user.id ||
+      warranty.recipient_user_id === user.id;
+
+    if (!canPurchaseExtension) {
+      return NextResponse.json(
+        { error: 'Only the warranty holder or recipient can purchase an extension' },
+        { status: 403 }
+      );
+    }
+
+    const policy = await getLatestExtensionPolicy(supabase, warrantyId);
+    const eligibility = getExtensionEligibility(warranty, policy);
+    let months = typeof extensionMonths === 'number' && extensionMonths > 0
       ? Math.min(extensionMonths, 24)
       : 12;
-    const PRICE_PER_MONTH_SAR = 49;
-    const amount = months * PRICE_PER_MONTH_SAR;
-    const currency = 'SAR';
+    let amount = 0;
+    let currency = warranty?.currency || 'SAR';
+    let resolvedExtensionId = extensionId as string | undefined;
+
+    if (resolvedExtensionId) {
+      const { data: existingExtension } = await supabase
+        .from('warranty_extensions')
+        .select('id, warranty_id, price, currency, new_end_date, is_purchased')
+        .eq('id', resolvedExtensionId)
+        .single();
+
+      if (!existingExtension || existingExtension.warranty_id !== warrantyId) {
+        return NextResponse.json({ error: 'Extension offer not found' }, { status: 404 });
+      }
+
+      if (existingExtension.is_purchased) {
+        return NextResponse.json({ error: 'This extension was already purchased' }, { status: 409 });
+      }
+
+      if (typeof existingExtension.price !== 'number' || existingExtension.price <= 0) {
+        return NextResponse.json({ error: 'This extension does not have a seller-approved price yet' }, { status: 422 });
+      }
+
+      amount = existingExtension.price;
+      currency = existingExtension.currency || currency;
+      const currentEnd = new Date(warranty.end_date);
+      const newEnd = new Date(existingExtension.new_end_date);
+      months = Math.max(
+        1,
+        (newEnd.getFullYear() - currentEnd.getFullYear()) * 12 +
+        (newEnd.getMonth() - currentEnd.getMonth())
+      );
+    } else {
+      return NextResponse.json(
+        {
+          error: eligibility.hasApprovedFallbackProvider
+            ? 'An approved provider offer is required before checkout can start.'
+            : 'Direct platform fallback checkout is disabled until an approved seller or provider offer exists.',
+        },
+        { status: 422 }
+      );
+    }
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || new URL(request.url).origin;
-    const safeBaseUrl = typeof returnUrl === 'string' && returnUrl.startsWith('http')
-      ? returnUrl
-      : appUrl;
-    const resolvedSuccessUrl =
-      typeof successUrl === 'string' && successUrl.startsWith('http')
-        ? successUrl
-        : `${safeBaseUrl}/${locale}/warranties/${warrantyId}?extension=success`;
-    const resolvedCancelUrl =
-      typeof cancelUrl === 'string' && cancelUrl.startsWith('http')
-        ? cancelUrl
-        : `${safeBaseUrl}/${locale}/warranties/${warrantyId}?extension=cancelled`;
-    const newEndDate = new Date(warranty.end_date);
-    newEndDate.setMonth(newEndDate.getMonth() + months);
+    const safeLocale = locale === 'ar' ? 'ar' : 'en';
+    const defaultSuccessPath = `/${safeLocale}/warranties/${warrantyId}?extension=success`;
+    const defaultCancelPath = `/${safeLocale}/warranties/${warrantyId}?extension=cancelled`;
+    const resolvedSuccessUrl = sameOriginUrl(successUrl || returnUrl, appUrl, defaultSuccessPath);
+    const resolvedCancelUrl = sameOriginUrl(cancelUrl, appUrl, defaultCancelPath);
+    if (!resolvedExtensionId) {
+      const newEndDate = new Date(warranty.end_date);
+      newEndDate.setMonth(newEndDate.getMonth() + months);
 
-    const { data: extension, error: extensionError } = await supabase
-      .from('warranty_extensions')
-      .insert({
-        warranty_id: warrantyId,
-        new_end_date: newEndDate.toISOString().split('T')[0],
-        price: amount,
-        currency,
-        commission_rate: 8.0,
-        commission_amount: amount * 0.08,
-        is_purchased: false,
-      })
-      .select('id')
-      .single();
+      const { data: extension, error: extensionError } = await supabase
+        .from('warranty_extensions')
+        .insert({
+          warranty_id: warrantyId,
+          new_end_date: newEndDate.toISOString().split('T')[0],
+          price: amount,
+          currency,
+          commission_rate: 8.0,
+          commission_amount: amount * 0.08,
+          is_purchased: false,
+        })
+        .select('id')
+        .single();
 
-    if (extensionError || !extension) {
-      return NextResponse.json({ error: 'Failed to create extension request' }, { status: 500 });
+      if (extensionError || !extension) {
+        return NextResponse.json({ error: 'Failed to create extension request' }, { status: 500 });
+      }
+
+      resolvedExtensionId = extension.id;
     }
 
     if (provider === 'stripe') {
@@ -103,7 +230,7 @@ export async function POST(request: NextRequest) {
           'line_items[0][price_data][product_data][name]': 'Warranty Extension - ' + months + ' months',
           'line_items[0][price_data][unit_amount]': String(amount * 100),
           'line_items[0][quantity]': '1',
-          'metadata[extension_id]': extension.id,
+          'metadata[extension_id]': resolvedExtensionId!,
           'metadata[warranty_id]': warrantyId,
           'metadata[extension_months]': String(months),
           'metadata[user_id]': user.id,
@@ -132,8 +259,8 @@ export async function POST(request: NextRequest) {
           amount: amount * 100,
           currency,
           description: 'Warranty Extension - ' + months + ' months',
-          callback_url: `${safeBaseUrl}/api/payments/moyasar/callback`,
-          metadata: { extension_id: extension.id, warranty_id: warrantyId, extension_months: months, user_id: user.id },
+          callback_url: new URL('/api/payments/moyasar/callback', appUrl).toString(),
+          metadata: { extension_id: resolvedExtensionId!, warranty_id: warrantyId, extension_months: months, user_id: user.id },
         }),
       });
 

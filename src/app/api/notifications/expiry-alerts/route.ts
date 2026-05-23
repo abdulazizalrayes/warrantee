@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { sendEmail, warrantyExpiryEmail } from "@/lib/email";
+import { requireInternalBearer } from "@/lib/internal-auth";
 
 function getSupabaseAdmin() {
   return createClient(
@@ -11,10 +12,8 @@ function getSupabaseAdmin() {
 }
 
 export async function POST(request: Request) {
-  const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const authError = requireInternalBearer(request, process.env.CRON_SECRET);
+  if (authError) return authError;
 
   const supabaseAdmin = getSupabaseAdmin();
   const alertDays = [30, 15, 7];

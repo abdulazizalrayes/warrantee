@@ -4,6 +4,7 @@
 declare global {
   interface Window {
     gtag?: (...args: unknown[]) => void;
+    fbq?: (...args: unknown[]) => void;
     dataLayer?: unknown[];
   }
 }
@@ -20,9 +21,37 @@ function pushDataLayer(event: string, payload: Record<string, unknown>) {
   }
 }
 
+const metaEventMap: Record<string, string> = {
+  sign_up: "CompleteRegistration",
+  purchase: "Purchase",
+  contact_form_submit: "Lead",
+  seller_invite_sent: "Lead",
+  team_invite: "Lead",
+  warranty_created: "WarrantyCreated",
+  warranty_scan: "WarrantyScan",
+  claim_submitted: "WarrantyClaimSubmitted",
+  extension_request: "WarrantyExtensionRequest",
+  extension_wishlist: "WarrantyExtensionWishlist",
+  document_view: "WarrantyDocumentView",
+  report_export_requested: "ReportExportRequested",
+};
+
+function pushMetaPixel(event: string, payload: Record<string, unknown>) {
+  if (typeof window === "undefined" || !window.fbq) return;
+  const metaEvent = metaEventMap[event];
+  if (!metaEvent) return;
+
+  const method = ["CompleteRegistration", "Purchase", "Lead"].includes(metaEvent)
+    ? "track"
+    : "trackCustom";
+
+  window.fbq(method, metaEvent, payload);
+}
+
 function emitEvent(event: string, payload: Record<string, unknown>) {
   gtag("event", event, payload);
   pushDataLayer(event, payload);
+  pushMetaPixel(event, payload);
 }
 
 export function trackPageView(pageName: string, metadata: Record<string, unknown> = {}) {
@@ -65,7 +94,7 @@ export function trackUpgrade(plan: string, value: number = 1) {
 }
 
 export function trackClaim(warrantyId?: string) {
-  emitEvent("generate_lead", {
+  emitEvent("claim_submitted", {
     event_category: "conversion",
     event_label: "warranty_claim",
     warranty_id: warrantyId,
@@ -74,15 +103,47 @@ export function trackClaim(warrantyId?: string) {
 
 // Additional tracking events
 export function trackWarrantyCreated(source: string = "manual") {
-  emitEvent("add_to_cart", {
+  emitEvent("warranty_created", {
     event_category: "engagement",
     event_label: "warranty_created",
     source,
   });
 }
 
+export function trackWarrantyScan(status: "started" | "completed" | "failed", metadata: Record<string, unknown> = {}) {
+  emitEvent("warranty_scan", {
+    status,
+    event_category: "warranty",
+    ...metadata,
+  });
+}
+
+export function trackExtensionRequest(metadata: Record<string, unknown> = {}) {
+  emitEvent("extension_request", {
+    event_category: "conversion",
+    event_label: "warranty_extension_request",
+    ...metadata,
+  });
+}
+
+export function trackExtensionWishlist(metadata: Record<string, unknown> = {}) {
+  emitEvent("extension_wishlist", {
+    event_category: "demand_signal",
+    event_label: "extension_interest",
+    ...metadata,
+  });
+}
+
+export function trackDocumentView(metadata: Record<string, unknown> = {}) {
+  emitEvent("document_view", {
+    event_category: "evidence",
+    event_label: "warranty_document_opened",
+    ...metadata,
+  });
+}
+
 export function trackContactForm(subject?: string) {
-  emitEvent("generate_lead", {
+  emitEvent("contact_form_submit", {
     event_category: "engagement",
     event_label: "contact_form_submit",
     subject,
@@ -106,9 +167,17 @@ export function trackFeatureView(feature?: string) {
 }
 
 export function trackSellerInvite() {
-  emitEvent("share", {
+  emitEvent("seller_invite_sent", {
     event_category: "engagement",
     event_label: "seller_invite_sent",
+  });
+}
+
+export function trackTeamInvite(metadata: Record<string, unknown> = {}) {
+  emitEvent("team_invite", {
+    event_category: "account",
+    event_label: "team_member_invited",
+    ...metadata,
   });
 }
 

@@ -5,13 +5,15 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { FileText, Search, File, Image, FileSpreadsheet, Eye, FolderOpen } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
-import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
 import { DashboardPageShell } from '@/components/dashboard/DashboardPageShell';
 import { PageViewTracker } from '@/components/PageViewTracker';
+import { ProtectedRouteNotice } from '@/components/dashboard/ProtectedRouteNotice';
+import { buildDocumentDownloadHref } from '@/lib/documents';
+import { trackDocumentView } from '@/lib/ga4-events';
 
 interface DocRow {
   id: string; file_name: string; file_type: string | null; file_size: number | null;
-  file_url: string | null; version: number; created_at: string; warranty_id: string;
+  file_url: string | null; storage_path?: string | null; version: number; created_at: string; warranty_id: string;
   warranties: { product_name: string; product_name_ar: string | null; reference_number: string } | null;
 }
 
@@ -20,26 +22,43 @@ export default function DocumentsPage() {
   const locale = (params.locale as string) || 'en';
   const isRTL = locale === 'ar';
   const { user, loading: authLoading } = useAuth();
-  const supabase = createSupabaseBrowserClient();
   const [docs, setDocs] = useState<DocRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [fetchError, setFetchError] = useState('');
 
   useEffect(() => {
-    if (authLoading || !user) return;
+    if (authLoading) return;
+    if (!user) {
+      setDocs([]);
+      setFetchError('');
+      setLoading(false);
+      return;
+    }
     const fetchDocs = async () => {
       setLoading(true);
-      const { data: userWarrantyIds } = await supabase.from('warranties').select('id').or(`created_by.eq.${user.id},recipient_user_id.eq.${user.id}`);
-      if (!userWarrantyIds || userWarrantyIds.length === 0) { setDocs([]); setLoading(false); return; }
-      const ids = userWarrantyIds.map((w: { id: string }) => w.id);
-      let query = supabase.from('warranty_documents').select('id, file_name, file_type, file_size, file_url, version, created_at, warranty_id, warranties(product_name, product_name_ar, reference_number)').in('warranty_id', ids).order('created_at', { ascending: false });
-      if (search) query = query.ilike('file_name', `%${search}%`);
-      const { data } = await query;
-      if (data) setDocs(data as unknown as DocRow[]);
-      setLoading(false);
+      try {
+        const query = new URLSearchParams();
+        if (search.trim()) query.set('q', search.trim());
+        query.set('limit', '200');
+        const response = await fetch(`/api/documents?${query.toString()}`, { cache: 'no-store' });
+        const payload = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          throw new Error(payload?.error || 'Failed to load documents');
+        }
+
+        setDocs((payload?.data || []) as DocRow[]);
+        setFetchError('');
+      } catch (error) {
+        setDocs([]);
+        setFetchError(error instanceof Error ? error.message : 'Failed to load documents');
+      } finally {
+        setLoading(false);
+      }
     };
     fetchDocs();
-  }, [user, authLoading, search, supabase]);
+  }, [user, authLoading, search]);
 
   const getFileIcon = (type: string | null) => {
     if (!type) return <File className="w-5 h-5 text-[#86868b]" />;
@@ -50,7 +69,7 @@ export default function DocumentsPage() {
   };
 
   const formatSize = (bytes: number | null) => {
-    if (!bytes) return 'â';
+    if (!bytes) return '—';
     if (bytes < 1024) return bytes + ' B';
     if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
     return (bytes / 1048576).toFixed(1) + ' MB';
@@ -66,6 +85,23 @@ export default function DocumentsPage() {
           <p className="text-[15px] text-[#86868b]">{isRTL ? '\u062c\u0627\u0631\u064a \u0627\u0644\u062a\u062d\u0645\u064a\u0644...' : 'Loading documents...'}</p>
         </div>
       </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <ProtectedRouteNotice
+        locale={locale}
+        isRTL={isRTL}
+        eyebrow={isRTL ? 'مكتبة المستندات' : 'Document library'}
+        title={isRTL ? 'المستندات' : 'Documents'}
+        subtitle={isRTL ? 'عرض مرفقات الضمانات يحتاج إلى جلسة نشطة.' : 'Viewing warranty attachments requires an active session.'}
+        message={isRTL ? 'سجل الدخول للوصول إلى مكتبة المستندات الكاملة وروابط الإثبات والملفات الداعمة.' : 'Sign in to access the full document library, proof files, and supporting attachments.'}
+        crumbs={[
+          { label: 'Dashboard', href: `/${locale}/dashboard` },
+          { label: isRTL ? 'المستندات' : 'Documents' },
+        ]}
+      />
     );
   }
 
@@ -92,6 +128,14 @@ export default function DocumentsPage() {
         auditNote={isRTL ? '\u062a\u062d\u0642\u0642 \u0645\u0646 \u0627\u0644\u0645\u0631\u0641\u0642\u0627\u062a \u0627\u0644\u0645\u0637\u0644\u0648\u0628\u0629 \u0642\u0628\u0644 \u0627\u0644\u0645\u0648\u0627\u0641\u0642\u0627\u062a \u0623\u0648 \u0627\u0644\u0645\u0637\u0627\u0644\u0628\u0627\u062a.' : 'Use this surface to verify required files are present before approvals, claims, or customer handoff.'}
       >
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-8 sm:py-12">
+      {fetchError ? (
+        <div className="mb-6 rounded-2xl border border-[#ffd7d3] bg-[#fff5f4] px-5 py-4 text-[#7a271a] shadow-sm">
+          <p className="text-[15px] font-semibold">{isRTL ? 'تعذر تحميل المستندات الآن' : 'Documents could not load right now'}</p>
+          <p className="mt-1 text-[13px] text-[#8a3b2f]">
+            {isRTL ? 'نحتاج إلى إعادة المحاولة أو مراجعة إعدادات التخزين.' : 'Retry the request or review the storage configuration for this workspace.'}
+          </p>
+        </div>
+      ) : null}
 
       <div className="bg-white rounded-2xl ring-1 ring-[#d2d2d7]/40 shadow-sm mb-6">
         <div className="p-4 sm:p-6">
@@ -133,8 +177,19 @@ export default function DocumentsPage() {
                   </div>
                 </div>
                 <span className="text-[12px] text-[#86868b] hidden sm:block">{formatDate(doc.created_at)}</span>
-                {doc.file_url && (
-                  <a href={doc.file_url} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg hover:bg-[#f5f5f7] transition-colors">
+                {(doc.file_url || doc.storage_path) && (
+                  <a
+                    href={buildDocumentDownloadHref(doc.id)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => trackDocumentView({
+                      locale,
+                      document_id: doc.id,
+                      warranty_id: doc.warranty_id,
+                      file_type: doc.file_type || 'unknown',
+                    })}
+                    className="p-2 rounded-lg hover:bg-[#f5f5f7] transition-colors"
+                  >
                     <Eye className="w-4 h-4 text-[#86868b]" />
                   </a>
                 )}

@@ -1,6 +1,7 @@
 // Warrantee — Admin Invitation Email via Resend
 // Sends admin role invitation emails
 import { Resend } from 'resend';
+import { getBusinessInboxBcc, getEmailFromAddress } from '@/lib/email-config';
 
 let _resend: Resend | null = null;
 function getResend() {
@@ -90,8 +91,9 @@ export async function sendAdminInvitationEmail({
 
   const resend = getResend();
   const result = await resend.emails.send({
-    from: 'Warrantee Admin <admin@warrantee.io>',
+    from: getEmailFromAddress(),
     to,
+    bcc: getBusinessInboxBcc(),
     subject,
     html,
   });

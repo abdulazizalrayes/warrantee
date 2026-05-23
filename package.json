@@ -2,6 +2,9 @@
   "name": "warrantee",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=20 <25"
+  },
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "NODE_ENV=production next build",
@@ -9,29 +12,44 @@
     "lint": "next lint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "test:e2e": "playwright test",
+    "test:e2e:business": "playwright test tests/e2e/business-workflows.spec.ts",
+    "test:e2e:operational": "OPERATIONAL_E2E=1 playwright test tests/e2e/operational-workflows.spec.ts --project=chromium",
+    "test:e2e:ui": "playwright test --ui",
+    "smoke:prod": "node scripts/production-smoke.mjs",
+    "load:prod": "node scripts/production-load-check.mjs",
+    "readiness:operational": "node scripts/operational-readiness-check.mjs",
+    "observability:sentry": "node scripts/sentry-release-readiness.mjs --vercel-production",
+    "guard:loopback": "node scripts/check-no-loopback-links.mjs",
+    "security:rls-probe": "node scripts/security-probe-supabase-rls.mjs",
+    "security:apply-rls": "scripts/apply-supabase-rls.sh",
+    "indexnow:submit": "node scripts/indexnow-submit.mjs"
   },
   "dependencies": {
     "@napi-rs/canvas": "^0.1.98",
-    "@sentry/nextjs": "^8.0.0",
+    "@sentry/nextjs": "^10.53.1",
     "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.49.4",
+    "@vercel/analytics": "^2.0.1",
+    "@vercel/speed-insights": "^2.0.0",
     "lucide-react": "^0.503.0",
-    "next": "^15.3.0",
+    "next": "^15.5.18",
     "papaparse": "^5.4.1",
     "pdfjs-dist": "^5.6.205",
     "pdfkit": "^0.18.0",
     "qrcode": "^1.5.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "read-excel-file": "^9.0.9",
     "resend": "^4.0.0",
     "stripe": "^18.0.0",
     "tesseract.js": "^5.1.1",
     "web-push": "^3.6.7",
-    "xlsx": "^0.18.5",
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@playwright/test": "^1.60.0",
     "@tailwindcss/postcss": "^4.0.0",
     "@types/node": "^22.0.0",
     "@types/papaparse": "^5.3.15",
@@ -41,11 +59,15 @@
     "@types/react-dom": "^19.0.0",
     "@types/web-push": "^3.6.4",
     "@vitejs/plugin-react": "^6.0.1",
+    "caniuse-lite": "^1.0.30001793",
     "eslint": "^9.0.0",
-    "eslint-config-next": "^15.3.0",
-    "postcss": "^8.5.0",
+    "eslint-config-next": "^15.5.18",
+    "postcss": "^8.5.15",
     "tailwindcss": "^4.0.0",
     "typescript": "^5.0.0",
     "vitest": "^4.1.2"
+  },
+  "overrides": {
+    "postcss": "$postcss"
   }
 }

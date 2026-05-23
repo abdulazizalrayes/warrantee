@@ -1,11 +1,13 @@
 // @ts-nocheck
 "use client";
 
+import { useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Check, Shield, Zap, Building2 } from "lucide-react";
-import { getDictionary, DIRECTION } from "@/lib/i18n";
+import { DIRECTION } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
+import { useAuth } from "@/lib/auth-context";
 
 const plans = [
   {
@@ -53,9 +55,43 @@ const plans = [
 export default function PricingPage() {
   const params = useParams() ?? {};
   const locale = (params.locale as string) || "en";
-  const dict = getDictionary(locale);
   const isRTL = locale === "ar";
   const direction = DIRECTION[locale as Locale];
+  const { user } = useAuth();
+  const [checkoutPlan, setCheckoutPlan] = useState<string | null>(null);
+
+  const startCheckout = async (planId: string) => {
+    if (planId === "free") {
+      window.location.href = `/${locale}/auth?tab=signup`;
+      return;
+    }
+
+    if (planId === "enterprise") {
+      window.location.href = `/${locale}/contact?intent=enterprise`;
+      return;
+    }
+
+    if (!user) {
+      window.location.href = `/${locale}/auth?tab=signup&plan=${encodeURIComponent(planId)}`;
+      return;
+    }
+
+    setCheckoutPlan(planId);
+    const response = await fetch("/api/stripe/checkout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ planId, locale }),
+    });
+    const payload = await response.json().catch(() => null);
+    setCheckoutPlan(null);
+
+    if (response.ok && payload?.url) {
+      window.location.href = payload.url;
+      return;
+    }
+
+    window.location.href = `/${locale}/billing?checkout=unavailable`;
+  };
 
   return (
     <div dir={direction} className="min-h-screen bg-[#fbfbfd]">
@@ -132,18 +168,22 @@ export default function PricingPage() {
                     ))}
                   </ul>
 
-                  <Link
-                    href={`/${locale}/auth?tab=signup`}
+                  <button
+                    type="button"
+                    onClick={() => startCheckout(plan.id)}
+                    disabled={checkoutPlan === plan.id}
                     className={`w-full py-2.5 rounded-full text-[14px] font-medium transition-all duration-200 text-center block ${
                       plan.popular
                         ? "bg-[#1A1A2E] hover:bg-[#2d2d5e] text-white shadow-sm hover:shadow-md"
                         : "bg-[#f5f5f7] hover:bg-[#e8e8ed] text-[#1d1d1f]"
                     }`}
                   >
-                    {plan.price === -1
+                    {checkoutPlan === plan.id
+                      ? isRTL ? "\u062c\u0627\u0631\u064a \u0627\u0644\u062a\u062d\u0648\u064a\u0644..." : "Redirecting..."
+                      : plan.price === -1
                       ? isRTL ? "تواصل معنا" : "Contact Sales"
                       : isRTL ? "ابدأ الآن" : "Get Started"}
-                  </Link>
+                  </button>
                 </div>
               </div>
             );

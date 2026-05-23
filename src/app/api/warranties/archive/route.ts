@@ -1,22 +1,46 @@
-import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
+import { createSupabaseAdminClient } from '@/lib/supabase/admin';
+import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { canMutateWarranty } from '@/lib/warranty-access';
 
-function getSupabaseAdmin() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-  return createClient(url, key);
+const ADMIN_ROLES = new Set(['admin', 'super_admin', 'platform_admin']);
+
+async function getAuthenticatedUser() {
+  const supabase = await createServerSupabaseClient();
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+
+  if (error || !user) return null;
+  return user;
+}
+
+async function isPlatformAdmin(supabase: ReturnType<typeof createSupabaseAdminClient>, userId: string) {
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', userId)
+    .single();
+
+  return ADMIN_ROLES.has(profile?.role || '');
 }
 
 // POST: Archive a warranty (soft-delete)
 export async function POST(request: NextRequest) {
   try {
-    const supabase = getSupabaseAdmin();
-    const body = await request.json();
-    const { warranty_id, reason, user_id } = body;
+    const user = await getAuthenticatedUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
-    if (!warranty_id || !user_id) {
+    const supabase = createSupabaseAdminClient();
+    const body = await request.json();
+    const { warranty_id, reason } = body;
+
+    if (!warranty_id) {
       return NextResponse.json(
-        { error: 'warranty_id and user_id are required' },
+        { error: 'warranty_id is required' },
         { status: 400 }
       );
     }
@@ -24,7 +48,7 @@ export async function POST(request: NextRequest) {
     // Check if warranty is under legal hold
     const { data: warranty, error: fetchError } = await supabase
       .from('warranties')
-      .select('id, legal_hold, is_archived, creator_id')
+      .select('id, legal_hold, is_archived, user_id, created_by, seller_id, issuer_user_id')
       .eq('id', warranty_id)
       .single();
 
@@ -32,6 +56,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Warranty not found' },
         { status: 404 }
+      );
+    }
+
+    const isAdmin = await isPlatformAdmin(supabase, user.id);
+    if (!isAdmin && !canMutateWarranty(warranty, user.id)) {
+      return NextResponse.json(
+        { error: 'You do not have permission to archive this warranty' },
+        { status: 403 }
       );
     }
 
@@ -55,7 +87,7 @@ export async function POST(request: NextRequest) {
       .update({
         is_archived: true,
         archived_at: new Date().toISOString(),
-        archived_by: user_id,
+        archived_by: user.id,
         archive_reason: reason || 'User requested archive',
       })
       .eq('id', warranty_id);
@@ -73,7 +105,7 @@ export async function POST(request: NextRequest) {
       .update({
         is_archived: true,
         archived_at: new Date().toISOString(),
-        archived_by: user_id,
+        archived_by: user.id,
       })
       .eq('warranty_id', warranty_id)
       .eq('is_archived', false);
@@ -93,23 +125,21 @@ export async function POST(request: NextRequest) {
 // PATCH: Restore an archived warranty
 export async function PATCH(request: NextRequest) {
   try {
-    const supabase = getSupabaseAdmin();
-    const body = await request.json();
-    const { warranty_id, user_id } = body;
+    const user = await getAuthenticatedUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
-    if (!warranty_id || !user_id) {
+    const supabase = createSupabaseAdminClient();
+    const body = await request.json();
+    const { warranty_id } = body;
+
+    if (!warranty_id) {
       return NextResponse.json(
-        { error: 'warranty_id and user_id are required' },
+        { error: 'warranty_id is required' },
         { status: 400 }
       );
     }
-
-    // Check admin role for restore
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user_id)
-      .single();
 
     // Only admin or the original archiver can restore
     const { data: warranty } = await supabase
@@ -125,8 +155,8 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    const isAdmin = profile?.role === 'admin';
-    const isArchiver = warranty.archived_by === user_id;
+    const isAdmin = await isPlatformAdmin(supabase, user.id);
+    const isArchiver = warranty.archived_by === user.id;
 
     if (!isAdmin && !isArchiver) {
       return NextResponse.json(

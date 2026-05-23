@@ -5,12 +5,15 @@ const BASE_URL = "https://warrantee.io";
 type PageKey =
   | "home"
   | "about"
+  | "blog"
   | "features"
   | "pricing"
   | "contact"
   | "faq"
   | "guide"
   | "verify"
+  | "apiDocs"
+  | "support"
   | "auth"
   | "terms"
   | "privacy"
@@ -19,12 +22,15 @@ type PageKey =
 const PAGE_PATHS: Record<PageKey, string> = {
   home: "",
   about: "/about",
+  blog: "/blog",
   features: "/features",
   pricing: "/pricing",
   contact: "/contact",
   faq: "/faq",
   guide: "/guide",
   verify: "/verify",
+  apiDocs: "/api-docs",
+  support: "/support",
   auth: "/auth",
   terms: "/terms",
   privacy: "/privacy",
@@ -40,14 +46,14 @@ const PAGE_META: Record<
 > = {
   home: {
     en: {
-      title: "Warrantee — Warranty Management Platform",
+      title: "Warrantee — Warranty Management Software & Platform",
       description:
-        "Track, approve, and claim warranties in one place. Bilingual Arabic and English. Free to start.",
+        "Warranty management software to track, approve, extend, and claim warranties in one place. Bilingual Arabic and English. Free to start.",
     },
     ar: {
-      title: "وارنتي — منصة إدارة الضمانات",
+      title: "وارنتي — منصة إدارة الضمانات | ثق بالشروط™",
       description:
-        "تتبّع الضمانات ووافق عليها وقدّم المطالبات من مكان واحد. باللغتين العربية والإنجليزية. ابدأ مجانًا.",
+        "منصة إدارة الضمانات لتتبّع الضمانات والموافقة عليها وتمديدها وتقديم المطالبات من مكان واحد. باللغتين العربية والإنجليزية. ابدأ مجانًا.",
     },
   },
   about: {
@@ -60,6 +66,18 @@ const PAGE_META: Record<
       title: "عن وارنتي — قصتنا",
       description:
         "تعرّف على كيف تغيّر وارنتي إدارة الضمانات للشركات في المملكة العربية السعودية ودول الخليج.",
+    },
+  },
+  blog: {
+    en: {
+      title: "Warrantee Blog — Warranty Management Guides",
+      description:
+        "Practical guides on warranty management software, warranty tracking, claims workflows, extensions, and bilingual warranty operations.",
+    },
+    ar: {
+      title: "مدونة وارنتي — أدلة إدارة الضمانات",
+      description:
+        "أدلة عملية حول برامج إدارة الضمانات وتتبع الضمانات والمطالبات والتمديدات وتشغيل الضمانات باللغتين العربية والإنجليزية.",
     },
   },
   features: {
@@ -134,6 +152,30 @@ const PAGE_META: Record<
         "أدخل رقم مرجع الضمان للتحقق من صحته فورًا عبر منصة وارنتي.",
     },
   },
+  apiDocs: {
+    en: {
+      title: "Warrantee API Documentation — ERP & System Integrations",
+      description:
+        "Integrate Warrantee with ERP, ecommerce, and internal systems using warranty management APIs and server-to-server integration tokens.",
+    },
+    ar: {
+      title: "وثائق API وارنتي — تكاملات ERP والأنظمة",
+      description:
+        "ادمج وارنتي مع أنظمة ERP والمتاجر والأنظمة الداخلية باستخدام واجهات إدارة الضمانات ورموز التكامل الخادمية.",
+    },
+  },
+  support: {
+    en: {
+      title: "Warrantee Support — Help and Contact Options",
+      description:
+        "Get support for Warrantee accounts, warranties, claims, seller onboarding, and API integrations.",
+    },
+    ar: {
+      title: "دعم وارنتي — المساعدة وخيارات التواصل",
+      description:
+        "احصل على دعم لحسابات وارنتي والضمانات والمطالبات وانضمام البائعين وتكاملات API.",
+    },
+  },
   auth: {
     en: {
       title: "Sign In to Warrantee",
@@ -184,15 +226,28 @@ const PAGE_META: Record<
   },
 };
 
+const NOINDEX_PAGES = new Set<PageKey>(["auth"]);
+
 export function buildPageMetadata(page: PageKey, locale: string): Metadata {
   const isAr = locale === "ar";
   const lang = isAr ? "ar" : "en";
   const meta = PAGE_META[page][lang];
   const pagePath = PAGE_PATHS[page];
+  const shouldNoindex = NOINDEX_PAGES.has(page);
 
   return {
     title: meta.title,
     description: meta.description,
+    robots: shouldNoindex
+      ? {
+          index: false,
+          follow: true,
+          googleBot: {
+            index: false,
+            follow: true,
+          },
+        }
+      : undefined,
     metadataBase: new URL(BASE_URL),
     alternates: {
       canonical: `${BASE_URL}/${locale}${pagePath}`,

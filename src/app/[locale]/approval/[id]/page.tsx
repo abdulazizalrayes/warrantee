@@ -10,6 +10,7 @@ import { trackApprovalAction } from '@/lib/ga4-events';
 import { CheckCircle2, ExternalLink, FileText, Send, XCircle } from 'lucide-react';
 import { DashboardPageShell } from '@/components/dashboard/DashboardPageShell';
 import { PageViewTracker } from '@/components/PageViewTracker';
+import { buildDocumentDownloadHref } from '@/lib/documents';
 
 const APPROVER_ROLES = new Set(['approver', 'company_admin', 'platform_admin', 'admin', 'super_admin']);
 
@@ -44,6 +45,7 @@ const detailText = {
       pending_approval: 'Pending Approval',
       draft: 'Draft',
       active: 'Approved',
+      rejected: 'Rejected',
       cancelled: 'Rejected',
       expired: 'Expired',
       claimed: 'Claimed',
@@ -79,6 +81,7 @@ const detailText = {
       pending_approval: '\u0628\u0627\u0646\u062a\u0638\u0627\u0631 \u0627\u0644\u0645\u0648\u0627\u0641\u0642\u0629',
       draft: '\u0645\u0633\u0648\u062f\u0629',
       active: '\u0645\u0648\u0627\u0641\u0642 \u0639\u0644\u064a\u0647',
+      rejected: '\u0645\u0631\u0641\u0648\u0636',
       cancelled: '\u0645\u0631\u0641\u0648\u0636',
       expired: '\u0645\u0646\u062a\u0647\u064a',
       claimed: '\u0645\u0637\u0627\u0644\u0628',
@@ -210,7 +213,7 @@ function ApprovalDetailPageInner() {
     ? 'bg-[#fff8e6] text-[#a06800]'
     : warranty.status === 'active'
       ? 'bg-[#e8faf0] text-[#1a7d42]'
-      : warranty.status === 'cancelled'
+      : warranty.status === 'rejected' || warranty.status === 'cancelled'
         ? 'bg-[#fff0f0] text-[#c42b1c]'
         : 'bg-[#f5f5f7] text-[#86868b]';
 
@@ -232,7 +235,7 @@ function ApprovalDetailPageInner() {
           { label: warranty.reference_number || warranty.id },
         ]}
         stats={[
-          { label: t.labels.status, value: statusLabel, tone: warranty.status === 'active' ? 'success' : warranty.status === 'cancelled' ? 'danger' : warranty.status === 'pending_approval' ? 'warning' : 'default' },
+          { label: t.labels.status, value: statusLabel, tone: warranty.status === 'active' ? 'success' : warranty.status === 'rejected' || warranty.status === 'cancelled' ? 'danger' : warranty.status === 'pending_approval' ? 'warning' : 'default' },
           { label: t.labels.documents, value: documents.length },
           { label: t.labels.createdAt, value: formatDate(warranty.created_at, locale) },
         ]}
@@ -296,7 +299,7 @@ function ApprovalDetailPageInner() {
                 {documents.map((doc) => (
                   <a
                     key={doc.id}
-                    href={doc.file_url}
+                    href={buildDocumentDownloadHref(doc.id)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg hover:bg-[#f5f5f7] transition"

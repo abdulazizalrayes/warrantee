@@ -132,7 +132,7 @@ function ApprovalPageInner() {
     if (filter === 'pending') return 'pending_approval';
     if (filter === 'draft') return 'draft';
     if (filter === 'approved') return 'active';
-    if (filter === 'rejected') return 'cancelled';
+    if (filter === 'rejected') return 'rejected';
     return null;
   };
 
@@ -203,6 +203,9 @@ function ApprovalPageInner() {
   const visibleItems = useMemo(() => {
     const mappedStatus = mapFilterToStatus(statusFilter);
     if (!mappedStatus) return allItems;
+    if (mappedStatus === 'rejected') {
+      return allItems.filter((item) => item.status === 'rejected' || item.status === 'cancelled');
+    }
     return allItems.filter((item) => item.status === mappedStatus);
   }, [allItems, statusFilter]);
 
@@ -210,7 +213,7 @@ function ApprovalPageInner() {
     { label: t.statuses.pending, value: allItems.filter((item) => item.status === 'pending_approval').length, tone: 'warning' as const },
     { label: t.statuses.draft, value: allItems.filter((item) => item.status === 'draft').length },
     { label: t.statuses.approved, value: allItems.filter((item) => item.status === 'active').length, tone: 'success' as const },
-    { label: t.statuses.rejected, value: allItems.filter((item) => item.status === 'cancelled').length, tone: 'danger' as const },
+    { label: t.statuses.rejected, value: allItems.filter((item) => item.status === 'rejected' || item.status === 'cancelled').length, tone: 'danger' as const },
   ];
 
   const statusBadge = (status: string) => {
@@ -219,7 +222,7 @@ function ApprovalPageInner() {
       ? 'bg-[#fff8e6] text-[#a06800]'
       : status === 'active'
         ? 'bg-[#e8faf0] text-[#1a7d42]'
-        : status === 'cancelled'
+        : status === 'rejected' || status === 'cancelled'
           ? 'bg-[#fff0f0] text-[#c42b1c]'
           : 'bg-[#f5f5f7] text-[#86868b]';
 

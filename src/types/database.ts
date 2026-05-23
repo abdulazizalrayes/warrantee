@@ -15,6 +15,9 @@ export interface Database {
           email: string
           full_name: string | null
           phone: string | null
+          company_id: string | null
+          company_name: string | null
+          company_domain: string | null
           preferred_language: string
           role: string
           avatar_url: string | null
@@ -26,6 +29,9 @@ export interface Database {
           email: string
           full_name?: string | null
           phone?: string | null
+          company_id?: string | null
+          company_name?: string | null
+          company_domain?: string | null
           preferred_language?: string
           role?: string
           avatar_url?: string | null
@@ -33,6 +39,9 @@ export interface Database {
         Update: {
           full_name?: string | null
           phone?: string | null
+          company_id?: string | null
+          company_name?: string | null
+          company_domain?: string | null
           preferred_language?: string
           avatar_url?: string | null
         }

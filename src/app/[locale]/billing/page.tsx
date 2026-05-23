@@ -9,6 +9,7 @@ import { getDictionary, DIRECTION } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth-context";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { ProtectedRouteNotice } from "@/components/dashboard/ProtectedRouteNotice";
 
 interface SubscriptionInfo {
   plan_id: string;
@@ -82,7 +83,12 @@ export default function BillingPage() {
   const [upgrading, setUpgrading] = useState(false);
 
   useEffect(() => {
-    if (authLoading || !user) return;
+    if (authLoading) return;
+    if (!user) {
+      setSubscription(null);
+      setLoading(false);
+      return;
+    }
     const fetchSub = async () => {
       const { data } = await supabase.rpc("get_user_subscription", { user_uuid: user.id });
       if (data) setSubscription(data as unknown as SubscriptionInfo);
@@ -134,6 +140,23 @@ export default function BillingPage() {
           <p className="text-[15px] text-[#86868b]">{dict.common.loading}</p>
         </div>
       </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <ProtectedRouteNotice
+        locale={locale}
+        isRTL={isRTL}
+        eyebrow={isRTL ? "الفوترة والاشتراك" : "Billing and plans"}
+        title={isRTL ? "إدارة الاشتراك" : "Manage Billing"}
+        subtitle={isRTL ? "الفواتير والخطط وحدود الاستخدام تظهر بعد تسجيل الدخول." : "Subscription plans, invoices, and usage limits are available after sign-in."}
+        message={isRTL ? "سجل الدخول للوصول إلى تفاصيل الخطة الحالية والحدود وتجربة الترقية أو التواصل لخطة المؤسسات." : "Sign in to review your current plan, usage limits, and upgrade options."}
+        crumbs={[
+          { label: "Dashboard", href: `/${locale}/dashboard` },
+          { label: isRTL ? "الفوترة" : "Billing" },
+        ]}
+      />
     );
   }
 

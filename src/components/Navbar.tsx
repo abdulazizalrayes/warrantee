@@ -55,7 +55,7 @@ export function Navbar({ locale, dictionary }: NavbarProps) {
               {dictionary.nav.login}
             </Link>
             <Link
-              href={`/${locale}/signup`}
+              href={`/${locale}/auth?tab=signup`}
               className="px-4 py-2 rounded-lg text-sm font-medium text-warm-white bg-gold hover:bg-gold/90 transition-colors"
             >
               {dictionary.nav.signup}
@@ -95,7 +95,7 @@ export function Navbar({ locale, dictionary }: NavbarProps) {
                 {dictionary.nav.login}
               </Link>
               <Link
-                href={`/${locale}/signup`}
+                href={`/${locale}/auth?tab=signup`}
                 className="block px-4 py-2 rounded-lg text-sm font-medium text-warm-white bg-gold hover:bg-gold/90 transition-colors text-center"
                 onClick={() => setIsOpen(false)}
               >

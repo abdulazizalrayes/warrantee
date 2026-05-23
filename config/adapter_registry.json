@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "status": "active_policy_config",
+  "sourceOfTruth": "../CEO_AGENT_CREATION_POLICY.md",
+  "defaultAdapter": "opencode",
+  "adapters": {
+    "opencode": {
+      "classification": "default",
+      "scarcity": "standard",
+      "approvalRequired": false,
+      "useFor": ["core_lane", "cheap_lane", "high_volume_operations", "document_workflows", "research_non_executive", "utility_tasks", "multilingual_operations"],
+      "approvalNotes": "Default adapter for existing and new Warrantee agents unless a premium exception is justified."
+    },
+    "codex": {
+      "classification": "scarce",
+      "scarcity": "high",
+      "approvalRequired": true,
+      "useFor": ["final_implementation", "critical_refactoring", "architecture_sensitive_coding", "final_code_signoff", "high_risk_engineering"],
+      "doNotUseFor": ["generic_analysis", "summarization", "admin_work", "routine_document_work", "repetitive_workflows", "non_final_utility_coding"],
+      "approvalNotes": "Requires written rationale showing OpenCode is insufficient for critical coding or final engineering work."
+    },
+    "claude_code": {
+      "classification": "scarce",
+      "scarcity": "high",
+      "approvalRequired": true,
+      "useFor": ["executive_reasoning", "board_strategy", "legal_commercial_wording", "final_proposal_wording", "high_stakes_financial_judgment", "final_review"],
+      "doNotUseFor": ["back_office_repetition", "bulk_document_cleanup", "normal_department_execution", "high_volume_summarization", "low_risk_operations", "routine_research"],
+      "approvalNotes": "Requires written rationale showing OpenCode is insufficient for premium reasoning or final executive review."
+    },
+    "hermes_agent": {
+      "classification": "optional_autonomy",
+      "scarcity": "medium",
+      "approvalRequired": true,
+      "useFor": ["always_on_autonomy", "persistent_long_running_operations", "stateful_back_office_orchestration", "autonomous_coordination"],
+      "approvalNotes": "Use only where persistent autonomy materially improves the workflow."
+    }
+  },
+  "validation": {
+    "probationRequired": true,
+    "reviewRequiredBeforeProductionTrust": true,
+    "downgradePathRequiredForScarceAdapters": true,
+    "premiumJustificationRequired": true,
+    "executiveSeniorityAloneIsNotJustification": true
+  }
+}

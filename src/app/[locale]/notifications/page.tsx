@@ -11,7 +11,7 @@ import { PageViewTracker } from "@/components/PageViewTracker";
 import {
   Bell, Check, CheckCheck, Trash2, AlertTriangle,
   CheckCircle, XCircle, ClipboardList, BellOff,
-  Filter, BellRing
+  BellRing
 } from "lucide-react";
 
 const t: Record<string, Record<string, string>> = {
@@ -48,11 +48,21 @@ const t: Record<string, Record<string, string>> = {
 interface Notification {
   id: string;
   title: string;
-  body: string;
+  body?: string | null;
+  message?: string | null;
   type: string;
-  is_read: boolean;
+  is_read?: boolean;
+  read?: boolean;
   created_at: string;
   warranty_id?: string;
+}
+
+function getNotificationBody(notification: Notification) {
+  return notification.body || notification.message || "";
+}
+
+function isNotificationRead(notification: Notification) {
+  return Boolean(notification.is_read ?? notification.read);
 }
 
 const iconForType = (type: string) => {
@@ -75,6 +85,7 @@ export default function NotificationsPage() {
 
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
+  const [actionError, setActionError] = useState("");
 
   useEffect(() => {
     if (!user) { setLoading(false); return; }
@@ -95,38 +106,63 @@ export default function NotificationsPage() {
   }, [user]);
 
   async function fetchNotifications() {
-    const { data } = await supabase
-      .from("notifications")
-      .select("*")
-      .eq("user_id", user!.id)
-      .order("created_at", { ascending: false })
-      .limit(50);
-    setNotifications(data || []);
-    setLoading(false);
+    try {
+      const response = await fetch("/api/notifications?limit=50", { cache: "no-store" });
+      const payload = await response.json().catch(() => ({}));
+      setNotifications(response.ok ? payload.notifications || [] : []);
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function markRead(id: string) {
-    await supabase.from("notifications").update({ is_read: true }).eq("id", id);
+    const response = await fetch("/api/notifications", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+    if (!response.ok) {
+      setActionError(locale === "ar" ? "تعذر تحديث الإشعار الآن." : "That notification could not be updated right now.");
+      await fetchNotifications();
+      return;
+    }
+    setActionError("");
     setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
+      prev.map((n) => (n.id === id ? { ...n, is_read: true, read: true } : n))
     );
   }
 
   async function markAllRead() {
-    await supabase
-      .from("notifications")
-      .update({ is_read: true })
-      .eq("user_id", user!.id)
-      .eq("is_read", false);
-    setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
+    const response = await fetch("/api/notifications", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ markAllRead: true }),
+    });
+    if (!response.ok) {
+      setActionError(locale === "ar" ? "تعذر تحديث الإشعارات الآن." : "Notifications could not be updated right now.");
+      await fetchNotifications();
+      return;
+    }
+    setActionError("");
+    setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true, read: true })));
   }
 
   async function deleteNotification(id: string) {
-    await supabase.from("notifications").delete().eq("id", id);
+    const response = await fetch("/api/notifications", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+    if (!response.ok) {
+      setActionError(locale === "ar" ? "تعذر حذف الإشعار الآن." : "That notification could not be deleted right now.");
+      await fetchNotifications();
+      return;
+    }
+    setActionError("");
     setNotifications((prev) => prev.filter((n) => n.id !== id));
   }
 
-  const unreadCount = notifications.filter((n) => !n.is_read).length;
+  const unreadCount = notifications.filter((n) => !isNotificationRead(n)).length;
   const today = new Date().toDateString();
   const todayNotifs = notifications.filter(
     (n) => new Date(n.created_at).toDateString() === today
@@ -194,16 +230,17 @@ export default function NotificationsPage() {
       >
       <div className="max-w-3xl space-y-6">
       <div>
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-[#1d1d1f]">{l.title}</h1>
-            {unreadCount > 0 && (
-              <p className="text-sm text-[#86868b] mt-1">
-                {unreadCount} {locale === "ar" ? "\u063a\u064a\u0631 \u0645\u0642\u0631\u0648\u0621" : "unread"}
-              </p>
-            )}
+        {actionError ? (
+          <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {actionError}
           </div>
+        ) : null}
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          {unreadCount > 0 ? (
+            <p className="text-sm text-[#86868b]">
+              {unreadCount} {locale === "ar" ? "\u063a\u064a\u0631 \u0645\u0642\u0631\u0648\u0621" : "unread"}
+            </p>
+          ) : <span />}
           <div className="flex items-center gap-3">
             <PushNotificationManager />
             {unreadCount > 0 && (
@@ -253,16 +290,16 @@ export default function NotificationsPage() {
                   {todayNotifs.map((n) => (
                     <div
                       key={n.id}
-                      className={`flex items-start gap-3 p-4 transition-colors ${!n.is_read ? "bg-[#007aff]/[0.03]" : ""}`}
+                      className={`flex items-start gap-3 p-4 transition-colors ${!isNotificationRead(n) ? "bg-[#007aff]/[0.03]" : ""}`}
                     >
                       <div className="flex-shrink-0 mt-0.5">{iconForType(n.type)}</div>
                       <div className="flex-1 min-w-0">
-                        <p className={`text-sm ${!n.is_read ? "font-semibold text-[#1d1d1f]" : "text-[#1d1d1f]"}`}>{n.title}</p>
-                        {n.body && <p className="text-xs text-[#86868b] mt-0.5 line-clamp-2">{n.body}</p>}
+                        <p className={`text-sm ${!isNotificationRead(n) ? "font-semibold text-[#1d1d1f]" : "text-[#1d1d1f]"}`}>{n.title}</p>
+                        {getNotificationBody(n) && <p className="text-xs text-[#86868b] mt-0.5 line-clamp-2">{getNotificationBody(n)}</p>}
                         <p className="text-xs text-[#86868b] mt-1">{timeAgo(n.created_at)}</p>
                       </div>
                       <div className="flex items-center gap-1 flex-shrink-0">
-                        {!n.is_read && (
+                        {!isNotificationRead(n) && (
                           <button onClick={() => markRead(n.id)} className="p-1.5 rounded-lg hover:bg-[#f5f5f7] transition-colors" title={l.markRead}>
                             <Check className="w-4 h-4 text-[#007aff]" />
                           </button>
@@ -283,16 +320,16 @@ export default function NotificationsPage() {
                   {earlierNotifs.map((n) => (
                     <div
                       key={n.id}
-                      className={`flex items-start gap-3 p-4 transition-colors ${!n.is_read ? "bg-[#007aff]/[0.03]" : ""}`}
+                      className={`flex items-start gap-3 p-4 transition-colors ${!isNotificationRead(n) ? "bg-[#007aff]/[0.03]" : ""}`}
                     >
                       <div className="flex-shrink-0 mt-0.5">{iconForType(n.type)}</div>
                       <div className="flex-1 min-w-0">
-                        <p className={`text-sm ${!n.is_read ? "font-semibold text-[#1d1d1f]" : "text-[#1d1d1f]"}`}>{n.title}</p>
-                        {n.body && <p className="text-xs text-[#86868b] mt-0.5 line-clamp-2">{n.body}</p>}
+                        <p className={`text-sm ${!isNotificationRead(n) ? "font-semibold text-[#1d1d1f]" : "text-[#1d1d1f]"}`}>{n.title}</p>
+                        {getNotificationBody(n) && <p className="text-xs text-[#86868b] mt-0.5 line-clamp-2">{getNotificationBody(n)}</p>}
                         <p className="text-xs text-[#86868b] mt-1">{timeAgo(n.created_at)}</p>
                       </div>
                       <div className="flex items-center gap-1 flex-shrink-0">
-                        {!n.is_read && (
+                        {!isNotificationRead(n) && (
                           <button onClick={() => markRead(n.id)} className="p-1.5 rounded-lg hover:bg-[#f5f5f7] transition-colors" title={l.markRead}>
                             <Check className="w-4 h-4 text-[#007aff]" />
                           </button>

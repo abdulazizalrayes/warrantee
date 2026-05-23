@@ -105,6 +105,44 @@ export const emailTemplates: Record<string, EmailTemplate> = {
       <a href="${data.dashboardUrl}" style="display:inline-block;background:#059669;color:#ffffff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">Get Started</a>
     `, locale),
   },
+
+  provisionalWarrantyConfirmation: {
+    subject: {
+      en: "Please confirm your warranty details",
+      ar: "يرجى تأكيد تفاصيل الضمان",
+    },
+    html: (data, locale) => baseLayout(locale === 'ar' ? `
+      <h2 style="color:#111827;margin:0 0 16px;font-size:20px;">يرجى مراجعة بيانات الضمان</h2>
+      <p style="color:#4b5563;line-height:1.8;">التقطنا بيانات ضمان جديدة من المستند الذي أرسلته. قبل تسجيله نهائياً، يرجى تأكيد أن التفاصيل صحيحة.</p>
+      <div style="background:#f9fafb;border-radius:12px;padding:20px;margin:20px 0;border:1px solid #e5e7eb;">
+        <p style="margin:0 0 8px;color:#111827;font-weight:600;">${data.product || "المنتج غير محدد"}</p>
+        <p style="margin:4px 0;color:#4b5563;">البائع: <strong>${data.seller || "غير محدد"}</strong></p>
+        <p style="margin:4px 0;color:#4b5563;">تاريخ الشراء: <strong>${data.purchaseDate || "غير محدد"}</strong></p>
+        <p style="margin:4px 0;color:#4b5563;">تاريخ الانتهاء: <strong>${data.expiryDate || "غير محدد"}</strong></p>
+      </div>
+      <p style="color:#6b7280;line-height:1.7;">إذا كانت البيانات صحيحة، قم بالتأكيد الآن. وإذا كانت غير دقيقة، سنعيدها للمراجعة قبل إصدار الضمان.</p>
+      <div style="margin:24px 0;display:flex;gap:12px;flex-wrap:wrap;">
+        <a href="${data.confirmUrl}" style="display:inline-block;background:#059669;color:#ffffff;padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:600;">نعم، البيانات صحيحة</a>
+        <a href="${data.rejectUrl}" style="display:inline-block;background:#ffffff;color:#b91c1c;padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:600;border:1px solid #fecaca;">لا، أحتاج مراجعة</a>
+      </div>
+      <p style="color:#9ca3af;font-size:12px;">يمكنك أيضاً مراجعة الحالات من لوحة التحكم في Warrantee.</p>
+    ` : `
+      <h2 style="color:#111827;margin:0 0 16px;font-size:20px;">Please review your warranty details</h2>
+      <p style="color:#4b5563;line-height:1.8;">We extracted a new warranty from the document you sent. Before we register it, please confirm that the details look correct.</p>
+      <div style="background:#f9fafb;border-radius:12px;padding:20px;margin:20px 0;border:1px solid #e5e7eb;">
+        <p style="margin:0 0 8px;color:#111827;font-weight:600;">${data.product || "Unknown product"}</p>
+        <p style="margin:4px 0;color:#4b5563;">Seller: <strong>${data.seller || "Unknown"}</strong></p>
+        <p style="margin:4px 0;color:#4b5563;">Purchase date: <strong>${data.purchaseDate || "Unknown"}</strong></p>
+        <p style="margin:4px 0;color:#4b5563;">Expiry date: <strong>${data.expiryDate || "Unknown"}</strong></p>
+      </div>
+      <p style="color:#6b7280;line-height:1.7;">If this looks right, confirm it now. If not, we will send it back for review before registering the warranty.</p>
+      <div style="margin:24px 0;display:flex;gap:12px;flex-wrap:wrap;">
+        <a href="${data.confirmUrl}" style="display:inline-block;background:#059669;color:#ffffff;padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:600;">Yes, this looks correct</a>
+        <a href="${data.rejectUrl}" style="display:inline-block;background:#ffffff;color:#b91c1c;padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:600;border:1px solid #fecaca;">No, I need to review it</a>
+      </div>
+      <p style="color:#9ca3af;font-size:12px;">You can also review these items from your Warrantee dashboard.</p>
+    `, locale),
+  },
 };
 
 export default emailTemplates;

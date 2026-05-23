@@ -20,6 +20,7 @@ import { getDictionary, DIRECTION } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth-context";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { ProtectedRouteNotice } from "@/components/dashboard/ProtectedRouteNotice";
 
 interface SellerStats {
   warranties_issued: number;
@@ -28,6 +29,22 @@ interface SellerStats {
   extensions_sold: number;
   total_commission: number;
   claims_rate: number;
+}
+
+interface SellerOpportunitySummary {
+  potentialWarranties: number;
+  extensionCandidates: number;
+  openIssueSignals: number;
+  topProducts: Array<{ name: string; count: number }>;
+  recent: Array<{
+    id: string;
+    product_name: string;
+    seller_name: string | null;
+    status: string | null;
+    end_date: string | null;
+    seller_id: string | null;
+    claim_count: number;
+  }>;
 }
 
 const statusConfig: Record<string, { color: string; bg: string; dot: string; label: { en: string; ar: string } }> = {
@@ -48,6 +65,13 @@ export default function SellerDashboardPage() {
 
   const [stats, setStats] = useState<SellerStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [opportunities, setOpportunities] = useState<SellerOpportunitySummary>({
+    potentialWarranties: 0,
+    extensionCandidates: 0,
+    openIssueSignals: 0,
+    topProducts: [],
+    recent: [],
+  });
   const [invitations, setInvitations] = useState<
     Array<{
       id: string;
@@ -60,7 +84,12 @@ export default function SellerDashboardPage() {
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!user) return;
+      if (!user) {
+        setStats(null);
+        setInvitations([]);
+        setLoading(false);
+        return;
+      }
 
       const { data: membership } = await supabase
         .from("company_members")
@@ -85,6 +114,71 @@ export default function SellerDashboardPage() {
         .limit(10);
 
       if (inv) setInvitations(inv);
+
+      const normalizedEmail = (user.email || "").toLowerCase();
+      const companyName = profile?.company_name?.trim() || "";
+      const matchedWarranties = new Map<string, any>();
+
+      const { data: directWarrantyMatches } = await supabase
+        .from("warranties")
+        .select("id, product_name, seller_name, status, end_date, seller_id, seller_email, recipient_user_id, buyer_id")
+        .eq("seller_email", normalizedEmail)
+        .order("created_at", { ascending: false })
+        .limit(50);
+
+      (directWarrantyMatches || []).forEach((warranty) => matchedWarranties.set(warranty.id, warranty));
+
+      if (companyName) {
+        const { data: companyNameMatches } = await supabase
+          .from("warranties")
+          .select("id, product_name, seller_name, status, end_date, seller_id, seller_email, recipient_user_id, buyer_id")
+          .ilike("seller_name", `%${companyName}%`)
+          .order("created_at", { ascending: false })
+          .limit(50);
+
+        (companyNameMatches || []).forEach((warranty) => matchedWarranties.set(warranty.id, warranty));
+      }
+
+      const matchedWarrantyList = Array.from(matchedWarranties.values());
+      const warrantyIds = matchedWarrantyList.map((warranty) => warranty.id);
+      let claimMap = new Map<string, number>();
+
+      if (warrantyIds.length > 0) {
+        const { data: claimSignals } = await supabase
+          .from("warranty_claims")
+          .select("id, warranty_id, status")
+          .in("warranty_id", warrantyIds);
+
+        claimMap = new Map<string, number>();
+        (claimSignals || []).forEach((claim) => {
+          const current = claimMap.get(claim.warranty_id) || 0;
+          claimMap.set(claim.warranty_id, current + 1);
+        });
+      }
+
+      const productCounts = new Map<string, number>();
+      matchedWarrantyList.forEach((warranty) => {
+        const key = warranty.product_name || "Unknown product";
+        productCounts.set(key, (productCounts.get(key) || 0) + 1);
+      });
+
+      const recentOpportunities = matchedWarrantyList
+        .slice(0, 8)
+        .map((warranty) => ({
+          ...warranty,
+          claim_count: claimMap.get(warranty.id) || 0,
+        }));
+
+      setOpportunities({
+        potentialWarranties: matchedWarrantyList.filter((warranty) => !warranty.seller_id).length,
+        extensionCandidates: matchedWarrantyList.filter((warranty) => warranty.status === "active").length,
+        openIssueSignals: Array.from(claimMap.values()).reduce((sum, count) => sum + count, 0),
+        topProducts: Array.from(productCounts.entries())
+          .map(([name, count]) => ({ name, count }))
+          .sort((a, b) => b.count - a.count)
+          .slice(0, 3),
+        recent: recentOpportunities,
+      });
       setLoading(false);
     };
     fetchData();
@@ -95,6 +189,23 @@ export default function SellerDashboardPage() {
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="w-8 h-8 border-2 border-[#1A1A2E] border-t-transparent rounded-full animate-spin" />
       </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <ProtectedRouteNotice
+        locale={locale}
+        isRTL={isRTL}
+        eyebrow={isRTL ? "مركز البائعين" : "Seller workspace"}
+        title={isRTL ? "\u0644\u0648\u062d\u0629 \u0627\u0644\u0628\u0627\u0626\u0639" : "Seller Dashboard"}
+        subtitle={isRTL ? "\u0645\u062a\u0627\u0628\u0639\u0629 \u0627\u0644\u0639\u0645\u0648\u0644\u0627\u062a \u0648\u0627\u0644\u062f\u0639\u0648\u0627\u062a \u0648\u0627\u0644\u0636\u0645\u0627\u0646\u0627\u062a \u062a\u062d\u062a\u0627\u062c \u0625\u0644\u0649 \u062d\u0633\u0627\u0628 \u0645\u0633\u062c\u0644." : "Commission, invitation, and seller activity data are available after sign-in."}
+        message={isRTL ? "\u0633\u062c\u0644 \u0627\u0644\u062f\u062e\u0648\u0644 \u0644\u0644\u0648\u0635\u0648\u0644 \u0625\u0644\u0649 \u0623\u062f\u0627\u0621 \u0627\u0644\u0628\u0627\u0626\u0639\u064a\u0646 \u0648\u062f\u0639\u0648\u0627\u062a \u0627\u0644\u0627\u0646\u0636\u0645\u0627\u0645 \u0648\u0627\u0644\u0639\u0645\u0648\u0644\u0627\u062a." : "Sign in to review seller performance, invitations, and commission activity in one place."}
+        crumbs={[
+          { label: "Dashboard", href: `/${locale}/dashboard` },
+          { label: isRTL ? "\u0627\u0644\u0628\u0627\u0626\u0639" : "Seller" },
+        ]}
+      />
     );
   }
 
@@ -119,6 +230,13 @@ export default function SellerDashboardPage() {
       label: isRTL ? "\u062a\u0645\u062f\u064a\u062f\u0627\u062a \u0645\u0628\u0627\u0639\u0629" : "Extensions Sold",
       iconColor: "text-[#0071e3]",
       iconBg: "bg-[#e5f1ff]",
+    },
+    {
+      icon: Users,
+      value: opportunities.potentialWarranties,
+      label: isRTL ? "فرص ضمانات من العملاء" : "Buyer-Recorded Opportunities",
+      iconColor: "text-[#7c3aed]",
+      iconBg: "bg-[#f3e8ff]",
     },
   ];
 
@@ -244,6 +362,115 @@ export default function SellerDashboardPage() {
             })}
           </div>
         )}
+      </div>
+
+      <div className="bg-white rounded-2xl ring-1 ring-[#d2d2d7]/40 shadow-sm overflow-hidden">
+        <div className="px-6 py-5 border-b border-[#f5f5f7]">
+          <h2 className="text-[20px] font-semibold text-[#1d1d1f]">
+            {isRTL ? "فرص البائع" : "Seller Opportunity Pipeline"}
+          </h2>
+          <p className="text-[13px] text-[#86868b] mt-0.5">
+            {isRTL
+              ? "ضمانات سجّلها العملاء ويمكن تحويلها إلى تمديد أو خدمة أو علاقة مباشرة مع البائع."
+              : "Client-recorded warranties that can turn into extensions, service relationships, and seller growth."}
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 px-6 py-6">
+          <div className="rounded-2xl bg-[#f5f7ff] p-4">
+            <p className="text-[12px] uppercase tracking-[0.14em] text-[#6b7280]">
+              {isRTL ? "ضمانات محتملة" : "Potential Warranties"}
+            </p>
+            <p className="mt-2 text-[30px] font-semibold text-[#1d1d1f]">
+              {opportunities.potentialWarranties}
+            </p>
+            <p className="mt-1 text-[13px] text-[#6b7280]">
+              {isRTL ? "سجلها العملاء ولم تُربط بعد بحساب البائع." : "Recorded by clients and not yet linked to a seller account."}
+            </p>
+          </div>
+
+          <div className="rounded-2xl bg-[#fff8e8] p-4">
+            <p className="text-[12px] uppercase tracking-[0.14em] text-[#6b7280]">
+              {isRTL ? "فرص تمديد" : "Extension Opportunities"}
+            </p>
+            <p className="mt-2 text-[30px] font-semibold text-[#1d1d1f]">
+              {opportunities.extensionCandidates}
+            </p>
+            <p className="mt-1 text-[13px] text-[#6b7280]">
+              {isRTL ? "ضمانات نشطة يمكن للبائع تصميم عروض تمديد لها." : "Active warranties the seller can convert into extension offers."}
+            </p>
+          </div>
+
+          <div className="rounded-2xl bg-[#fff1f2] p-4">
+            <p className="text-[12px] uppercase tracking-[0.14em] text-[#6b7280]">
+              {isRTL ? "إشارات مشاكل" : "Issue Signals"}
+            </p>
+            <p className="mt-2 text-[30px] font-semibold text-[#1d1d1f]">
+              {opportunities.openIssueSignals}
+            </p>
+            <p className="mt-1 text-[13px] text-[#6b7280]">
+              {isRTL ? "مطالبات أو مؤشرات تساعد البائع على اكتشاف مشاكل المنتج مبكراً." : "Claims and issue patterns that help sellers spot product problems early."}
+            </p>
+          </div>
+        </div>
+
+        <div className="px-6 pb-6 grid grid-cols-1 lg:grid-cols-[1.1fr,1.4fr] gap-6">
+          <div className="rounded-2xl border border-[#e5e7eb] p-5">
+            <h3 className="text-[16px] font-semibold text-[#1d1d1f]">
+              {isRTL ? "المنتجات الأكثر حضوراً" : "Product Hotspots"}
+            </h3>
+            {opportunities.topProducts.length === 0 ? (
+              <p className="mt-3 text-[13px] text-[#86868b]">
+                {isRTL ? "لا توجد إشارات كافية بعد." : "No opportunity signals yet."}
+              </p>
+            ) : (
+              <div className="mt-4 space-y-3">
+                {opportunities.topProducts.map((product) => (
+                  <div key={product.name} className="flex items-center justify-between rounded-2xl bg-[#f9fafb] px-4 py-3">
+                    <span className="text-[14px] font-medium text-[#1d1d1f]">{product.name}</span>
+                    <span className="text-[13px] text-[#6b7280]">{product.count}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-2xl border border-[#e5e7eb] p-5">
+            <h3 className="text-[16px] font-semibold text-[#1d1d1f]">
+              {isRTL ? "فرص حديثة من العملاء" : "Recent Buyer-Recorded Opportunities"}
+            </h3>
+            {opportunities.recent.length === 0 ? (
+              <p className="mt-3 text-[13px] text-[#86868b]">
+                {isRTL ? "لم يتم العثور على ضمانات مرتبطة بالبائع بعد." : "No customer-recorded seller opportunities found yet."}
+              </p>
+            ) : (
+              <div className="mt-4 space-y-3">
+                {opportunities.recent.map((opportunity) => (
+                  <div key={opportunity.id} className="rounded-2xl bg-[#f9fafb] px-4 py-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-[14px] font-medium text-[#1d1d1f]">{opportunity.product_name || (isRTL ? "منتج غير محدد" : "Unknown product")}</p>
+                        <p className="text-[12px] text-[#86868b] mt-1">
+                          {opportunity.seller_name || (isRTL ? "بائع غير محدد" : "Seller not specified")}
+                        </p>
+                      </div>
+                      <span className={`rounded-full px-3 py-1 text-[11px] font-medium ${opportunity.seller_id ? "bg-[#e8f9ed] text-[#1d7a34]" : "bg-[#fff4d4] text-[#7a5a00]"}`}>
+                        {opportunity.seller_id
+                          ? (isRTL ? "مرتبطة" : "Linked")
+                          : (isRTL ? "غير مرتبطة" : "Unclaimed")}
+                      </span>
+                    </div>
+                    <div className="mt-3 flex flex-wrap gap-3 text-[12px] text-[#6b7280]">
+                      <span>{isRTL ? "الحالة:" : "Status:"} {opportunity.status || "—"}</span>
+                      <span>{isRTL ? "المطالبات:" : "Claims:"} {opportunity.claim_count}</span>
+                      <span>{isRTL ? "الانتهاء:" : "Ends:"} {opportunity.end_date || "—"}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

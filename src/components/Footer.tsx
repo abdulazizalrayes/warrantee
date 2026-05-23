@@ -20,11 +20,14 @@ export function Footer({ locale, dictionary }: FooterProps) {
         { label: dictionary.nav.features, href: `/${locale}#features` },
         { label: dictionary.how_it_works.title, href: `/${locale}#how-it-works` },
         { label: dictionary.nav.pricing, href: `/${locale}#pricing` },
+        { label: locale === 'en' ? 'Blog & Guides' : 'المدونة والأدلة', href: `/${locale}/blog` },
+        { label: locale === 'en' ? 'API & ERP Integrations' : 'تكاملات API وERP', href: `/${locale}/api-docs` },
       ],
     },
     {
       title: dictionary.footer.company,
       links: [
+        { label: locale === 'en' ? 'About' : 'عن وارنتي', href: `/${locale}/about` },
         { label: dictionary.nav.contact, href: `/${locale}#contact` },
       ],
     },

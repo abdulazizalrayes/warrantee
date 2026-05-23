@@ -1,11 +1,78 @@
 'use client';
 
 import { useState } from 'react';
+import { useParams } from 'next/navigation';
 import { Mail, MessageCircle, Send } from 'lucide-react';
 import { trackContactForm } from '@/lib/ga4-events';
 import { PageViewTracker } from '@/components/PageViewTracker';
 
 export default function ContactPage() {
+  const params = useParams() ?? {};
+  const locale = params.locale === 'ar' ? 'ar' : 'en';
+  const isRTL = locale === 'ar';
+  const copy = isRTL
+    ? {
+        sentTitle: 'تم إرسال الرسالة',
+        sentBody: 'شكرًا لتواصلك معنا. سنعود إليك خلال 24 ساعة عمل.',
+        home: 'العودة للرئيسية',
+        error: 'تعذر إرسال النموذج الآن. يمكنك مراسلتنا مباشرة على hello@warrantee.io.',
+        title: 'تواصل معنا',
+        subtitle: 'لديك سؤال أو تحتاج مساعدة أو ترغب بمعرفة المزيد؟ يسعدنا التواصل معك.',
+        email: 'البريد الإلكتروني',
+        emailHint: 'للاستفسارات العامة والدعم',
+        chat: 'المحادثة المباشرة',
+        chatHint: 'متاحة خلال ساعات العمل',
+        comingSoon: 'قريبًا',
+        formTitle: 'أرسل لنا رسالة',
+        name: 'الاسم الكامل *',
+        namePlaceholder: 'اسمك',
+        company: 'الشركة',
+        companyPlaceholder: 'اسم الشركة (اختياري)',
+        subject: 'الموضوع *',
+        message: 'الرسالة *',
+        messagePlaceholder: 'أخبرنا كيف يمكننا مساعدتك...',
+        sending: 'جارٍ الإرسال...',
+        submit: 'إرسال الرسالة',
+        subjects: {
+          general: 'استفسار عام',
+          support: 'دعم فني',
+          partnership: 'استفسار شراكة',
+          enterprise: 'الشركات / طلب عرض توضيحي',
+          api: 'العلامة البيضاء / API',
+          press: 'الصحافة / الإعلام',
+        },
+      }
+    : {
+        sentTitle: 'Message Sent!',
+        sentBody: "Thank you for reaching out. We'll get back to you within 24 business hours.",
+        home: 'Back to Home',
+        error: 'We could not submit the form right now. You can still email hello@warrantee.io directly.',
+        title: 'Contact Us',
+        subtitle: "Have a question, need help, or want to learn more? We'd love to hear from you.",
+        email: 'Email',
+        emailHint: 'General inquiries and support',
+        chat: 'Live Chat',
+        chatHint: 'Available during business hours',
+        comingSoon: 'Coming soon',
+        formTitle: 'Send Us a Message',
+        name: 'Full Name *',
+        namePlaceholder: 'Your name',
+        company: 'Company',
+        companyPlaceholder: 'Company name (optional)',
+        subject: 'Subject *',
+        message: 'Message *',
+        messagePlaceholder: 'Tell us how we can help...',
+        sending: 'Sending...',
+        submit: 'Send Message',
+        subjects: {
+          general: 'General Inquiry',
+          support: 'Technical Support',
+          partnership: 'Partnership Inquiry',
+          enterprise: 'Enterprise / Demo Request',
+          api: 'White Label / API',
+          press: 'Press / Media',
+        },
+      };
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -33,31 +100,29 @@ export default function ContactPage() {
       trackContactForm(formData.subject);
       setSubmitted(true);
     } catch {
-      setError('We could not submit the form right now. You can still email hello@warrantee.io directly.');
+      setError(copy.error);
       window.location.href = `mailto:hello@warrantee.io?subject=${encodeURIComponent(formData.subject)}&body=${encodeURIComponent(formData.message)}`;
     } finally {
       setSubmitting(false);
     }
   }
 
-  // const locale = 'en'; // hardcoded English only for now
-
   if (submitted) {
     return (
-      <div className="min-h-screen bg-warm-white flex items-center justify-center px-4">
+      <div dir={isRTL ? 'rtl' : 'ltr'} className="min-h-screen bg-warm-white flex items-center justify-center px-4">
         <div className="text-center max-w-md">
           <div className="w-16 h-16 bg-gold/10 rounded-full flex items-center justify-center mx-auto mb-6">
             <Send className="w-8 h-8 text-gold" />
           </div>
-          <h1 className="text-3xl font-bold text-navy mb-4">Message Sent!</h1>
+          <h1 className="text-3xl font-bold text-navy mb-4">{copy.sentTitle}</h1>
           <p className="text-navy/60 mb-8">
-            Thank you for reaching out. We&apos;ll get back to you within 24 business hours.
+            {copy.sentBody}
           </p>
           <a
-            href="/en"
+            href={`/${locale}`}
             className="px-8 py-3 bg-gold text-navy font-semibold rounded-xl hover:bg-gold/90 transition-all inline-block"
           >
-            Back to Home
+            {copy.home}
           </a>
         </div>
       </div>
@@ -65,13 +130,13 @@ export default function ContactPage() {
   }
 
   return (
-    <div className="min-h-screen bg-warm-white">
-      <PageViewTracker pageName="contact_page" pageType="marketing" locale="en" />
+    <div dir={isRTL ? 'rtl' : 'ltr'} className="min-h-screen bg-warm-white">
+      <PageViewTracker pageName="contact_page" pageType="marketing" locale={locale} />
       <section className="pt-24 pb-12 px-4 sm:px-6 lg:px-8 text-center bg-gradient-to-b from-gold/5 to-transparent">
         <div className="max-w-3xl mx-auto">
-          <h1 className="text-5xl font-bold text-navy tracking-tight mb-4">Contact Us</h1>
+          <h1 className="text-5xl font-bold text-navy tracking-tight mb-4">{copy.title}</h1>
           <p className="text-xl text-navy/60">
-            Have a question, need help, or want to learn more? We&apos;d love to hear from you.
+            {copy.subtitle}
           </p>
         </div>
       </section>
@@ -80,24 +145,24 @@ export default function ContactPage() {
         <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-6">
           <div className="bg-white rounded-2xl border-2 border-gold/20 p-8 text-center hover:border-gold/40 transition-colors">
             <Mail className="w-10 h-10 text-gold mx-auto mb-4" />
-            <h3 className="font-bold text-lg text-navy mb-2">Email</h3>
-            <p className="text-navy/60 text-sm mb-3">General inquiries and support</p>
+            <h3 className="font-bold text-lg text-navy mb-2">{copy.email}</h3>
+            <p className="text-navy/60 text-sm mb-3">{copy.emailHint}</p>
             <a href="mailto:hello@warrantee.io" className="text-gold font-semibold hover:underline">
               hello@warrantee.io
             </a>
           </div>
           <div className="bg-white rounded-2xl border-2 border-navy/10 p-8 text-center hover:border-navy/20 transition-colors">
             <MessageCircle className="w-10 h-10 text-navy/40 mx-auto mb-4" />
-            <h3 className="font-bold text-lg text-navy mb-2">Live Chat</h3>
-            <p className="text-navy/60 text-sm mb-3">Available during business hours</p>
-            <span className="text-navy/40 font-semibold text-sm">Coming soon</span>
+            <h3 className="font-bold text-lg text-navy mb-2">{copy.chat}</h3>
+            <p className="text-navy/60 text-sm mb-3">{copy.chatHint}</p>
+            <span className="text-navy/40 font-semibold text-sm">{copy.comingSoon}</span>
           </div>
         </div>
       </section>
 
       <section className="px-4 sm:px-6 lg:px-8 pb-20">
         <div className="max-w-2xl mx-auto">
-          <h2 className="text-2xl font-bold text-navy mb-6">Send Us a Message</h2>
+          <h2 className="text-2xl font-bold text-navy mb-6">{copy.formTitle}</h2>
           <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-navy/5 p-8 space-y-5">
             {error ? (
               <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -106,18 +171,18 @@ export default function ContactPage() {
             ) : null}
             <div className="grid md:grid-cols-2 gap-5">
               <div>
-                <label className="block text-sm font-semibold text-navy mb-1.5">Full Name *</label>
+                <label className="block text-sm font-semibold text-navy mb-1.5">{copy.name}</label>
                 <input
                   type="text"
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   className="w-full px-4 py-3 rounded-xl border border-navy/10 focus:outline-none focus:border-gold focus:ring-2 focus:ring-gold/20 text-sm"
-                  placeholder="Your name"
+                  placeholder={copy.namePlaceholder}
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-navy mb-1.5">Email *</label>
+                <label className="block text-sm font-semibold text-navy mb-1.5">{copy.email} *</label>
                 <input
                   type="email"
                   required
@@ -130,40 +195,40 @@ export default function ContactPage() {
             </div>
             <div className="grid md:grid-cols-2 gap-5">
               <div>
-                <label className="block text-sm font-semibold text-navy mb-1.5">Company</label>
+                <label className="block text-sm font-semibold text-navy mb-1.5">{copy.company}</label>
                 <input
                   type="text"
                   value={formData.company}
                   onChange={(e) => setFormData({ ...formData, company: e.target.value })}
                   className="w-full px-4 py-3 rounded-xl border border-navy/10 focus:outline-none focus:border-gold focus:ring-2 focus:ring-gold/20 text-sm"
-                  placeholder="Company name (optional)"
+                  placeholder={copy.companyPlaceholder}
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-navy mb-1.5">Subject *</label>
+                <label className="block text-sm font-semibold text-navy mb-1.5">{copy.subject}</label>
                 <select
                   value={formData.subject}
                   onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
                   className="w-full px-4 py-3 rounded-xl border border-navy/10 focus:outline-none focus:border-gold focus:ring-2 focus:ring-gold/20 text-sm"
                 >
-                  <option value="general">General Inquiry</option>
-                  <option value="support">Technical Support</option>
-                  <option value="partnership">Partnership Inquiry</option>
-                  <option value="enterprise">Enterprise / Demo Request</option>
-                  <option value="api">White Label / API</option>
-                  <option value="press">Press / Media</option>
+                  <option value="general">{copy.subjects.general}</option>
+                  <option value="support">{copy.subjects.support}</option>
+                  <option value="partnership">{copy.subjects.partnership}</option>
+                  <option value="enterprise">{copy.subjects.enterprise}</option>
+                  <option value="api">{copy.subjects.api}</option>
+                  <option value="press">{copy.subjects.press}</option>
                 </select>
               </div>
             </div>
             <div>
-              <label className="block text-sm font-semibold text-navy mb-1.5">Message *</label>
+              <label className="block text-sm font-semibold text-navy mb-1.5">{copy.message}</label>
               <textarea
                 required
                 value={formData.message}
                 onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                 rows={5}
                 className="w-full px-4 py-3 rounded-xl border border-navy/10 focus:outline-none focus:border-gold focus:ring-2 focus:ring-gold/20 text-sm resize-vertical"
-                placeholder="Tell us how we can help..."
+                placeholder={copy.messagePlaceholder}
               />
             </div>
             <button
@@ -171,7 +236,7 @@ export default function ContactPage() {
               disabled={submitting}
               className="px-8 py-3 bg-gold text-navy font-semibold rounded-xl hover:bg-gold/90 transition-all inline-flex items-center gap-2"
             >
-              {submitting ? 'Sending...' : 'Send Message'}
+              {submitting ? copy.sending : copy.submit}
               <Send className="w-4 h-4" />
             </button>
           </form>

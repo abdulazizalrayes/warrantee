@@ -153,6 +153,11 @@ export interface Document {
   file_size: number;
   uploaded_by: string;
   uploaded_at: string;
+  document_kind?: "original_proof" | "certificate" | "claim_support" | "reference" | "other";
+  storage_path?: string | null;
+  file_hash?: string | null;
+  provenance_status?: "recorded" | "legacy" | "verified";
+  evidence_metadata?: Record<string, unknown> | null;
 }
 
 // Dashboard types

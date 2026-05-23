@@ -1,7 +1,9 @@
 // @ts-nocheck
+import type { Metadata } from 'next';
 import { getDictionary, Locale, DIRECTION } from '@/lib/i18n';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
+import { buildPageMetadata } from '@/lib/page-metadata';
 import {
   Shield, Bell, FileCheck, BarChart3, Mail, Link2,
   Clock, CheckCircle, ArrowRight, Globe, ChevronRight,
@@ -9,6 +11,11 @@ import {
 
 interface HomePageProps {
   params: Promise<{ locale: string }>;
+}
+
+export async function generateMetadata({ params }: HomePageProps): Promise<Metadata> {
+  const { locale } = await params;
+  return buildPageMetadata('home', locale);
 }
 
 export default async function HomePage({ params }: HomePageProps) {

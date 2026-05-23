@@ -14,18 +14,23 @@ export async function GET(request: NextRequest) {
   );
 
   const { searchParams } = new URL(request.url);
-  const query = searchParams?.get("q");
+  const query = searchParams?.get("q")?.trim();
 
   if (!query) {
     return NextResponse.json({ success: false, error: "Query parameter 'q' is required" }, { status: 400 });
   }
 
   try {
-    // Search by ID, certificate_number, or serial_number
+    const safeQuery = query.replace(/[%_,]/g, "").slice(0, 80);
+    if (!safeQuery) {
+      return NextResponse.json({ success: false, error: "Invalid verification query" }, { status: 400 });
+    }
+
+    // Public verification intentionally returns only proof-safe fields.
     const { data, error } = await supabase
       .from("warranties")
-      .select("id, product_name, serial_number, status, warranty_start_date, warranty_end_date, coverage_type, customer_name, certificate_number, created_at")
-      .or(`id.eq.${query},serial_number.ilike.${query},certificate_number.ilike.${query}`)
+      .select("id, reference_number, product_name, product_name_ar, serial_number, status, start_date, end_date, category, seller_name, certificate_url, created_at")
+      .or(`id.eq.${safeQuery},reference_number.ilike.${safeQuery},serial_number.ilike.${safeQuery}`)
       .limit(1)
       .single();
 

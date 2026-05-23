@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
+import { useAuth } from '@/lib/auth-context';
 import { trackReportExport } from '@/lib/ga4-events';
 import {
   BarChart3,
@@ -20,6 +21,7 @@ import {
 } from 'lucide-react';
 import { DashboardPageShell } from '@/components/dashboard/DashboardPageShell';
 import { PageViewTracker } from '@/components/PageViewTracker';
+import { buildWarrantyAccessOrClause } from '@/lib/warranty-access';
 
 const supabase = createSupabaseBrowserClient();
 
@@ -101,43 +103,94 @@ const statusColors: Record<string, { dot: string; bg: string; text: string }> = 
   claimed: { dot: 'bg-[#0071e3]', bg: 'bg-[#e5f1ff]', text: 'text-[#003d7a]' },
 };
 
+const emptyAnalyticsData: AnalyticsData = {
+  totalWarranties: 0,
+  activeWarranties: 0,
+  expiredWarranties: 0,
+  expiringThisMonth: 0,
+  totalClaims: 0,
+  pendingClaims: 0,
+  avgWarrantyDuration: 0,
+  categoryBreakdown: [],
+  monthlyTrend: [],
+  statusBreakdown: [],
+  topSuppliers: [],
+  coverageValue: 0,
+};
+
+function parseDate(value: string | null | undefined) {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
 export default function AnalyticsPage() {
   const params = useParams() ?? {};
   const locale = (params?.locale as string) || 'en';
   const isRTL = locale === 'ar';
   const t = translations[locale as keyof typeof translations] || translations.en;
+  const { user, loading: authLoading } = useAuth();
 
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const fetchAnalytics = useCallback(async () => {
+    if (!user) {
+      setData(emptyAnalyticsData);
+      setLoadError(null);
+      setLoading(false);
+      return;
+    }
+
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      setLoadError(null);
 
-      const { data: warranties } = await supabase
+      const { data: warranties, error: warrantiesError } = await supabase
         .from('warranties')
-        .select('*')
-        .eq('user_id', user.id);
+        .select('id, status, start_date, end_date, created_at, category, seller_name, purchase_price, user_id, created_by, recipient_user_id, buyer_id, seller_id, issuer_user_id')
+        .or(buildWarrantyAccessOrClause(user.id));
 
-      const { data: claims } = await supabase.from('claims').select('*');
+      if (warrantiesError) {
+        console.error('Analytics warranties query error:', warrantiesError);
+        setData(emptyAnalyticsData);
+        setLoadError(isRTL
+          ? 'تعذر تحميل التحليلات الآن. يرجى المحاولة مرة أخرى.'
+          : 'Analytics could not load right now. Please try again.');
+        return;
+      }
 
-      if (!warranties) { setLoading(false); return; }
+      const warrantyIds = (warranties || []).map((w) => w.id);
+      const { data: claims, error: claimsError } = warrantyIds.length > 0
+        ? await supabase.from('warranty_claims').select('id, status, warranty_id, created_at').in('warranty_id', warrantyIds)
+        : { data: [], error: null };
+
+      if (claimsError) {
+        console.warn('Analytics claims query warning:', claimsError);
+      }
 
       const now = new Date();
       const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-      const active = warranties.filter(w => new Date(w.end_date) > now);
-      const expired = warranties.filter(w => new Date(w.end_date) <= now);
+      const active = warranties.filter(w => {
+        const end = parseDate(w.end_date);
+        return end ? end > now : false;
+      });
+      const expired = warranties.filter(w => {
+        const end = parseDate(w.end_date);
+        return end ? end <= now : false;
+      });
       const expiringThisMonth = warranties.filter(w => {
-        const end = new Date(w.end_date);
+        const end = parseDate(w.end_date);
+        if (!end) return false;
         return end > now && end <= endOfMonth;
       });
 
       const durations = warranties.map(w => {
-        const start = new Date(w.start_date);
-        const end = new Date(w.end_date);
+        const start = parseDate(w.start_date);
+        const end = parseDate(w.end_date);
+        if (!start || !end) return null;
         return Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-      });
+      }).filter((duration): duration is number => typeof duration === 'number' && duration >= 0);
       const avgDuration = durations.length > 0
         ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length) : 0;
 
@@ -164,11 +217,13 @@ export default function AnalyticsPage() {
         const monthEnd = new Date(d.getFullYear(), d.getMonth() + 1, 0);
         const monthStr = d.toLocaleDateString(locale === 'ar' ? 'ar-SA' : 'en-US', { month: 'short', year: '2-digit' });
         const created = warranties.filter(w => {
-          const cd = new Date(w.created_at);
+          const cd = parseDate(w.created_at);
+          if (!cd) return false;
           return cd >= d && cd <= monthEnd;
         }).length;
         const expiredCount = warranties.filter(w => {
-          const ed = new Date(w.end_date);
+          const ed = parseDate(w.end_date);
+          if (!ed) return false;
           return ed >= d && ed <= monthEnd;
         }).length;
         monthlyTrend.push({ month: monthStr, created, expired: expiredCount });
@@ -176,7 +231,7 @@ export default function AnalyticsPage() {
 
       const suppMap: Record<string, number> = {};
       warranties.forEach(w => {
-        if (w.supplier) suppMap[w.supplier] = (suppMap[w.supplier] || 0) + 1;
+        if (w.seller_name) suppMap[w.seller_name] = (suppMap[w.seller_name] || 0) + 1;
       });
       const topSuppliers = Object.entries(suppMap)
         .map(([supplier, count]) => ({ supplier, count }))
@@ -196,12 +251,20 @@ export default function AnalyticsPage() {
       });
     } catch (err) {
       console.error('Analytics error:', err);
+      setData(emptyAnalyticsData);
+      setLoadError(isRTL
+        ? 'تعذر تحميل التحليلات الآن. يرجى المحاولة مرة أخرى.'
+        : 'Analytics could not load right now. Please try again.');
     } finally {
       setLoading(false);
     }
-  }, [locale]);
+  }, [isRTL, locale, user]);
 
-  useEffect(() => { fetchAnalytics(); }, [fetchAnalytics]);
+  useEffect(() => {
+    if (authLoading) return;
+    setLoading(true);
+    fetchAnalytics();
+  }, [authLoading, fetchAnalytics]);
 
   const maxBarValue = data
     ? Math.max(...data.monthlyTrend.map(m => Math.max(m.created, m.expired)), 1) : 1;
@@ -255,6 +318,31 @@ export default function AnalyticsPage() {
         }
       >
       <div className="space-y-8">
+
+      {loadError ? (
+        <div className="rounded-2xl border border-[#ffd0cc] bg-[#fff5f4] p-5 text-[#7a1d1d]">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-[15px] font-semibold">{loadError}</p>
+              <p className="mt-1 text-[13px] text-[#8a3a32]">
+                {isRTL
+                  ? 'تم الاحتفاظ بتجربة لوحة التحكم، ويمكنك إعادة المحاولة بدون فقدان السياق.'
+                  : 'The dashboard shell stayed available, and you can retry without losing context.'}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setLoading(true);
+                fetchAnalytics();
+              }}
+              className="rounded-full bg-[#1A1A2E] px-5 py-2.5 text-[14px] font-medium text-white transition-colors hover:bg-[#2d2d5e]"
+            >
+              {isRTL ? 'إعادة المحاولة' : 'Try again'}
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       {!data || data.totalWarranties === 0 ? (
         <div className="bg-white rounded-2xl ring-1 ring-[#d2d2d7]/40 shadow-sm p-16 text-center">

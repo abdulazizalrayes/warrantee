@@ -1,6 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
+import { getFAQJsonLd } from "@/lib/jsonld";
 
 const faqs = {
   en: [
@@ -81,6 +82,10 @@ export default function FAQPage() {
 
   return (
     <div dir={isRTL ? "rtl" : "ltr"} className="min-h-screen bg-gray-50">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(getFAQJsonLd(locale)) }}
+      />
       <div className="max-w-3xl mx-auto px-4 py-16 sm:px-6 lg:px-8">
         <h1 className="text-4xl font-bold text-gray-900 text-center mb-2">
           {isRTL ? "\u0627\u0644\u0623\u0633\u0626\u0644\u0629 \u0627\u0644\u0634\u0627\u0626\u0639\u0629" : "Frequently Asked Questions"}

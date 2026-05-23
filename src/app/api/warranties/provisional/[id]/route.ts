@@ -4,7 +4,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
-import { logAudit } from '@/lib/ingestion';
+import { rejectProvisionalWarranty } from '@/lib/provisional-warranties';
 
 export async function PATCH(
   request: NextRequest,
@@ -28,7 +28,7 @@ export async function PATCH(
 
   const { data: provisional } = await supabase
     .from('provisional_warranties')
-    .select('*, ingestion_job_id')
+    .select('id, user_id')
     .eq('id', id)
     .eq('user_id', user.id)
     .single();
@@ -38,29 +38,26 @@ export async function PATCH(
   }
 
   if (action === 'reject') {
-    await supabase.from('provisional_warranties').update({
-      status: 'rejected',
-    }).eq('id', id);
-
-    if (provisional.ingestion_job_id) {
-      await logAudit(provisional.ingestion_job_id, 'user_rejected', `user:${user.id}`, {
-        provisional_id: id,
-      });
+    const result = await rejectProvisionalWarranty(id, {
+      reason: 'reject',
+      actor: `user:${user.id}`,
+      auditAction: 'user_rejected',
+    });
+    if (!result.ok) {
+      return NextResponse.json({ error: result.error }, { status: result.status });
     }
 
     return NextResponse.json({ status: 'rejected' });
   }
 
   if (action === 'not_warranty') {
-    await supabase.from('provisional_warranties').update({
-      status: 'not_warranty',
-    }).eq('id', id);
-
-    if (provisional.ingestion_job_id) {
-      await logAudit(provisional.ingestion_job_id, 'user_rejected', `user:${user.id}`, {
-        provisional_id: id,
-        reason: 'not_warranty',
-      });
+    const result = await rejectProvisionalWarranty(id, {
+      reason: 'not_warranty',
+      actor: `user:${user.id}`,
+      auditAction: 'user_rejected',
+    });
+    if (!result.ok) {
+      return NextResponse.json({ error: result.error }, { status: result.status });
     }
 
     return NextResponse.json({ status: 'not_warranty' });

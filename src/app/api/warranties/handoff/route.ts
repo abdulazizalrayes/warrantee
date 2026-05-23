@@ -1,27 +1,49 @@
-import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
+import { createSupabaseAdminClient } from '@/lib/supabase/admin';
+import { createServerSupabaseClient } from '@/lib/supabase/server';
 
-function getSupabaseAdmin() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-  return createClient(url, key);
+const ADMIN_ROLES = new Set(['admin', 'super_admin', 'platform_admin']);
+
+async function getAuthenticatedUser() {
+  const supabase = await createServerSupabaseClient();
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+
+  if (error || !user) return null;
+  return user;
+}
+
+async function isPlatformAdmin(supabase: ReturnType<typeof createSupabaseAdminClient>, userId: string) {
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', userId)
+    .single();
+
+  return ADMIN_ROLES.has(profile?.role || '');
 }
 
 // POST: Create a servicing handoff (manufacturer delegates servicing to a local company)
 export async function POST(request: NextRequest) {
   try {
-    const supabase = getSupabaseAdmin();
+    const user = await getAuthenticatedUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const supabase = createSupabaseAdminClient();
     const body = await request.json();
     const {
       warranty_id,
       servicing_company_id,
-      initiated_by,
       notes,
     } = body;
 
-    if (!warranty_id || !servicing_company_id || !initiated_by) {
+    if (!warranty_id || !servicing_company_id) {
       return NextResponse.json(
-        { error: 'warranty_id, servicing_company_id, and initiated_by are required' },
+        { error: 'warranty_id and servicing_company_id are required' },
         { status: 400 }
       );
     }
@@ -49,12 +71,13 @@ export async function POST(request: NextRequest) {
       .from('company_members')
       .select('id')
       .eq('company_id', warranty.issuer_company_id)
-      .eq('user_id', initiated_by)
+      .eq('user_id', user.id)
       .single();
 
-    if (!membership) {
+    const isAdmin = await isPlatformAdmin(supabase, user.id);
+    if (!membership && !isAdmin) {
       return NextResponse.json(
-        { error: 'Only the issuing company can delegate servicing' },
+        { error: 'Only the issuing company or platform admin can delegate servicing' },
         { status: 403 }
       );
     }
@@ -95,10 +118,10 @@ export async function POST(request: NextRequest) {
       .insert({
         warranty_id,
         assigned_to: servicing_company_id,
-        assigned_by: initiated_by,
+        assigned_by: user.id,
         assignment_type: 'servicing_handoff',
         servicing_company_id,
-        initiated_by,
+        initiated_by: user.id,
         notes: notes || null,
       })
       .select()
@@ -124,13 +147,18 @@ export async function POST(request: NextRequest) {
 // DELETE: Revoke a servicing handoff
 export async function DELETE(request: NextRequest) {
   try {
-    const supabase = getSupabaseAdmin();
-    const body = await request.json();
-    const { assignment_id, revoked_by, reason } = body;
+    const user = await getAuthenticatedUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
-    if (!assignment_id || !revoked_by) {
+    const supabase = createSupabaseAdminClient();
+    const body = await request.json();
+    const { assignment_id, reason } = body;
+
+    if (!assignment_id) {
       return NextResponse.json(
-        { error: 'assignment_id and revoked_by are required' },
+        { error: 'assignment_id is required' },
         { status: 400 }
       );
     }
@@ -172,17 +200,12 @@ export async function DELETE(request: NextRequest) {
         .from('company_members')
         .select('id')
         .eq('company_id', warranty.issuer_company_id)
-        .eq('user_id', revoked_by)
+        .eq('user_id', user.id)
         .single();
 
-      // Also allow admin
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', revoked_by)
-        .single();
+      const isAdmin = await isPlatformAdmin(supabase, user.id);
 
-      if (!membership && profile?.role !== 'admin') {
+      if (!membership && !isAdmin) {
         return NextResponse.json(
           { error: 'Only the issuing company or admin can revoke a handoff' },
           { status: 403 }
@@ -194,7 +217,7 @@ export async function DELETE(request: NextRequest) {
       .from('warranty_chain_assignments')
       .update({
         revoked_at: new Date().toISOString(),
-        revoked_by,
+        revoked_by: user.id,
         revocation_reason: reason || 'Handoff revoked by issuer',
       })
       .eq('id', assignment_id);
@@ -218,7 +241,12 @@ export async function DELETE(request: NextRequest) {
 // GET: List active handoffs for a warranty
 export async function GET(request: NextRequest) {
   try {
-    const supabase = getSupabaseAdmin();
+    const user = await getAuthenticatedUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const supabase = createSupabaseAdminClient();
     const { searchParams } = new URL(request.url);
     const warranty_id = searchParams?.get('warranty_id');
 
@@ -226,6 +254,32 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(
         { error: 'warranty_id query param is required' },
         { status: 400 }
+      );
+    }
+
+    const { data: warranty } = await supabase
+      .from('warranties')
+      .select('issuer_company_id, user_id, created_by, seller_id, issuer_user_id')
+      .eq('id', warranty_id)
+      .single();
+
+    if (!warranty) {
+      return NextResponse.json({ error: 'Warranty not found' }, { status: 404 });
+    }
+
+    const { data: membership } = await supabase
+      .from('company_members')
+      .select('id')
+      .eq('company_id', warranty.issuer_company_id)
+      .eq('user_id', user.id)
+      .single();
+    const isAdmin = await isPlatformAdmin(supabase, user.id);
+    const isWarrantyParty = [warranty.user_id, warranty.created_by, warranty.seller_id, warranty.issuer_user_id].includes(user.id);
+
+    if (!membership && !isWarrantyParty && !isAdmin) {
+      return NextResponse.json(
+        { error: 'You do not have permission to view handoffs for this warranty' },
+        { status: 403 }
       );
     }
 

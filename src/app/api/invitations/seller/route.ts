@@ -5,6 +5,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
 import { Resend } from 'resend';
+import { upsertHubSpotContact } from '@/lib/hubspot';
+import { getBusinessInboxBcc, getEmailFromAddress } from '@/lib/email-config';
 
 let _resend: Resend | null = null;
 function getResend() {
@@ -92,10 +94,19 @@ export async function POST(request: NextRequest) {
   const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL}/en/seller/accept-invite?token=${invitation.token}`;
 
   try {
+    await upsertHubSpotContact({
+      email: seller_email.toLowerCase(),
+      firstname: seller_name || seller_email,
+      phone: seller_phone || null,
+      lifecycleStage: 'lead',
+    }).catch((crmError) => {
+      console.warn('[Invitation] HubSpot sync failed:', crmError);
+    });
+
     await getResend().emails.send({
-      from: 'Warrantee <noreply@warrantee.io>',
+      from: getEmailFromAddress(),
       to: seller_email,
-      bcc: 'hello@warrantee.io',
+      bcc: getBusinessInboxBcc(),
       subject: `${inviterProfile?.full_name || 'A customer'} invited you to Warrantee`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">

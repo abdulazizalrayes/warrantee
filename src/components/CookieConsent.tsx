@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
+import { defaultCookieConsent, readStoredCookieConsent } from '@/lib/cookie-consent';
 
 interface ConsentState {
   necessary: boolean;
@@ -17,18 +18,31 @@ export default function CookieConsent() {
   const [showBanner, setShowBanner] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [consent, setConsent] = useState<ConsentState>({
-    necessary: true,
-    analytics: false,
-    marketing: false,
+    ...defaultCookieConsent,
     timestamp: '',
   });
 
   useEffect(() => {
     const saved = localStorage.getItem('warrantee_cookie_consent');
+    const parsed = readStoredCookieConsent(saved);
+
     if (!saved) {
       const timer = setTimeout(() => setShowBanner(true), 1500);
       return () => clearTimeout(timer);
     }
+
+    if (!parsed) {
+      localStorage.removeItem('warrantee_cookie_consent');
+      const timer = setTimeout(() => setShowBanner(true), 1500);
+      return () => clearTimeout(timer);
+    }
+
+    setConsent({
+      necessary: true,
+      analytics: parsed.analytics,
+      marketing: parsed.marketing,
+      timestamp: parsed.timestamp || '',
+    });
   }, []);
 
   const saveConsent = (state: ConsentState) => {
@@ -39,7 +53,12 @@ export default function CookieConsent() {
       (window as any).gtag('consent', 'update', {
         analytics_storage: 'granted',
         ad_storage: finalState.marketing ? 'granted' : 'denied',
+        ad_user_data: finalState.marketing ? 'granted' : 'denied',
+        ad_personalization: finalState.marketing ? 'granted' : 'denied',
       });
+    }
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('warrantee_cookie_consent_updated', { detail: finalState }));
     }
   };
 
@@ -94,14 +113,14 @@ export default function CookieConsent() {
             </svg>
             <h3 className="font-semibold text-gray-900">{text.title}</h3>
           </div>
-          <p className="text-sm text-gray-600 mb-4">{text.description}</p>
+          <p className="text-sm text-gray-700 mb-4">{text.description}</p>
 
           {showDetails && (
             <div className="space-y-3 mb-4 p-4 bg-gray-50 rounded-xl">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-medium text-sm text-gray-900">{text.necessary}</p>
-                  <p className="text-xs text-gray-500">{text.necessaryDesc}</p>
+                  <p className="text-xs text-gray-600">{text.necessaryDesc}</p>
                 </div>
                 <div className="w-10 h-6 bg-emerald-500 rounded-full relative">
                   <div className="absolute top-1 right-1 w-4 h-4 bg-white rounded-full" />
@@ -110,7 +129,7 @@ export default function CookieConsent() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-medium text-sm text-gray-900">{text.analytics}</p>
-                  <p className="text-xs text-gray-500">{text.analyticsDesc}</p>
+                  <p className="text-xs text-gray-600">{text.analyticsDesc}</p>
                 </div>
                 <button onClick={() => setConsent(p => ({ ...p, analytics: !p.analytics }))}
                   className={`w-10 h-6 rounded-full relative transition-colors ${consent.analytics ? 'bg-emerald-500' : 'bg-gray-300'}`}>
@@ -120,7 +139,7 @@ export default function CookieConsent() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-medium text-sm text-gray-900">{text.marketing}</p>
-                  <p className="text-xs text-gray-500">{text.marketingDesc}</p>
+                  <p className="text-xs text-gray-600">{text.marketingDesc}</p>
                 </div>
                 <button onClick={() => setConsent(p => ({ ...p, marketing: !p.marketing }))}
                   className={`w-10 h-6 rounded-full relative transition-colors ${consent.marketing ? 'bg-emerald-500' : 'bg-gray-300'}`}>
@@ -132,7 +151,7 @@ export default function CookieConsent() {
 
           <div className="flex flex-wrap gap-2">
             <button onClick={acceptAll}
-              className="flex-1 px-4 py-2.5 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors">
+              className="flex-1 px-4 py-2.5 bg-emerald-700 text-white text-sm font-medium rounded-lg hover:bg-emerald-800 transition-colors">
               {text.acceptAll}
             </button>
             <button onClick={rejectAll}
@@ -151,7 +170,7 @@ export default function CookieConsent() {
               </button>
             )}
           </div>
-          <p className="text-xs text-gray-400 mt-3 text-center flex items-center justify-center gap-1">
+          <p className="text-xs text-gray-600 mt-3 text-center flex items-center justify-center gap-1">
             <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
             </svg>

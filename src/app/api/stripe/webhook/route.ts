@@ -10,8 +10,7 @@ function getSupabaseAdmin() {
   );
 }
 
-// Idempotency:  check Supabase for processed event IDs
-async function isEventProcessed(eventId: string, supabaseAdmin: any): Promise<boolean> {
+async function hasProcessedEvent(eventId: string, supabaseAdmin: any): Promise<boolean> {
   try {
     const { data } = await supabaseAdmin
       .from("webhook_events")
@@ -19,18 +18,23 @@ async function isEventProcessed(eventId: string, supabaseAdmin: any): Promise<bo
       .eq("event_id", eventId)
       .maybeSingle();
 
-    if (data) return true;
-
-    // Record this event as processed
-    await supabaseAdmin
-      .from("webhook_events")
-      .insert({ event_id: eventId, processed_at: new Date().toISOString() });
-
-    return false;
+    return Boolean(data);
   } catch (err) {
     console.warn("Idempotency check failed:", err);
-    // Fail safely - treat as not processed if check fails
     return false;
+  }
+}
+
+async function markEventProcessed(event: any, supabaseAdmin: any) {
+  const { error } = await supabaseAdmin
+    .from("webhook_events")
+    .insert({
+      event_id: event.id,
+      processed_at: new Date().toISOString(),
+    });
+
+  if (error && error.code !== "23505") {
+    throw error;
   }
 }
 
@@ -58,7 +62,7 @@ export async function POST(request: Request) {
   const supabaseAdmin = getSupabaseAdmin();
 
   // Idempotency check: skip if we already processed this event
-  if (await isEventProcessed(event.id, supabaseAdmin)) {
+  if (await hasProcessedEvent(event.id, supabaseAdmin)) {
     return NextResponse.json({ received: true, deduplicated: true });
   }
 
@@ -82,12 +86,15 @@ export async function POST(request: Request) {
         if (extensionId) {
           const { error: extError } = await supabaseAdmin
             .from("warranty_extensions")
-            .update({ is_purchased: true })
+            .update({
+              is_purchased: true,
+              purchased_by: userId || null,
+              purchased_at: new Date().toISOString(),
+            })
             .eq("id", extensionId);
 
           if (extError) {
-            console.warn("Extension update failed:", extError.message);
-            break;
+            throw extError;
           }
 
           const { data: extension } = await supabaseAdmin
@@ -97,13 +104,16 @@ export async function POST(request: Request) {
             .single();
 
           if (extension) {
-            await supabaseAdmin
+            const { error: warrantyError } = await supabaseAdmin
               .from("warranties")
               .update({
                 end_date: extension.new_end_date,
                 status: "renewed",
+                updated_at: new Date().toISOString(),
               })
               .eq("id", extension.warranty_id);
+
+            if (warrantyError) throw warrantyError;
           }
         }
         break;
@@ -134,12 +144,14 @@ export async function POST(request: Request) {
         if (metadata?.extension_id) {
           const { error: extError } = await supabaseAdmin
             .from("warranty_extensions")
-            .update({ is_purchased: true })
+            .update({
+              is_purchased: true,
+              purchased_at: new Date().toISOString(),
+            })
             .eq("id", metadata.extension_id);
 
           if (extError) {
-            console.warn("Extension update failed:", extError.message);
-            break;
+            throw extError;
           }
 
           const { data: extension } = await supabaseAdmin
@@ -149,21 +161,26 @@ export async function POST(request: Request) {
             .single();
 
           if (extension) {
-            await supabaseAdmin
+            const { error: warrantyError } = await supabaseAdmin
               .from("warranties")
               .update({
                 end_date: extension.new_end_date,
                 status: "renewed",
+                updated_at: new Date().toISOString(),
               })
               .eq("id", extension.warranty_id);
+
+            if (warrantyError) throw warrantyError;
           }
         }
         break;
       }
     }
+
+    await markEventProcessed(event, supabaseAdmin);
   } catch (err) {
-    // Log processing errors but still return 200 to prevent Stripe retries
     console.warn("Webhook processing error for event:", event.type);
+    return NextResponse.json({ error: "Webhook processing failed" }, { status: 500 });
   }
 
   return NextResponse.json({ received: true });

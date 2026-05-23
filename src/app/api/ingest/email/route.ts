@@ -20,6 +20,8 @@ import {
 } from '@/lib/ingestion';
 import type { ResendInboundPayload, IngestionJobStatus } from '@/lib/ingestion';
 import { sendEmail } from '@/lib/email';
+import emailTemplates from '@/lib/email-templates';
+import { createBuyerConfirmationToken } from '@/lib/provisional-warranties';
 
 function getSupabaseAdmin() {
   return createClient<Database>(
@@ -168,6 +170,22 @@ export async function POST(request: NextRequest) {
       }).catch((err) => console.error('[Ingest] Confirmation email failed:', err));
     }
 
+    if (finalStatus === 'pending_buyer_confirmation' && senderMatch.buyer_id) {
+      const pendingProvisionalResults = attachmentResults.filter((result) => result.provisional);
+      for (const result of pendingProvisionalResults) {
+        try {
+          await sendBuyerConfirmationEmail({
+            provisional: result.provisional!,
+            recipientEmail: fromEmail,
+            jobId: job.id,
+            locale: 'en',
+          });
+        } catch (err) {
+          console.error('[Ingest] Buyer confirmation email failed:', err);
+        }
+      }
+    }
+
     return NextResponse.json({
       status: finalStatus,
       job_id: job.id,
@@ -189,7 +207,7 @@ async function processAttachment(
   senderMatch: Awaited<ReturnType<typeof matchSender>>,
   fromEmail: string,
   supabaseAdmin: SupabaseAdminClient
-): Promise<{ confidence: number; hasFraud: boolean }> {
+): Promise<{ confidence: number; hasFraud: boolean; provisional?: any | null }> {
   const isSupported = SUPPORTED_FILE_TYPES.includes(attachment.content_type);
   if (attachment.size > MAX_FILE_SIZE) {
     await logAudit(jobId, 'error', 'system', {
@@ -197,7 +215,7 @@ async function processAttachment(
       filename: attachment.filename,
       size: attachment.size,
     });
-    return { confidence: 0, hasFraud: false };
+    return { confidence: 0, hasFraud: false, provisional: null };
   }
 
   const fileBuffer = Buffer.from(attachment.content, 'base64');
@@ -216,7 +234,7 @@ async function processAttachment(
       filename: attachment.filename,
       details: storageError.message,
     });
-    return { confidence: 0, hasFraud: false };
+    return { confidence: 0, hasFraud: false, provisional: null };
   }
 
   const { data: attachmentRecord } = await supabaseAdmin
@@ -234,7 +252,7 @@ async function processAttachment(
     .single();
 
   if (!attachmentRecord) {
-    return { confidence: 0, hasFraud: false };
+    return { confidence: 0, hasFraud: false, provisional: null };
   }
 
   await logAudit(jobId, 'attachment_stored', 'system', {
@@ -245,7 +263,7 @@ async function processAttachment(
   });
 
   if (!isSupported) {
-    return { confidence: 0, hasFraud: false };
+    return { confidence: 0, hasFraud: false, provisional: null };
   }
 
   await logAudit(jobId, 'ocr_started', 'system', {
@@ -293,7 +311,7 @@ async function processAttachment(
     }
 
     if (senderMatch.user_id && ocrResult.aggregate_confidence >= CONFIDENCE_THRESHOLDS.MEDIUM && !hasFraud) {
-      await createProvisionalWarranty(jobId, attachmentRecord.id, senderMatch.user_id, ocrResult, supabaseAdmin);
+      var provisional = await createProvisionalWarranty(jobId, attachmentRecord.id, senderMatch.user_id, ocrResult, supabaseAdmin);
     }
 
     if (
@@ -308,7 +326,7 @@ async function processAttachment(
       }, attachmentRecord.id);
     }
 
-    return { confidence: ocrResult.aggregate_confidence, hasFraud };
+    return { confidence: ocrResult.aggregate_confidence, hasFraud, provisional: provisional || null };
 
   } catch (ocrError) {
     await supabaseAdmin.from('ingestion_attachments').update({
@@ -320,7 +338,7 @@ async function processAttachment(
       error: (ocrError as Error).message,
     }, attachmentRecord.id);
 
-    return { confidence: 0, hasFraud: false };
+    return { confidence: 0, hasFraud: false, provisional: null };
   }
 }
 
@@ -346,7 +364,7 @@ async function createProvisionalWarranty(
     }
   }
 
-  await supabaseAdmin.from('provisional_warranties').insert({
+  const { data: provisional } = await supabaseAdmin.from('provisional_warranties').insert({
     ingestion_job_id: jobId,
     attachment_id: attachmentId,
     user_id: userId,
@@ -360,13 +378,15 @@ async function createProvisionalWarranty(
     seller_name: fields.seller_name?.value || null,
     confidence_score: ocrResult.aggregate_confidence,
     needs_input_fields: needsInput,
-  });
+  }).select('id, user_id, product_name, seller_name, purchase_date, expiry_date, ingestion_job_id, attachment_id').single();
 
   await logAudit(jobId, 'provisional_created', 'system', {
     user_id: userId,
     confidence: ocrResult.aggregate_confidence,
     needs_input: needsInput,
   }, attachmentId);
+
+  return provisional || null;
 }
 
 async function autoConfirmWarranty(
@@ -413,10 +433,10 @@ function verifyResendSignature(body: string, signature: string | null): boolean 
     .update(body)
     .digest('hex');
 
-  return crypto.timingSafeEqual(
-    Buffer.from(signature),
-    Buffer.from(expectedSignature)
-  );
+  const sigBuf = Buffer.from(signature);
+  const expectedBuf = Buffer.from(expectedSignature);
+  if (sigBuf.length !== expectedBuf.length) return false;
+  return crypto.timingSafeEqual(sigBuf, expectedBuf);
 }
 
 async function checkRateLimit(email: string, supabaseAdmin: SupabaseAdminClient): Promise<boolean> {
@@ -453,4 +473,69 @@ async function sendNoAttachmentNotification(email: string, subject: string | und
   <p style="color: #999; font-size: 12px;">Warrantee — Trust the Terms™</p>
 </div>`,
   });
+}
+
+async function sendBuyerConfirmationEmail({
+  provisional,
+  recipientEmail,
+  jobId,
+  locale,
+}: {
+  provisional: {
+    id: string;
+    user_id: string;
+    product_name?: string | null;
+    seller_name?: string | null;
+    purchase_date?: string | null;
+    expiry_date?: string | null;
+    attachment_id?: string | null;
+  };
+  recipientEmail: string;
+  jobId: string;
+  locale: 'en' | 'ar';
+}) {
+  const expiresAt = Date.now() + 1000 * 60 * 60 * 24 * 3;
+  const confirmToken = createBuyerConfirmationToken({
+    provisionalId: provisional.id,
+    userId: provisional.user_id,
+    email: recipientEmail,
+    action: 'confirm',
+    expiresAt,
+  });
+  const rejectToken = createBuyerConfirmationToken({
+    provisionalId: provisional.id,
+    userId: provisional.user_id,
+    email: recipientEmail,
+    action: 'reject',
+    expiresAt,
+  });
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://warrantee.io';
+  const confirmUrl = `${appUrl}/api/warranties/provisional/email-action?token=${encodeURIComponent(confirmToken)}`;
+  const rejectUrl = `${appUrl}/api/warranties/provisional/email-action?token=${encodeURIComponent(rejectToken)}`;
+
+  const template = emailTemplates.provisionalWarrantyConfirmation;
+  const sendResult = await sendEmail({
+    to: recipientEmail,
+    subject: template.subject[locale],
+    html: template.html(
+      {
+        product: provisional.product_name || '',
+        seller: provisional.seller_name || '',
+        purchaseDate: provisional.purchase_date || '',
+        expiryDate: provisional.expiry_date || '',
+        confirmUrl,
+        rejectUrl,
+      },
+      locale
+    ),
+  });
+
+  if (sendResult.success) {
+    await logAudit(jobId, 'buyer_confirmation_sent', 'system', {
+      provisional_id: provisional.id,
+      recipient_email: recipientEmail,
+      expires_at: new Date(expiresAt).toISOString(),
+    }, provisional.attachment_id || undefined);
+  }
 }

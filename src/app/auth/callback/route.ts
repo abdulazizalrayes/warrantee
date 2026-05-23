@@ -1,11 +1,16 @@
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { sendEmail, welcomeEmail } from "@/lib/email";
+import { upsertHubSpotContact } from "@/lib/hubspot";
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams?.get("code");
-  const next = searchParams?.get("next") ?? "/en/dashboard";
+  const requestedNext = searchParams?.get("next");
+  const next =
+    requestedNext && requestedNext.startsWith("/") && !requestedNext.startsWith("//")
+      ? requestedNext
+      : "/en/dashboard";
 
   if (code) {
     const supabase = await createServerSupabaseClient();
@@ -29,6 +34,14 @@ export async function GET(request: Request) {
             const diffMinutes =
               (now.getTime() - createdAt.getTime()) / (1000 * 60);
 
+            await upsertHubSpotContact({
+              email: profile.email || user.email || "",
+              firstname: profile.full_name || profile.email || user.email || "User",
+              lifecycleStage: "subscriber",
+            }).catch((error) => {
+              console.warn("HubSpot signup sync error:", error);
+            });
+
             // If profile was created within last 5 minutes, send welcome email
             if (diffMinutes <= 5) {
               const email = profile.email || user.email || "";
@@ -44,7 +57,7 @@ export async function GET(request: Request) {
         console.error("Welcome email error:", e);
       }
 
-      return NextResponse.redirect(origin + next);
+      return NextResponse.redirect(new URL(next, origin));
     }
   }
 

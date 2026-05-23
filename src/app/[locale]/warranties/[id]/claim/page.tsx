@@ -3,11 +3,13 @@
 
 import { useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, CheckCircle, Paperclip, X, Upload } from "lucide-react";
+import { CheckCircle, Paperclip, X, Upload } from "lucide-react";
+import { SubpageHeroHeader } from "@/components/dashboard/SubpageHeroHeader";
 import { getDictionary, DIRECTION } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth-context";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { trackClaim } from "@/lib/ga4-events";
 
 export default function FileClaimPage() {
   const params = useParams() ?? {};
@@ -151,6 +153,7 @@ export default function FileClaimPage() {
       metadata: { warranty_id: warrantyId, claim_number: claimNumber },
     });
 
+    trackClaim(warrantyId);
     setCreatedClaimId(claim.id);
     setSuccess(true);
     setLoading(false);
@@ -171,38 +174,54 @@ export default function FileClaimPage() {
 
   return (
     <div dir={direction} className="max-w-2xl mx-auto">
-      <div className="flex items-center gap-4 mb-6">
-        <button onClick={() => router.back()} className="p-2 hover:bg-gray-100 rounded-lg">
-          {isRTL ? <ArrowRight size={20} /> : <ArrowLeft size={20} />}
-        </button>
-        <h1 className="text-2xl font-bold text-[#1A1A2E]">{t.title}</h1>
-      </div>
+      <SubpageHeroHeader
+        fallbackHref={`/${locale}/warranties/${warrantyId}`}
+        isRTL={isRTL}
+        eyebrow={isRTL ? "مسار المطالبة" : "Claims workflow"}
+        title={t.title}
+        subtitle={
+          isRTL
+            ? "سجّل المشكلة، أرفق الأدلة، وحدد طريقة التواصل المناسبة حتى تتحرك المطالبة ضمن مسار واضح وقابل للتتبع."
+            : "Describe the issue, attach evidence, and choose the right contact path so the claim moves through a clear and traceable workflow."
+        }
+        badge={files.length > 0 ? `${files.length} ${isRTL ? "مرفقات" : "attachments"}` : (isRTL ? "إرفاق الأدلة اختياري" : "Evidence attachments optional")}
+      />
 
       <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="mb-5 border-b border-gray-100 pb-4">
+          <h2 className="text-xl font-bold text-[#1A1A2E]">
+            {isRTL ? "تفاصيل المطالبة" : "Claim details"}
+          </h2>
+          <p className="mt-1 text-sm text-gray-500">
+            {isRTL
+              ? "اكتب الوصف كما حدث فعلياً، وارفع ما يثبت الحالة لتقليل ذهاب وإياب المراجعة."
+              : "Describe the issue as it happened and attach supporting proof to reduce approval back-and-forth."}
+          </p>
+        </div>
         {error && <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-800 text-sm">{error}</div>}
         <form onSubmit={e => { e.preventDefault(); handleSubmit(false); }} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-[#1A1A2E] mb-1">{t.claimTitle} *</label>
-            <input type="text" value={title} onChange={e => setTitle(e.target.value)} required
+            <label htmlFor="claim-title" className="block text-sm font-medium text-[#1A1A2E] mb-1">{t.claimTitle} *</label>
+            <input id="claim-title" name="claimTitle" type="text" value={title} onChange={e => setTitle(e.target.value)} required
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#4169E1]" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-[#1A1A2E] mb-1">{t.desc} *</label>
-            <textarea value={description} onChange={e => setDescription(e.target.value)} rows={4} required
+            <label htmlFor="claim-description" className="block text-sm font-medium text-[#1A1A2E] mb-1">{t.desc} *</label>
+            <textarea id="claim-description" name="description" value={description} onChange={e => setDescription(e.target.value)} rows={4} required
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#4169E1] resize-none" />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-[#1A1A2E] mb-1">{t.sev}</label>
-              <select value={severity} onChange={e => setSeverity(e.target.value)}
+              <label htmlFor="claim-severity" className="block text-sm font-medium text-[#1A1A2E] mb-1">{t.sev}</label>
+              <select id="claim-severity" name="severity" value={severity} onChange={e => setSeverity(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#4169E1]">
                 <option value="low">{t.low}</option><option value="medium">{t.medium}</option>
                 <option value="high">{t.high}</option><option value="critical">{t.critical}</option>
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-[#1A1A2E] mb-1">{t.cat}</label>
-              <select value={category} onChange={e => setCategory(e.target.value)}
+              <label htmlFor="claim-category" className="block text-sm font-medium text-[#1A1A2E] mb-1">{t.cat}</label>
+              <select id="claim-category" name="category" value={category} onChange={e => setCategory(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#4169E1]">
                 <option value="">{t.selectCat}</option><option value="defect">{t.defect}</option>
                 <option value="damage">{t.damage}</option><option value="malfunction">{t.malfunction}</option>
@@ -212,21 +231,21 @@ export default function FileClaimPage() {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-[#1A1A2E] mb-1">{t.amount}</label>
-              <input type="number" value={claimAmount} onChange={e => setClaimAmount(e.target.value)}
+              <label htmlFor="claim-amount" className="block text-sm font-medium text-[#1A1A2E] mb-1">{t.amount}</label>
+              <input id="claim-amount" name="claimAmount" type="number" value={claimAmount} onChange={e => setClaimAmount(e.target.value)}
                 step="0.01" dir="ltr" className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#4169E1]" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-[#1A1A2E] mb-1">{t.curr}</label>
-              <select value={currency} onChange={e => setCurrency(e.target.value)}
+              <label htmlFor="claim-currency" className="block text-sm font-medium text-[#1A1A2E] mb-1">{t.curr}</label>
+              <select id="claim-currency" name="currency" value={currency} onChange={e => setCurrency(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#4169E1]">
                 <option value="SAR">SAR</option><option value="USD">USD</option><option value="EUR">EUR</option>
               </select>
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-[#1A1A2E] mb-1">{t.contact}</label>
-            <select value={contactMethod} onChange={e => setContactMethod(e.target.value)}
+            <label htmlFor="claim-contact-method" className="block text-sm font-medium text-[#1A1A2E] mb-1">{t.contact}</label>
+            <select id="claim-contact-method" name="contactMethod" value={contactMethod} onChange={e => setContactMethod(e.target.value)}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#4169E1]">
               <option value="email">{t.email}</option><option value="phone">{t.phone}</option>
               <option value="in_person">{t.in_person}</option><option value="other">{t.otherC}</option>
@@ -234,10 +253,14 @@ export default function FileClaimPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[#1A1A2E] mb-1">{t.attachFiles}</label>
+            <label htmlFor="claim-attachments" className="block text-sm font-medium text-[#1A1A2E] mb-1">{t.attachFiles}</label>
             <div
+              role="button"
+              tabIndex={0}
+              aria-controls="claim-attachments"
               className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-[#4169E1] transition-colors cursor-pointer"
               onClick={() => fileInputRef.current?.click()}
+              onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fileInputRef.current?.click(); } }}
               onDragOver={e => { e.preventDefault(); e.currentTarget.classList.add("border-[#4169E1]", "bg-blue-50"); }}
               onDragLeave={e => { e.preventDefault(); e.currentTarget.classList.remove("border-[#4169E1]", "bg-blue-50"); }}
               onDrop={e => { e.preventDefault(); e.currentTarget.classList.remove("border-[#4169E1]", "bg-blue-50"); handleFiles(e.dataTransfer.files); }}
@@ -246,6 +269,8 @@ export default function FileClaimPage() {
               <p className="text-sm text-gray-600">{t.dragDrop}</p>
               <p className="text-xs text-gray-400 mt-1">{t.maxSize}</p>
               <input
+                id="claim-attachments"
+                name="attachments"
                 ref={fileInputRef}
                 type="file"
                 multiple

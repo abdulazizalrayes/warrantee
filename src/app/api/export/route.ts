@@ -2,11 +2,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { rateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
+import { buildWarrantyAccessOrClause } from "@/lib/warranty-access";
 
 export async function GET(request: NextRequest) {
   // Rate limiting
   const ip = request.headers.get("x-forwarded-for") || "unknown";
-  const rl = rateLimit(ip, { maxRequests: 10, windowMs: 60000, identifier: "export" });
+  const rl = await rateLimit(ip, { maxRequests: 10, windowMs: 60000, identifier: "export" });
   if (!rl.success) {
     return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429, headers: getRateLimitHeaders(rl) });
   }
@@ -28,18 +29,40 @@ export async function GET(request: NextRequest) {
     if (type === "warranties") {
       const { data: warranties, error } = await supabase
         .from("warranties")
-        .select("id, product_name, serial_number, status, purchase_date, warranty_start_date, warranty_end_date, coverage_type, coverage_amount, currency, customer_name, customer_email, created_at")
-        .eq("created_by", user.id)
+        .select("id, reference_number, product_name, product_name_ar, sku, serial_number, quantity, category, status, start_date, end_date, coverage_type, seller_name, seller_email, purchase_price, currency, created_at")
+        .or(buildWarrantyAccessOrClause(user.id))
         .order("created_at", { ascending: false });
       if (error) throw error;
       data = warranties || [];
     } else if (type === "claims") {
-      const { data: claims, error } = await supabase
-        .from("warranty_claims")
-        .select("id, claim_number, status, claim_date, claimed_amount, description, resolved_at, created_at, warranty_id")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      data = claims || [];
+      const { data: visibleWarranties, error: warrantyError } = await supabase
+        .from("warranties")
+        .select("id")
+        .or(buildWarrantyAccessOrClause(user.id));
+
+      if (warrantyError) throw warrantyError;
+
+      const warrantyIds = (visibleWarranties || []).map((warranty) => warranty.id);
+      if (warrantyIds.length === 0) {
+        data = [];
+      } else {
+        const { data: claims, error } = await supabase
+          .from("warranty_claims")
+          .select("id, warranty_id, claim_type, status, description, created_at, updated_at")
+          .in("warranty_id", warrantyIds)
+          .order("created_at", { ascending: false });
+        if (error) throw error;
+        data = claims || [];
+      }
+    } else {
+      return NextResponse.json({ error: "Unsupported export type" }, { status: 400 });
+    }
+
+    if (format === "pdf") {
+      return NextResponse.json(
+        { error: "PDF export is not available yet. Use format=csv for a real data export." },
+        { status: 501 }
+      );
     }
 
     if (format === "csv") {
@@ -66,9 +89,13 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    if (format !== "json") {
+      return NextResponse.json({ error: "Unsupported export format" }, { status: 400 });
+    }
+
     // JSON format fallback
     return NextResponse.json({ success: true, data, total: data.length });
   } catch (err: any) {
     return NextResponse.json({ error: err.message || "Export failed" }, { status: 500 });
   }
-            }
+}

@@ -1,15 +1,18 @@
 // @ts-nocheck
 "use client";
 
-import { useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, Upload, X, FileText, CheckCircle, ScanLine, Sparkles, Camera } from "lucide-react";
+import { SubpageHeroHeader } from "@/components/dashboard/SubpageHeroHeader";
 import { getDictionary, DIRECTION } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth-context";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { trackWarrantyCreated, trackWarrantyScan } from "@/lib/ga4-events";
 
 type Step = 1 | 2 | 3 | 4;
+const PROVISIONAL_REVIEW_CONFIDENCE_THRESHOLD = 0.85;
 
 const CATEGORIES = [
   { value: "electronics", en: "Electronics", ar: "\u0625\u0644\u0643\u062a\u0631\u0648\u0646\u064a\u0627\u062a" },
@@ -31,7 +34,7 @@ export default function NewWarrantyPage() {
   const dict = getDictionary(locale);
   const isRTL = locale === "ar";
   const direction = DIRECTION[locale as Locale];
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const supabase = createSupabaseBrowserClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -62,14 +65,32 @@ export default function NewWarrantyPage() {
   const [scanning, setScanning] = useState(false);
   const [scanProgress, setScanProgress] = useState(0);
   const [scanResult, setScanResult] = useState<{fieldsFound: number} | null>(null);
+  const [scanReviewNotice, setScanReviewNotice] = useState<string | null>(null);
   const scanInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.replace(`/${locale}/auth?redirect=${encodeURIComponent(`/${locale}/warranties/new`)}`);
+    }
+  }, [authLoading, locale, router, user]);
+
+  if (authLoading || !user) {
+    return (
+      <div dir={direction} className="flex min-h-[40vh] items-center justify-center text-sm text-gray-500">
+        {isRTL ? "جاري التحقق من الجلسة..." : "Checking your session..."}
+      </div>
+    );
+  }
 
   const handleSmartScan = async (file: File) => {
     setScanning(true);
     setScanProgress(0);
     setScanResult(null);
+    setScanReviewNotice(null);
     setError("");
+    trackWarrantyScan("started", { locale, file_type: file.type || "unknown" });
     let worker: any = null;
+    let fieldsFound = 0;
     try {
       setScanProgress(5);
       const Tesseract = await import("tesseract.js");
@@ -111,10 +132,51 @@ export default function NewWarrantyPage() {
         if (f.start_date) { setStartDate(f.start_date); count++; }
         if (f.end_date) { setEndDate(f.end_date); count++; }
         setScanResult({ fieldsFound: count });
+        fieldsFound = count;
+
+        const scanConfidence = typeof f.confidence === "number" ? f.confidence : 0;
+        if (scanConfidence < PROVISIONAL_REVIEW_CONFIDENCE_THRESHOLD && count > 0) {
+          const needsInputFields = [
+            !f.product_name ? "product_name" : null,
+            !f.serial_number ? "serial_number" : null,
+            !f.start_date ? "purchase_date" : null,
+            !f.end_date ? "expiry_date" : null,
+            !f.supplier ? "seller_name" : null,
+          ].filter(Boolean);
+
+          const provisionalResponse = await fetch("/api/warranties/provisional", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              product_name: f.product_name || null,
+              brand: null,
+              model_number: sku || null,
+              serial_number: f.serial_number || null,
+              purchase_date: f.start_date || null,
+              expiry_date: f.end_date || null,
+              seller_name: f.supplier || null,
+              confidence_score: scanConfidence,
+              needs_input_fields: needsInputFields,
+            }),
+          });
+
+          if (provisionalResponse.ok) {
+            setScanReviewNotice(
+              isRTL
+                ? "تم إنشاء عنصر مراجعة في صندوق المراجعة لأن ثقة المسح ليست كافية للاعتماد الكامل."
+                : "A provisional review item was created because the scan confidence is not high enough for full trust."
+            );
+          }
+        }
       }
+      trackWarrantyScan("completed", {
+        locale,
+        fields_found: fieldsFound,
+      });
       setFiles((prev) => [...prev, file]);
     } catch (err: any) {
       console.error("Smart Scan error:", err);
+      trackWarrantyScan("failed", { locale, reason: err?.message || "unknown" });
       const msg = err?.message || "";
       const userMsg = msg.length > 0 ? msg : (isRTL ? "\u062d\u062f\u062b \u062e\u0637\u0623 \u063a\u064a\u0631 \u0645\u062a\u0648\u0642\u0639" : "An unexpected error occurred. Please try again.");
       setError(isRTL ? `\u0641\u0634\u0644 \u0627\u0644\u0645\u0633\u062d \u0627\u0644\u0630\u0643\u064a: ${userMsg}` : `Smart Scan failed: ${userMsg}`);
@@ -177,16 +239,32 @@ export default function NewWarrantyPage() {
     setLoading(true);
     setError("");
     setCompletionNotice(null);
+
+    if (!user) {
+      setError(
+        isRTL
+          ? "يجب تسجيل الدخول أولاً قبل إنشاء الضمان."
+          : "You need to sign in before creating a warranty."
+      );
+      setLoading(false);
+      return;
+    }
+
     const referenceNumber = generateReferenceNumber();
-    const { data: warranty, error: insertError } = await supabase
-      .from("warranties")
-      .insert({
+    const createResponse = await fetch("/api/warranties", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
         reference_number: referenceNumber,
         product_name: productName,
         product_name_ar: productNameAr || null,
         sku: sku || null,
         serial_number: serialNumber || null,
-        quantity, category,
+        quantity,
+        category,
+        purchase_date: startDate,
+        warranty_start_date: startDate,
+        warranty_end_date: endDate,
         start_date: startDate,
         end_date: endDate,
         seller_name: sellerName || null,
@@ -197,34 +275,41 @@ export default function NewWarrantyPage() {
         custom_clauses: customClauses || null,
         language,
         status: asDraft ? "draft" : "active",
-        created_by: user!.id,
-        issuer_user_id: user!.id,
-      })
-      .select().single();
-    if (insertError) { setError(insertError.message); setLoading(false); return; }
+      }),
+    });
+
+    const createPayload = await createResponse.json().catch(() => null);
+    if (!createResponse.ok || !createPayload?.data) {
+      setError(createPayload?.error || (isRTL ? "تعذر إنشاء الضمان." : "Failed to create warranty."));
+      setLoading(false);
+      return;
+    }
+
+    const warranty = createPayload.data;
+    trackWarrantyCreated(asDraft ? "manual_draft" : files.length > 0 ? "manual_with_documents" : "manual");
     const issues: string[] = [];
     if (files.length > 0 && warranty) {
       setUploading(true);
       for (const file of files) {
-        const filePath = `${user!.id}/${warranty.id}/${Date.now()}-${file.name}`;
-        const { error: uploadError } = await supabase.storage.from("warranty-documents").upload(filePath, file);
-        if (uploadError) {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("documentKind", "original_proof");
+        formData.append("sourceContext", "warranty_creation");
+
+        const uploadResponse = await fetch(`/api/warranties/${warranty.id}/documents`, {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!uploadResponse.ok) {
           issues.push(`Attachment upload failed for ${file.name}`);
-        } else {
-          const { data: publicUrl } = supabase.storage.from("warranty-documents").getPublicUrl(filePath);
-          const { error: documentError } = await supabase.from("warranty_documents").insert({
-            warranty_id: warranty.id, file_name: file.name, file_type: file.type,
-            file_size: file.size, file_url: publicUrl.publicUrl, uploaded_by: user!.id,
-          });
-          if (documentError) {
-            issues.push(`Document record failed for ${file.name}`);
-          }
+          continue;
         }
       }
       setUploading(false);
     }
     const { error: activityError } = await supabase.from("activity_log").insert({
-      actor_id: user!.id, entity_type: "warranty", entity_id: warranty.id,
+      actor_id: user.id, entity_type: "warranty", entity_id: warranty.id,
       action: "warranty_created", metadata: { reference_number: referenceNumber, product_name: productName },
     });
     if (activityError) {
@@ -426,38 +511,19 @@ export default function NewWarrantyPage() {
   return (
     <div dir={direction}>
       <div className="max-w-3xl mx-auto">
-        <div className="mb-6 rounded-3xl bg-gradient-to-br from-[#1A1A2E] via-[#242446] to-[#2f2f5f] px-6 py-7 text-white shadow-lg">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[12px] font-medium text-white/85">
-                <Sparkles size={14} />
-                {isRTL ? "إنشاء ضمان جديد" : "Create a new warranty"}
-              </div>
-              <h1 className="mt-4 text-[30px] font-semibold tracking-tight">{dict.warranty.create}</h1>
-              <p className="mt-3 max-w-xl text-[15px] text-white/70">
-                {isRTL
-                  ? "أدخل بيانات المنتج والضمان والمرفقات ضمن تدفق واضح من ثلاث خطوات قبل النشر."
-                  : "Capture product details, warranty terms, and supporting documents in a guided three-step flow before publishing."}
-              </p>
-            </div>
-            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-[13px] text-white/75">
-              {isRTL ? "جاهز للمسح الذكي والمرفقات" : "Supports smart scan and attachments"}
-            </div>
-          </div>
-        </div>
+        <SubpageHeroHeader
+          fallbackHref={`/${locale}/warranties`}
+          isRTL={isRTL}
+          eyebrow={isRTL ? "إنشاء ضمان جديد" : "Create a new warranty"}
+          title={dict.warranty.create}
+          subtitle={
+            isRTL
+              ? "أدخل بيانات المنتج والضمان والمرفقات ضمن تدفق واضح من ثلاث خطوات قبل النشر."
+              : "Capture product details, warranty terms, and supporting documents in a guided three-step flow before publishing."
+          }
+          badge={isRTL ? "جاهز للمسح الذكي والمرفقات" : "Supports smart scan and attachments"}
+        />
 
-        <div className="flex items-center gap-4 mb-6">
-          <button onClick={() => router.back()} className="p-2 hover:bg-gray-100 rounded-lg transition">
-            {isRTL ? <ArrowRight size={20} /> : <ArrowLeft size={20} />}
-          </button>
-          <div>
-            <h2 className="text-2xl font-bold text-navy">{dict.warranty.create}</h2>
-            <p className="text-sm text-gray-500 mt-1">
-              {isRTL ? "أكمل الحقول الأساسية ثم راجع المستندات قبل الإنشاء." : "Complete the core fields, then review documents before creation."}
-            </p>
-          </div>
-        </div>
-        
         {step < 4 && (
           <div className="mb-6 bg-gradient-to-r from-[#1A1A2E] to-[#2d2d5e] rounded-2xl p-4 text-white">
             <div className="flex items-center justify-between">
@@ -497,6 +563,11 @@ export default function NewWarrantyPage() {
                 <span>{isRTL ? `\u062a\u0645 \u0627\u0644\u0639\u062b\u0648\u0631 \u0639\u0644\u0649 ${scanResult.fieldsFound} \u062d\u0642\u0648\u0644` : `Found ${scanResult.fieldsFound} fields`}</span>
               </div>
             )}
+            {scanReviewNotice && (
+              <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[12px] text-amber-800">
+                {scanReviewNotice}
+              </div>
+            )}
           </div>
         )}
 
@@ -508,6 +579,14 @@ export default function NewWarrantyPage() {
           </div>
         )}
         <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <div className="mb-5 border-b border-gray-100 pb-4">
+            <h2 className="text-xl font-bold text-navy">
+              {isRTL ? "تفاصيل الضمان" : "Warranty details"}
+            </h2>
+            <p className="mt-1 text-sm text-gray-500">
+              {isRTL ? "أكمل الحقول الأساسية ثم راجع المستندات قبل الإنشاء." : "Complete the core fields, then review documents before creation."}
+            </p>
+          </div>
           {error && (<div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-800 text-sm">{error}</div>)}
           {step === 1 && renderStep1()}
           {step === 2 && renderStep2()}

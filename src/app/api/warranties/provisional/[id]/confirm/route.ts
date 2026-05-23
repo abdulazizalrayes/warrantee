@@ -5,22 +5,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
-import { createClient } from '@supabase/supabase-js';
-import { logAudit } from '@/lib/ingestion';
-
-function getSupabaseAdmin() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
+import { confirmProvisionalWarranty } from '@/lib/provisional-warranties';
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const supabaseAdmin = getSupabaseAdmin();
 
   // Auth check
   const cookieStore = await cookies();
@@ -37,10 +28,9 @@ export async function POST(
   // Get provisional warranty
   const { data: provisional, error: fetchError } = await supabase
     .from('provisional_warranties')
-    .select('*')
+    .select('id, user_id')
     .eq('id', id)
     .eq('user_id', user.id)
-    .eq('status', 'pending')
     .single();
 
   if (fetchError || !provisional) {
@@ -50,66 +40,18 @@ export async function POST(
   // Get user corrections from request body
   const body = await request.json();
   const corrections = body.corrections || {};
+  const result = await confirmProvisionalWarranty(id, {
+    corrections,
+    actor: `user:${user.id}`,
+    auditAction: 'user_confirmed',
+  });
 
-  // Merge OCR data with user corrections (matches warranties table schema)
-  const warrantyData = {
-    recipient_user_id: user.id,
-    product_name: corrections.product_name || provisional.product_name || 'Unknown Product',
-    sku: corrections.model_number || provisional.model_number || null,
-    serial_number: corrections.serial_number || provisional.serial_number || null,
-    start_date: corrections.purchase_date || provisional.purchase_date || null,
-    end_date: corrections.expiry_date || provisional.expiry_date || null,
-    seller_name: corrections.seller_name || provisional.seller_name || null,
-    is_self_registered: true,
-    source: 'email_ingestion',
-    ingestion_job_id: provisional.ingestion_job_id,
-  };
-
-  // Create confirmed warranty
-  const { data: warranty, error: createError } = await supabaseAdmin
-    .from('warranties')
-    .insert(warrantyData)
-    .select('id')
-    .single();
-
-  if (createError) {
-    return NextResponse.json({ error: createError.message }, { status: 500 });
-  }
-
-  // Update provisional warranty status
-  await supabase.from('provisional_warranties').update({
-    status: 'confirmed',
-    confirmed_at: new Date().toISOString(),
-  }).eq('id', id);
-
-  // Link attachment to warranty
-  if (provisional.attachment_id) {
-    await supabaseAdmin.from('ingestion_attachments').update({
-      warranty_id: warranty.id,
-    }).eq('id', provisional.attachment_id);
-  }
-
-  // Update ingestion job status
-  if (provisional.ingestion_job_id) {
-    await supabaseAdmin.from('ingestion_jobs').update({
-      status: 'confirmed',
-    }).eq('id', provisional.ingestion_job_id);
-
-    await logAudit(
-      provisional.ingestion_job_id,
-      'user_confirmed',
-      `user:${user.id}`,
-      {
-        provisional_id: id,
-        warranty_id: warranty.id,
-        corrections_applied: Object.keys(corrections),
-      },
-      provisional.attachment_id
-    );
+  if (!result.ok) {
+    return NextResponse.json({ error: result.error }, { status: result.status });
   }
 
   return NextResponse.json({
-    warranty_id: warranty.id,
+    warranty_id: result.warrantyId,
     status: 'confirmed',
   });
 }

@@ -3,9 +3,11 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
 import { useAuth } from '@/lib/auth-context';
 import { Shield, Plus, Search, ChevronLeft, ChevronRight, MoreHorizontal, Eye, Pencil, Trash2, FileText } from 'lucide-react';
+import { ProtectedRouteNotice } from '@/components/dashboard/ProtectedRouteNotice';
+import { DashboardPageShell } from '@/components/dashboard/DashboardPageShell';
+import { PageViewTracker } from '@/components/PageViewTracker';
 
 const PAGE_SIZE = 20;
 type StatusFilter = 'all' | 'active' | 'pending_approval' | 'draft' | 'expired' | 'claimed';
@@ -38,7 +40,7 @@ const pageText = {
     },
     table: {
       product: 'Product',
-      brand: 'Brand',
+      brand: 'Seller',
       status: 'Status',
       startDate: 'Start Date',
       endDate: 'End Date',
@@ -76,7 +78,7 @@ const pageText = {
     },
     table: {
       product: '\u0627\u0644\u0645\u0646\u062a\u062c',
-      brand: '\u0627\u0644\u0639\u0644\u0627\u0645\u0629',
+      brand: '\u0627\u0644\u0628\u0627\u0626\u0639',
       status: '\u0627\u0644\u062d\u0627\u0644\u0629',
       startDate: '\u062a\u0627\u0631\u064a\u062e \u0627\u0644\u0628\u062f\u0621',
       endDate: '\u062a\u0627\u0631\u064a\u062e \u0627\u0644\u0627\u0646\u062a\u0647\u0627\u0621',
@@ -133,7 +135,6 @@ function WarrantiesPageInner() {
   const localizedStatus = statusLabels[locale as 'en' | 'ar'] || statusLabels.en;
 
   const { user } = useAuth();
-  const supabase = createSupabaseBrowserClient();
 
   const [warranties, setWarranties] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -142,6 +143,8 @@ function WarrantiesPageInner() {
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(0);
   const [contextMenu, setContextMenu] = useState<{ id: string; x: number; y: number; status: string } | null>(null);
+  const [fetchError, setFetchError] = useState('');
+  const [reloadToken, setReloadToken] = useState(0);
 
   const menuRef = useRef<HTMLDivElement>(null);
   const viewMode = useMemo(() => resolveViewMode(searchParams), [searchParams]);
@@ -149,34 +152,53 @@ function WarrantiesPageInner() {
   const withView = (basePath: string) => `${basePath}${basePath.includes('?') ? '&' : '?'}view=${viewMode}`;
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setWarranties([]);
+      setTotal(0);
+      setLoading(false);
+      return;
+    }
 
     const fetchWarranties = async () => {
       setLoading(true);
+      const query = new URLSearchParams({
+        limit: String(PAGE_SIZE),
+        offset: String(page * PAGE_SIZE),
+        view: viewMode,
+      });
 
-      const sellerFilter = `issuer_user_id.eq.${user.id},created_by.eq.${user.id},seller_id.eq.${user.id}`;
-      const buyerFilter = `recipient_user_id.eq.${user.id},buyer_id.eq.${user.id},user_id.eq.${user.id}`;
+      if (statusFilter !== 'all') query.set('status', statusFilter);
+      if (searchQuery.trim()) query.set('q', searchQuery.trim());
 
-      let query = supabase
-        .from('warranties')
-        .select('*', { count: 'exact' })
-        .or(viewMode === 'seller' ? sellerFilter : buyerFilter)
-        .order('created_at', { ascending: false })
-        .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+      try {
+        const response = await fetch(`/api/warranties?${query.toString()}`);
+        const payload = await response.json().catch(() => null);
 
-      if (statusFilter !== 'all') query = query.eq('status', statusFilter);
-      if (searchQuery.trim()) {
-        query = query.or(`product_name.ilike.%${searchQuery}%,product_name_ar.ilike.%${searchQuery}%,brand.ilike.%${searchQuery}%,serial_number.ilike.%${searchQuery}%,reference_number.ilike.%${searchQuery}%`);
+        if (!response.ok) {
+          if (response.status === 401) {
+            setWarranties([]);
+            setTotal(0);
+            setFetchError(isRTL ? 'انتهت الجلسة. يرجى تسجيل الدخول مرة أخرى.' : 'Your session has expired. Please sign in again.');
+            return;
+          }
+          throw new Error(payload?.error || 'Failed to load warranties');
+        }
+
+        setWarranties(payload?.data || []);
+        setTotal(payload?.pagination?.total || 0);
+        setFetchError('');
+      } catch (error) {
+        console.warn('Failed to load warranties', error);
+        setWarranties([]);
+        setTotal(0);
+        setFetchError(error instanceof Error ? error.message : 'Failed to load warranties');
+      } finally {
+        setLoading(false);
       }
-
-      const { data, count } = await query;
-      setWarranties(data || []);
-      setTotal(count || 0);
-      setLoading(false);
     };
 
     fetchWarranties();
-  }, [user, viewMode, statusFilter, searchQuery, page, supabase]);
+  }, [user, viewMode, statusFilter, searchQuery, page, reloadToken]);
 
   useEffect(() => {
     const handleClick = (event: MouseEvent) => {
@@ -187,9 +209,16 @@ function WarrantiesPageInner() {
   }, []);
 
   const handleDelete = async (id: string) => {
-    await supabase.from('warranties').delete().eq('id', id);
+    const response = await fetch(`/api/warranties/${id}`, { method: 'DELETE' });
+    if (!response.ok) {
+      setFetchError(
+        isRTL ? 'تعذر حذف المسودة الآن. حاول مرة أخرى.' : 'That draft could not be deleted right now. Please try again.'
+      );
+      return;
+    }
+    setFetchError('');
     setWarranties((prev) => prev.filter((item) => item.id !== id));
-    setTotal((prev) => prev - 1);
+    setTotal((prev) => Math.max(0, prev - 1));
     setContextMenu(null);
   };
 
@@ -233,25 +262,64 @@ function WarrantiesPageInner() {
     );
   }
 
+  if (!user) {
+    return (
+      <ProtectedRouteNotice
+        locale={locale}
+        isRTL={isRTL}
+        eyebrow={isRTL ? 'مركز الضمانات' : 'Warranty hub'}
+        title={t.title}
+        subtitle={isRTL ? 'عرض الضمانات المستلمة أو الصادرة يحتاج إلى جلسة نشطة.' : 'Viewing issued and received warranties requires an active session.'}
+        message={isRTL ? 'سجل الدخول للوصول إلى لوحة الضمانات الكاملة والتنقل بين الحالات والسجلات والتفاصيل.' : 'Sign in to access the full warranty workspace, including status filters, history, and warranty details.'}
+        crumbs={[
+          { label: 'Dashboard', href: `/${locale}/dashboard` },
+          { label: t.title },
+        ]}
+      />
+    );
+  }
+
   return (
-    <div dir={isRTL ? 'rtl' : 'ltr'} className="max-w-[1200px] mx-auto px-4 sm:px-6 py-8 sm:py-12">
+    <div dir={isRTL ? 'rtl' : 'ltr'}>
+      <PageViewTracker
+        pageName="warranties"
+        pageType="operations"
+        locale={locale}
+        extra={{ total, view_mode: viewMode, status_filter: statusFilter }}
+      />
+      <DashboardPageShell
+        eyebrow={isRTL ? 'مركز الضمانات' : 'Warranty hub'}
+        title={t.title}
+        subtitle={isRTL ? 'راجع الضمانات المصدرة أو المستلمة مع نفس بنية لوحة التحكم والفلترة والتتبع.' : 'Review issued and received warranties with the same dashboard shell, filtering, and tracking experience.'}
+        crumbs={[
+          { label: 'Dashboard', href: `/${locale}/dashboard` },
+          { label: t.title },
+        ]}
+        actions={
+          viewMode === 'seller' ? (
+            <Link
+              href={withView(`/${locale}/warranties/new`)}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-[#1A1A2E] hover:bg-[#2d2d5e] text-white text-[15px] font-medium rounded-full transition-all shadow-sm"
+            >
+              <Plus className="w-4 h-4" />
+              {t.newWarranty}
+            </Link>
+          ) : null
+        }
+        stats={[
+          { label: isRTL ? 'الإجمالي' : 'Total', value: total },
+          { label: isRTL ? 'العرض' : 'Mode', value: viewMode === 'seller' ? t.modes.seller : t.modes.buyer },
+        ]}
+        auditNote={isRTL ? 'يجب أن تبقى قوائم الضمانات قابلة للوصول حتى عند فشل الجلب، مع إبقاء نفس سياق الصفحة ولوحة التحكم.' : 'Warranty listings should stay inside the same shell even when data fetches fail, so the operating context never disappears.'}
+      >
+    <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-8 sm:py-12">
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-[32px] sm:text-[40px] font-semibold tracking-tight text-[#1d1d1f]">{t.title}</h1>
           <p className="text-[15px] text-[#86868b] mt-1">{`${total} ${viewMode === 'seller' ? t.modes.sellerHint : t.modes.buyerHint}`}</p>
           <div className="mt-2 inline-flex items-center px-3 py-1 rounded-full bg-[#f5f5f7] text-[#1d1d1f] text-xs font-medium">
             {viewMode === 'seller' ? t.modes.seller : t.modes.buyer}
           </div>
         </div>
-        {viewMode === 'seller' && (
-          <Link
-            href={withView(`/${locale}/warranties/new`)}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-[#1A1A2E] hover:bg-[#2d2d5e] text-white text-[15px] font-medium rounded-full transition-all shadow-sm"
-          >
-            <Plus className="w-4 h-4" />
-            {t.newWarranty}
-          </Link>
-        )}
       </div>
 
       <div className="bg-white rounded-2xl ring-1 ring-[#d2d2d7]/40 shadow-sm mb-6">
@@ -290,6 +358,32 @@ function WarrantiesPageInner() {
           </div>
         </div>
       </div>
+
+      {fetchError ? (
+        <div className="mb-6 rounded-2xl border border-[#ffd7d3] bg-[#fff5f4] px-5 py-4 text-[#7a271a] shadow-sm">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-[15px] font-semibold">
+                {isRTL ? 'تعذر تحميل الضمانات الآن' : 'Warranties could not load right now'}
+              </p>
+              <p className="mt-1 text-[13px] text-[#8a3b2f]">
+                {isRTL ? 'سنحافظ على الصفحة متاحة، لكن نحتاج إعادة المحاولة لاسترجاع البيانات.' : 'The page is still available, but the listing needs another fetch to restore data.'}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setLoading(true);
+                setFetchError('');
+                setReloadToken((current) => current + 1);
+              }}
+              className="inline-flex items-center justify-center rounded-full bg-[#1A1A2E] px-4 py-2 text-[13px] font-semibold text-white transition hover:bg-[#2d2d5e]"
+            >
+              {isRTL ? 'إعادة المحاولة' : 'Retry'}
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       {!loading && warranties.length === 0 ? (
         <div className="bg-white rounded-2xl ring-1 ring-[#d2d2d7]/40 shadow-sm p-12 text-center">
@@ -340,7 +434,7 @@ function WarrantiesPageInner() {
                         </div>
                       </div>
                     </td>
-                    <td className="py-4 px-6 text-[14px] text-[#1d1d1f]">{warranty.brand || '—'}</td>
+                    <td className="py-4 px-6 text-[14px] text-[#1d1d1f]">{warranty.seller_name || warranty.seller_email || '—'}</td>
                     <td className="py-4 px-6">{getStatusBadge(warranty.status)}</td>
                     <td className="py-4 px-6 text-[14px] text-[#86868b]">{formatDate(warranty.start_date || warranty.warranty_start_date)}</td>
                     <td className="py-4 px-6 text-[14px] text-[#86868b]">{formatDate(warranty.end_date || warranty.warranty_end_date)}</td>
@@ -375,7 +469,7 @@ function WarrantiesPageInner() {
                     </div>
                     <div>
                       <p className="text-[15px] font-semibold text-[#1d1d1f]">{isRTL && warranty.product_name_ar ? warranty.product_name_ar : warranty.product_name || '—'}</p>
-                      {warranty.brand && <p className="text-[13px] text-[#86868b]">{warranty.brand}</p>}
+                      {(warranty.seller_name || warranty.seller_email) && <p className="text-[13px] text-[#86868b]">{warranty.seller_name || warranty.seller_email}</p>}
                     </div>
                   </div>
                   <button
@@ -462,6 +556,8 @@ function WarrantiesPageInner() {
           )}
         </div>
       )}
+    </div>
+      </DashboardPageShell>
     </div>
   );
 }

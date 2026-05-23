@@ -1,9 +1,10 @@
 // @ts-nocheck
 "use client";
 
-import { useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, Upload, FileText, CheckCircle, AlertCircle, Download, FileSpreadsheet, ShieldCheck, Sparkles } from "lucide-react";
+import { Upload, FileText, CheckCircle, AlertCircle, Download, FileSpreadsheet, ShieldCheck } from "lucide-react";
+import { SubpageHeroHeader } from "@/components/dashboard/SubpageHeroHeader";
 import { getDictionary, DIRECTION } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth-context";
@@ -29,7 +30,7 @@ export default function ImportWarrantiesPage() {
   const isRTL = locale === "ar";
   const direction = DIRECTION[locale as Locale];
 
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [file, setFile] = useState<File | null>(null);
@@ -40,6 +41,20 @@ export default function ImportWarrantiesPage() {
   const [done, setDone] = useState(false);
   const requiredColumns = ["product_name", "start_date", "end_date"];
   const recommendedColumns = ["serial_number", "sku", "category", "seller_name", "seller_email", "quantity"];
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.replace(`/${locale}/auth?redirect=${encodeURIComponent(`/${locale}/warranties/import`)}`);
+    }
+  }, [loading, locale, router, user]);
+
+  if (loading || !user) {
+    return (
+      <div dir={direction} className="flex min-h-[40vh] items-center justify-center text-sm text-gray-500">
+        {isRTL ? "جاري التحقق من الجلسة..." : "Checking your session..."}
+      </div>
+    );
+  }
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files?.[0];
@@ -135,24 +150,18 @@ export default function ImportWarrantiesPage() {
 
   return (
     <div dir={direction} className="max-w-5xl space-y-8">
-      <div className="rounded-3xl bg-gradient-to-br from-[#1A1A2E] via-[#242446] to-[#2f2f5f] px-6 py-7 text-white shadow-lg">
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-          <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[12px] font-medium text-white/85">
-              <Sparkles size={14} />
-              {isRTL ? "استيراد جماعي جاهز للتشغيل" : "Production-ready bulk import"}
-            </div>
-            <h1 className="mt-4 text-[30px] font-semibold tracking-tight">
-              {isRTL ? "استيراد الضمانات من CSV" : "Import Warranties from CSV"}
-            </h1>
-            <p className="mt-3 max-w-xl text-[15px] text-white/70">
-              {isRTL
-                ? "حمّل ملفاً واحداً، راجع الصفوف قبل التنفيذ، ثم ادخل الضمانات دفعة واحدة مع تقليل الاخطاء اليدوية."
-                : "Upload a single CSV, validate the rows before commit, and bring large warranty batches into Warrantee with less manual work."}
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:w-[420px]">
+      <SubpageHeroHeader
+        fallbackHref={`/${locale}/warranties`}
+        isRTL={isRTL}
+        eyebrow={isRTL ? "استيراد جماعي جاهز للتشغيل" : "Production-ready bulk import"}
+        title={isRTL ? "استيراد الضمانات من CSV" : "Import Warranties from CSV"}
+        subtitle={
+          isRTL
+            ? "حمّل ملفاً واحداً، راجع الصفوف قبل التنفيذ، ثم ادخل الضمانات دفعة واحدة مع تقليل الاخطاء اليدوية."
+            : "Upload a single CSV, validate the rows before commit, and bring large warranty batches into Warrantee with less manual work."
+        }
+      >
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:w-[420px]">
             <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
               <FileSpreadsheet className="mb-3 h-5 w-5 text-[#f5d76e]" />
               <p className="text-[13px] font-medium">{isRTL ? "ملف واحد" : "Single source file"}</p>
@@ -169,23 +178,16 @@ export default function ImportWarrantiesPage() {
               <p className="mt-1 text-[12px] text-white/60">{isRTL ? "مثالي للدفعات الاولية والانتقال من ملفات خارجية" : "Great for onboarding legacy warranty lists"}</p>
             </div>
           </div>
-        </div>
-      </div>
-
-      <div className="flex items-center gap-4">
-        <button onClick={() => router.back()} className="p-2 hover:bg-gray-100 rounded-lg transition">
-          {isRTL ? <ArrowRight size={20} /> : <ArrowLeft size={20} />}
-        </button>
-        <div>
-          <h2 className="text-2xl font-bold text-navy">{isRTL ? "\u0627\u0633\u062A\u064A\u0631\u0627\u062F \u0636\u0645\u0627\u0646\u0627\u062A \u0645\u0646 CSV" : "Import Warranties from CSV"}</h2>
-          <p className="text-sm text-gray-500 mt-1">
-            {isRTL ? "الخطوة 1: نزّل القالب ثم ارفع ملفك وراجع المعاينة." : "Step 1: download the template, upload your file, and verify the preview."}
-          </p>
-        </div>
-      </div>
+      </SubpageHeroHeader>
 
       <div className="grid gap-6 lg:grid-cols-[1.3fr_0.7fr]">
         <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-6 shadow-sm">
+        <div className="border-b border-gray-100 pb-4">
+          <h2 className="text-2xl font-bold text-navy">{isRTL ? "\u0627\u0633\u062A\u064A\u0631\u0627\u062F \u0636\u0645\u0627\u0646\u0627\u062A \u0645\u0646 CSV" : "Import Warranties from CSV"}</h2>
+          <p className="mt-1 text-sm text-gray-500">
+            {isRTL ? "الخطوة 1: نزّل القالب ثم ارفع ملفك وراجع المعاينة." : "Step 1: download the template, upload your file, and verify the preview."}
+          </p>
+        </div>
         <div className="p-4 bg-blue-50 border border-blue-200 rounded-2xl flex items-center justify-between">
           <p className="text-sm text-blue-800">
             {isRTL ? "\u062D\u0645\u0644 \u0627\u0644\u0642\u0627\u0644\u0628 \u0644\u0631\u0624\u064A\u0629 \u0627\u0644\u062A\u0646\u0633\u064A\u0642 \u0627\u0644\u0645\u0637\u0644\u0648\u0628" : "Download the template to see the required format"}

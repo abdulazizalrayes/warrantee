@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Upload, File, Trash2, AlertCircle } from "lucide-react";
+import { buildDocumentDownloadHref, normalizeWarrantyDocumentStoragePath, WARRANTY_DOCUMENTS_BUCKET } from "@/lib/documents";
 
 const t = {
   en: { title: "Documents", dropzone: "Drag & drop files here", browse: "or click to browse", types: "PDF, JPEG, PNG, DOC, DOCX (max 250MB)", uploading: "Uploading...", noFiles: "No documents uploaded yet", delete: "Delete", download: "Download", error: "Upload failed" },
@@ -32,18 +33,31 @@ export default function DocumentUpload({ warrantyId, locale = "en" }: Props) {
     if (file.size > 250 * 1024 * 1024) { setError("File too large"); return; }
     setUploading(true); setError("");
     try {
-      const ext = file.name.split(".").pop() || "bin";
-      const path = warrantyId + "/" + Date.now() + "." + ext;
-      const { error: upErr } = await supabase.storage.from("warranty-documents").upload(path, file, { contentType: file.type });
-      if (upErr) throw upErr;
-      await supabase.from("warranty_documents").insert({ warranty_id: warrantyId, file_name: file.name, file_type: file.type, file_size: file.size, file_url: path });
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("documentKind", "reference");
+      formData.append("sourceContext", "document_library");
+
+      const response = await fetch(`/api/warranties/${warrantyId}/documents`, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({ error: l.error }));
+        throw new Error(payload.error || l.error);
+      }
+
       loadDocs();
     } catch (e: any) { setError(e.message || l.error); }
     finally { setUploading(false); }
   }
 
   async function handleDelete(doc: any) {
-    await supabase.storage.from("warranty-documents").remove([doc.file_url]);
+    const storagePath = normalizeWarrantyDocumentStoragePath(doc.storage_path, doc.file_url);
+    if (storagePath) {
+      await supabase.storage.from(WARRANTY_DOCUMENTS_BUCKET).remove([storagePath]);
+    }
     await supabase.from("warranty_documents").delete().eq("id", doc.id);
     loadDocs();
   }
@@ -66,6 +80,9 @@ export default function DocumentUpload({ warrantyId, locale = "en" }: Props) {
             <div key={doc.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
               <div className="flex items-center gap-2"><File className="w-4 h-4 text-gray-500" /><span className="text-sm">{doc.file_name}</span><span className="text-xs text-gray-400">{(doc.file_size / 1024).toFixed(0)} KB</span></div>
               <div className="flex gap-2">
+                <a href={buildDocumentDownloadHref(doc.id)} target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-gray-700">
+                  <File className="w-4 h-4" />
+                </a>
                 <button onClick={(e) => { e.stopPropagation(); handleDelete(doc); }} className="text-red-500 hover:text-red-700"><Trash2 className="w-4 h-4" /></button>
               </div>
             </div>

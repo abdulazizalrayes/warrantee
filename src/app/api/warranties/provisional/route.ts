@@ -60,3 +60,46 @@ export async function GET(request: NextRequest) {
     },
   });
 }
+
+export async function POST(request: NextRequest) {
+  const { user, supabase } = await getUser(request);
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  let body: Record<string, any> = {};
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+  }
+
+  const confidenceScore = Number(body.confidence_score || 0);
+  const payload = {
+    user_id: user.id,
+    product_name: body.product_name || null,
+    brand: body.brand || null,
+    model_number: body.model_number || null,
+    serial_number: body.serial_number || null,
+    warranty_duration_months:
+      typeof body.warranty_duration_months === 'number' ? body.warranty_duration_months : null,
+    purchase_date: body.purchase_date || null,
+    expiry_date: body.expiry_date || null,
+    seller_name: body.seller_name || null,
+    confidence_score: Number.isFinite(confidenceScore) ? confidenceScore : 0,
+    needs_input_fields: Array.isArray(body.needs_input_fields) ? body.needs_input_fields : [],
+    status: 'pending',
+  };
+
+  const { data, error } = await supabase
+    .from('provisional_warranties')
+    .insert(payload)
+    .select('*')
+    .single();
+
+  if (error || !data) {
+    return NextResponse.json({ error: error?.message || 'Failed to create provisional warranty' }, { status: 500 });
+  }
+
+  return NextResponse.json({ data }, { status: 201 });
+}

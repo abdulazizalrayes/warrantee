@@ -3,6 +3,11 @@
 
 import { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
+import {
+  buildAuthEmailErrorMessage,
+  normalizeAuthEmail,
+  rememberAuthEmailSend,
+} from "@/lib/auth-email-guard";
 import type { User, Session } from "@supabase/supabase-js";
 
 interface Profile {
@@ -10,6 +15,8 @@ interface Profile {
   full_name: string | null;
   avatar_url: string | null;
   role: "user" | "seller" | "admin" | "support" | "super_admin";
+  company_id?: string | null;
+  company_domain?: string | null;
   company_name: string | null;
   phone: string | null;
   preferred_language: string | null;
@@ -22,11 +29,11 @@ interface AuthContextType {
   session: Session | null;
   profile: Profile | null;
   loading: boolean;
-  signInWithGoogle: () => Promise<void>;
-  signInWithApple: () => Promise<void>;
-  signInWithMagicLink: (email: string) => Promise<any>;
+  signInWithGoogle: (locale?: string, nextPath?: string) => Promise<any>;
+  signInWithApple: (locale?: string, nextPath?: string) => Promise<any>;
+  signInWithMagicLink: (email: string, locale?: string, nextPath?: string) => Promise<any>;
   signInWithPassword: (email: string, password: string) => Promise<any>;
-  signUp: (email: string, password: string, metadata?: any) => Promise<any>;
+  signUp: (email: string, password: string, metadata?: any, locale?: string, nextPath?: string) => Promise<any>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
@@ -122,50 +129,70 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
   }, [fetchProfile, supabase]);
 
-  const getRedirectURL = () => {
+  const getRedirectURL = (locale = "en", nextPath?: string) => {
     const origin = typeof window !== "undefined" ? window.location.origin : "";
-    return origin + "/auth/callback";
+    const safeLocale = locale || "en";
+    const fallbackNext = `/${safeLocale}/dashboard`;
+    const safeNext =
+      nextPath && nextPath.startsWith("/") && !nextPath.startsWith("//")
+        ? nextPath
+        : fallbackNext;
+    return `${origin}/${safeLocale}/auth/callback?next=${encodeURIComponent(safeNext)}`;
   };
 
-  const signInWithGoogle = async () => {
-    if (!hasSupabaseConfig) return;
-    await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: getRedirectURL() },
-    });
-  };
-
-  const signInWithApple = async () => {
-    if (!hasSupabaseConfig) return;
-    await supabase.auth.signInWithOAuth({
-      provider: "apple",
-      options: { redirectTo: getRedirectURL() },
-    });
-  };
-
-  const signInWithMagicLink = async (email: string) => {
+  const signInWithGoogle = async (locale = "en", nextPath?: string) => {
     if (!hasSupabaseConfig) return { error: missingConfigError };
-    return supabase.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: getRedirectURL() },
+    return supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: getRedirectURL(locale, nextPath) },
     });
+  };
+
+  const signInWithApple = async (locale = "en", nextPath?: string) => {
+    if (!hasSupabaseConfig) return { error: missingConfigError };
+    return supabase.auth.signInWithOAuth({
+      provider: "apple",
+      options: { redirectTo: getRedirectURL(locale, nextPath) },
+    });
+  };
+
+  const signInWithMagicLink = async (email: string, locale = "en", nextPath?: string) => {
+    if (!hasSupabaseConfig) return { error: missingConfigError };
+    const normalizedEmail = normalizeAuthEmail(email);
+    const guardError = buildAuthEmailErrorMessage(normalizedEmail, "magic-link");
+    if (guardError) return { error: guardError };
+    const result = await supabase.auth.signInWithOtp({
+      email: normalizedEmail,
+      options: { emailRedirectTo: getRedirectURL(locale, nextPath) },
+    });
+    if (!result.error) {
+      rememberAuthEmailSend(normalizedEmail, "magic-link");
+    }
+    return result;
   };
 
   const signInWithPassword = async (email: string, password: string) => {
     if (!hasSupabaseConfig) return { error: missingConfigError };
-    return supabase.auth.signInWithPassword({ email, password });
+    return supabase.auth.signInWithPassword({ email: normalizeAuthEmail(email), password });
   };
 
-  const signUp = async (email: string, password: string, metadata?: any) => {
+  const signUp = async (email: string, password: string, metadata?: any, locale = "en", nextPath?: string) => {
     if (!hasSupabaseConfig) return { error: missingConfigError };
-    return supabase.auth.signUp({
-      email,
+    const normalizedEmail = normalizeAuthEmail(email);
+    const guardError = buildAuthEmailErrorMessage(normalizedEmail, "signup");
+    if (guardError) return { error: guardError };
+    const result = await supabase.auth.signUp({
+      email: normalizedEmail,
       password,
       options: {
         data: metadata,
-        emailRedirectTo: getRedirectURL(),
+        emailRedirectTo: getRedirectURL(locale, nextPath),
       },
     });
+    if (!result.error) {
+      rememberAuthEmailSend(normalizedEmail, "signup");
+    }
+    return result;
   };
 
   const signOut = async () => {

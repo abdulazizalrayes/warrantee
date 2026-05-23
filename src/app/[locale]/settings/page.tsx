@@ -16,11 +16,10 @@ import {
   Phone,
   Globe,
   Bell,
-  ChevronLeft,
-  ChevronRight,
   Check,
   Shield,
   CreditCard,
+  Users,
 } from "lucide-react";
 
 export default function SettingsPage() {
@@ -92,6 +91,7 @@ export default function SettingsPage() {
     if (deleteConfirmInput !== "DELETE") return;
     setDeleting(true);
     try {
+      setShowDeleteModal(false);
       await supabase.auth.signOut();
       router.push(`/${locale}`);
     } catch {
@@ -106,6 +106,7 @@ export default function SettingsPage() {
   const sections = [
     { id: "profile", label: isRTL ? "\u0627\u0644\u0645\u0644\u0641 \u0627\u0644\u0634\u062e\u0635\u064a" : "Profile", icon: User },
     { id: "notifications", label: isRTL ? "\u0627\u0644\u0625\u0634\u0639\u0627\u0631\u0627\u062a" : "Notifications", icon: Bell },
+    { id: "team", label: isRTL ? "\u0641\u0631\u064a\u0642 \u0627\u0644\u0634\u0631\u0643\u0629" : "Company Team", icon: Users },
     { id: "language", label: isRTL ? "\u0627\u0644\u0644\u063a\u0629 \u0648\u0627\u0644\u0645\u0646\u0637\u0642\u0629" : "Language & Region", icon: Globe },
     { id: "subscription", label: isRTL ? "\u0627\u0644\u0627\u0634\u062a\u0631\u0627\u0643" : "Subscription", icon: CreditCard },
     { id: "security", label: isRTL ? "\u0627\u0644\u0623\u0645\u0627\u0646" : "Security", icon: Shield },
@@ -133,27 +134,6 @@ export default function SettingsPage() {
         ]}
         auditNote={isRTL ? "\u064a\u062c\u0628 \u0623\u0644\u0627 \u062a\u0641\u0631\u0636 \u0627\u0644\u0625\u0639\u062f\u0627\u062f\u0627\u062a \u0639\u0644\u0649 \u0627\u0644\u0645\u0633\u062a\u062e\u062f\u0645 \u0631\u062d\u0644\u0629 \u0645\u0639\u0642\u062f\u0629: \u0647\u0630\u0647 \u0627\u0644\u0635\u0641\u062d\u0629 \u062a\u062c\u0645\u0639 \u0623\u0647\u0645 \u0627\u0644\u062a\u063a\u064a\u064a\u0631\u0627\u062a \u0641\u064a \u0633\u064a\u0627\u0642 \u0648\u0627\u062d\u062f." : "Settings should reduce friction, not create it. This page keeps the main account controls in one auditable surface."}
       >
-      {/* Header */}
-      <div className="mb-10">
-        <button
-          onClick={() => router.push(`/${locale}/dashboard`)}
-          className="group inline-flex items-center gap-1.5 text-[15px] text-[#86868b] hover:text-[#1d1d1f] transition-colors mb-6"
-        >
-          {isRTL ? (
-            <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-          ) : (
-            <ChevronLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
-          )}
-          {isRTL ? "\u0627\u0644\u0639\u0648\u062f\u0629 \u0644\u0644\u0648\u062d\u0629 \u0627\u0644\u062a\u062d\u0643\u0645" : "Back to Dashboard"}
-        </button>
-        <h1 className="text-[32px] sm:text-[40px] font-semibold tracking-tight text-[#1d1d1f]">
-          {dict.common.settings}
-        </h1>
-        <p className="text-[17px] text-[#86868b] mt-2">
-          {isRTL ? "\u0625\u062f\u0627\u0631\u0629 \u062d\u0633\u0627\u0628\u0643 \u0648\u062a\u0641\u0636\u064a\u0644\u0627\u062a\u0643" : "Manage your account and preferences"}
-        </p>
-      </div>
-
       <div className="flex flex-col lg:flex-row gap-8 max-w-[980px]">
         {/* Sidebar Navigation */}
         <nav className="lg:w-[240px] flex-shrink-0">
@@ -288,6 +268,37 @@ export default function SettingsPage() {
                 >
                   {isRTL ? "\u0625\u0644\u063a\u0627\u0621" : "Cancel"}
                 </button>
+              </div>
+            </div>
+          )}
+
+          {activeSection === "team" && (
+            <div className="bg-white rounded-2xl p-8 ring-1 ring-[#d2d2d7]/40 shadow-sm">
+              <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#f5f5f7] text-[#1A1A2E]">
+                    <Users className="h-6 w-6" />
+                  </div>
+                  <h2 className="text-[24px] font-semibold tracking-tight text-[#1d1d1f]">
+                    {isRTL ? "\u0625\u062f\u0627\u0631\u0629 \u0641\u0631\u064a\u0642 \u0627\u0644\u0634\u0631\u0643\u0629" : "Manage company team"}
+                  </h2>
+                  <p className="mt-2 max-w-xl text-[15px] leading-6 text-[#6e6e73]">
+                    {isRTL
+                      ? "\u0623\u0636\u0641 \u0632\u0645\u0644\u0627\u0621 \u0645\u0646 \u0646\u0641\u0633 \u0646\u0637\u0627\u0642 \u0628\u0631\u064a\u062f \u0627\u0644\u0634\u0631\u0643\u0629 \u0641\u0642\u0637\u060c \u0645\u0639 \u0623\u062f\u0648\u0627\u0631 \u0648\u0627\u0636\u062d\u0629: \u0645\u062f\u064a\u0631 \u0623\u0639\u0644\u0649\u060c \u0645\u062f\u064a\u0631\u060c \u0623\u0648 \u0645\u0634\u0627\u0647\u062f."
+                      : "Add colleagues from the same company email domain only, with clear access tiers: superadmin, manager, or viewer."}
+                  </p>
+                  <div className="mt-5 grid gap-2 text-[14px] text-[#1d1d1f]">
+                    <p>{isRTL ? "\u2713 \u062a\u062d\u0642\u0642 \u0645\u0646 \u0646\u0637\u0627\u0642 \u0627\u0644\u0628\u0631\u064a\u062f" : "✓ Same-domain email enforcement"}</p>
+                    <p>{isRTL ? "\u2713 \u0635\u0644\u0627\u062d\u064a\u0627\u062a \u0645\u062a\u062f\u0631\u062c\u0629" : "✓ Tiered role permissions"}</p>
+                    <p>{isRTL ? "\u2713 \u0645\u0646\u0639 \u0627\u0644\u062e\u0644\u0637 \u0628\u064a\u0646 \u0627\u0644\u0634\u0631\u0643\u0627\u062a" : "✓ Prevents cross-company contamination"}</p>
+                  </div>
+                </div>
+                <Link
+                  href={`/${locale}/settings/team`}
+                  className="inline-flex shrink-0 items-center justify-center rounded-full bg-[#1A1A2E] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#2d2d5e]"
+                >
+                  {isRTL ? "\u0641\u062a\u062d \u0625\u062f\u0627\u0631\u0629 \u0627\u0644\u0641\u0631\u064a\u0642" : "Open team management"}
+                </Link>
               </div>
             </div>
           )}
@@ -473,10 +484,10 @@ export default function SettingsPage() {
                       </div>
                       <div>
                         <p className="text-[15px] font-medium text-[#1d1d1f]">
-                          {isRTL ? "\u062d\u0630\u0641 \u0627\u0644\u062d\u0633\u0627\u0628" : "Delete Account"}
+                          {isRTL ? "\u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062e\u0631\u0648\u062c" : "Sign Out"}
                         </p>
                         <p className="text-[13px] text-[#86868b] mt-0.5">
-                          {isRTL ? "\u062d\u0630\u0641 \u062d\u0633\u0627\u0628\u0643 \u0648\u0628\u064a\u0627\u0646\u0627\u062a\u0643 \u0646\u0647\u0627\u0626\u064a\u0627\u064b" : "Permanently delete your account and data"}
+                          {isRTL ? "\u0627\u0646\u0647\u064a \u062c\u0644\u0633\u062a\u0643 \u0628\u0623\u0645\u0627\u0646 \u0639\u0644\u0649 \u0647\u0630\u0627 \u0627\u0644\u062c\u0647\u0627\u0632" : "End your current session safely on this device"}
                         </p>
                       </div>
                     </div>
@@ -484,7 +495,7 @@ export default function SettingsPage() {
                       onClick={() => { setShowDeleteModal(true); setDeleteConfirmInput(""); }}
                       className="text-[13px] font-medium text-[#ff3b30] hover:text-[#d70015] transition-colors"
                     >
-                      {isRTL ? "\u062d\u0630\u0641" : "Delete"}
+                      {isRTL ? "\u062e\u0631\u0648\u062c" : "Sign Out"}
                     </button>
                   </div>
                 </div>
@@ -504,12 +515,12 @@ export default function SettingsPage() {
               </svg>
             </div>
             <h2 className="text-[17px] font-semibold text-[#1d1d1f] text-center mb-2">
-              {isRTL ? "حذف الحساب نهائياً" : "Delete Account Permanently"}
+              {isRTL ? "تسجيل الخروج من هذا الجهاز" : "Sign out on this device"}
             </h2>
             <p className="text-[15px] text-[#86868b] text-center mb-6">
               {isRTL
-                ? 'هذا الإجراء لا يمكن التراجع عنه. اكتب "DELETE" للتأكيد.'
-                : 'This action cannot be undone. Type DELETE to confirm.'}
+                ? 'سننهي الجلسة الحالية فقط. اكتب "DELETE" للتأكيد.'
+                : 'This only ends your current session. Type DELETE to confirm.'}
             </p>
             <input
               type="text"
@@ -530,7 +541,7 @@ export default function SettingsPage() {
                 disabled={deleteConfirmInput !== "DELETE" || deleting}
                 className="flex-1 px-4 py-2.5 bg-[#ff3b30] text-white rounded-xl text-[15px] font-medium hover:bg-[#d70015] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                {deleting ? "..." : (isRTL ? "حذف" : "Delete")}
+                {deleting ? "..." : (isRTL ? "خروج" : "Sign Out")}
               </button>
             </div>
           </div>
