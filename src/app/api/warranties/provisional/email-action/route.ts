@@ -9,6 +9,15 @@ function getAppUrl() {
   return process.env.NEXT_PUBLIC_APP_URL || "https://warrantee.io";
 }
 
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function renderResultPage({
   title,
   message,
@@ -22,23 +31,28 @@ function renderResultPage({
   actionLabel: string;
   accent?: string;
 }) {
+  const safeTitle = escapeHtml(title);
+  const safeMessage = escapeHtml(message);
+  const safeActionHref = escapeHtml(actionHref);
+  const safeActionLabel = escapeHtml(actionLabel);
+
   return `<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>${title}</title>
+    <title>${safeTitle}</title>
   </head>
   <body style="margin:0;background:#f5f5f7;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#111827;">
     <div style="max-width:680px;margin:48px auto;padding:24px;">
       <div style="background:#fff;border:1px solid #e5e7eb;border-radius:24px;overflow:hidden;box-shadow:0 12px 40px rgba(17,24,39,0.08);">
         <div style="padding:28px 32px;background:linear-gradient(135deg,#111827,${accent});color:#fff;">
           <div style="font-size:13px;letter-spacing:.12em;text-transform:uppercase;opacity:.8;">Warrantee</div>
-          <h1 style="margin:12px 0 0;font-size:32px;line-height:1.15;">${title}</h1>
+          <h1 style="margin:12px 0 0;font-size:32px;line-height:1.15;">${safeTitle}</h1>
         </div>
         <div style="padding:32px;">
-          <p style="margin:0 0 24px;font-size:16px;line-height:1.7;color:#4b5563;">${message}</p>
-          <a href="${actionHref}" style="display:inline-block;background:${accent};color:#fff;text-decoration:none;padding:14px 22px;border-radius:999px;font-weight:600;">${actionLabel}</a>
+          <p style="margin:0 0 24px;font-size:16px;line-height:1.7;color:#4b5563;">${safeMessage}</p>
+          <a href="${safeActionHref}" style="display:inline-block;background:${accent};color:#fff;text-decoration:none;padding:14px 22px;border-radius:999px;font-weight:600;">${safeActionLabel}</a>
         </div>
       </div>
     </div>

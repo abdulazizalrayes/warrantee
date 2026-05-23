@@ -13,7 +13,7 @@ export async function POST(request: Request) {
 
     const body = await request.json();
     const planId = body.planId as string;
-    const locale = typeof body.locale === "string" ? body.locale : "en";
+    const locale = body.locale === "ar" ? "ar" : "en";
 
     const plan = PLANS[planId as keyof typeof PLANS];
     if (!plan || planId === "free" || planId === "enterprise") {
@@ -26,14 +26,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Plan not available for purchase" }, { status: 400 });
     }
 
-    const origin = request.headers.get("origin") || "https://warrantee.io";
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || new URL(request.url).origin;
+    const appOrigin = new URL(appUrl).origin;
 
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       customer_email: user.email!,
       line_items: [{ price: serverPriceId, quantity: 1 }],
-      success_url: `${origin}/${locale}/dashboard?subscription=success`,
-      cancel_url: `${origin}/${locale}/dashboard?subscription=cancelled`,
+      success_url: `${appOrigin}/${locale}/dashboard?subscription=success`,
+      cancel_url: `${appOrigin}/${locale}/dashboard?subscription=cancelled`,
       metadata: { user_id: user.id, plan_id: planId },
       subscription_data: { trial_period_days: 30, metadata: { user_id: user.id, plan_id: planId } },
     });

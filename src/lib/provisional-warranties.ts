@@ -20,12 +20,18 @@ type BuyerConfirmationTokenPayload = {
 };
 
 function getBuyerConfirmationSecret() {
-  return (
+  const secret =
     process.env.WARRANTEE_EMAIL_ACTION_SECRET ||
     process.env.RESEND_WEBHOOK_SECRET ||
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    "warrantee-email-action-secret"
-  );
+    process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (secret) return secret;
+
+  if (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "test") {
+    return "warrantee-email-action-secret";
+  }
+
+  throw new Error("Buyer confirmation token secret is not configured.");
 }
 
 function encodeBase64Url(value: string) {

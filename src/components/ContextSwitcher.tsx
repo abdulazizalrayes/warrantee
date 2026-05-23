@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { ShoppingBag, Store } from 'lucide-react';
 
 type ContextMode = 'buyer' | 'seller';
 
@@ -18,9 +19,6 @@ export default function ContextSwitcher({
 }: ContextSwitcherProps) {
   const router = useRouter();
   const [mode, setMode] = useState<ContextMode>('buyer');
-
-  // Only show for dual-role companies
-  if (companyRole !== 'both') return null;
 
   // Load saved context from cookie
   useEffect(() => {
@@ -43,6 +41,8 @@ export default function ContextSwitcher({
     [mode, router]
   );
 
+  if (companyRole !== 'both') return null;
+
   return (
     <div className="flex items-center bg-gray-100 dark:bg-gray-800 rounded-full p-1 gap-0.5">
       {/* Buyer Toggle */}
@@ -55,7 +55,7 @@ export default function ContextSwitcher({
         }`}
         aria-pressed={mode === 'buyer'}
       >
-        <span>ð¢</span>
+        <ShoppingBag aria-hidden="true" className="h-4 w-4" />
         <span>As Buyer</span>
         {mode !== 'buyer' && buyerPendingCount > 0 && (
           <span className="absolute -top-1 -right-1 w-3 h-3 bg-amber-500 rounded-full animate-pulse" />
@@ -72,7 +72,7 @@ export default function ContextSwitcher({
         }`}
         aria-pressed={mode === 'seller'}
       >
-        <span>ð­</span>
+        <Store aria-hidden="true" className="h-4 w-4" />
         <span>As Seller</span>
         {mode !== 'seller' && sellerPendingCount > 0 && (
           <span className="absolute -top-1 -right-1 w-3 h-3 bg-amber-500 rounded-full animate-pulse" />

@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://warrantee.io"),
 };
 
-const shouldRenderVercelInsights = process.env.VERCEL === "1";
+const shouldRenderVercelInsights = process.env.VERCEL === "1" && Boolean(process.env.VERCEL_URL);
 
 const webMcpScript = `
 (() => {
