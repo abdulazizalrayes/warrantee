@@ -11,7 +11,7 @@ Audited surface:
 - Public, protected, authenticated, business, operational, SEO, and agent-readiness Playwright suites.
 - Supabase anonymous RLS probe and production readiness scripts.
 - Dependency vulnerability and outdated-package posture.
-- Loopback/localhost references.
+- Loopback references.
 - Payment, OCR, signed email action, document, support, team, and webhook boundaries.
 
 ## Corrections Applied
@@ -61,4 +61,3 @@ Local limitation:
 5. Schedule a lint-debt cleanup pass: remove `@ts-nocheck`, replace broad `any` usage, and resolve remaining hook dependency warnings in high-traffic admin/dashboard pages.
 6. Add a mocked OCR provider or fixture-mode OCR path for local operational E2E so the full gate can run without paid cloud OCR credentials.
 7. Add accessibility/visual regression coverage for critical flows after launch: auth, dashboard shell, warranty detail, claim filing, extension request, document upload/download, team settings, and seller/admin dashboards.
-
