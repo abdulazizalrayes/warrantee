@@ -28,7 +28,7 @@ Current launch position:
 ## Closed
 
 - Production is live on `warrantee.io`.
-- Latest verified production deployment is `dpl_5YjEvnTU7TuRPcJ3bbKibwhrccPG`, aliased to `https://warrantee.io`.
+- Latest verified May 24 production deployment is aliased to `https://warrantee.io`.
 - The May 22 launch gate is closed for controlled production usage:
   - `npm test` passed with 48/48 tests
   - `npm run type-check` passed

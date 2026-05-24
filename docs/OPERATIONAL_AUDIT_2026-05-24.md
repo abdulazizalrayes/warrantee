@@ -53,7 +53,7 @@ Local verification against the fixed code:
 - `NEXT_TELEMETRY_DISABLED=1 npm run build`: passed, 151 app routes generated.
 - Built-server browser E2E against the local QA server: passed, 88 passed / 2 intentionally skipped.
 - Built-server operational E2E with `OPERATIONAL_E2E=1`: import, approval, rejection, document upload/download/delete, OCR, and team guardrails reached successfully; local checkout stops at `503 Stripe not configured` because the local env file does not contain the server Stripe secret.
-- Production deployment `dpl_5YjEvnTU7TuRPcJ3bbKibwhrccPG`: Ready and aliased to `https://warrantee.io`.
+- May 24 production deployment: Ready and aliased to `https://warrantee.io`.
 - `npm run smoke:prod`: passed against `https://warrantee.io`.
 - `npm run security:rls-probe`: passed, no anonymous warranty/document/claim rows exposed.
 - `npm run readiness:operational`: passed, including production API OCR and Stripe checks.
