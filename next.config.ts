@@ -24,7 +24,6 @@ const contentSecurityPolicyReportOnly = [
   "frame-src https://js.stripe.com https://checkout.stripe.com https://*.hotjar.com",
   "worker-src 'self' blob:",
   "manifest-src 'self'",
-  "upgrade-insecure-requests",
 ].join("; ");
 
 const markdownEnabledPaths = [
