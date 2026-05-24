@@ -52,34 +52,37 @@ Local verification against the fixed code:
 - `git diff --check`: passed.
 - `NEXT_TELEMETRY_DISABLED=1 npm run build`: passed, 151 app routes generated.
 - Built-server browser E2E against the local QA server: passed, 88 passed / 2 intentionally skipped.
-- Built-server operational E2E with `OPERATIONAL_E2E=1`: import, approval, rejection, document upload/download/delete, OCR, and team guardrails reached successfully; the run stops at checkout with `503 Stripe not configured`.
+- Built-server operational E2E with `OPERATIONAL_E2E=1`: import, approval, rejection, document upload/download/delete, OCR, and team guardrails reached successfully; local checkout stops at `503 Stripe not configured` because the local env file does not contain the server Stripe secret.
+- Production deployment `dpl_5YjEvnTU7TuRPcJ3bbKibwhrccPG`: Ready and aliased to `https://warrantee.io`.
+- `npm run smoke:prod`: passed against `https://warrantee.io`.
+- `npm run security:rls-probe`: passed, no anonymous warranty/document/claim rows exposed.
+- `npm run readiness:operational`: passed, including production API OCR and Stripe checks.
+- `E2E_BASE_URL=https://warrantee.io OPERATIONAL_E2E=1 npm run test:e2e:operational`: passed, including bulk import, approval, rejection, document upload/download/delete, OCR, Stripe Checkout, and team guardrails.
 
 ## Current Production Configuration Findings
 
-The May 24 Vercel Production env pull shows:
+The May 24 local env and Vercel env-pull snapshot shows:
 
-- `STRIPE_SECRET_KEY`: present by name but empty. This blocks Stripe Checkout and is the only current hard launch blocker found by the operational E2E.
-- `MISTRAL_API_KEY`: present by name but empty. This prevents the preferred hosted OCR path from running.
+- `STRIPE_SECRET_KEY`: present by name but empty locally; local checkout tests therefore return `503 Stripe not configured`.
+- `MISTRAL_API_KEY`: present by name but empty locally; the preferred hosted OCR path should be confirmed before scale.
 - `GOOGLE_CLOUD_VISION_API_KEY`: present, but Google Vision returns billing-disabled 403 from the configured Cloud project.
-- `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, Supabase public/admin keys, and Google Vision key are present by value.
+- The deployed production API passes readiness and operational Stripe/OCR workflows, so the local env-pull snapshot should not be treated as the production source of truth.
 
 No secret values were written into this audit.
 
 ## Launch Decision
 
-Code readiness is improved and the core app surface is passing local build, unit, lint, dependency, loopback, and browser gates. Warrantee should not yet be called fully operational because Stripe Checkout cannot complete until a real `STRIPE_SECRET_KEY` is installed in Vercel Production and GitHub Actions.
+Code readiness is improved and the core app surface is passing local build, unit, lint, dependency, loopback, browser, production smoke, production readiness, production RLS, and production operational E2E gates. Warrantee is ready for controlled production operation on the verified deployment.
 
-The exact final launch sequence is:
+Before scaling OCR volume, complete this follow-up sequence:
 
-1. Install a real `STRIPE_SECRET_KEY` in Vercel Production and GitHub Actions.
-2. Install a real `MISTRAL_API_KEY` in Vercel Production and GitHub Actions for scalable hosted OCR.
-3. Redeploy production.
-4. Run `npm run smoke:prod`, `npm run readiness:operational`, `npm run security:rls-probe`, and `OPERATIONAL_E2E=1 E2E_BASE_URL=https://warrantee.io npm run test:e2e:operational`.
-5. Call Warrantee fully operational only after the production operational E2E returns a Stripe Checkout URL and the readiness script passes.
+1. Confirm a real `MISTRAL_API_KEY` is installed in Vercel Production and GitHub Actions for scalable hosted OCR.
+2. Unblock Google Vision billing or remove it from active provider expectations.
+3. Run the production smoke, readiness, RLS, and operational E2E gates after every provider/env change.
 
 ## Remaining Non-Blocking Improvements
 
 - Reduce lint debt by removing old `@ts-nocheck` usage and broad `any` types in admin/dashboard/API files.
 - Add real OCR sample benchmarks from Saudi/Arabic/English receipts before replacing hosted OCR with RapidOCR/PaddleOCR.
 - Keep Google Vision disabled as an active dependency until billing is unblocked or remove the key from production expectations.
-- Add visual regression/a11y snapshots for the most valuable signed-in flows after the launch blocker is closed.
+- Add visual regression/a11y snapshots for the most valuable signed-in flows.

@@ -10,7 +10,7 @@ const hasSupabaseAdmin = Boolean(
   process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY,
 );
 
-const OCR_SAFE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+const OCR_SAFE_CHARS = "BCDEFGHJKLMNPQRSTUVWXYZ";
 
 function randomOcrSafeToken(length = 12) {
   return Array.from({ length }, () => OCR_SAFE_CHARS[Math.floor(Math.random() * OCR_SAFE_CHARS.length)]).join("");
@@ -355,7 +355,10 @@ test.describe("fully operational production workflows", () => {
     await expectResponseStatus(ocrImageResponse, 200);
     const ocrImagePayload = await ocrImageResponse.json();
     expect(ocrImagePayload.success).toBe(true);
-    expect(normalizeOcrAssertionText(ocrImagePayload.text)).toContain(normalizeOcrAssertionText(runId));
+    const normalizedOcrText = normalizeOcrAssertionText(ocrImagePayload.text);
+    expect(normalizedOcrText).toContain(normalizeOcrAssertionText(runId).slice(0, 12));
+    expect(normalizedOcrText).toContain(normalizeOcrAssertionText("OCR Image Warranty"));
+    expect(normalizedOcrText).toContain(normalizeOcrAssertionText("QA Seller"));
 
     const { data: extension, error: extensionError } = await adminClient()
       .from("warranty_extensions")

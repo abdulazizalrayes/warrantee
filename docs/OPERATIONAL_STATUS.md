@@ -4,11 +4,11 @@ Last updated: 2026-05-24
 
 ## 2026-05-24 Recheck
 
-The latest end-to-end launch recheck reopened two environment blockers that were not visible from key names alone:
+The latest end-to-end launch recheck found a local env-pull inconsistency, then verified the deployed production API directly:
 
-- `STRIPE_SECRET_KEY` exists in Vercel Production and `.env.production.local`, but the pulled value is empty. Stripe checkout correctly returns `503 Stripe not configured` until a real restricted or secret key is installed.
-- `MISTRAL_API_KEY` exists in Vercel Production and `.env.production.local`, but the pulled value is empty. OCR now falls through to Google Vision and then the in-house Tesseract emergency fallback.
-- `GOOGLE_CLOUD_VISION_API_KEY` is present, but Google Vision returns a billing-disabled 403 from the configured Cloud project.
+- Local `.env.production.local` still has empty `STRIPE_SECRET_KEY` and `MISTRAL_API_KEY` values, so local operational checkout cannot complete from that file alone.
+- The deployed production API passed readiness and the full operational E2E, including Stripe Checkout and OCR.
+- `GOOGLE_CLOUD_VISION_API_KEY` is present, but Google Vision still returns a billing-disabled 403 from the configured Cloud project; the deployed OCR path no longer depends on it for launch availability.
 
 Corrections made in the May 24 pass:
 
@@ -21,14 +21,14 @@ Corrections made in the May 24 pass:
 Current launch position:
 
 - Code-level launch hardening is substantially complete.
-- Local operational E2E now passes through OCR with the fallback, then stops at the expected Stripe configuration blocker.
-- Warrantee should not be called fully operational until a real `STRIPE_SECRET_KEY` is installed and the production operational E2E passes after deployment.
+- Production smoke, readiness, RLS, and operational E2E now pass on the May 24 deployment.
+- Warrantee is ready for controlled production operation.
 - For OCR scale, install a real `MISTRAL_API_KEY`; the Tesseract fallback is an availability bridge, not the preferred long-term provider.
 
 ## Closed
 
 - Production is live on `warrantee.io`.
-- Latest verified production deployment is `dpl_DzRpiCkJ9Kayx4ZBBLRn2moTh1ib`, aliased to `https://warrantee.io`.
+- Latest verified production deployment is `dpl_5YjEvnTU7TuRPcJ3bbKibwhrccPG`, aliased to `https://warrantee.io`.
 - The May 22 launch gate is closed for controlled production usage:
   - `npm test` passed with 48/48 tests
   - `npm run type-check` passed
@@ -36,13 +36,12 @@ Current launch position:
   - `npm run smoke:prod` passed after deployment
   - `npm run guard:loopback` passed and CI now blocks disallowed local loopback links outside intentional test/guard files
   - `npm run test:e2e:business` passed against production with sign-in, warranty detail, draft claim creation, extension request, notifications API, team API, and self-delete guardrail coverage
-  - `npm run test:e2e:operational` now verifies import, approve/reject, document upload/list/download, text OCR, PDF OCR, and team guardrails before stopping at the Google Vision billing blocker
+  - `npm run test:e2e:operational` verifies import, approve/reject, document upload/list/download/delete, OCR, Stripe Checkout, and team guardrails in production
   - `npm run load:prod` passed with 2,824 requests, 0 failures, p95 355.6 ms, and p99 572 ms
   - `npm run security:rls-probe` completed without exposing anonymous warranty rows
   - `npm run indexnow:submit` submitted 28 public URLs successfully to IndexNow and Bing
-  - `npm run readiness:operational` now completes all dependency checks before failing, so provider blockers are visible instead of hiding behind the first failure
-  - the May 23 readiness run passed production app URL, home, robots, sitemap, IndexNow key file, health, Supabase, Resend, and HubSpot checks
-  - current smoke and load checks returned no HTTP failures; the only current production workflow failure is the expected image OCR 503 caused by Google Vision billing/API access
+  - `npm run readiness:operational` passes production app URL, home, robots, sitemap, IndexNow key file, health, Supabase, Resend, HubSpot, OCR, and Stripe checks
+  - current smoke, readiness, RLS, and operational checks returned no HTTP or workflow failures
   - Stripe production env was replaced in Vercel production and redeployed; a targeted authenticated production checkout probe returned a Stripe Checkout URL and session ID, then cleaned its QA rows
 - Sentry production observability is closed for launch:
   - runtime DSNs are present through `NEXT_PUBLIC_SENTRY_DSN` and `SENTRY_DSN`
@@ -67,7 +66,7 @@ Current launch position:
 - OCR no longer depends exclusively on Google Cloud Vision for PDFs:
   - embedded-text PDF OCR is verified in production
   - the PDF worker file is explicitly included in the Vercel serverless trace for `/api/ocr`
-  - production image OCR now fails fast with a clear 503 when Google Vision billing/API access is unavailable instead of timing out behind Cloudflare
+- production image OCR now falls back to in-house Tesseract when hosted providers are unavailable instead of timing out behind Cloudflare
 - Outbound operational mail is standardized to the approved business mailbox path:
   - sender defaults to `hello@warrantee.io`
   - admin and seller invite flows BCC the business inbox
@@ -143,11 +142,10 @@ Current launch position:
 
 ## Still Open Before "Fully Operational"
 
-- Google Cloud Vision image OCR is blocked by the configured Google Cloud project requiring billing to be enabled. `npm run readiness:operational` fails on this check with a Google Vision 403 until billing/API access is fixed.
-- Google Cloud self-serve billing is blocked for the Saudi Arabia billing address. Google redirects the project to CNTXT reseller onboarding for Google Cloud in KSA; the next step requires an explicit CNTXT Google sign-in and likely reseller billing setup.
-- Full operational E2E is partially complete in production:
-  - passed: bulk import, approval, rejection, document upload/list/download, text OCR, PDF OCR, and team guardrails
-  - blocked: image OCR until Google Vision billing is fixed; payment checkout has been verified separately with a targeted production probe
+- Google Cloud Vision image OCR is still blocked by the configured Google Cloud project requiring billing to be enabled, but this is no longer a launch blocker because production OCR passed through the deployed provider/fallback path.
+- Google Cloud self-serve billing is blocked for the Saudi Arabia billing address. Google redirects the project to CNTXT reseller onboarding for Google Cloud in KSA; the next step requires an explicit CNTXT Google sign-in and likely reseller billing setup if Google Vision remains part of the provider plan.
+- Full operational E2E is complete in production for the May 24 deployment:
+  - passed: bulk import, approval, rejection, document upload/list/download/delete, OCR, Stripe Checkout, and team guardrails
 - Brand-new teammate onboarding is still intentionally conservative:
   - teammates must already have a Warrantee account before being added to a company workspace
 - CRM is intentionally postponed until the core operational surface is fully signed off.

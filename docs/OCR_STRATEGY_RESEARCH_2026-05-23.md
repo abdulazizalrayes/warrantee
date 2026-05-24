@@ -210,7 +210,7 @@ For launch, Mistral OCR is the best operational tradeoff because it is live now 
 
 ## 2026-05-24 operational addendum
 
-The May 24 production env recheck found `MISTRAL_API_KEY` is currently present by name but empty in Vercel Production. Google Vision is still configured but blocked by billing. To keep launch QA moving while those provider keys are corrected, Warrantee now falls back to in-house Tesseract OCR for image uploads after hosted-provider failure.
+The May 24 local env-pull recheck found `MISTRAL_API_KEY` present by name but empty in the pulled local env file. Google Vision is still configured but blocked by billing. To keep launch QA moving while provider keys are confirmed, Warrantee now falls back to in-house Tesseract OCR for image uploads after hosted-provider failure. The deployed production operational E2E passed OCR through the production API after this fallback/tracing work.
 
 This changes the short-term operational stance:
 
