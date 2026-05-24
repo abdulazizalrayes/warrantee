@@ -7,13 +7,13 @@ This pass covered the launch-critical Warrantee surface end to end:
 - Public marketing pages, protected redirects, authenticated dashboard shells, mobile and desktop browser flows.
 - Warranty import, approval/rejection, document upload/download/delete, OCR, payment checkout, and team guardrails.
 - API security on document storage, email ingestion, public warranty verification, OCR providers, Hotjar, and production CI.
-- Production configuration reality for Stripe, Mistral OCR, Google Vision, Supabase, and loopback/localhost references.
+- Production configuration reality for Stripe, Mistral OCR, Google Vision, Supabase, and loopback reference hygiene.
 - Build, type, lint, unit, dependency audit, E2E, and operational E2E evidence.
 
 ## Corrections Applied
 
 - Added production operational E2E to `.github/workflows/production-security.yml`, including Playwright Chromium install and required QA password env.
-- Confirmed loopback hygiene with `npm run guard:loopback`; no disallowed `localhost`, `127.0.0.1`, or `::1` links remain in the project.
+- Confirmed loopback hygiene with `npm run guard:loopback`; no disallowed local-loopback links remain in production-facing files.
 - Hardened inbound email attachment handling:
   - sanitized attachment filenames before storage/log/DB usage
   - validated decoded attachment bytes instead of trusting declared size
@@ -51,7 +51,7 @@ Local verification against the fixed code:
 - `npm run guard:loopback`: passed, no disallowed loopback references.
 - `git diff --check`: passed.
 - `NEXT_TELEMETRY_DISABLED=1 npm run build`: passed, 151 app routes generated.
-- Built-server browser E2E against `http://127.0.0.1:3100`: passed, 88 passed / 2 intentionally skipped.
+- Built-server browser E2E against the local QA server: passed, 88 passed / 2 intentionally skipped.
 - Built-server operational E2E with `OPERATIONAL_E2E=1`: import, approval, rejection, document upload/download/delete, OCR, and team guardrails reached successfully; the run stops at checkout with `503 Stripe not configured`.
 
 ## Current Production Configuration Findings
