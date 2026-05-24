@@ -309,6 +309,7 @@ async function processAttachment(
       attachment_id: attachmentRecord.id,
       confidence: ocrResult.aggregate_confidence,
       language: ocrResult.language_detected,
+      ocr_provider: ocrResult.provider,
       fields_extracted: Object.keys(ocrResult.extracted_fields)
         .filter((k) => ocrResult.extracted_fields[k as keyof typeof ocrResult.extracted_fields] !== null).length,
     }, attachmentRecord.id);

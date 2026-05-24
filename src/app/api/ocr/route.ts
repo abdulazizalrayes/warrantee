@@ -4,6 +4,7 @@ import { apiRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { extractTextFromPdfBuffer } from "@/lib/ocr/pdf";
 import { recognizeImageDataUriWithTesseract } from "@/lib/ocr/tesseract";
+import { cleanOCRTelemetry, type OCRProviderTelemetry } from "@/lib/ocr/telemetry";
 import {
   hasMistralOCRConfig,
   MistralOCRConfigurationError,
@@ -78,13 +79,41 @@ function shouldTryGoogleVision() {
   );
 }
 
-async function extractTextWithMistral(dataUri: string) {
+type OCRDocumentExtraction = {
+  text: string;
+  telemetry: OCRProviderTelemetry;
+};
+
+function submittedTextTelemetry(): OCRProviderTelemetry {
+  return {
+    provider: "submitted_text",
+    engine: "submitted_text",
+    mode: "input",
+    providerPreference: getOCRProviderPreference(),
+    fallback: false,
+  };
+}
+
+async function extractTextWithMistral(dataUri: string, mimeType: string, fallback = false): Promise<OCRDocumentExtraction> {
   const result = await withTimeout(
     recognizeDataUriWithMistral(dataUri, { timeoutMs: MISTRAL_TIMEOUT_MS }),
     MISTRAL_TIMEOUT_MS + 1000,
     "Mistral OCR timed out. Please try a clearer or smaller document."
   );
-  return result.text;
+  return {
+    text: result.text,
+    telemetry: cleanOCRTelemetry({
+      provider: "mistral",
+      engine: "mistral_ocr",
+      mode: "hosted",
+      providerPreference: getOCRProviderPreference(),
+      fallback,
+      mimeType,
+      model: result.model,
+      confidence: result.confidence,
+      pageCount: result.pageCount,
+    }),
+  };
 }
 
 async function recognizeImageDataUriWithLocalOCR(dataUri: string) {
@@ -96,7 +125,32 @@ async function recognizeImageDataUriWithLocalOCR(dataUri: string) {
   return recognizeImageDataUriWithTesseract(dataUri, ["eng", "ara"]);
 }
 
-async function extractTextFromDocument(dataUri: string) {
+function pdfTelemetry(result: Awaited<ReturnType<typeof extractTextFromPdfBuffer>>, mimeType: string, fallback = false): OCRProviderTelemetry {
+  return cleanOCRTelemetry({
+    provider: "pdfjs",
+    engine: result.engine,
+    mode: fallback ? "fallback" : "local",
+    providerPreference: getOCRProviderPreference(),
+    fallback,
+    mimeType,
+    confidence: result.confidence,
+    pageCount: result.pageCount,
+  });
+}
+
+function tesseractTelemetry(result: Awaited<ReturnType<typeof recognizeImageDataUriWithLocalOCR>>, mimeType: string, fallback = false): OCRProviderTelemetry {
+  return cleanOCRTelemetry({
+    provider: "tesseract",
+    engine: "tesseract",
+    mode: fallback ? "fallback" : "local",
+    providerPreference: getOCRProviderPreference(),
+    fallback,
+    mimeType,
+    confidence: result.confidence,
+  });
+}
+
+async function extractTextFromDocument(dataUri: string): Promise<OCRDocumentExtraction> {
   if (Buffer.byteLength(dataUri, "utf8") > MAX_IMAGE_DATA_URI_BYTES) {
     throw new Error("Image is too large for OCR. Please upload a file under 4MB or use a compressed image/PDF.");
   }
@@ -104,6 +158,7 @@ async function extractTextFromDocument(dataUri: string) {
   const { mimeType, base64 } = getDataUriMeta(dataUri);
   const provider = getOCRProviderPreference();
   const tryMistral = shouldTryMistral();
+  let fallbackFromMistral = false;
 
   if (mimeType === "application/pdf") {
     const result = await withTimeout(
@@ -112,12 +167,13 @@ async function extractTextFromDocument(dataUri: string) {
       "PDF OCR timed out. Please try a smaller or clearer PDF."
     );
     if (result.text.trim() || !tryMistral) {
-      return result.text;
+      return { text: result.text, telemetry: pdfTelemetry(result, mimeType) };
     }
 
     try {
-      return await extractTextWithMistral(dataUri);
+      return await extractTextWithMistral(dataUri, mimeType);
     } catch (error) {
+      fallbackFromMistral = true;
       if ((provider === "mistral" || error instanceof MistralOCRConfigurationError) && !shouldTryGoogleVision()) {
         throw new OCRServiceConfigurationError(error instanceof Error ? error.message : "Mistral OCR is unavailable.");
       }
@@ -127,14 +183,15 @@ async function extractTextFromDocument(dataUri: string) {
         LOCAL_OCR_TIMEOUT_MS,
         "PDF OCR timed out after Mistral fallback. Please try a smaller or clearer PDF."
       );
-      return fallback.text;
+      return { text: fallback.text, telemetry: pdfTelemetry(fallback, mimeType, fallbackFromMistral) };
     }
   }
 
   if (tryMistral) {
     try {
-      return await extractTextWithMistral(dataUri);
+      return await extractTextWithMistral(dataUri, mimeType);
     } catch (error) {
+      fallbackFromMistral = true;
       if ((provider === "mistral" || error instanceof MistralOCRConfigurationError) && !shouldTryGoogleVision()) {
         throw new OCRServiceConfigurationError(error instanceof Error ? error.message : "Mistral OCR is unavailable.");
       }
@@ -152,7 +209,8 @@ async function extractTextFromDocument(dataUri: string) {
       LOCAL_OCR_TIMEOUT_MS,
       "Image OCR timed out. Please try a clearer or smaller image."
     );
-    return fallback.text;
+    const fallbackToLocal = fallbackFromMistral || provider === "mistral" || provider === "google" || provider === "google-vision";
+    return { text: fallback.text, telemetry: tesseractTelemetry(fallback, mimeType, fallbackToLocal) };
   }
 
   try {
@@ -183,7 +241,17 @@ async function extractTextFromDocument(dataUri: string) {
     }
 
     const payload = await response.json();
-    return payload.responses?.[0]?.fullTextAnnotation?.text || payload.responses?.[0]?.textAnnotations?.[0]?.description || "";
+    return {
+      text: payload.responses?.[0]?.fullTextAnnotation?.text || payload.responses?.[0]?.textAnnotations?.[0]?.description || "",
+      telemetry: cleanOCRTelemetry({
+        provider: "google_vision",
+        engine: "google_document_text_detection",
+        mode: "hosted",
+        providerPreference: provider,
+        fallback: fallbackFromMistral,
+        mimeType,
+      }),
+    };
   } catch (error) {
     console.warn("Vision OCR unavailable, falling back to in-house Tesseract OCR:", summarizeOCRProviderError(error));
     const fallback = await withTimeout(
@@ -191,7 +259,7 @@ async function extractTextFromDocument(dataUri: string) {
       LOCAL_OCR_TIMEOUT_MS,
       "Image OCR timed out after Vision fallback. Please try a clearer or smaller image."
     );
-    return fallback.text;
+    return { text: fallback.text, telemetry: tesseractTelemetry(fallback, mimeType, true) };
   }
 }
 
@@ -360,13 +428,16 @@ export async function POST(request: NextRequest) {
 
     let { text } = body;
     const { image } = body;
+    let ocrTelemetry = submittedTextTelemetry();
 
     if (!text && typeof image === "string") {
-      text = await withTimeout(
+      const extraction = await withTimeout(
         extractTextFromDocument(image),
         LOCAL_OCR_TIMEOUT_MS + VISION_TIMEOUT_MS + 2000,
         "OCR timed out. Please try a clearer image, smaller file, or paste the text manually."
       );
+      text = extraction.text;
+      ocrTelemetry = extraction.telemetry;
     }
 
     if (!text || typeof text !== "string") {
@@ -392,11 +463,20 @@ export async function POST(request: NextRequest) {
     }
 
     const fields = extractWarrantyFields(trimmedText);
+    console.info("OCR provider selected", {
+      provider: ocrTelemetry.provider,
+      engine: ocrTelemetry.engine,
+      mode: ocrTelemetry.mode,
+      fallback: ocrTelemetry.fallback,
+      mimeType: ocrTelemetry.mimeType,
+      model: ocrTelemetry.model,
+    });
 
     return NextResponse.json({
       success: true,
       text: trimmedText,
       fields,
+      ocr: ocrTelemetry,
       message:
         fields.confidence >= 0.3
           ? "Fields extracted successfully"
@@ -428,7 +508,7 @@ export async function GET() {
     status: "OCR parsing endpoint active",
     usage: "POST with { text: 'extracted OCR text' } or { image: 'data:image/png;base64,...' | 'data:application/pdf;base64,...' }",
     engines: ["mistral_ocr", "google_vision_fallback", "pdfjs_local", "tesseract_dev_fallback"],
-    note: "Warrantee prefers Mistral OCR when MISTRAL_API_KEY is configured, keeps embedded-text PDFs local, falls back to Google Vision when available, and uses in-house Tesseract as an emergency availability fallback.",
+    note: "Warrantee prefers Mistral OCR when MISTRAL_API_KEY is configured, keeps embedded-text PDFs local, falls back to Google Vision when available, and uses in-house Tesseract as an emergency availability fallback. Successful POST responses include ocr.provider and ocr.engine.",
     max_text_length: MAX_OCR_TEXT_LENGTH,
     fields: [
       "product_name",

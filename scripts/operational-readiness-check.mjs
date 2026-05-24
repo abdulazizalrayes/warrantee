@@ -281,8 +281,20 @@ async function checkRemoteOCRProvider() {
   if (!result.payload?.success || !/WARRANTEE|OCR/i.test(result.payload?.text || "")) {
     throw new Error("Production OCR endpoint did not return the expected extracted text");
   }
+  const telemetry = result.payload?.ocr || {};
+  if (!telemetry.provider || !telemetry.engine) {
+    throw new Error("Production OCR endpoint did not report provider telemetry");
+  }
 
-  return { name: "ocr-provider", status: "ok", mode: "production-api" };
+  return {
+    name: "ocr-provider",
+    status: "ok",
+    mode: "production-api",
+    provider: telemetry.provider,
+    engine: telemetry.engine,
+    fallback: Boolean(telemetry.fallback),
+    model: telemetry.model,
+  };
 }
 
 function missingColumn(message) {

@@ -309,6 +309,8 @@ test.describe("fully operational production workflows", () => {
     await expectResponseStatus(ocrTextResponse, 200);
     const ocrTextPayload = await ocrTextResponse.json();
     expect(ocrTextPayload.success).toBe(true);
+    expect(ocrTextPayload.ocr?.provider).toBe("submitted_text");
+    expect(ocrTextPayload.ocr?.engine).toBe("submitted_text");
     expect(JSON.stringify(ocrTextPayload.fields)).toContain(runId);
 
     const ocrPdf = await pdfBuffer(
@@ -322,6 +324,8 @@ test.describe("fully operational production workflows", () => {
     await expectResponseStatus(ocrPdfResponse, 200);
     const ocrPdfPayload = await ocrPdfResponse.json();
     expect(ocrPdfPayload.success).toBe(true);
+    expect(["pdfjs", "mistral", "tesseract"]).toContain(ocrPdfPayload.ocr?.provider);
+    expect(["pdf_text", "pdf_tesseract", "mistral_ocr", "tesseract"]).toContain(ocrPdfPayload.ocr?.engine);
     expect(ocrPdfPayload.text).toContain(runId);
 
     const teamResponse = await page.request.get("/api/team/members");
@@ -355,6 +359,8 @@ test.describe("fully operational production workflows", () => {
     await expectResponseStatus(ocrImageResponse, 200);
     const ocrImagePayload = await ocrImageResponse.json();
     expect(ocrImagePayload.success).toBe(true);
+    expect(["mistral", "google_vision", "tesseract"]).toContain(ocrImagePayload.ocr?.provider);
+    expect(["mistral_ocr", "google_document_text_detection", "tesseract"]).toContain(ocrImagePayload.ocr?.engine);
     const normalizedOcrText = normalizeOcrAssertionText(ocrImagePayload.text);
     expect(normalizedOcrText).toContain(normalizeOcrAssertionText(runId).slice(0, 12));
     expect(normalizedOcrText).toContain(normalizeOcrAssertionText("OCR Image Warranty"));

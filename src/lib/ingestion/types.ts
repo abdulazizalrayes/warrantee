@@ -1,5 +1,7 @@
 // Warrantee — OCR & Email-Ingestion Engine Types
 
+import type { OCRProviderTelemetry } from '@/lib/ocr/telemetry';
+
 export interface ResendInboundPayload {
   from: string;
   to: string;
@@ -52,6 +54,7 @@ export interface OCRResult {
   confidence: number;
   extracted_fields: OCRExtractedFields;
   aggregate_confidence: number;
+  provider?: OCRProviderTelemetry;
 }
 
 export type IngestionJobStatus =
