@@ -10,6 +10,23 @@ const discoveryLinkHeader = [
   `</.well-known/agent-skills>; rel="describedby"; type="application/json"`,
 ].join(", ");
 
+const contentSecurityPolicyReportOnly = [
+  "default-src 'self'",
+  "base-uri 'self'",
+  "object-src 'none'",
+  "frame-ancestors 'none'",
+  "form-action 'self' https://checkout.stripe.com",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com https://static.hotjar.com https://script.hotjar.com https://js.stripe.com https://checkout.stripe.com https://vercel.live",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob: https://erptubrslnfmkuouczgn.supabase.co https://lh3.googleusercontent.com https://www.google-analytics.com https://www.googletagmanager.com https://*.hotjar.com",
+  "font-src 'self' data:",
+  "connect-src 'self' https://erptubrslnfmkuouczgn.supabase.co wss://erptubrslnfmkuouczgn.supabase.co https://api.stripe.com https://checkout.stripe.com https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://*.hotjar.com wss://*.hotjar.com https://vitals.vercel-insights.com https://*.sentry.io https://*.ingest.sentry.io",
+  "frame-src https://js.stripe.com https://checkout.stripe.com https://*.hotjar.com",
+  "worker-src 'self' blob:",
+  "manifest-src 'self'",
+  "upgrade-insecure-requests",
+].join("; ");
+
 const markdownEnabledPaths = [
   "/",
   "/en",
@@ -119,6 +136,7 @@ const nextConfig: NextConfig = {
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
           { key: "X-XSS-Protection", value: "1; mode=block" },
+          { key: "Content-Security-Policy-Report-Only", value: contentSecurityPolicyReportOnly },
           { key: "Link", value: discoveryLinkHeader },
           { key: "Vary", value: "Accept" },
         ],

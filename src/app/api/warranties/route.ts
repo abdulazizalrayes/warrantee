@@ -2,7 +2,7 @@
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import { validateWarrantyInput, isValidDate, sanitizeString, isOneOf, VALID_WARRANTY_STATUSES } from "@/lib/validation";
-import { apiRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
+import { apiRateLimit, getClientIp, getRateLimitHeaders } from "@/lib/rate-limit";
 import {
   buildWarrantyAccessOrClause,
   buildBuyerWarrantyAccessOrClause,
@@ -18,7 +18,7 @@ function generateReferenceNumber() {
 
 export async function GET(request: NextRequest) {
   try {
-    const ip = request.headers.get("x-forwarded-for") || "unknown";
+    const ip = getClientIp(request);
     const rateLimitResult = await apiRateLimit(ip);
     if (!rateLimitResult.success) {
       return NextResponse.json(
@@ -107,7 +107,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const ip = request.headers.get("x-forwarded-for") || "unknown";
+    const ip = getClientIp(request);
     const rateLimitResult = await apiRateLimit(ip);
     if (!rateLimitResult.success) {
       return NextResponse.json(

@@ -117,6 +117,33 @@ async function checkUrl(name, path, expectedStatus = 200, contains) {
   return { name, status: response.status };
 }
 
+async function checkSecurityHeaders() {
+  const response = await fetchWithTimeout(`${baseUrl}/en`, { redirect: "follow" });
+  if (response.status !== 200) {
+    throw new Error(`security headers probe returned ${response.status}`);
+  }
+
+  const requiredHeaders = [
+    "strict-transport-security",
+    "x-content-type-options",
+    "x-frame-options",
+    "referrer-policy",
+    "permissions-policy",
+    "content-security-policy-report-only",
+  ];
+  const missing = requiredHeaders.filter((header) => !response.headers.get(header));
+  if (missing.length > 0) {
+    throw new Error(`Missing security headers: ${missing.join(", ")}`);
+  }
+
+  const csp = response.headers.get("content-security-policy-report-only") || "";
+  if (!csp.includes("default-src 'self'") || !csp.includes("object-src 'none'")) {
+    throw new Error("CSP report-only header is missing core directives");
+  }
+
+  return { name: "security-headers", status: "ok", csp: "report-only" };
+}
+
 async function checkSupabase() {
   const admin = createSupabaseAdminClient();
   const user = await findQaUser(admin);
@@ -179,6 +206,27 @@ async function checkStripe() {
   }
 
   return { name: "stripe", status: "ok" };
+}
+
+async function checkStripeWebhook() {
+  const response = await fetchWithTimeout(`${baseUrl}/api/stripe/webhook`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: "{}",
+  });
+  const payload = await response.json().catch(() => ({}));
+
+  if (response.status === 503) {
+    throw new Error("Stripe webhook endpoint is not configured; set STRIPE_WEBHOOK_SECRET in Vercel Production.");
+  }
+  if (response.status !== 400) {
+    throw new Error(`Unsigned Stripe webhook probe returned ${response.status}, expected 400`);
+  }
+  if (!/signature/i.test(payload?.error || "")) {
+    throw new Error("Unsigned Stripe webhook probe did not fail on signature validation");
+  }
+
+  return { name: "stripe-webhook", status: "ok", mode: "rejects-unsigned" };
 }
 
 async function checkGoogleVision() {
@@ -481,11 +529,13 @@ async function main() {
     { name: "sitemap", run: () => checkUrl("sitemap", "/sitemap.xml", 200, "https://warrantee.io/en") },
     { name: "indexnow-key", run: () => checkUrl("indexnow-key", `/${indexNowKey}.txt`, 200, indexNowKey) },
     { name: "health", run: () => checkUrl("health", "/api/health") },
+    { name: "security-headers", run: checkSecurityHeaders },
     { name: "supabase", run: checkSupabase },
     { name: "resend", run: checkResend },
     { name: "hubspot", run: checkHubSpot },
     { name: "ocr-provider", run: checkOCRProvider },
     { name: "stripe", run: checkStripe },
+    { name: "stripe-webhook", run: checkStripeWebhook },
   ];
 
   for (const check of plannedChecks) {

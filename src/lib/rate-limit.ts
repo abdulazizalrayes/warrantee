@@ -116,6 +116,19 @@ export interface RateLimitConfig {
   identifier?: string;
 }
 
+export function getClientIp(request: Request | { headers: Headers }) {
+  const cloudflareIp = request.headers.get("cf-connecting-ip");
+  if (cloudflareIp?.trim()) return cloudflareIp.trim();
+
+  const forwardedFor = request.headers.get("x-forwarded-for");
+  if (forwardedFor?.trim()) return forwardedFor.split(",")[0].trim() || "unknown";
+
+  const realIp = request.headers.get("x-real-ip");
+  if (realIp?.trim()) return realIp.trim();
+
+  return "unknown";
+}
+
 export async function rateLimit(
   ip: string,
   config: RateLimitConfig = { maxRequests: 60, windowMs: 60 * 1000 }
@@ -146,4 +159,16 @@ export const apiRateLimit = (ip: string) =>
 export const authRateLimit = (ip: string) =>
   rateLimit(ip, { maxRequests: 10, windowMs: 60000, identifier: "auth" });
 export const webhookRateLimit = (ip: string) =>
-  rateLimit(ip, { maxRequests: 100, windowMs: 60000, identifier: "webhook" });
+  rateLimit(ip, { maxRequests: 120, windowMs: 60000, identifier: "webhook" });
+export const contactRateLimit = (subject: string) =>
+  rateLimit(subject, { maxRequests: 5, windowMs: 10 * 60000, identifier: "contact" });
+export const ocrRateLimit = (subject: string) =>
+  rateLimit(subject, { maxRequests: 12, windowMs: 60000, identifier: "ocr" });
+export const bulkImportRateLimit = (subject: string) =>
+  rateLimit(subject, { maxRequests: 6, windowMs: 10 * 60000, identifier: "bulk-import" });
+export const paymentRateLimit = (subject: string) =>
+  rateLimit(subject, { maxRequests: 10, windowMs: 5 * 60000, identifier: "payment" });
+export const certificateRateLimit = (subject: string) =>
+  rateLimit(subject, { maxRequests: 12, windowMs: 10 * 60000, identifier: "certificate" });
+export const publicLookupRateLimit = (subject: string) =>
+  rateLimit(subject, { maxRequests: 60, windowMs: 60000, identifier: "public-lookup" });

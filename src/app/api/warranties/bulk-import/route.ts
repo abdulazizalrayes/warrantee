@@ -1,6 +1,6 @@
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
-import { apiRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
+import { apiRateLimit, bulkImportRateLimit, getClientIp, getRateLimitHeaders } from "@/lib/rate-limit";
 import { sanitizeString } from "@/lib/validation";
 import { buildWarrantyOwnershipInsert } from "@/lib/warranty-access";
 import Papa from "papaparse";
@@ -41,7 +41,7 @@ function rowsFromSheet(sheetRows: unknown[][]) {
 export async function POST(request: NextRequest) {
   try {
     // Rate limiting
-    const ip = request.headers.get("x-forwarded-for") || "unknown";
+    const ip = getClientIp(request);
     const rateLimitResult = await apiRateLimit(ip);
     if (!rateLimitResult.success) {
       return NextResponse.json(
@@ -59,6 +59,14 @@ export async function POST(request: NextRequest) {
 
     if (authError || !user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const importLimitResult = await bulkImportRateLimit(`${user.id}:${ip}`);
+    if (!importLimitResult.success) {
+      return NextResponse.json(
+        { error: "Too many import attempts. Please wait before uploading another file." },
+        { status: 429, headers: getRateLimitHeaders(importLimitResult) }
+      );
     }
 
     // Parse form data

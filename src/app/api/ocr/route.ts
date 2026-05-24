@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { NextRequest, NextResponse } from "next/server";
-import { apiRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
+import { apiRateLimit, getClientIp, getRateLimitHeaders, ocrRateLimit } from "@/lib/rate-limit";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { extractTextFromPdfBuffer } from "@/lib/ocr/pdf";
 import { recognizeImageDataUriWithTesseract } from "@/lib/ocr/tesseract";
@@ -404,7 +404,7 @@ function extractWarrantyFields(text: string) {
 
 export async function POST(request: NextRequest) {
   try {
-    const ip = request.headers.get("x-forwarded-for") || "unknown";
+    const ip = getClientIp(request);
     const rateLimitResult = await apiRateLimit(ip);
     if (!rateLimitResult.success) {
       return NextResponse.json(
@@ -417,6 +417,14 @@ export async function POST(request: NextRequest) {
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const ocrLimitResult = await ocrRateLimit(`${user.id}:${ip}`);
+    if (!ocrLimitResult.success) {
+      return NextResponse.json(
+        { error: "Too many OCR requests. Please wait before scanning more documents." },
+        { status: 429, headers: getRateLimitHeaders(ocrLimitResult) }
+      );
     }
 
     let body;

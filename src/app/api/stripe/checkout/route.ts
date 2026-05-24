@@ -1,14 +1,24 @@
 import { NextResponse } from "next/server";
 import { stripe, PLANS } from "@/lib/stripe";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { getClientIp, getRateLimitHeaders, paymentRateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
   try {
+    const ip = getClientIp(request);
     const supabase = await createSupabaseServerClient();
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const rateLimitResult = await paymentRateLimit(`${user.id}:${ip}`);
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { error: "Too many checkout attempts. Please wait before trying again." },
+        { status: 429, headers: getRateLimitHeaders(rateLimitResult) }
+      );
     }
 
     const body = await request.json();

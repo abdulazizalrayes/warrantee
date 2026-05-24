@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 import { createClient } from "@supabase/supabase-js";
+import { getClientIp, getRateLimitHeaders, webhookRateLimit } from "@/lib/rate-limit";
 
 function getSupabaseAdmin() {
   return createClient(
@@ -39,6 +40,20 @@ async function markEventProcessed(event: any, supabaseAdmin: any) {
 }
 
 export async function POST(request: Request) {
+  const rateLimitResult = await webhookRateLimit(getClientIp(request));
+  if (!rateLimitResult.success) {
+    return NextResponse.json(
+      { error: "Too many webhook attempts" },
+      { status: 429, headers: getRateLimitHeaders(rateLimitResult) }
+    );
+  }
+
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  if (!webhookSecret) {
+    console.error("Stripe webhook secret is not configured");
+    return NextResponse.json({ error: "Webhook is not configured" }, { status: 503 });
+  }
+
   const body = await request.text();
   const signature = request.headers.get("stripe-signature");
 
@@ -51,7 +66,7 @@ export async function POST(request: Request) {
     event = stripe.webhooks.constructEvent(
       body,
       signature,
-      process.env.STRIPE_WEBHOOK_SECRET!
+      webhookSecret
     );
   } catch (err) {
     // Log signature failures without exposing internal details

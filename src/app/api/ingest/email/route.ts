@@ -24,6 +24,7 @@ import emailTemplates from '@/lib/email-templates';
 import { createBuyerConfirmationToken } from '@/lib/provisional-warranties';
 import { sanitizeInboundAttachmentFilename } from '@/lib/ingestion/attachments';
 import { escapeHtml } from '@/lib/html-escape';
+import { getClientIp, getRateLimitHeaders, webhookRateLimit } from '@/lib/rate-limit';
 
 function getSupabaseAdmin() {
   return createClient<Database>(
@@ -36,6 +37,14 @@ type SupabaseAdminClient = ReturnType<typeof getSupabaseAdmin>;
 type InboundAttachment = NonNullable<ResendInboundPayload['attachments']>[number];
 
 export async function POST(request: NextRequest) {
+  const webhookLimitResult = await webhookRateLimit(getClientIp(request));
+  if (!webhookLimitResult.success) {
+    return NextResponse.json(
+      { error: 'Too many webhook attempts' },
+      { status: 429, headers: getRateLimitHeaders(webhookLimitResult) }
+    );
+  }
+
   const supabaseAdmin = getSupabaseAdmin();
   try {
     // 1. Verify Resend webhook signature
@@ -73,7 +82,7 @@ export async function POST(request: NextRequest) {
         status: 'received',
         attachment_count: payload.attachments?.length || 0,
         raw_payload: payload,
-        ip_address: request.headers.get('x-forwarded-for') || null,
+        ip_address: getClientIp(request),
       })
       .select('id')
       .single();

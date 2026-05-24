@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { apiRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
+import { apiRateLimit, getClientIp, getRateLimitHeaders } from "@/lib/rate-limit";
+import { isTrustedSameOriginRequest } from "@/lib/request-origin";
 
 const GRAPH_VERSION = process.env.META_GRAPH_API_VERSION || "v20.0";
 const META_PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID;
@@ -20,13 +21,17 @@ const allowedEvents = new Set([
 ]);
 
 export async function POST(request: NextRequest) {
-  const ip = request.headers.get("x-forwarded-for") || "unknown";
+  const ip = getClientIp(request);
   const rateLimitResult = await apiRateLimit(ip);
   if (!rateLimitResult.success) {
     return NextResponse.json(
       { error: "Too many requests" },
       { status: 429, headers: getRateLimitHeaders(rateLimitResult) }
     );
+  }
+
+  if (!isTrustedSameOriginRequest(request)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   if (!META_PIXEL_ID || !META_CAPI_ACCESS_TOKEN) {

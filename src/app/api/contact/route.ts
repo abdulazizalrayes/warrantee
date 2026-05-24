@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createClient } from "@supabase/supabase-js";
-import { apiRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
+import { contactRateLimit, getClientIp, getRateLimitHeaders } from "@/lib/rate-limit";
 import { validateContactInput } from "@/lib/validation";
 import { upsertHubSpotContact } from "@/lib/hubspot";
 import { sendEmail } from "@/lib/email";
+import { isTrustedSameOriginRequest } from "@/lib/request-origin";
 
 function createSupabaseAdminClient() {
   return createClient(
@@ -86,13 +87,17 @@ function buildNotificationHtml(input: {
 
 export async function POST(request: NextRequest) {
   try {
-    const ip = request.headers.get("x-forwarded-for") || "unknown";
-    const rateLimitResult = await apiRateLimit(ip);
+    const ip = getClientIp(request);
+    const rateLimitResult = await contactRateLimit(ip);
     if (!rateLimitResult.success) {
       return NextResponse.json(
         { error: "Too many requests" },
         { status: 429, headers: getRateLimitHeaders(rateLimitResult) }
       );
+    }
+
+    if (!isTrustedSameOriginRequest(request)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const body = await request.json();

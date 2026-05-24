@@ -4,6 +4,19 @@ Last updated: 2026-05-24
 
 ## 2026-05-24 Recheck
 
+### Security Hardening Addendum
+
+The latest hardening pass added stricter launch gates for abuse protection and payment integrity:
+
+- central client IP extraction now prefers Cloudflare and forwarded proxy headers consistently
+- OCR, bulk import, payment, contact, certificate, public lookup, and webhook routes have endpoint-specific rate limits
+- contact and Meta conversion browser endpoints now reject cross-origin direct posts
+- Stripe webhooks now fail closed when `STRIPE_WEBHOOK_SECRET` is missing and reject unsigned probes in readiness
+- the app now emits a report-only Content Security Policy so violations can be observed before enforcement
+- operational readiness now validates production security headers and Stripe webhook signature enforcement
+
+Launch status depends on the stricter readiness gate. If the new `stripe-webhook` readiness check reports that `STRIPE_WEBHOOK_SECRET` is not configured in Vercel Production, subscriptions and invoice/payment lifecycle updates must not be considered fully operational until the Stripe dashboard webhook signing secret is installed and the production readiness gate passes again.
+
 The latest end-to-end launch recheck found a local env-pull inconsistency, then verified the deployed production API directly:
 
 - Local `.env.production.local` still has empty `STRIPE_SECRET_KEY` and `MISTRAL_API_KEY` values, so local operational checkout cannot complete from that file alone.

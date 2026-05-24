@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { getClientIp, getRateLimitHeaders, publicLookupRateLimit } from "@/lib/rate-limit";
 
 const VERIFICATION_SELECT =
   "id, reference_number, product_name, product_name_ar, serial_number, status, start_date, end_date, category, seller_name, certificate_url, created_at";
@@ -42,6 +43,14 @@ async function findPublicWarranty(supabase: SupabaseClient, safeQuery: string) {
 }
 
 export async function GET(request: NextRequest) {
+  const rateLimitResult = await publicLookupRateLimit(getClientIp(request));
+  if (!rateLimitResult.success) {
+    return NextResponse.json(
+      { success: false, error: "Too many verification attempts" },
+      { status: 429, headers: getRateLimitHeaders(rateLimitResult) }
+    );
+  }
+
   // Require service role key for secure operations
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
     return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 });

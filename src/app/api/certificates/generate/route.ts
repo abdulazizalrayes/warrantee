@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import crypto from "crypto";
 import { buildWarrantyAccessOrClause } from "@/lib/warranty-access";
 import { escapeHtml } from "@/lib/html-escape";
+import { certificateRateLimit, getClientIp, getRateLimitHeaders } from "@/lib/rate-limit";
 
 function getSupabaseAdmin() {
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
@@ -129,11 +130,20 @@ function generateCertificateHTML(warranty: any, company: any, locale: string = "
 
 export async function POST(request: Request) {
   try {
+    const ip = getClientIp(request);
     const supabase = await createSupabaseServerClient();
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const rateLimitResult = await certificateRateLimit(`${user.id}:${ip}`);
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { error: "Too many certificate requests. Please wait before trying again." },
+        { status: 429, headers: getRateLimitHeaders(rateLimitResult) }
+      );
     }
 
     const { warrantyId, locale = "en" } = await request.json();

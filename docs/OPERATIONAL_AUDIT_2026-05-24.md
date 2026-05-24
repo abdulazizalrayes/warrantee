@@ -12,6 +12,14 @@ This pass covered the launch-critical Warrantee surface end to end:
 
 ## Corrections Applied
 
+- Added launch hardening for abuse-prone endpoints:
+  - consistent client IP extraction through Cloudflare/proxy headers
+  - tighter endpoint-specific rate limits for OCR, bulk import, payments, certificates, public lookup, contact, and webhooks
+  - cross-origin rejection on browser-only contact and Meta conversion endpoints
+  - Stripe webhook fail-closed behavior when its signing secret is absent
+  - readiness probing for unsigned Stripe webhook rejection
+- Added `Content-Security-Policy-Report-Only` with conservative base/object/frame directives and allowlists for active production integrations.
+- Added operational readiness checks for security headers and Stripe webhook signature enforcement.
 - Added production operational E2E to `.github/workflows/production-security.yml`, including Playwright Chromium install and required QA password env.
 - Confirmed loopback hygiene with `npm run guard:loopback`; no disallowed local-loopback links remain in production-facing files.
 - Hardened inbound email attachment handling:
@@ -72,13 +80,16 @@ No secret values were written into this audit.
 
 ## Launch Decision
 
-Code readiness is improved and the core app surface is passing local build, unit, lint, dependency, loopback, browser, production smoke, production readiness, production RLS, and production operational E2E gates. Warrantee is ready for controlled production operation on the verified deployment.
+Code readiness is improved and the core app surface is passing local build, unit, lint, dependency, loopback, browser, production smoke, production readiness, production RLS, and production operational E2E gates. The new hardening gate raises one stricter launch condition: the production Stripe webhook endpoint must reject unsigned probes with signature validation, not return a missing-secret configuration error.
+
+Warrantee is ready for controlled production operation only when the current production deployment passes the updated readiness gate, including `security-headers` and `stripe-webhook`.
 
 Before scaling OCR volume, complete this follow-up sequence:
 
 1. Confirm a real `MISTRAL_API_KEY` is installed in Vercel Production and GitHub Actions for scalable hosted OCR.
 2. Unblock Google Vision billing or remove it from active provider expectations.
-3. Run the production smoke, readiness, RLS, and operational E2E gates after every provider/env change.
+3. Confirm `STRIPE_WEBHOOK_SECRET` is installed in Vercel Production for `https://warrantee.io/api/stripe/webhook`.
+4. Run the production smoke, readiness, RLS, and operational E2E gates after every provider/env change.
 
 ## Remaining Non-Blocking Improvements
 

@@ -1,12 +1,12 @@
 // @ts-nocheck
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
-import { rateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
+import { getClientIp, getRateLimitHeaders, rateLimit } from "@/lib/rate-limit";
 import { buildWarrantyAccessOrClause } from "@/lib/warranty-access";
 
 export async function GET(request: NextRequest) {
   // Rate limiting
-  const ip = request.headers.get("x-forwarded-for") || "unknown";
+  const ip = getClientIp(request);
   const rl = await rateLimit(ip, { maxRequests: 10, windowMs: 60000, identifier: "export" });
   if (!rl.success) {
     return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429, headers: getRateLimitHeaders(rl) });

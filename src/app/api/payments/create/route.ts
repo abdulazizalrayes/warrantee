@@ -3,6 +3,7 @@ import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { buildWarrantyAccessOrClause } from '@/lib/warranty-access';
 import { getExtensionEligibility } from '@/lib/extension-eligibility';
 import { getLatestExtensionPolicy } from '@/lib/extension-policy';
+import { getClientIp, getRateLimitHeaders, paymentRateLimit } from '@/lib/rate-limit';
 
 const STRIPE_SECRET = process.env.STRIPE_SECRET_KEY;
 const MOYASAR_SECRET = process.env.MOYASAR_SECRET_KEY;
@@ -85,10 +86,19 @@ async function getPaymentWarranty(
 
 export async function POST(request: NextRequest) {
   try {
+    const ip = getClientIp(request);
     const supabase = await createServerSupabaseClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const rateLimitResult = await paymentRateLimit(`${user.id}:${ip}`);
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { error: 'Too many payment attempts. Please wait before trying again.' },
+        { status: 429, headers: getRateLimitHeaders(rateLimitResult) }
+      );
     }
 
     const body = await request.json();
