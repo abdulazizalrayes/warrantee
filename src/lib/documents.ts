@@ -30,6 +30,7 @@ export function normalizeWarrantyDocumentStoragePath(
       if (parsed.pathname.includes(signedPrefix)) {
         return stripLeadingSlash(parsed.pathname.split(signedPrefix)[1] || "");
       }
+      return "";
     } catch {
       return "";
     }

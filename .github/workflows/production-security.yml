@@ -18,11 +18,13 @@ jobs:
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
+      E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
       RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
       EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
       HUBSPOT_ACCESS_TOKEN: ${{ secrets.HUBSPOT_ACCESS_TOKEN }}
       STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
       NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
+      OPERATIONAL_TIMEOUT_MS: "30000"
       LOAD_DURATION_SECONDS: "20"
       LOAD_CONCURRENCY: "6"
 
@@ -44,11 +46,20 @@ jobs:
       - name: Production smoke test
         run: npm run smoke:prod
 
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
       - name: Supabase anonymous RLS probe
         run: npm run security:rls-probe
 
       - name: Operational readiness check
         run: npm run readiness:operational
+
+      - name: Production operational E2E
+        env:
+          E2E_BASE_URL: https://warrantee.io
+          OPERATIONAL_E2E: "1"
+        run: npm run test:e2e:operational
 
       - name: Controlled production load check
         run: npm run load:prod

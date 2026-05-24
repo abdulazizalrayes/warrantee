@@ -22,6 +22,8 @@ import type { ResendInboundPayload, IngestionJobStatus } from '@/lib/ingestion';
 import { sendEmail } from '@/lib/email';
 import emailTemplates from '@/lib/email-templates';
 import { createBuyerConfirmationToken } from '@/lib/provisional-warranties';
+import { sanitizeInboundAttachmentFilename } from '@/lib/ingestion/attachments';
+import { escapeHtml } from '@/lib/html-escape';
 
 function getSupabaseAdmin() {
   return createClient<Database>(
@@ -208,30 +210,48 @@ async function processAttachment(
   fromEmail: string,
   supabaseAdmin: SupabaseAdminClient
 ): Promise<{ confidence: number; hasFraud: boolean; provisional?: any | null }> {
-  const isSupported = SUPPORTED_FILE_TYPES.includes(attachment.content_type);
+  const safeFilename = sanitizeInboundAttachmentFilename(attachment.filename);
+  const contentType = String(attachment.content_type || '').toLowerCase();
+  const isSupported = SUPPORTED_FILE_TYPES.includes(contentType);
   if (attachment.size > MAX_FILE_SIZE) {
     await logAudit(jobId, 'error', 'system', {
       error: 'File too large',
-      filename: attachment.filename,
+      filename: safeFilename,
       size: attachment.size,
     });
     return { confidence: 0, hasFraud: false, provisional: null };
   }
 
+  if (typeof attachment.content !== 'string' || !attachment.content.trim()) {
+    await logAudit(jobId, 'error', 'system', {
+      error: 'Attachment content missing',
+      filename: safeFilename,
+    });
+    return { confidence: 0, hasFraud: false, provisional: null };
+  }
+
   const fileBuffer = Buffer.from(attachment.content, 'base64');
+  if (fileBuffer.byteLength > MAX_FILE_SIZE) {
+    await logAudit(jobId, 'error', 'system', {
+      error: 'Decoded file too large',
+      filename: safeFilename,
+      size: fileBuffer.byteLength,
+    });
+    return { confidence: 0, hasFraud: false, provisional: null };
+  }
   const fileHash = crypto.createHash('sha256').update(fileBuffer).digest('hex');
 
-  const storagePath = `ingestion/${jobId}/${attachment.filename}`;
+  const storagePath = `ingestion/${jobId}/${safeFilename}`;
   const { error: storageError } = await supabaseAdmin.storage
     .from('warranty-documents')
     .upload(storagePath, fileBuffer, {
-      contentType: attachment.content_type,
+      contentType,
     });
 
   if (storageError) {
     await logAudit(jobId, 'error', 'system', {
       error: 'Attachment storage failed',
-      filename: attachment.filename,
+      filename: safeFilename,
       details: storageError.message,
     });
     return { confidence: 0, hasFraud: false, provisional: null };
@@ -241,9 +261,9 @@ async function processAttachment(
     .from('ingestion_attachments')
     .insert({
       ingestion_job_id: jobId,
-      filename: attachment.filename,
-      content_type: attachment.content_type,
-      file_size: attachment.size,
+      filename: safeFilename,
+      content_type: contentType,
+      file_size: fileBuffer.byteLength,
       file_hash: fileHash,
       storage_path: storagePath,
       ocr_status: isSupported ? 'processing' : 'unsupported',
@@ -257,7 +277,7 @@ async function processAttachment(
 
   await logAudit(jobId, 'attachment_stored', 'system', {
     attachment_id: attachmentRecord.id,
-    filename: attachment.filename,
+    filename: safeFilename,
     file_hash: fileHash,
     supported: isSupported,
   });
@@ -271,7 +291,7 @@ async function processAttachment(
   }, attachmentRecord.id);
 
   try {
-    const ocrResult = await processDocument(attachment.content, attachment.content_type);
+    const ocrResult = await processDocument(attachment.content, contentType);
     const simHash = ocrResult.raw_text ? computeSimHash(ocrResult.raw_text) : null;
 
     await supabaseAdmin.from('ingestion_attachments').update({
@@ -310,8 +330,9 @@ async function processAttachment(
       }, attachmentRecord.id);
     }
 
+    let provisional = null;
     if (senderMatch.user_id && ocrResult.aggregate_confidence >= CONFIDENCE_THRESHOLDS.MEDIUM && !hasFraud) {
-      var provisional = await createProvisionalWarranty(jobId, attachmentRecord.id, senderMatch.user_id, ocrResult, supabaseAdmin);
+      provisional = await createProvisionalWarranty(jobId, attachmentRecord.id, senderMatch.user_id, ocrResult, supabaseAdmin);
     }
 
     if (
@@ -455,7 +476,7 @@ function extractName(fromField: string): string | null {
 }
 
 async function sendNoAttachmentNotification(email: string, subject: string | undefined) {
-  const originalSubject = subject ? `"${subject}"` : "your email";
+  const originalSubject = subject ? `&quot;${escapeHtml(subject)}&quot;` : "your email";
   await sendEmail({
     to: email,
     subject: "We received your email but found no warranty documents",

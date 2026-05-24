@@ -6,6 +6,7 @@ import {
   isSchemaColumnError,
 } from "@/lib/warranty-document-provenance";
 import { computeSha256Hex } from "@/lib/server/document-hash";
+import { sanitizeInboundAttachmentFilename } from "@/lib/ingestion/attachments";
 
 const ALLOWED_TYPES = [
   "application/pdf",
@@ -16,6 +17,23 @@ const ALLOWED_TYPES = [
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 ];
 const MAX_SIZE = 250 * 1024 * 1024;
+
+function getSafeExtension(fileName: string, mimeType: string) {
+  const extension = fileName.includes(".") ? fileName.split(".").pop()?.toLowerCase() : "";
+  if (extension && /^[a-z0-9]{1,10}$/.test(extension)) return extension;
+
+  if (mimeType === "application/pdf") return "pdf";
+  if (mimeType === "image/jpeg" || mimeType === "image/jpg") return "jpg";
+  if (mimeType === "image/png") return "png";
+  if (mimeType === "application/msword") return "doc";
+  if (mimeType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") return "docx";
+  return "bin";
+}
+
+function sanitizeSourceContext(value: string | null) {
+  const normalized = (value || "manual_upload").trim().toLowerCase();
+  return normalized.replace(/[^a-z0-9_.-]+/g, "_").slice(0, 80) || "manual_upload";
+}
 
 async function getAuthorizedContext(warrantyId: string) {
   const supabase = await createServerSupabaseClient();
@@ -52,7 +70,7 @@ export async function POST(
   const formData = await request.formData();
   const file = formData.get("file") as File | null;
   const declaredKind = formData.get("documentKind")?.toString() || null;
-  const sourceContext = formData.get("sourceContext")?.toString() || "manual_upload";
+  const sourceContext = sanitizeSourceContext(formData.get("sourceContext")?.toString() || null);
 
   if (!file) return NextResponse.json({ error: "No file provided" }, { status: 400 });
   if (!ALLOWED_TYPES.includes(file.type)) {
@@ -62,12 +80,13 @@ export async function POST(
     return NextResponse.json({ error: "File too large (max 250MB)" }, { status: 400 });
   }
 
-  const ext = file.name.split(".").pop() || "bin";
+  const safeFileName = sanitizeInboundAttachmentFilename(file.name);
+  const ext = getSafeExtension(safeFileName, file.type);
   const filePath = `${user.id}/${warrantyId}/${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${ext}`;
   const buffer = Buffer.from(await file.arrayBuffer());
   const uploadedAt = new Date().toISOString();
   const fileHash = computeSha256Hex(buffer);
-  const documentKind = inferWarrantyDocumentKind(file.name, declaredKind);
+  const documentKind = inferWarrantyDocumentKind(safeFileName, declaredKind);
 
   const { error: uploadError } = await supabase.storage
     .from("warranty-documents")
@@ -81,7 +100,7 @@ export async function POST(
 
   const richInsertPayload = {
     warranty_id: warrantyId,
-    file_name: file.name,
+    file_name: safeFileName,
     file_type: file.type,
     file_size: file.size,
     file_url: urlData.publicUrl || filePath,
@@ -93,7 +112,7 @@ export async function POST(
     provenance_status: "recorded",
     evidence_metadata: {
       source_context: sourceContext,
-      original_file_name: file.name,
+      original_file_name: safeFileName,
       content_type: file.type,
       bytes: file.size,
     },
@@ -111,7 +130,7 @@ export async function POST(
     schemaMode = "fallback";
     const fallbackInsertPayload = {
       warranty_id: warrantyId,
-      file_name: file.name,
+      file_name: safeFileName,
       file_type: file.type,
       file_size: file.size,
       file_url: urlData.publicUrl || filePath,
@@ -129,6 +148,7 @@ export async function POST(
   }
 
   if (error) {
+    await supabase.storage.from("warranty-documents").remove([filePath]);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
@@ -141,7 +161,7 @@ export async function POST(
       metadata: {
         warranty_id: warrantyId,
         document_id: data.id,
-        file_name: file.name,
+        file_name: safeFileName,
         file_type: file.type,
         file_size: file.size,
         file_hash: fileHash,

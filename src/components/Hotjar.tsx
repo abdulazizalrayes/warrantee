@@ -5,7 +5,9 @@ import Script from "next/script";
 const HOTJAR_ID = process.env.NEXT_PUBLIC_HOTJAR_ID;
 
 export default function Hotjar() {
-  if (!HOTJAR_ID) {
+  const hotjarSiteId = HOTJAR_ID && /^\d+$/.test(HOTJAR_ID) ? HOTJAR_ID : "";
+
+  if (!hotjarSiteId) {
     return null;
   }
 
@@ -29,7 +31,7 @@ export default function Hotjar() {
     "loadHotjar();",
     "h.addEventListener('warrantee_cookie_consent_updated',loadHotjar);",
     "})(window,document,'https://static.hotjar.com/c/hotjar-','.js?sv=');",
-  ].join("\n").replace("HOTJAR_ID", HOTJAR_ID);
+  ].join("\n").replace("HOTJAR_ID", hotjarSiteId);
 
   return (
     <Script

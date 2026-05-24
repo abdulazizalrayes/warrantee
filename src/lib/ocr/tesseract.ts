@@ -1,9 +1,25 @@
+import fs from "fs";
+import path from "path";
+
 type TesseractResult = {
   text: string;
   confidence: number;
   engine: "tesseract";
   language: string;
 };
+
+function resolveTesseractWorkerPath() {
+  const workerPath = path.join(
+    process.cwd(),
+    "node_modules",
+    "tesseract.js",
+    "src",
+    "worker-script",
+    "node",
+    "index.js",
+  );
+  return fs.existsSync(workerPath) ? workerPath : undefined;
+}
 
 function normalizeLanguageHint(languages?: string[]) {
   if (!languages || languages.length === 0) return "eng+ara";
@@ -16,8 +32,10 @@ export async function recognizeImageBufferWithTesseract(
   languages?: string[],
 ): Promise<TesseractResult> {
   const Tesseract = await import("tesseract.js");
+  const workerPath = resolveTesseractWorkerPath();
   const worker = await Tesseract.createWorker(normalizeLanguageHint(languages), 1, {
     logger: () => undefined,
+    ...(workerPath ? { workerPath } : {}),
   });
 
   try {

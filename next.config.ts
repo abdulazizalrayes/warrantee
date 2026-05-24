@@ -44,7 +44,18 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   serverExternalPackages: ["@napi-rs/canvas", "pdfjs-dist"],
   outputFileTracingIncludes: {
-    "/api/ocr": ["./node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs"],
+    "/api/ocr": [
+      "./node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs",
+      "./node_modules/pdfjs-dist/standard_fonts/**/*",
+      "./node_modules/tesseract.js/src/worker-script/node/index.js",
+      "./node_modules/tesseract.js-core/**/*",
+    ],
+    "/api/ingest/email": [
+      "./node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs",
+      "./node_modules/pdfjs-dist/standard_fonts/**/*",
+      "./node_modules/tesseract.js/src/worker-script/node/index.js",
+      "./node_modules/tesseract.js-core/**/*",
+    ],
   },
   images: {
     remotePatterns: [

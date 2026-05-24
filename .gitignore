@@ -15,3 +15,5 @@ pnpm-debug.log*
 *.bak
 *.traineddata
 signup-page.png
+supabase/migrations 2/
+tests/e2e 2/

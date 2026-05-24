@@ -1,8 +1,8 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Upload, File, Trash2, AlertCircle } from "lucide-react";
-import { buildDocumentDownloadHref, normalizeWarrantyDocumentStoragePath, WARRANTY_DOCUMENTS_BUCKET } from "@/lib/documents";
+import { buildDocumentDownloadHref } from "@/lib/documents";
 
 const t = {
   en: { title: "Documents", dropzone: "Drag & drop files here", browse: "or click to browse", types: "PDF, JPEG, PNG, DOC, DOCX (max 250MB)", uploading: "Uploading...", noFiles: "No documents uploaded yet", delete: "Delete", download: "Download", error: "Upload failed" },
@@ -13,20 +13,27 @@ const ALLOWED = ["application/pdf", "image/jpeg", "image/png", "image/jpg", "app
 
 interface Props { warrantyId: string; locale?: string; }
 
+type WarrantyDocument = {
+  id: string;
+  file_name: string | null;
+  file_size: number | null;
+};
+
 export default function DocumentUpload({ warrantyId, locale = "en" }: Props) {
   const l = t[locale as keyof typeof t] || t.en;
-  const supabase = createClient();
-  const [docs, setDocs] = useState<any[]>([]);
+  const supabase = useMemo(() => createClient(), []);
+  const [docs, setDocs] = useState<WarrantyDocument[]>([]);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [dragOver, setDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const loadDocs = useCallback(async () => {
     const { data } = await supabase.from("warranty_documents").select("*").eq("warranty_id", warrantyId).order("created_at", { ascending: false });
     setDocs(data || []);
-  }, [warrantyId]);
+  }, [supabase, warrantyId]);
 
-  useEffect(() => { loadDocs(); }, [loadDocs]);
+  useEffect(() => { void loadDocs(); }, [loadDocs]);
 
   async function handleUpload(file: globalThis.File) {
     if (!ALLOWED.includes(file.type)) { setError("Invalid file type"); return; }
@@ -48,26 +55,53 @@ export default function DocumentUpload({ warrantyId, locale = "en" }: Props) {
         throw new Error(payload.error || l.error);
       }
 
-      loadDocs();
-    } catch (e: any) { setError(e.message || l.error); }
+      await loadDocs();
+    } catch (e) { setError(e instanceof Error ? e.message : l.error); }
     finally { setUploading(false); }
   }
 
-  async function handleDelete(doc: any) {
-    const storagePath = normalizeWarrantyDocumentStoragePath(doc.storage_path, doc.file_url);
-    if (storagePath) {
-      await supabase.storage.from(WARRANTY_DOCUMENTS_BUCKET).remove([storagePath]);
+  async function handleDelete(doc: WarrantyDocument) {
+    setError("");
+    const response = await fetch(`/api/documents/${doc.id}`, { method: "DELETE" });
+    if (!response.ok) {
+      const payload = await response.json().catch(() => ({ error: l.error }));
+      setError(payload.error || l.error);
+      return;
     }
-    await supabase.from("warranty_documents").delete().eq("id", doc.id);
-    loadDocs();
+    await loadDocs();
+  }
+
+  function openFilePicker() {
+    fileInputRef.current?.click();
   }
 
   return (
     <div className="bg-white rounded-xl shadow-sm p-6">
       <h3 className="font-bold text-lg mb-4">{l.title}</h3>
-      <div onDragOver={(e) => { e.preventDefault(); setDragOver(true); }} onDragLeave={() => setDragOver(false)}
-        onDrop={(e) => { e.preventDefault(); setDragOver(false); const f = e.dataTransfer.files[0]; if (f) handleUpload(f); }}
-        onClick={() => { const inp = document.createElement("input"); inp.type = "file"; inp.accept = ".pdf,.jpg,.jpeg,.png,.doc,.docx"; inp.onchange = (e: any) => { if (e.target.files[0]) handleUpload(e.target.files[0]); }; inp.click(); }}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+        className="sr-only"
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          if (file) void handleUpload(file);
+          event.target.value = "";
+        }}
+      />
+      <div
+        role="button"
+        tabIndex={0}
+        aria-label={l.dropzone}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            openFilePicker();
+          }
+        }}
+        onDragOver={(e) => { e.preventDefault(); setDragOver(true); }} onDragLeave={() => setDragOver(false)}
+        onDrop={(e) => { e.preventDefault(); setDragOver(false); const f = e.dataTransfer.files[0]; if (f) void handleUpload(f); }}
+        onClick={openFilePicker}
         className={"border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors " + (dragOver ? "border-[#4169E1] bg-blue-50" : "border-gray-300 hover:border-[#4169E1]")}>
         <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
         <p className="text-sm text-gray-500">{uploading ? l.uploading : l.dropzone}</p>
@@ -78,12 +112,12 @@ export default function DocumentUpload({ warrantyId, locale = "en" }: Props) {
         <div className="mt-4 space-y-2">
           {docs.map((doc) => (
             <div key={doc.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-              <div className="flex items-center gap-2"><File className="w-4 h-4 text-gray-500" /><span className="text-sm">{doc.file_name}</span><span className="text-xs text-gray-400">{(doc.file_size / 1024).toFixed(0)} KB</span></div>
+              <div className="flex items-center gap-2"><File className="w-4 h-4 text-gray-500" /><span className="text-sm">{doc.file_name || "Document"}</span><span className="text-xs text-gray-400">{(((doc.file_size || 0) / 1024)).toFixed(0)} KB</span></div>
               <div className="flex gap-2">
-                <a href={buildDocumentDownloadHref(doc.id)} target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-gray-700">
+                <a href={buildDocumentDownloadHref(doc.id)} target="_blank" rel="noopener noreferrer" aria-label={l.download} className="text-gray-500 hover:text-gray-700">
                   <File className="w-4 h-4" />
                 </a>
-                <button onClick={(e) => { e.stopPropagation(); handleDelete(doc); }} className="text-red-500 hover:text-red-700"><Trash2 className="w-4 h-4" /></button>
+                <button type="button" aria-label={l.delete} onClick={(e) => { e.stopPropagation(); void handleDelete(doc); }} className="text-red-500 hover:text-red-700"><Trash2 className="w-4 h-4" /></button>
               </div>
             </div>
           ))}

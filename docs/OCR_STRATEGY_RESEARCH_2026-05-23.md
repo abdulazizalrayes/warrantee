@@ -207,3 +207,15 @@ Medium term:
 Decision:
 
 For launch, Mistral OCR is the best operational tradeoff because it is live now and does not depend on the delayed Google partner paperwork. Open-source OCR should be the next cost-control layer, with RapidOCR/PaddleOCR as the best candidate, but it should be benchmarked on real Saudi/Arabic/English receipts before replacing hosted OCR.
+
+## 2026-05-24 operational addendum
+
+The May 24 production env recheck found `MISTRAL_API_KEY` is currently present by name but empty in Vercel Production. Google Vision is still configured but blocked by billing. To keep launch QA moving while those provider keys are corrected, Warrantee now falls back to in-house Tesseract OCR for image uploads after hosted-provider failure.
+
+This changes the short-term operational stance:
+
+- Preferred launch provider remains Mistral OCR once a real key is installed.
+- Google Vision remains a later fallback after billing is unblocked.
+- Tesseract is now an emergency production fallback for availability, but should not be treated as the scaled OCR strategy because serverless cold starts and mixed Arabic/English accuracy are weaker than hosted OCR.
+- The Sentry worker-path error was fixed by resolving the `tesseract.js` Node worker explicitly from the deployed `node_modules` path.
+- OCR provider failures now log sanitized status summaries rather than full upstream error payloads.

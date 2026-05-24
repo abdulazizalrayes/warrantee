@@ -1,4 +1,5 @@
 import { createCanvas } from "@napi-rs/canvas";
+import path from "path";
 import { recognizeImageBufferWithTesseract } from "@/lib/ocr/tesseract";
 
 type PdfExtractionResult = {
@@ -16,6 +17,10 @@ async function loadPdfJs() {
   return import("pdfjs-dist/legacy/build/pdf.mjs");
 }
 
+function resolvePdfStandardFontDataUrl() {
+  return `${path.join(process.cwd(), "node_modules", "pdfjs-dist", "standard_fonts")}/`;
+}
+
 export async function extractTextFromPdfBuffer(
   pdfBuffer: Buffer,
   maxPages = 5,
@@ -28,6 +33,7 @@ export async function extractTextFromPdfBuffer(
     disableWorker: true,
     useWorkerFetch: false,
     isEvalSupported: false,
+    standardFontDataUrl: resolvePdfStandardFontDataUrl(),
   } as any);
 
   const pdf = await loadingTask.promise;

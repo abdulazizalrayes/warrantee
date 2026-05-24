@@ -32,6 +32,17 @@ interface VisionAnnotation {
   };
 }
 
+function summarizeOCRProviderError(error: unknown) {
+  const rawMessage = error instanceof Error ? error.message : String(error);
+  const name = error instanceof Error ? error.name : 'Error';
+  const message = rawMessage
+    .replace(/key=[^&\s]+/gi, 'key=[redacted]')
+    .replace(/\b\d{10,}\b/g, '[redacted-number]')
+    .slice(0, 300);
+
+  return `${name}: ${message}`;
+}
+
 /**
  * Process a document image through Google Cloud Vision OCR.
  * Supports PDF pages (as images), PNG, JPG, TIFF.
@@ -53,10 +64,10 @@ export async function processDocument(
     try {
       return await processWithMistral(imageBase64, mimeType);
     } catch (error) {
-      if (provider === 'mistral' || error instanceof MistralOCRConfigurationError) {
+      if ((provider === 'mistral' || error instanceof MistralOCRConfigurationError) && !shouldTryGoogleVision()) {
         throw error;
       }
-      console.warn('Mistral PDF OCR unavailable, falling back to local PDF OCR:', error);
+      console.warn('Mistral PDF OCR unavailable, falling back to local PDF OCR:', summarizeOCRProviderError(error));
       return processPdfWithLocalStack(imageBase64, true);
     }
   }
@@ -65,13 +76,13 @@ export async function processDocument(
     try {
       return await processWithMistral(imageBase64, mimeType);
     } catch (error) {
-      if (provider === 'mistral' || error instanceof MistralOCRConfigurationError) {
+      if ((provider === 'mistral' || error instanceof MistralOCRConfigurationError) && !shouldTryGoogleVision()) {
         throw error;
       }
       if (error instanceof MistralOCRUnsupportedFileError && !shouldTryGoogleVision()) {
         throw error;
       }
-      console.warn('Mistral OCR unavailable, trying next OCR provider:', error);
+      console.warn('Mistral OCR unavailable, trying next OCR provider:', summarizeOCRProviderError(error));
     }
   }
 
@@ -97,7 +108,7 @@ export async function processDocument(
     });
 
     if (!response.ok) {
-      throw new Error(`Vision API error: ${response.status} ${response.statusText}`);
+      throw new Error(`Vision API unavailable with status ${response.status}`);
     }
 
     const data = await response.json();
@@ -139,7 +150,7 @@ export async function processDocument(
       aggregate_confidence: aggregateConfidence,
     };
   } catch (error) {
-    console.warn('Vision OCR unavailable, falling back to in-house Tesseract OCR:', error);
+    console.warn('Vision OCR unavailable, falling back to in-house Tesseract OCR:', summarizeOCRProviderError(error));
     return processWithTesseract(imageBase64, mimeType);
   }
 }
@@ -150,12 +161,16 @@ function getOCRProviderPreference() {
 
 function shouldTryMistral() {
   const provider = getOCRProviderPreference();
-  return provider === 'mistral' || (provider === 'auto' && hasMistralOCRConfig());
+  return (provider === 'mistral' || provider === 'auto') && hasMistralOCRConfig();
 }
 
 function shouldTryGoogleVision() {
   const provider = getOCRProviderPreference();
-  return provider === 'google' || provider === 'google-vision' || (provider === 'auto' && Boolean(process.env.GOOGLE_CLOUD_VISION_API_KEY));
+  return (
+    provider === 'google' ||
+    provider === 'google-vision' ||
+    ((provider === 'auto' || provider === 'mistral') && Boolean(process.env.GOOGLE_CLOUD_VISION_API_KEY))
+  );
 }
 
 async function processWithMistral(

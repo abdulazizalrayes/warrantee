@@ -10,10 +10,21 @@ const hasSupabaseAdmin = Boolean(
   process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY,
 );
 
-const runId = `QA-OPS-${Date.now().toString(36).toUpperCase()}-${Math.random()
-  .toString(36)
-  .slice(2, 8)
-  .toUpperCase()}`;
+const OCR_SAFE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+
+function randomOcrSafeToken(length = 12) {
+  return Array.from({ length }, () => OCR_SAFE_CHARS[Math.floor(Math.random() * OCR_SAFE_CHARS.length)]).join("");
+}
+
+function normalizeOcrAssertionText(value: string) {
+  return value
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "")
+    .replace(/[O0]/g, "0")
+    .replace(/[I1L]/g, "1");
+}
+
+const runId = `QA-OPS-${randomOcrSafeToken()}`;
 
 let qaUserId: string | null = null;
 let activeWarrantyId: string | null = null;
@@ -284,6 +295,12 @@ test.describe("fully operational production workflows", () => {
     const downloadResponse = await page.request.get(`/api/documents/${documentPayload.id}/download`);
     expect([200, 302]).toContain(downloadResponse.status());
 
+    const deleteDocumentResponse = await page.request.delete(`/api/documents/${documentPayload.id}`);
+    expect(deleteDocumentResponse.status()).toBe(200);
+    const documentsAfterDeleteResponse = await page.request.get(`/api/warranties/${activeWarrantyId}/documents`);
+    expect(documentsAfterDeleteResponse.status()).toBe(200);
+    expect(JSON.stringify(await documentsAfterDeleteResponse.json())).not.toContain(`${runId}-original-proof.pdf`);
+
     const ocrTextResponse = await page.request.post("/api/ocr", {
       data: {
         text: `Product: ${runId} OCR Text Warranty\nSerial: ${runId}-OCR-TEXT\nPurchase Date: 2026-01-01\nExpiry Date: 2028-01-01\nSeller: QA Seller`,
@@ -338,7 +355,7 @@ test.describe("fully operational production workflows", () => {
     await expectResponseStatus(ocrImageResponse, 200);
     const ocrImagePayload = await ocrImageResponse.json();
     expect(ocrImagePayload.success).toBe(true);
-    expect(ocrImagePayload.text).toContain(runId);
+    expect(normalizeOcrAssertionText(ocrImagePayload.text)).toContain(normalizeOcrAssertionText(runId));
 
     const { data: extension, error: extensionError } = await adminClient()
       .from("warranty_extensions")

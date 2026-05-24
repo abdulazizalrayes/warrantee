@@ -126,5 +126,5 @@ vercel logs warrantee.io --since 30m
   - failed OCR
   - failed email ingestion
   - failed payment or webhook processing
-- Complete CNTXT / Google Cloud reseller billing onboarding for project `916427933820`, then rerun `npm run readiness:operational` and `OPERATIONAL_E2E=1 npm run test:e2e:operational`.
+- Complete CNTXT / Google Cloud reseller billing onboarding for the configured Google Cloud project, then rerun `npm run readiness:operational` and `OPERATIONAL_E2E=1 npm run test:e2e:operational`.
 - Add a Stripe webhook signing-secret verification probe once real payment lifecycle QA is approved; checkout session creation is already verified in production.

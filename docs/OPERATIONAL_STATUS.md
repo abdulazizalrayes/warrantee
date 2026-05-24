@@ -1,6 +1,29 @@
 # Warrantee Operational Status
 
-Last updated: 2026-05-23
+Last updated: 2026-05-24
+
+## 2026-05-24 Recheck
+
+The latest end-to-end launch recheck reopened two environment blockers that were not visible from key names alone:
+
+- `STRIPE_SECRET_KEY` exists in Vercel Production and `.env.production.local`, but the pulled value is empty. Stripe checkout correctly returns `503 Stripe not configured` until a real restricted or secret key is installed.
+- `MISTRAL_API_KEY` exists in Vercel Production and `.env.production.local`, but the pulled value is empty. OCR now falls through to Google Vision and then the in-house Tesseract emergency fallback.
+- `GOOGLE_CLOUD_VISION_API_KEY` is present, but Google Vision returns a billing-disabled 403 from the configured Cloud project.
+
+Corrections made in the May 24 pass:
+
+- Added an in-house production OCR fallback so image OCR does not hard-fail while the Google reseller/billing path and Mistral key are unresolved.
+- Fixed the Tesseract worker path that caused the Sentry `Cannot find module '/var/task/.next/worker-script/node/index.js'` production error.
+- Sanitized OCR provider logging so upstream error payloads are not dumped into application logs.
+- Hardened document upload/delete, inbound email attachment names, public warranty verification query construction, and Hotjar script injection.
+- Extended production CI to run the operational Playwright workflow against `https://warrantee.io`.
+
+Current launch position:
+
+- Code-level launch hardening is substantially complete.
+- Local operational E2E now passes through OCR with the fallback, then stops at the expected Stripe configuration blocker.
+- Warrantee should not be called fully operational until a real `STRIPE_SECRET_KEY` is installed and the production operational E2E passes after deployment.
+- For OCR scale, install a real `MISTRAL_API_KEY`; the Tesseract fallback is an availability bridge, not the preferred long-term provider.
 
 ## Closed
 

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { FileText, Search, File, Image, FileSpreadsheet, Eye, FolderOpen } from 'lucide-react';
+import { FileText, Search, File, ImageIcon, FileSpreadsheet, Eye, FolderOpen } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { DashboardPageShell } from '@/components/dashboard/DashboardPageShell';
 import { PageViewTracker } from '@/components/PageViewTracker';
@@ -62,7 +62,7 @@ export default function DocumentsPage() {
 
   const getFileIcon = (type: string | null) => {
     if (!type) return <File className="w-5 h-5 text-[#86868b]" />;
-    if (type.startsWith('image/')) return <Image className="w-5 h-5 text-[#0071e3]" />;
+    if (type.startsWith('image/')) return <ImageIcon className="w-5 h-5 text-[#0071e3]" />;
     if (type.includes('pdf')) return <FileText className="w-5 h-5 text-[#ff3b30]" />;
     if (type.includes('sheet') || type.includes('csv')) return <FileSpreadsheet className="w-5 h-5 text-[#30d158]" />;
     return <File className="w-5 h-5 text-[#86868b]" />;
