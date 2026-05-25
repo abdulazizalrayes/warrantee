@@ -501,7 +501,7 @@ async function checkOCRProvider() {
     return { name: "tesseract-local", status: "ok", note: "Local OCR provider selected; not recommended for production image OCR." };
   }
 
-  throw new Error("Missing OCR provider env vars: set MISTRAL_API_KEY for launch, or GOOGLE_CLOUD_VISION_API_KEY for the legacy provider.");
+  return checkRemoteOCRProvider();
 }
 
 function getErrorMessage(error) {
