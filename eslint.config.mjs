@@ -9,10 +9,14 @@ const config = [
   {
     ignores: [
       ".next/**",
+      ".codex-quarantine/**",
       ".vercel/**",
       "node_modules/**",
       "playwright-report/**",
       "test-results/**",
+      "supabase/.temp/**",
+      "supabase/migrations 2/**",
+      "tests/e2e 2/**",
       "next-env.d.ts",
     ],
   },

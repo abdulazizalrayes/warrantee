@@ -90,6 +90,8 @@ export function warrantyExpiryEmail(
 
 export function welcomeEmail(name: string, locale: string = "en") {
   const isAr = locale === "ar";
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://warrantee.io";
+  const dashboardUrl = `${appUrl}/${isAr ? "ar" : "en"}/dashboard`;
   const dir = isAr ? "rtl" : "ltr";
 
   const subject = isAr
@@ -115,7 +117,7 @@ export function welcomeEmail(name: string, locale: string = "en") {
         : "Thanks for joining Warrantee. You can now manage your warranties with ease."}
     </p>
     <div style="text-align: center; margin: 24px 0;">
-      <a href="https://warrantee.io/en/dashboard" style="display: inline-block; background: #F5C542; color: #1A1A2E; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+      <a href="${dashboardUrl}" style="display: inline-block; background: #F5C542; color: #1A1A2E; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">
         ${isAr ? "ابدأ الآن" : "Get Started"}
       </a>
     </div>

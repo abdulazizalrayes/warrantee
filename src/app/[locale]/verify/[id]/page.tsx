@@ -41,9 +41,13 @@ export default function VerifyPage() {
   const daysRemaining = Math.max(0, Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
   const baseUrl = typeof window !== "undefined" ? window.location.origin : "https://warrantee.io";
   const qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=" + encodeURIComponent(baseUrl + "/" + locale + "/verify/" + id);
+  const isRTL = locale === "ar";
+  const displayProductName = isRTL && warranty.product_name_ar ? warranty.product_name_ar : warranty.product_name;
+  const displayStartDate = warranty.start_date ? new Date(warranty.start_date).toLocaleDateString(isRTL ? "ar-SA" : "en-US") : "";
+  const displayEndDate = warranty.end_date ? new Date(warranty.end_date).toLocaleDateString(isRTL ? "ar-SA" : "en-US") : "";
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA] py-8 px-4">
+    <div className="min-h-screen bg-[#FAFAFA] py-8 px-4" dir={isRTL ? "rtl" : "ltr"}>
       <div className="max-w-lg mx-auto">
         <div className="text-center mb-6">
           <Shield className="w-10 h-10 text-[#4169E1] mx-auto mb-2" />
@@ -56,12 +60,12 @@ export default function VerifyPage() {
             {isActive && <p className="text-green-600 text-sm mt-1">{daysRemaining} {l.daysLeft}</p>}
           </div>
           <div className="p-6 space-y-4">
-            <div className="flex items-start gap-3"><Package className="w-5 h-5 text-gray-400 mt-0.5" /><div><p className="text-xs text-gray-400 uppercase">{l.product}</p><p className="font-medium">{warranty.product_name}</p></div></div>
+            <div className="flex items-start gap-3"><Package className="w-5 h-5 text-gray-400 mt-0.5" /><div><p className="text-xs text-gray-400 uppercase">{l.product}</p><p className="font-medium">{displayProductName}</p></div></div>
             <div className="flex items-start gap-3"><Hash className="w-5 h-5 text-gray-400 mt-0.5" /><div><p className="text-xs text-gray-400 uppercase">{l.reference}</p><p className="font-medium font-mono">{warranty.reference_number}</p></div></div>
             {warranty.serial_number && <div className="flex items-start gap-3"><Hash className="w-5 h-5 text-gray-400 mt-0.5" /><div><p className="text-xs text-gray-400 uppercase">{l.serial}</p><p className="font-medium">{warranty.serial_number}</p></div></div>}
             <div className="grid grid-cols-2 gap-4">
-              <div className="flex items-start gap-2"><Calendar className="w-4 h-4 text-gray-400 mt-0.5" /><div><p className="text-xs text-gray-400">{l.startDate}</p><p className="text-sm font-medium">{warranty.start_date}</p></div></div>
-              <div className="flex items-start gap-2"><Calendar className="w-4 h-4 text-gray-400 mt-0.5" /><div><p className="text-xs text-gray-400">{l.endDate}</p><p className="text-sm font-medium">{warranty.end_date}</p></div></div>
+              <div className="flex items-start gap-2"><Calendar className="w-4 h-4 text-gray-400 mt-0.5" /><div><p className="text-xs text-gray-400">{l.startDate}</p><p className="text-sm font-medium">{displayStartDate}</p></div></div>
+              <div className="flex items-start gap-2"><Calendar className="w-4 h-4 text-gray-400 mt-0.5" /><div><p className="text-xs text-gray-400">{l.endDate}</p><p className="text-sm font-medium">{displayEndDate}</p></div></div>
             </div>
             {warranty.seller_name && <div><p className="text-xs text-gray-400 uppercase">{l.seller}</p><p className="text-sm">{warranty.seller_name}</p></div>}
           </div>

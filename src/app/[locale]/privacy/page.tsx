@@ -87,12 +87,13 @@ export default function PrivacyPage() {
   const params = useParams() ?? {};
   const locale = (params.locale as string) || "en";
   const t = content[locale as keyof typeof content] || content.en;
+  const isRTL = locale === "ar";
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA]">
+    <div className="min-h-screen bg-[#FAFAFA]" dir={isRTL ? "rtl" : "ltr"}>
       <div className="max-w-4xl mx-auto px-6 py-16">
         <Link href={`/${locale}`} className="text-[#4169E1] hover:underline mb-8 inline-block">
-          {locale === "ar" ? "\u2190 \u0627\u0644\u0631\u062C\u0648\u0639 \u0644\u0644\u0631\u0626\u064A\u0633\u064A\u0629" : "\u2190 Back to Home"}
+          {isRTL ? "العودة للرئيسية →" : "← Back to Home"}
         </Link>
         <h1 className="text-4xl font-bold text-[#1A1A2E] mb-4">{t.title}</h1>
         <p className="text-gray-500 mb-12">{t.lastUpdated}</p>

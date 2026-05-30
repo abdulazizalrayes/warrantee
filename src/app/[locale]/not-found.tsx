@@ -1,8 +1,15 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 export default function NotFound() {
+  const pathname = usePathname();
+  const locale = pathname?.startsWith("/ar") ? "ar" : "en";
+  const isRTL = locale === "ar";
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#FAFAFA]">
+    <div className="min-h-screen flex items-center justify-center bg-[#FAFAFA]" dir={isRTL ? "rtl" : "ltr"}>
       <div className="text-center px-6">
         <div className="mb-8">
           <svg className="w-32 h-32 mx-auto text-[#4169E1]/20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -10,14 +17,20 @@ export default function NotFound() {
           </svg>
         </div>
         <h1 className="text-6xl font-bold text-[#1A1A2E] mb-4">404</h1>
-        <p className="text-xl text-gray-600 mb-2">Page Not Found</p>
-        <p className="text-gray-400 mb-8">The page you are looking for does not exist or has been moved.</p>
-        <div className="flex gap-4 justify-center">
-          <Link href="/en/dashboard" className="px-6 py-3 bg-[#4169E1] text-white rounded-xl font-medium hover:bg-[#3457c9] transition-all">
-            Go to Dashboard
+        <p className="text-xl text-gray-600 mb-2">
+          {isRTL ? "الصفحة غير موجودة" : "Page Not Found"}
+        </p>
+        <p className="text-gray-400 mb-8">
+          {isRTL
+            ? "الصفحة التي تبحث عنها غير موجودة أو تم نقلها."
+            : "The page you are looking for does not exist or has been moved."}
+        </p>
+        <div className="flex flex-wrap gap-4 justify-center">
+          <Link href={`/${locale}/dashboard`} className="px-6 py-3 bg-[#4169E1] text-white rounded-xl font-medium hover:bg-[#3457c9] transition-all">
+            {isRTL ? "الذهاب إلى لوحة التحكم" : "Go to Dashboard"}
           </Link>
-          <Link href="/en" className="px-6 py-3 bg-white text-gray-700 border border-gray-200 rounded-xl font-medium hover:bg-gray-50 transition-all">
-            Go Home
+          <Link href={`/${locale}`} className="px-6 py-3 bg-white text-gray-700 border border-gray-200 rounded-xl font-medium hover:bg-gray-50 transition-all">
+            {isRTL ? "العودة للرئيسية" : "Go Home"}
           </Link>
         </div>
       </div>

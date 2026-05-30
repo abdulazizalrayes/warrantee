@@ -53,7 +53,7 @@ export function getServerEnv() {
     const message = Object.entries(errors)
       .map(([key, msgs]) => `  ${key}: ${msgs?.join(", ")}`)
       .join("\n");
-    throw new Error(`â Missing or invalid server environment variables:\n${message}`);
+    throw new Error(`Missing or invalid server environment variables:\n${message}`);
   }
   return parsed.data;
 }
@@ -79,7 +79,7 @@ export function getClientEnv() {
     const message = Object.entries(errors)
       .map(([key, msgs]) => `  ${key}: ${msgs?.join(", ")}`)
       .join("\n");
-    throw new Error(`â Missing or invalid client environment variables:\n${message}`);
+    throw new Error(`Missing or invalid client environment variables:\n${message}`);
   }
   return parsed.data;
 }

@@ -17,6 +17,7 @@ type BuyerConfirmationTokenPayload = {
   email: string;
   action: BuyerConfirmationAction;
   expiresAt: number;
+  locale?: "en" | "ar";
 };
 
 function getBuyerConfirmationSecret() {

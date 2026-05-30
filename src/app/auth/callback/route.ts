@@ -3,14 +3,19 @@ import { NextResponse } from "next/server";
 import { sendEmail, welcomeEmail } from "@/lib/email";
 import { upsertHubSpotContact } from "@/lib/hubspot";
 
+function getLocaleFromPath(path: string | null) {
+  return path?.startsWith("/ar") ? "ar" : "en";
+}
+
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams?.get("code");
   const requestedNext = searchParams?.get("next");
+  const fallbackLocale = getLocaleFromPath(requestedNext);
   const next =
     requestedNext && requestedNext.startsWith("/") && !requestedNext.startsWith("//")
       ? requestedNext
-      : "/en/dashboard";
+      : `/${fallbackLocale}/dashboard`;
 
   if (code) {
     const supabase = await createServerSupabaseClient();
@@ -47,7 +52,7 @@ export async function GET(request: Request) {
               const email = profile.email || user.email || "";
               const name =
                 profile.full_name || email.split("@")[0] || "User";
-              const { subject, html } = welcomeEmail(name, "en");
+              const { subject, html } = welcomeEmail(name, getLocaleFromPath(next));
               await sendEmail({ to: email, subject, html });
             }
           }
@@ -61,5 +66,5 @@ export async function GET(request: Request) {
     }
   }
 
-  return NextResponse.redirect(origin + "/en/auth?error=auth_callback_error");
+  return NextResponse.redirect(new URL(`/${fallbackLocale}/auth?error=auth_callback_error`, origin));
 }

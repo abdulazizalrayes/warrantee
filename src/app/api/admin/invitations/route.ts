@@ -1,6 +1,6 @@
-// Warrantee â Admin Invitation API
-// POST /api/admin/invitations â Send admin invitation via Resend
-// GET /api/admin/invitations â List admin invitations
+// Warrantee — Admin Invitation API
+// POST /api/admin/invitations — Send admin invitation via Resend
+// GET /api/admin/invitations — List admin invitations
 
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';

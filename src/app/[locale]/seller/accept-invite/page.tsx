@@ -70,7 +70,7 @@ function AcceptSellerInviteContent() {
 
   if (authLoading || loading) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+      <div dir={isRtl ? 'rtl' : 'ltr'} style={{ minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
         <div style={{ textAlign: 'center', color: '#64748B' }}>
           {isRtl ? 'جارٍ التحميل...' : 'Loading...'}
         </div>
@@ -80,7 +80,7 @@ function AcceptSellerInviteContent() {
 
   if (error) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+      <div dir={isRtl ? 'rtl' : 'ltr'} style={{ minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
         <div style={{
           maxWidth: '440px', textAlign: 'center', padding: '48px',
           background: 'white', borderRadius: '16px', boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
@@ -97,7 +97,7 @@ function AcceptSellerInviteContent() {
 
   if (accepted) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+      <div dir={isRtl ? 'rtl' : 'ltr'} style={{ minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
         <div style={{
           maxWidth: '440px', textAlign: 'center', padding: '48px',
           background: 'white', borderRadius: '16px', boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
@@ -207,13 +207,23 @@ function AcceptSellerInviteContent() {
   );
 }
 
+function SellerInviteLoadingFallback() {
+  const params = useParams() ?? {};
+  const locale = (params?.locale as string) || 'en';
+  const isRtl = locale === 'ar';
+
+  return (
+    <div dir={isRtl ? 'rtl' : 'ltr'} style={{ minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+      <div style={{ textAlign: 'center', color: '#64748B' }}>
+        {isRtl ? 'جارٍ التحميل...' : 'Loading...'}
+      </div>
+    </div>
+  );
+}
+
 export default function AcceptSellerInvitePage() {
   return (
-    <Suspense fallback={
-      <div style={{ minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-        <div style={{ textAlign: 'center', color: '#64748B' }}>Loading...</div>
-      </div>
-    }>
+    <Suspense fallback={<SellerInviteLoadingFallback />}>
       <AcceptSellerInviteContent />
     </Suspense>
   );

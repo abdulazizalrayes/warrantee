@@ -9,6 +9,10 @@ function getAppUrl() {
   return process.env.NEXT_PUBLIC_APP_URL || "https://warrantee.io";
 }
 
+function normalizeLocale(value: string | null | undefined) {
+  return value === "ar" ? "ar" : "en";
+}
+
 function escapeHtml(value: string) {
   return value
     .replace(/&/g, "&amp;")
@@ -24,12 +28,14 @@ function renderResultPage({
   actionHref,
   actionLabel,
   accent = "#059669",
+  locale = "en",
 }: {
   title: string;
   message: string;
   actionHref: string;
   actionLabel: string;
   accent?: string;
+  locale?: "en" | "ar";
 }) {
   const safeTitle = escapeHtml(title);
   const safeMessage = escapeHtml(message);
@@ -37,7 +43,7 @@ function renderResultPage({
   const safeActionLabel = escapeHtml(actionLabel);
 
   return `<!DOCTYPE html>
-<html lang="en">
+<html lang="${locale}" dir="${locale === "ar" ? "rtl" : "ltr"}">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -63,7 +69,9 @@ function renderResultPage({
 export async function GET(request: NextRequest) {
   const token = request.nextUrl.searchParams.get("token") || "";
   const payload = verifyBuyerConfirmationToken(token);
-  const dashboardUrl = `${getAppUrl()}/en/dashboard/provisional`;
+  const locale = normalizeLocale(payload?.locale);
+  const dashboardUrl = `${getAppUrl()}/${locale}/dashboard/provisional`;
+  const warrantiesUrl = `${getAppUrl()}/${locale}/warranties`;
 
   if (!payload) {
     return new NextResponse(
@@ -73,6 +81,7 @@ export async function GET(request: NextRequest) {
         actionHref: dashboardUrl,
         actionLabel: "Open dashboard",
         accent: "#b91c1c",
+        locale,
       }),
       { status: 400, headers: { "content-type": "text/html; charset=utf-8" } }
     );
@@ -92,6 +101,7 @@ export async function GET(request: NextRequest) {
           actionHref: dashboardUrl,
           actionLabel: "Review in dashboard",
           accent: "#b91c1c",
+          locale,
         }),
         { status: result.status, headers: { "content-type": "text/html; charset=utf-8" } }
       );
@@ -101,8 +111,9 @@ export async function GET(request: NextRequest) {
       renderResultPage({
         title: "Warranty confirmed",
         message: "Your warranty details have been confirmed and the warranty has been registered in Warrantee.",
-        actionHref: `${getAppUrl()}/en/warranties`,
+        actionHref: warrantiesUrl,
         actionLabel: "View warranties",
+        locale,
       }),
       { status: 200, headers: { "content-type": "text/html; charset=utf-8" } }
     );
@@ -122,6 +133,7 @@ export async function GET(request: NextRequest) {
         actionHref: dashboardUrl,
         actionLabel: "Open dashboard",
         accent: "#b91c1c",
+        locale,
       }),
       { status: result.status, headers: { "content-type": "text/html; charset=utf-8" } }
     );
@@ -134,6 +146,7 @@ export async function GET(request: NextRequest) {
       actionHref: dashboardUrl,
       actionLabel: "Review in dashboard",
       accent: "#9a3412",
+      locale,
     }),
     { status: 200, headers: { "content-type": "text/html; charset=utf-8" } }
   );

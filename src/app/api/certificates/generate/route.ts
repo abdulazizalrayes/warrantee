@@ -119,7 +119,7 @@ function generateCertificateHTML(warranty: any, company: any, locale: string = "
     '<div class="stamp"><div class="stamp-circle"><div class="stamp-text">' + verifiedText + '</div></div></div>',
     '<div style="text-align: ' + textAlign + '"><div class="detail-label">' + issueDateLabel + '</div><div class="issue-date">' + issueDate + '</div></div>',
     "</div>",
-    '<div class="verify-note">' + verifyText + ' https://warrantee.io/en/verify?q=' + certNumber + '</div>',
+    '<div class="verify-note">' + verifyText + ' https://warrantee.io/' + locale + '/verify?q=' + certNumber + '</div>',
     "</div>",
     "</body>",
     "</html>"

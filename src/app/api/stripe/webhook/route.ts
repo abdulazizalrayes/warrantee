@@ -86,17 +86,10 @@ export async function POST(request: Request) {
       case "checkout.session.completed": {
         const session = event.data.object;
         const userId = session.metadata?.user_id;
-        const planId = session.metadata?.plan_id;
         const extensionId = session.metadata?.extension_id;
 
-        if (userId && planId) {
-          const { error } = await supabaseAdmin
-            .from("profiles")
-            .update({ role: planId === "pro" ? "user" : "admin" })
-            .eq("id", userId);
-
-          if (error) console.warn("Profile update failed:", error.message);
-        }
+        // Billing state must not grant application roles. Admin/seller access is
+        // controlled by invitation and team-management flows, not Stripe metadata.
 
         if (extensionId) {
           const { error: extError } = await supabaseAdmin
@@ -135,20 +128,6 @@ export async function POST(request: Request) {
       }
 
       case "customer.subscription.updated": {
-        const subscription = event.data.object;
-        const userId = subscription.metadata?.user_id;
-
-        if (userId) {
-          const status = subscription.status;
-          if (status === "canceled" || status === "unpaid") {
-            const { error } = await supabaseAdmin
-              .from("profiles")
-              .update({ role: "user" })
-              .eq("id", userId);
-
-            if (error) console.warn("Subscription downgrade failed:", error.message);
-          }
-        }
         break;
       }
 

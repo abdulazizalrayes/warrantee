@@ -1,6 +1,6 @@
-// Warrantee â Provisional Warranties API
-// GET /api/warranties/provisional â List user's provisional warranties
-// PATCH /api/warranties/provisional â Batch update (not used yet)
+// Warrantee — Provisional Warranties API
+// GET /api/warranties/provisional — List user's provisional warranties
+// PATCH /api/warranties/provisional — Batch update (not used yet)
 
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';

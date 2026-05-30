@@ -1,5 +1,5 @@
-// Warrantee â Admin Ingestion Management API
-// GET /api/admin/ingestion â List ingestion jobs (admin only)
+// Warrantee — Admin Ingestion Management API
+// GET /api/admin/ingestion — List ingestion jobs (admin only)
 
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';

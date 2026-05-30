@@ -1,6 +1,6 @@
-// Warrantee â Seller Invitation Token API
-// GET /api/invitations/seller/[token] â Validate invitation
-// POST /api/invitations/seller/[token] â Accept invitation
+// Warrantee — Seller Invitation Token API
+// GET /api/invitations/seller/[token] — Validate invitation
+// POST /api/invitations/seller/[token] — Accept invitation
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
@@ -12,6 +12,10 @@ function getSupabaseAdmin() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
+}
+
+function normalizeEmail(value: string | null | undefined) {
+  return String(value || '').trim().toLowerCase();
 }
 
 export async function GET(
@@ -84,6 +88,13 @@ export async function POST(
     return NextResponse.json({ error: 'Invalid or expired invitation' }, { status: 404 });
   }
 
+  if (normalizeEmail(invitation.seller_email) !== normalizeEmail(user.email)) {
+    return NextResponse.json(
+      { error: 'Sign in with the invited seller email address to accept this invitation' },
+      { status: 403 }
+    );
+  }
+
   await supabaseAdmin.from('profiles').update({
     role: 'seller',
   }).eq('id', user.id);
@@ -91,7 +102,7 @@ export async function POST(
   await supabaseAdmin.from('seller_invitations').update({
     status: 'accepted',
     accepted_at: new Date().toISOString(),
-  }).eq('id', invitation.id);
+  }).eq('id', invitation.id).in('status', ['pending', 'sent']);
 
   if (invitation.warranty_id) {
     await supabaseAdmin.from('warranties').update({

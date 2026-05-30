@@ -15,6 +15,11 @@ const webMcpScript = `
   if (!modelContext || typeof modelContext.provideContext !== "function") return;
 
   const absolute = (path) => new URL(path, window.location.origin).toString();
+  const currentLocale = () => {
+    const firstSegment = window.location.pathname.split("/").filter(Boolean)[0];
+    return firstSegment === "ar" ? "ar" : "en";
+  };
+  const localized = (path) => absolute("/" + currentLocale() + path);
 
   modelContext.provideContext({
     tools: [
@@ -34,7 +39,7 @@ const webMcpScript = `
         },
         annotations: { readOnlyHint: true },
         execute: ({ reference }) => {
-          const url = absolute("/verify?query=" + encodeURIComponent(reference));
+          const url = localized("/verify?query=" + encodeURIComponent(reference));
           window.location.assign(url);
           return {
             content: [
@@ -54,7 +59,7 @@ const webMcpScript = `
         },
         annotations: { readOnlyHint: false },
         execute: () => {
-          const url = absolute("/en/claims");
+          const url = localized("/claims");
           window.location.assign(url);
           return {
             content: [
@@ -74,7 +79,7 @@ const webMcpScript = `
         },
         annotations: { readOnlyHint: true },
         execute: () => {
-          const url = absolute("/en/seller/register");
+          const url = localized("/seller/register");
           window.location.assign(url);
           return {
             content: [

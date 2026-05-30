@@ -8,7 +8,7 @@ import Link from 'next/link';
 
 const supabase = createSupabaseBrowserClient();
 
-// âââ TYPES ââââââââââââââââââââââââââââââââââââââââââââââ
+// ─── TYPES ──────────────────────────────────────────────
 type TabId = 'overview' | 'users' | 'warranties' | 'companies' | 'claims' | 'support' | 'fraud' | 'ingestion' | 'billing' | 'config' | 'team' | 'audit';
 
 interface Stats {
@@ -25,7 +25,7 @@ interface Stats {
   revenueByMonth: { month: string; amount: number }[];
 }
 
-// âââ TRANSLATIONS ââââââââââââââââââââââââââââââââââââââ
+// ─── TRANSLATIONS ──────────────────────────────────────
 const rawTranslations = {
   en: {
     title: 'Warrantee Admin', subtitle: 'Operations, risk, and service control center', overview: 'Overview', usersTab: 'Users',
@@ -86,79 +86,65 @@ const rawTranslations = {
     legalHold: 'Legal Hold', archived: 'Archived',
   },
   ar: {
-    title: 'Ø¥Ø¯Ø§Ø±Ø© ÙØ§Ø±ÙØªÙ', subtitle: 'Ø«Ù Ø¨Ø§ÙØ´Ø±ÙØ·â¢', overview: 'ÙØ¸Ø±Ø© Ø¹Ø§ÙØ©', usersTab: 'Ø§ÙÙØ³ØªØ®Ø¯ÙÙÙ',
-    warrantiesTab: 'Ø§ÙØ¶ÙØ§ÙØ§Øª', companiesTab: 'Ø§ÙØ´Ø±ÙØ§Øª', claimsTab: 'Ø§ÙÙØ·Ø§ÙØ¨Ø§Øª', supportTab: 'Ø§ÙØ¯Ø¹Ù',
-    fraudTab: 'Ø§ÙØ§Ø­ØªÙØ§Ù', ingestionTab: 'Ø§ÙØ¨Ø±ÙØ¯', billingTab: 'Ø§ÙÙÙØªØ±Ø©', configTab: 'Ø§ÙØ¥Ø¹Ø¯Ø§Ø¯Ø§Øª',
-    teamTab: 'Ø§ÙÙØ±ÙÙ', auditTab: 'Ø³Ø¬Ù Ø§ÙÙØ±Ø§Ø¬Ø¹Ø©',
-    totalUsers: 'Ø§ÙÙØ³ØªØ®Ø¯ÙÙÙ', totalWarranties: 'Ø§ÙØ¶ÙØ§ÙØ§Øª', totalCompanies: 'Ø§ÙØ´Ø±ÙØ§Øª',
-    totalClaims: 'Ø§ÙÙØ·Ø§ÙØ¨Ø§Øª', active: 'ÙØ´Ø·', expired: 'ÙÙØªÙÙ', pending: 'ÙÙØ¯ Ø§ÙØ§ÙØªØ¸Ø§Ø±',
-    consumers: 'Ø£ÙØ±Ø§Ø¯', businesses: 'Ø´Ø±ÙØ§Øª',
-    openTickets: 'ØªØ°Ø§ÙØ± ÙÙØªÙØ­Ø©', fraudAlerts: 'ØªÙØ¨ÙÙØ§Øª Ø§Ø­ØªÙØ§Ù', revenue: 'Ø§ÙØ¥ÙØ±Ø§Ø¯Ø§Øª', subscriptions: 'Ø§ÙØ§Ø´ØªØ±Ø§ÙØ§Øª',
-    name: 'Ø§ÙØ§Ø³Ù', email: 'Ø§ÙØ¨Ø±ÙØ¯', role: 'Ø§ÙØ¯ÙØ±', joined: 'Ø§ÙØ§ÙØ¶ÙØ§Ù', product: 'Ø§ÙÙÙØªØ¬',
-    status: 'Ø§ÙØ­Ø§ÙØ©', expiry: 'Ø§ÙØ§ÙØªÙØ§Ø¡', company: 'Ø§ÙØ´Ø±ÙØ©', cr: 'Ø§ÙØ³Ø¬Ù', type: 'Ø§ÙÙÙØ¹',
-    date: 'Ø§ÙØªØ§Ø±ÙØ®', actions: 'Ø¥Ø¬Ø±Ø§Ø¡Ø§Øª', category: 'Ø§ÙÙØ¦Ø©', priority: 'Ø§ÙØ£ÙÙÙÙØ©', severity: 'Ø§ÙØ®Ø·ÙØ±Ø©',
-    subject: 'Ø§ÙÙÙØ¶ÙØ¹', description: 'Ø§ÙÙØµÙ', signalType: 'Ø§ÙØ¥Ø´Ø§Ø±Ø©', confidence: 'Ø§ÙØ«ÙØ©',
-    amount: 'Ø§ÙÙØ¨ÙØº', plan: 'Ø§ÙØ®Ø·Ø©', source: 'Ø§ÙÙØµØ¯Ø±',
-    unauthorized: 'ÙÙØ³ ÙØ¯ÙÙ ØµÙØ§Ø­ÙØ© Ø§ÙÙØµÙÙ.', backToDashboard: 'Ø§ÙØ¹ÙØ¯Ø© ÙÙÙØ­Ø© Ø§ÙØªØ­ÙÙ',
-    noData: 'ÙØ§ ØªÙØ¬Ø¯ Ø¨ÙØ§ÙØ§Øª', signOut: 'ØªØ³Ø¬ÙÙ Ø§ÙØ®Ø±ÙØ¬', signingOut: 'Ø¬Ø§Ø±Ù Ø§ÙØ®Ø±ÙØ¬...',
-    recentActivity: 'Ø§ÙÙØ´Ø§Ø· Ø§ÙØ£Ø®ÙØ±', registrationTrend: 'Ø§ØªØ¬Ø§Ù Ø§ÙØªØ³Ø¬ÙÙ',
-    warrantiesByCategory: 'Ø§ÙØ¶ÙØ§ÙØ§Øª Ø­Ø³Ø¨ Ø§ÙÙØ¦Ø©', claimsBreakdown: 'ØªÙØ²ÙØ¹ Ø§ÙÙØ·Ø§ÙØ¨Ø§Øª',
-    revenueOverview: 'ÙØ¸Ø±Ø© Ø¹ÙÙ Ø§ÙØ¥ÙØ±Ø§Ø¯Ø§Øª', platformHealth: 'ØµØ­Ø© Ø§ÙÙÙØµØ©',
-    ingestionRate: 'ÙØ¬Ø§Ø­ Ø§ÙØ§Ø³ØªÙØ±Ø§Ø¯', ocrConfidence: 'Ø¯ÙØ© OCR',
-    systemMetrics: 'ÙÙØ§ÙÙØ³ Ø§ÙÙØ¸Ø§Ù', quickActions: 'Ø¥Ø¬Ø±Ø§Ø¡Ø§Øª Ø³Ø±ÙØ¹Ø©',
-    exportData: 'ØªØµØ¯ÙØ± CSV', refresh: 'ØªØ­Ø¯ÙØ«', search: 'Ø¨Ø­Ø«...',
-    teamTitle: 'Ø¥Ø¯Ø§Ø±Ø© Ø§ÙÙØ±ÙÙ', addAdmin: 'Ø¥Ø¶Ø§ÙØ© Ø¹Ø¶Ù', emailPlaceholder: 'Ø£Ø¯Ø®Ù Ø§ÙØ¨Ø±ÙØ¯ Ø§ÙØ¥ÙÙØªØ±ÙÙÙ',
-    invite: 'Ø¥Ø¶Ø§ÙØ©', removeAccess: 'Ø¥Ø²Ø§ÙØ©', confirmRemove: 'ØªØ£ÙÙØ¯ Ø§ÙØ¥Ø²Ø§ÙØ©',
-    confirmRemoveMsg: 'Ø¥Ø²Ø§ÙØ© ØµÙØ§Ø­ÙØ© Ø§ÙØ¥Ø¯Ø§Ø±Ø© ÙÙ', cancel: 'Ø¥ÙØºØ§Ø¡', confirm: 'ØªØ£ÙÙØ¯',
-    promoted: 'ØªÙ Ø§ÙØªØ±ÙÙØ© Ø¨ÙØ¬Ø§Ø­', demoted: 'ØªÙ Ø¥Ø²Ø§ÙØ© Ø§ÙØµÙØ§Ø­ÙØ©', inviteSent: 'ØªÙ Ø¥Ø¶Ø§ÙØ© Ø§ÙØ¹Ø¶Ù',
-    userNotFound: 'ÙØ§ ÙÙØ¬Ø¯ Ø­Ø³Ø§Ø¨ Ø¨ÙØ°Ø§ Ø§ÙØ¨Ø±ÙØ¯.', alreadyAdmin: 'ÙØ´Ø±Ù Ø¨Ø§ÙÙØ¹Ù.',
-    cannotRemoveSelf: 'ÙØ§ ÙÙÙÙÙ Ø¥Ø²Ø§ÙØ© ÙÙØ³Ù.', cannotRemoveSuper: 'ÙØ§ ÙÙÙÙ ØªØ¹Ø¯ÙÙ Ø§ÙÙØ¯ÙØ± Ø§ÙØ£Ø¹ÙÙ.',
-    superAdmin: 'ÙØ¯ÙØ± Ø£Ø¹ÙÙ', admin: 'ÙØ´Ø±Ù', support: 'Ø¯Ø¹Ù', user: 'ÙØ³ØªØ®Ø¯Ù',
-    makeAdmin: 'ØªØ±ÙÙØ© ÙÙØ´Ø±Ù', makeSupport: 'ØªØ¹ÙÙÙ Ø¯Ø¹Ù', demoteToUser: 'Ø¥Ø²Ø§ÙØ© Ø§ÙØµÙØ§Ø­ÙØ©',
-    auditTitle: 'Ø³Ø¬Ù Ø§ÙÙØ±Ø§Ø¬Ø¹Ø©', actor: 'Ø§ÙÙÙÙØ°', action: 'Ø§ÙØ¥Ø¬Ø±Ø§Ø¡', target: 'Ø§ÙÙØ¯Ù',
-    details: 'Ø§ÙØªÙØ§ØµÙÙ', timestamp: 'Ø§ÙÙÙØª', riskLevel: 'Ø§ÙØ®Ø·ÙØ±Ø©',
-    noAuditLogs: 'ÙØ§ ØªÙØ¬Ø¯ Ø³Ø¬ÙØ§Øª Ø¨Ø¹Ø¯.', high: 'Ø¹Ø§ÙÙ', medium: 'ÙØªÙØ³Ø·', low: 'ÙÙØ®ÙØ¶',
-    configTitle: 'Ø¥Ø¹Ø¯Ø§Ø¯Ø§Øª Ø§ÙÙØ¸Ø§Ù', key: 'Ø§ÙÙÙØªØ§Ø­', value: 'Ø§ÙÙÙÙØ©', save: 'Ø­ÙØ¸',
-    saved: 'ØªÙ Ø§ÙØ­ÙØ¸!',
-    ingestionTitle: 'Ø§Ø³ØªÙØ±Ø§Ø¯ Ø§ÙØ¨Ø±ÙØ¯', sender: 'Ø§ÙÙØ±Ø³Ù', processed: 'ÙØ¹Ø§ÙØ¬',
-    fraudTitle: 'ÙØ±Ø§ÙØ¨Ø© Ø§ÙØ§Ø­ØªÙØ§Ù', entity: 'Ø§ÙÙÙØ§Ù', evidence: 'Ø§ÙØ¯ÙÙÙ',
-    resolution: 'Ø§ÙØ­Ù', investigate: 'ØªØ­ÙÙÙ', dismiss: 'Ø±ÙØ¶',
-    supportTitle: 'ØªØ°Ø§ÙØ± Ø§ÙØ¯Ø¹Ù', ticket: 'Ø§ÙØªØ°ÙØ±Ø©', assignee: 'Ø§ÙÙØ³Ø¤ÙÙ',
-    billingTitle: 'Ø§ÙÙÙØªØ±Ø© ÙØ§ÙØ¥ÙØ±Ø§Ø¯Ø§Øª', eventType: 'Ø§ÙØ­Ø¯Ø«', currency: 'Ø§ÙØ¹ÙÙØ©',
-    totalRevenueLabel: 'Ø¥Ø¬ÙØ§ÙÙ Ø§ÙØ¥ÙØ±Ø§Ø¯Ø§Øª', activeSubsLabel: 'Ø§Ø´ØªØ±Ø§ÙØ§Øª ÙØ´Ø·Ø©',
-    mrrLabel: 'Ø§ÙØ¥ÙØ±Ø§Ø¯Ø§Øª Ø§ÙØ´ÙØ±ÙØ©', extensionRevLabel: 'Ø¥ÙØ±Ø§Ø¯Ø§Øª Ø§ÙØªÙØ¯ÙØ¯',
-    accountType: 'ÙÙØ¹ Ø§ÙØ­Ø³Ø§Ø¨', phone: 'Ø§ÙÙØ§ØªÙ', locale: 'Ø§ÙÙØºØ©',
-    sellerName: 'Ø§ÙØ¨Ø§Ø¦Ø¹', startDate: 'ØªØ§Ø±ÙØ® Ø§ÙØ¨Ø¯Ø§ÙØ©', endDate: 'ØªØ§Ø±ÙØ® Ø§ÙØ§ÙØªÙØ§Ø¡',
-    claimNumber: 'Ø±ÙÙ Ø§ÙÙØ·Ø§ÙØ¨Ø©', warrantyRef: 'Ø§ÙØ¶ÙØ§Ù', claimAmount: 'Ø§ÙÙØ¨ÙØº',
-    filedAt: 'ØªØ§Ø±ÙØ® Ø§ÙØªÙØ¯ÙÙ', resolvedAt: 'ØªØ§Ø±ÙØ® Ø§ÙØ­Ù',
-    ticketNumber: 'Ø±ÙÙ Ø§ÙØªØ°ÙØ±Ø©', createdAt: 'ØªØ§Ø±ÙØ® Ø§ÙØ¥ÙØ´Ø§Ø¡',
-    all: 'Ø§ÙÙÙ', filter: 'ØªØµÙÙØ©',
-    legalHold: 'Ø­Ø¬Ø² ÙØ§ÙÙÙÙ', archived: 'ÙØ¤Ø±Ø´Ù',
+    title: 'إدارة وارنتي', subtitle: 'ثق بالشروط™', overview: 'نظرة عامة', usersTab: 'المستخدمون',
+    warrantiesTab: 'الضمانات', companiesTab: 'الشركات', claimsTab: 'المطالبات', supportTab: 'الدعم',
+    fraudTab: 'الاحتيال', ingestionTab: 'البريد', billingTab: 'الفوترة', configTab: 'الإعدادات',
+    teamTab: 'الفريق', auditTab: 'سجل المراجعة',
+    totalUsers: 'المستخدمون', totalWarranties: 'الضمانات', totalCompanies: 'الشركات',
+    totalClaims: 'المطالبات', active: 'نشط', expired: 'منتهي', pending: 'قيد الانتظار',
+    consumers: 'أفراد', businesses: 'شركات',
+    openTickets: 'تذاكر مفتوحة', fraudAlerts: 'تنبيهات احتيال', revenue: 'الإيرادات', subscriptions: 'الاشتراكات',
+    name: 'الاسم', email: 'البريد', role: 'الدور', joined: 'الانضمام', product: 'المنتج',
+    status: 'الحالة', expiry: 'الانتهاء', company: 'الشركة', cr: 'السجل', type: 'النوع',
+    date: 'التاريخ', actions: 'إجراءات', category: 'الفئة', priority: 'الأولوية', severity: 'الخطورة',
+    subject: 'الموضوع', description: 'الوصف', signalType: 'الإشارة', confidence: 'الثقة',
+    amount: 'المبلغ', plan: 'الخطة', source: 'المصدر',
+    unauthorized: 'ليس لديك صلاحية الوصول.', backToDashboard: 'العودة للوحة التحكم',
+    noData: 'لا توجد بيانات', signOut: 'تسجيل الخروج', signingOut: 'جارٍ الخروج...',
+    recentActivity: 'النشاط الأخير', registrationTrend: 'اتجاه التسجيل',
+    warrantiesByCategory: 'الضمانات حسب الفئة', claimsBreakdown: 'توزيع المطالبات',
+    revenueOverview: 'نظرة على الإيرادات', platformHealth: 'صحة المنصة',
+    ingestionRate: 'نجاح الاستيراد', ocrConfidence: 'دقة OCR',
+    systemMetrics: 'مقاييس النظام', quickActions: 'إجراءات سريعة',
+    exportData: 'تصدير CSV', refresh: 'تحديث', search: 'بحث...',
+    teamTitle: 'إدارة الفريق', addAdmin: 'إضافة عضو', emailPlaceholder: 'أدخل البريد الإلكتروني',
+    invite: 'إضافة', removeAccess: 'إزالة', confirmRemove: 'تأكيد الإزالة',
+    confirmRemoveMsg: 'إزالة صلاحية الإدارة من', cancel: 'إلغاء', confirm: 'تأكيد',
+    promoted: 'تم الترقية بنجاح', demoted: 'تم إزالة الصلاحية', inviteSent: 'تم إضافة العضو',
+    userNotFound: 'لا يوجد حساب بهذا البريد.', alreadyAdmin: 'مشرف بالفعل.',
+    cannotRemoveSelf: 'لا يمكنك إزالة نفسك.', cannotRemoveSuper: 'لا يمكن تعديل المدير الأعلى.',
+    superAdmin: 'مدير أعلى', admin: 'مشرف', support: 'دعم', user: 'مستخدم',
+    makeAdmin: 'ترقية لمشرف', makeSupport: 'تعيين دعم', demoteToUser: 'إزالة الصلاحية',
+    auditTitle: 'سجل المراجعة', actor: 'المنفذ', action: 'الإجراء', target: 'الهدف',
+    details: 'التفاصيل', timestamp: 'الوقت', riskLevel: 'الخطورة',
+    noAuditLogs: 'لا توجد سجلات بعد.', high: 'عالي', medium: 'متوسط', low: 'منخفض',
+    configTitle: 'إعدادات النظام', key: 'المفتاح', value: 'القيمة', save: 'حفظ',
+    saved: 'تم الحفظ!',
+    ingestionTitle: 'استيراد البريد', sender: 'المرسل', processed: 'معالج',
+    fraudTitle: 'مراقبة الاحتيال', entity: 'الكيان', evidence: 'الدليل',
+    resolution: 'الحل', investigate: 'تحقيق', dismiss: 'رفض',
+    supportTitle: 'تذاكر الدعم', ticket: 'التذكرة', assignee: 'المسؤول',
+    billingTitle: 'الفوترة والإيرادات', eventType: 'الحدث', currency: 'العملة',
+    totalRevenueLabel: 'إجمالي الإيرادات', activeSubsLabel: 'اشتراكات نشطة',
+    mrrLabel: 'الإيرادات الشهرية', extensionRevLabel: 'إيرادات التمديد',
+    accountType: 'نوع الحساب', phone: 'الهاتف', locale: 'اللغة',
+    sellerName: 'البائع', startDate: 'تاريخ البداية', endDate: 'تاريخ الانتهاء',
+    claimNumber: 'رقم المطالبة', warrantyRef: 'الضمان', claimAmount: 'المبلغ',
+    filedAt: 'تاريخ التقديم', resolvedAt: 'تاريخ الحل',
+    ticketNumber: 'رقم التذكرة', createdAt: 'تاريخ الإنشاء',
+    all: 'الكل', filter: 'تصفية',
+    legalHold: 'حجز قانوني', archived: 'مؤرشف',
   },
 };
 
 const EM_DASH = '\u2014';
 
-function decodeMojibake(value: string) {
-  try {
-    return decodeURIComponent(escape(value));
-  } catch {
-    return value;
-  }
-}
-
-function decodeTranslationMap<T extends Record<string, string>>(translations: T): T {
-  return Object.fromEntries(
-    Object.entries(translations).map(([key, value]) => [key, decodeMojibake(value)])
-  ) as T;
-}
-
 const t = {
   en: rawTranslations.en,
-  ar: decodeTranslationMap(rawTranslations.ar),
+  ar: rawTranslations.ar,
 };
 
-// âââ MINI CHART COMPONENTS âââââââââââââââââââââââââââââ
+// ─── MINI CHART COMPONENTS ─────────────────────────────
 function BarChart({ data, labelKey, valueKey, color = '#D4AF37', height = 160 }: any) {
   if (!data?.length) return <div className="text-xs text-gray-400 py-8 text-center">No data</div>;
   const max = Math.max(...data.map((d: any) => d[valueKey] || 0), 1);
@@ -227,7 +213,7 @@ function SparkNumber({ label, value, sub, icon, color = '#D4AF37' }: any) {
   );
 }
 
-// âââ MAIN COMPONENT ââââââââââââââââââââââââââââââââââââ
+// ─── MAIN COMPONENT ────────────────────────────────────
 export default function AdminPage() {
   const pathname = usePathname();
   const locale = pathname?.startsWith('/ar') ? 'ar' : 'en';
@@ -292,7 +278,7 @@ export default function AdminPage() {
 
   const isSuperAdmin = currentUserRole === 'super_admin';
 
-  // âââ AUTH CHECK âââââââââââââââââââââââââââââââââââââââ
+  // ─── AUTH CHECK ───────────────────────────────────────
   useEffect(() => {
     const check = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -310,7 +296,7 @@ export default function AdminPage() {
     check();
   }, []);
 
-  // âââ SIGN OUT âââââââââââââââââââââââââââââââââââââââââ
+  // ─── SIGN OUT ─────────────────────────────────────────
   const handleSignOut = async () => {
     setSigningOut(true);
     await logAudit('sign_out', 'session', currentUserId, { email: currentUserEmail }, null, null, 'low');
@@ -318,7 +304,7 @@ export default function AdminPage() {
     router.push(`/${locale}/admin/login`);
   };
 
-  // âââ DATA LOADING âââââââââââââââââââââââââââââââââââââ
+  // ─── DATA LOADING ─────────────────────────────────────
   const loadAllData = async () => {
     const now = new Date().toISOString();
     const [usersR, warranR, compR, claimR, actR, tickR, fraudR, ingR, revR, subsR] = await Promise.all([
@@ -387,7 +373,7 @@ export default function AdminPage() {
     });
   };
 
-  // âââ TEAM MANAGEMENT ââââââââââââââââââââââââââââââââââ
+  // ─── TEAM MANAGEMENT ──────────────────────────────────
   const loadTeam = async () => {
     const { data } = await supabase.from('profiles')
       .select('id, email, full_name, role, created_at')
@@ -444,14 +430,17 @@ export default function AdminPage() {
   const handleAddMember = async () => {
     if (!inviteEmail.trim()) return;
     setTeamLoading(true); setTeamMsg(''); setTeamError('');
-    const { data: target } = await supabase.from('profiles').select('id, email, full_name, role').eq('email', inviteEmail.trim().toLowerCase()).single();
-    if (!target) { setTeamError(text.userNotFound); setTeamLoading(false); return; }
-    if (['admin', 'super_admin'].includes(target.role)) { setTeamError(text.alreadyAdmin); setTeamLoading(false); return; }
-    const prev = target.role;
-    const { error } = await supabase.from('profiles').update({ role: inviteRole }).eq('id', target.id);
-    if (error) { setTeamError(error.message); } else {
-      await logAudit('role_change', 'profile', target.id, { email: target.email, changed_by: currentUserId }, { role: prev }, { role: inviteRole }, 'high');
+    try {
+      const res = await fetch('/api/admin/team/role', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: inviteEmail.trim().toLowerCase(), role: inviteRole }),
+      });
+      const payload = await res.json();
+      if (!res.ok) throw new Error(payload.error || text.userNotFound);
       setTeamMsg(text.inviteSent); setInviteEmail(''); await loadTeam();
+    } catch (err) {
+      setTeamError((err as Error).message);
     }
     setTeamLoading(false);
   };
@@ -461,16 +450,23 @@ export default function AdminPage() {
     const m = teamMembers.find(x => x.id === userId);
     if (m?.role === 'super_admin') { setTeamError(text.cannotRemoveSuper); return; }
     setTeamLoading(true); setTeamMsg(''); setTeamError('');
-    const { error } = await supabase.from('profiles').update({ role: newRole }).eq('id', userId);
-    if (error) { setTeamError(error.message); } else {
-      await logAudit('role_change', 'profile', userId, { email: m?.email, new_role: newRole }, { role: m?.role }, { role: newRole }, newRole === 'user' ? 'high' : 'medium');
+    try {
+      const res = await fetch('/api/admin/team/role', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, role: newRole }),
+      });
+      const payload = await res.json();
+      if (!res.ok) throw new Error(payload.error || 'Failed to update that role');
       setTeamMsg(newRole === 'user' ? text.demoted : text.promoted);
       setConfirmAction(null); await loadTeam();
+    } catch (err) {
+      setTeamError((err as Error).message);
     }
     setTeamLoading(false);
   };
 
-  // âââ HELPERS ââââââââââââââââââââââââââââââââââââââââââ
+  // ─── HELPERS ──────────────────────────────────────────
   const fmtDate = (d: string) => d ? new Date(d).toLocaleDateString(locale === 'ar' ? 'ar-SA' : 'en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : EM_DASH;
   const fmtDateTime = (d: string) => d ? new Date(d).toLocaleString(locale === 'ar' ? 'ar-SA' : 'en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : EM_DASH;
   const fmtMoney = (n: number) => `$${(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -601,7 +597,7 @@ export default function AdminPage() {
     return items.filter(item => keys.some(k => item[k]?.toString().toLowerCase().includes(q)));
   };
 
-  // âââ TABS CONFIG ââââââââââââââââââââââââââââââââââââââ
+  // ─── TABS CONFIG ──────────────────────────────────────
   const baseTabs: { id: TabId; label: string; icon: string }[] = [
     { id: 'overview', label: text.overview, icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
     { id: 'users', label: text.usersTab, icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z' },
@@ -635,7 +631,7 @@ export default function AdminPage() {
     audit: locale === 'ar' ? 'فحص سجل التدقيق والعمليات عالية المخاطر.' : 'Inspect the audit trail and high-risk operations.',
   } as Record<TabId, string>)[activeTab];
 
-  // âââ LOADING / UNAUTHORIZED âââââââââââââââââââââââââââ
+  // ─── LOADING / UNAUTHORIZED ───────────────────────────
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-[#0a0a1a]">
       <div className="flex flex-col items-center gap-4">
@@ -654,10 +650,10 @@ export default function AdminPage() {
     </div>
   );
 
-  // âââ RENDER âââââââââââââââââââââââââââââââââââââââââââ
+  // ─── RENDER ───────────────────────────────────────────
   return (
     <div className="min-h-screen bg-[#0a0a1a] text-white" dir={isRTL ? 'rtl' : 'ltr'}>
-      {/* âââ HEADER âââ */}
+      {/* ─── HEADER ─── */}
       <header className="bg-[#0e0e20] border-b border-[#1a1a3a] sticky top-0 z-50">
         <div className="max-w-[1600px] mx-auto px-4 lg:px-6">
           <div className="flex items-center justify-between h-14">
@@ -701,7 +697,7 @@ export default function AdminPage() {
       </header>
 
       <div className="max-w-[1600px] mx-auto flex">
-        {/* âââ SIDEBAR NAV âââ */}
+        {/* ─── SIDEBAR NAV ─── */}
         <nav className="hidden lg:flex flex-col w-56 min-h-[calc(100vh-56px)] bg-[#0e0e20] border-r border-[#1a1a3a] py-4 px-2 sticky top-14 self-start">
           {tabs.map((tab, i) => (
             <div key={tab.id}>
@@ -725,7 +721,7 @@ export default function AdminPage() {
           ))}
         </nav>
 
-        {/* âââ MOBILE NAV âââ */}
+        {/* ─── MOBILE NAV ─── */}
         <div className="lg:hidden w-full overflow-x-auto border-b border-[#1a1a3a] bg-[#0e0e20] sticky top-14 z-40">
           <div className="flex gap-0.5 p-1.5 min-w-max">
             {tabs.map(tab => (
@@ -737,7 +733,7 @@ export default function AdminPage() {
           </div>
         </div>
 
-        {/* âââ CONTENT AREA âââ */}
+        {/* ─── CONTENT AREA ─── */}
         <main className="flex-1 min-w-0 p-4 lg:p-6">
           <section className="mb-6 rounded-2xl border border-[#1a1a3a] bg-gradient-to-br from-[#0e0e20] via-[#12122a] to-[#171733] p-5 lg:p-6">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -777,7 +773,7 @@ export default function AdminPage() {
             </div>
           </section>
 
-          {/* âââ OVERVIEW TAB âââ */}
+          {/* ═══ OVERVIEW TAB ═══ */}
           {activeTab === 'overview' && (
             <div className="space-y-6">
               {/* KPI Cards */}
@@ -856,7 +852,7 @@ export default function AdminPage() {
             </div>
           )}
 
-          {/* âââ USERS TAB âââ */}
+          {/* ═══ USERS TAB ═══ */}
           {activeTab === 'users' && (
             <div>
               <div className="flex items-center justify-between mb-4">
@@ -928,7 +924,7 @@ export default function AdminPage() {
             </div>
           )}
 
-          {/* âââ WARRANTIES TAB âââ */}
+          {/* ═══ WARRANTIES TAB ═══ */}
           {activeTab === 'warranties' && (
             <div>
               <div className="flex items-center justify-between mb-4">
@@ -974,7 +970,7 @@ export default function AdminPage() {
             </div>
           )}
 
-          {/* âââ COMPANIES TAB âââ */}
+          {/* ═══ COMPANIES TAB ═══ */}
           {activeTab === 'companies' && (
             <div>
               <h2 className="text-lg font-bold mb-4">{text.companiesTab} <span className="text-sm font-normal text-gray-500">({companies.length})</span></h2>
@@ -1003,7 +999,7 @@ export default function AdminPage() {
             </div>
           )}
 
-          {/* âââ CLAIMS TAB âââ */}
+          {/* ═══ CLAIMS TAB ═══ */}
           {activeTab === 'claims' && (
             <div>
               <div className="flex items-center justify-between mb-4">
@@ -1044,7 +1040,7 @@ export default function AdminPage() {
             </div>
           )}
 
-          {/* âââ SUPPORT TAB âââ */}
+          {/* ═══ SUPPORT TAB ═══ */}
           {activeTab === 'support' && (
             <div>
               <div className="flex items-center justify-between mb-4">
@@ -1094,7 +1090,7 @@ export default function AdminPage() {
             </div>
           )}
 
-          {/* âââ FRAUD TAB âââ */}
+          {/* ═══ FRAUD TAB ═══ */}
           {activeTab === 'fraud' && (
             <div>
               <h2 className="text-lg font-bold mb-4">{text.fraudTitle} <span className="text-sm font-normal text-gray-500">({fraudSignals.length})</span></h2>
@@ -1127,7 +1123,7 @@ export default function AdminPage() {
             </div>
           )}
 
-          {/* âââ INGESTION TAB âââ */}
+          {/* ═══ INGESTION TAB ═══ */}
           {activeTab === 'ingestion' && (
             <div>
               <h2 className="text-lg font-bold mb-4">{text.ingestionTitle} <span className="text-sm font-normal text-gray-500">({ingestions.length})</span></h2>
@@ -1174,7 +1170,7 @@ export default function AdminPage() {
             </div>
           )}
 
-          {/* âââ BILLING TAB âââ */}
+          {/* ═══ BILLING TAB ═══ */}
           {activeTab === 'billing' && (
             <div>
               <h2 className="text-lg font-bold mb-4">{text.billingTitle}</h2>
@@ -1209,7 +1205,7 @@ export default function AdminPage() {
             </div>
           )}
 
-          {/* âââ CONFIG TAB âââ */}
+          {/* ═══ CONFIG TAB ═══ */}
           {activeTab === 'config' && isSuperAdmin && (
             <div>
               <h2 className="text-lg font-bold mb-4">{text.configTitle}</h2>
@@ -1404,7 +1400,7 @@ export default function AdminPage() {
             </div>
           )}
 
-          {/* âââ TEAM TAB âââ */}
+          {/* ═══ TEAM TAB ═══ */}
           {activeTab === 'team' && isSuperAdmin && (
             <div>
               <h2 className="text-lg font-bold mb-4">{text.teamTitle}</h2>
@@ -1473,7 +1469,7 @@ export default function AdminPage() {
             </div>
           )}
 
-          {/* âââ AUDIT TAB âââ */}
+          {/* ═══ AUDIT TAB ═══ */}
           {activeTab === 'audit' && isSuperAdmin && (
             <div>
               <div className="flex items-center justify-between mb-4">

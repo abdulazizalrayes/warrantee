@@ -160,6 +160,10 @@ export async function POST(request: NextRequest) {
       processed_at: new Date().toISOString(),
     }).eq('id', job.id);
 
+    const responseLocale = 'en';
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://warrantee.io';
+    const dashboardUrl = `${appUrl}/${responseLocale}/dashboard`;
+
     // Send confirmation email when warranty is auto-confirmed via ingestion
     if (finalStatus === 'auto_confirmed') {
       await sendEmail({
@@ -172,7 +176,7 @@ export async function POST(request: NextRequest) {
   <p><strong>Reference:</strong> Job #${job.id}</p>
   <p>You can view and manage your warranty by logging into your Warrantee account.</p>
   <div style="text-align: center; margin: 24px 0;">
-    <a href="https://warrantee.io/en/dashboard" style="background: #F5C542; color: #1A1A2E; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+    <a href="${dashboardUrl}" style="background: #F5C542; color: #1A1A2E; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">
       View Dashboard
     </a>
   </div>
@@ -189,7 +193,7 @@ export async function POST(request: NextRequest) {
             provisional: result.provisional!,
             recipientEmail: fromEmail,
             jobId: job.id,
-            locale: 'en',
+            locale: responseLocale,
           });
         } catch (err) {
           console.error('[Ingest] Buyer confirmation email failed:', err);
@@ -532,6 +536,7 @@ async function sendBuyerConfirmationEmail({
     email: recipientEmail,
     action: 'confirm',
     expiresAt,
+    locale,
   });
   const rejectToken = createBuyerConfirmationToken({
     provisionalId: provisional.id,
@@ -539,6 +544,7 @@ async function sendBuyerConfirmationEmail({
     email: recipientEmail,
     action: 'reject',
     expiresAt,
+    locale,
   });
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://warrantee.io';

@@ -4,8 +4,12 @@ import path from "node:path";
 const root = process.cwd();
 const ignoredDirectories = new Set([
   ".git",
+  ".codex-quarantine",
   ".next",
   ".vercel",
+  ".temp",
+  "e2e 2",
+  "migrations 2",
   "node_modules",
   "playwright-report",
   "test-results",

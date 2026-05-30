@@ -6,7 +6,6 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
-import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
 import { ProtectedRouteNotice } from '@/components/dashboard/ProtectedRouteNotice';
 
 function AdminAcceptInviteContent() {
@@ -16,7 +15,6 @@ function AdminAcceptInviteContent() {
   const params = useParams() ?? {};
   const locale = (params?.locale as string) || 'en';
   const isRtl = locale === 'ar';
-  const supabase = createSupabaseBrowserClient();
 
   const [invitation, setInvitation] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -31,49 +29,36 @@ function AdminAcceptInviteContent() {
       return;
     }
 
+    const inviteToken = token;
     async function loadInvitation() {
-      const { data, error: fetchError } = await supabase
-        .from('admin_invitations')
-        .select('id, email, role, status, expires_at, invited_by_name')
-        .eq('token', token)
-        .single();
-
-      if (fetchError || !data) {
-        setError(isRtl ? 'الدعوة غير موجودة' : 'Invitation not found');
-      } else if (data.status === 'accepted') {
-        setError(isRtl ? 'تم قبول الدعوة مسبقا' : 'Invitation already accepted');
-      } else if (data.status === 'expired' || new Date(data.expires_at) < new Date()) {
-        setError(isRtl ? 'انتهت صلاحية الدعوة' : 'Invitation has expired');
-      } else {
+      try {
+        const res = await fetch(`/api/admin/invitations/accept/${encodeURIComponent(inviteToken)}`);
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || 'Invitation not found');
+        }
         setInvitation(data);
+      } catch (err) {
+        setError(isRtl ? 'الدعوة غير موجودة أو غير صالحة' : (err as Error).message);
       }
       setLoading(false);
     }
 
     loadInvitation();
-  }, [token, isRtl, supabase]);
+  }, [token, isRtl]);
 
   const handleAccept = async () => {
-    if (!invitation || !user) return;
+    if (!invitation || !user || !token) return;
     setAccepting(true);
 
     try {
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({ role: invitation.role })
-        .eq('id', user.id);
-
-      if (profileError) throw profileError;
-
-      await supabase
-        .from('admin_invitations')
-        .update({
-          status: 'accepted',
-          accepted_at: new Date().toISOString(),
-          accepted_by: user.id,
-        })
-        .eq('id', invitation.id);
-
+      const res = await fetch(`/api/admin/invitations/accept/${encodeURIComponent(token)}`, {
+        method: 'POST',
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to accept invitation');
+      }
       setAccepted(true);
     } catch (err) {
       setError((err as Error).message);
@@ -90,9 +75,9 @@ function AdminAcceptInviteContent() {
 
   if (authLoading || loading) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#F8FAFC' }}>
+      <div dir={isRtl ? 'rtl' : 'ltr'} style={{ minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#F8FAFC' }}>
         <div style={{ textAlign: 'center', color: '#64748B' }}>
-          {isRtl ? 'جار التحميل...' : 'Loading...'}
+          {isRtl ? 'جارٍ التحميل...' : 'Loading...'}
         </div>
       </div>
     );
@@ -100,7 +85,7 @@ function AdminAcceptInviteContent() {
 
   if (error) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#F8FAFC' }}>
+      <div dir={isRtl ? 'rtl' : 'ltr'} style={{ minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#F8FAFC' }}>
         <div style={{
           maxWidth: '440px', textAlign: 'center', padding: '48px',
           background: 'white', borderRadius: '16px', boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
@@ -127,12 +112,12 @@ function AdminAcceptInviteContent() {
 
   if (accepted) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#F8FAFC' }}>
+      <div dir={isRtl ? 'rtl' : 'ltr'} style={{ minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#F8FAFC' }}>
         <div style={{
           maxWidth: '440px', textAlign: 'center', padding: '48px',
           background: 'white', borderRadius: '16px', boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
         }}>
-          <div style={{ fontSize: '48px', marginBottom: '16px' }}>ð</div>
+          <div style={{ fontSize: '48px', marginBottom: '16px', color: '#16A34A' }}>✓</div>
           <h2 style={{ fontSize: '24px', fontWeight: 700, marginBottom: '8px', color: '#0F172A' }}>
             {isRtl ? 'تم القبول!' : 'Accepted!'}
           </h2>
@@ -165,7 +150,7 @@ function AdminAcceptInviteContent() {
         title={isRtl ? 'قبول الدعوة الإدارية' : 'Accept Admin Invitation'}
         subtitle={isRtl ? 'الدعوة صالحة، ويتبقى تسجيل الدخول بالحساب المناسب لإتمام قبول الصلاحية.' : 'The invitation is valid. Sign in with the invited account to complete role acceptance.'}
         message={isRtl ? 'سجل الدخول لمتابعة قبول الدعوة وتفعيل الدور الإداري على حسابك.' : 'Sign in to continue accepting this invitation and activate the admin role on your account.'}
-        primaryHref={`/${locale}/auth?redirect=/admin/accept-invite?token=${token}`}
+        primaryHref={`/${locale}/auth?redirect=${encodeURIComponent(`/admin/accept-invite?token=${token}`)}`}
         primaryLabel={isRtl ? 'تسجيل الدخول' : 'Sign In'}
         secondaryHref={`/${locale}`}
         secondaryLabel={isRtl ? 'العودة للرئيسية' : 'Back to home'}
@@ -226,13 +211,23 @@ function AdminAcceptInviteContent() {
   );
 }
 
+function AdminInviteLoadingFallback() {
+  const params = useParams() ?? {};
+  const locale = (params?.locale as string) || 'en';
+  const isRtl = locale === 'ar';
+
+  return (
+    <div dir={isRtl ? 'rtl' : 'ltr'} style={{ minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#F8FAFC' }}>
+      <div style={{ textAlign: 'center', color: '#64748B' }}>
+        {isRtl ? 'جارٍ التحميل...' : 'Loading...'}
+      </div>
+    </div>
+  );
+}
+
 export default function AdminAcceptInvitePage() {
   return (
-    <Suspense fallback={
-      <div style={{ minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#F8FAFC' }}>
-        <div style={{ textAlign: 'center', color: '#64748B' }}>Loading...</div>
-      </div>
-    }>
+    <Suspense fallback={<AdminInviteLoadingFallback />}>
       <AdminAcceptInviteContent />
     </Suspense>
   );

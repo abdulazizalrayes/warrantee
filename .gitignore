@@ -15,5 +15,7 @@ pnpm-debug.log*
 *.bak
 *.traineddata
 signup-page.png
+.codex-quarantine/
+supabase/.temp/
 supabase/migrations 2/
 tests/e2e 2/

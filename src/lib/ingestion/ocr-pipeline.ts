@@ -1,4 +1,4 @@
-// Warrantee â OCR Pipeline
+// Warrantee — OCR Pipeline
 // Google Cloud Vision API integration with confidence scoring
 
 import type { OCRResult, OCRExtractedFields, ExtractedField } from './types';
@@ -424,9 +424,9 @@ function extractProductName(text: string, lang: string): ExtractedField | null {
   ];
   // Arabic patterns
   const arPatterns = [
-    /(?:Ø§Ø³Ù\s*)?Ø§ÙÙÙØªØ¬[:\s]+([^\n,]+)/,
-    /Ø§ÙØµÙÙ[:\s]+([^\n,]+)/,
-    /Ø§ÙÙØµÙ[:\s]+([^\n,]+)/,
+    /(?:اسم\s*)?المنتج[:\s]+([^\n,]+)/,
+    /الصنف[:\s]+([^\n,]+)/,
+    /الوصف[:\s]+([^\n,]+)/,
   ];
 
   const patterns = lang === 'ar' ? [...arPatterns, ...enPatterns] : [...enPatterns, ...arPatterns];
@@ -440,9 +440,9 @@ function extractBrand(text: string, lang: string): ExtractedField | null {
     /(?:made|mfg)\s+by[:\s]+([^\n,]+)/i,
   ];
   const arPatterns = [
-    /Ø§ÙØ¹ÙØ§ÙØ©\s*Ø§ÙØªØ¬Ø§Ø±ÙØ©[:\s]+([^\n,]+)/,
-    /Ø§ÙØ´Ø±ÙØ©\s*Ø§ÙÙØµÙØ¹Ø©[:\s]+([^\n,]+)/,
-    /ØµÙØ¹\s+Ø¨ÙØ§Ø³Ø·Ø©[:\s]+([^\n,]+)/,
+    /العلامة\s*التجارية[:\s]+([^\n,]+)/,
+    /الشركة\s*المصنعة[:\s]+([^\n,]+)/,
+    /صنع\s+بواسطة[:\s]+([^\n,]+)/,
   ];
 
   const patterns = lang === 'ar' ? [...arPatterns, ...enPatterns] : [...enPatterns, ...arPatterns];
@@ -452,9 +452,9 @@ function extractBrand(text: string, lang: string): ExtractedField | null {
 function extractModelNumber(text: string): ExtractedField | null {
   const patterns = [
     /model\s*(?:no\.?|number|#)?[:\s]+([A-Z0-9][\w\-\/]+)/i,
-    /Ø±ÙÙ\s*Ø§ÙÙÙØ¯ÙÙ[:\s]+([A-Z0-9][\w\-\/]+)/,
-    /ÙÙØ¯ÙÙ[:\s]+([A-Z0-9][\w\-\/]+)/,
-    /(?:type|ÙÙØ¹)[:\s]+([A-Z0-9][\w\-\/]+)/i,
+    /رقم\s*الموديل[:\s]+([A-Z0-9][\w\-\/]+)/,
+    /موديل[:\s]+([A-Z0-9][\w\-\/]+)/,
+    /(?:type|نوع)[:\s]+([A-Z0-9][\w\-\/]+)/i,
   ];
   return matchPattern(text, patterns, 0.85);
 }
@@ -462,8 +462,8 @@ function extractModelNumber(text: string): ExtractedField | null {
 function extractSerialNumber(text: string): ExtractedField | null {
   const patterns = [
     /(?:serial|s\/n|ser\.?\s*no\.?)[:\s]+([A-Z0-9][\w\-]+)/i,
-    /Ø§ÙØ±ÙÙ\s*Ø§ÙØªØ³ÙØ³ÙÙ[:\s]+([A-Z0-9][\w\-]+)/,
-    /Ø±ÙÙ\s*Ø§ÙØ³ÙØ±ÙØ§Ù[:\s]+([A-Z0-9][\w\-]+)/,
+    /الرقم\s*التسلسلي[:\s]+([A-Z0-9][\w\-]+)/,
+    /رقم\s*السيريال[:\s]+([A-Z0-9][\w\-]+)/,
   ];
   return matchPattern(text, patterns, 0.9);
 }
@@ -473,8 +473,8 @@ function extractWarrantyDuration(text: string, _lang: string): ExtractedField<nu
   const yearPatterns = [
     /(\d+)\s*(?:year|yr)s?\s*(?:warranty|guarantee)/i,
     /warranty[:\s]*(\d+)\s*(?:year|yr)s?/i,
-    /(\d+)\s*Ø³Ù[Ø©Ù](?:Ø§Øª)?\s*Ø¶ÙØ§Ù/,
-    /Ø¶ÙØ§Ù\s*(?:ÙÙØ¯Ø©\s*)?(\d+)\s*Ø³Ù[Ø©Ù](?:Ø§Øª)?/,
+    /(\d+)\s*سن[ةو](?:ات)?\s*ضمان/,
+    /ضمان\s*(?:لمدة\s*)?(\d+)\s*سن[ةو](?:ات)?/,
   ];
 
   for (const pattern of yearPatterns) {
@@ -491,8 +491,8 @@ function extractWarrantyDuration(text: string, _lang: string): ExtractedField<nu
   const monthPatterns = [
     /(\d+)\s*months?\s*(?:warranty|guarantee)/i,
     /warranty[:\s]*(\d+)\s*months?/i,
-    /(\d+)\s*(?:Ø´ÙØ±|Ø£Ø´ÙØ±)\s*Ø¶ÙØ§Ù/,
-    /Ø¶ÙØ§Ù\s*(?:ÙÙØ¯Ø©\s*)?(\d+)\s*(?:Ø´ÙØ±|Ø£Ø´ÙØ±)/,
+    /(\d+)\s*(?:شهر|أشهر)\s*ضمان/,
+    /ضمان\s*(?:لمدة\s*)?(\d+)\s*(?:شهر|أشهر)/,
   ];
 
   for (const pattern of monthPatterns) {
@@ -506,7 +506,7 @@ function extractWarrantyDuration(text: string, _lang: string): ExtractedField<nu
   }
 
   // Lifetime
-  if (/lifetime\s*warranty/i.test(text) || /Ø¶ÙØ§Ù\s*ÙØ¯Ù\s*Ø§ÙØ­ÙØ§Ø©/.test(text)) {
+  if (/lifetime\s*warranty/i.test(text) || /ضمان\s*مدى\s*الحياة/.test(text)) {
     return { value: 999, confidence: 0.7 };
   }
 
@@ -520,8 +520,8 @@ function extractDate(text: string, type: 'purchase' | 'expiry', _lang: string): 
   if (matches.length === 0) return null;
 
   // Look for context clues
-  const purchaseKeywords = /(?:purchase|buy|bought|date of sale|ØªØ§Ø±ÙØ®\s*Ø§ÙØ´Ø±Ø§Ø¡|ØªØ§Ø±ÙØ®\s*Ø§ÙØ¨ÙØ¹)/i;
-  const expiryKeywords = /(?:expir|valid\s*until|end\s*date|ØªØ§Ø±ÙØ®\s*Ø§ÙØ§ÙØªÙØ§Ø¡|ØµØ§ÙØ­\s*Ø­ØªÙ)/i;
+  const purchaseKeywords = /(?:purchase|buy|bought|date of sale|تاريخ\s*الشراء|تاريخ\s*البيع)/i;
+  const expiryKeywords = /(?:expir|valid\s*until|end\s*date|تاريخ\s*الانتهاء|صالح\s*حتى)/i;
 
   const targetKeywords = type === 'purchase' ? purchaseKeywords : expiryKeywords;
 
@@ -552,9 +552,9 @@ function extractDate(text: string, type: 'purchase' | 'expiry', _lang: string): 
 function extractSellerName(text: string, _lang: string): ExtractedField | null {
   const patterns = [
     /(?:sold\s*by|seller|dealer|vendor|retailer)[:\s]+([^\n,]+)/i,
-    /(?:Ø§ÙØ¨Ø§Ø¦Ø¹|Ø§ÙÙÙØ²Ø¹|Ø§ÙØªØ§Ø¬Ø±|Ø§ÙÙÙØ±Ø¯)[:\s]+([^\n,]+)/,
+    /(?:البائع|الموزع|التاجر|المورد)[:\s]+([^\n,]+)/,
     /(?:store|shop|company)[:\s]+([^\n,]+)/i,
-    /(?:Ø§ÙÙØªØ¬Ø±|Ø§ÙØ´Ø±ÙØ©|Ø§ÙÙØ­Ù)[:\s]+([^\n,]+)/,
+    /(?:المتجر|الشركة|المحل)[:\s]+([^\n,]+)/,
   ];
   return matchPattern(text, patterns, 0.65);
 }
@@ -562,8 +562,8 @@ function extractSellerName(text: string, _lang: string): ExtractedField | null {
 function extractBuyerName(text: string, _lang: string): ExtractedField | null {
   const patterns = [
     /(?:customer|buyer|purchased\s*by|sold\s*to|client)[:\s]+([^\n,]+)/i,
-    /(?:Ø§ÙØ¹ÙÙÙ|Ø§ÙÙØ´ØªØ±Ù|Ø§ÙØ²Ø¨ÙÙ)[:\s]+([^\n,]+)/,
-    /(?:name|Ø§ÙØ§Ø³Ù)[:\s]+([^\n,]+)/i,
+    /(?:العميل|المشتري|الزبون)[:\s]+([^\n,]+)/,
+    /(?:name|الاسم)[:\s]+([^\n,]+)/i,
   ];
   return matchPattern(text, patterns, 0.6);
 }

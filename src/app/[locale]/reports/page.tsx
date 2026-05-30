@@ -8,7 +8,6 @@ import { FileText, Download, Calendar, Filter, BarChart3, PieChart, TrendingUp, 
 import { DashboardPageShell } from "@/components/dashboard/DashboardPageShell";
 import { PageViewTracker } from "@/components/PageViewTracker";
 import { trackReportExport } from "@/lib/ga4-events";
-import { fixMojibake } from "@/lib/fix-mojibake";
 import { buildWarrantyAccessOrClause } from "@/lib/warranty-access";
 
 type ReportType = "warranty_summary" | "expiry_forecast" | "claims_overview" | "supplier_performance";
@@ -101,7 +100,7 @@ export default function ReportsPage() {
   const [stats, setStats] = useState({ total: 0, active: 0, expiring: 0, expired: 0, claimed: 0 });
   const [warranties, setWarranties] = useState<WarrantyReportRow[]>([]);
   const [claims, setClaims] = useState<ClaimReportRow[]>([]);
-  const tr = (value: string) => (isRTL ? fixMojibake(value) : value);
+  const tr = (value: string) => value;
 
   useEffect(() => {
     if (!user) {
@@ -146,34 +145,34 @@ export default function ReportsPage() {
     load();
   }, [user]);
   const reportTypes = [
-    { id: "warranty_summary" as ReportType, icon: FileBarChart, label: isRTL ? tr("ÙÙØ®Øµ Ø§ÙØ¶ÙØ§ÙØ§Øª") : "Warranty Summary", desc: isRTL ? tr("ÙØ¸Ø±Ø© Ø¹Ø§ÙØ© Ø¹ÙÙ Ø¬ÙÙØ¹ Ø§ÙØ¶ÙØ§ÙØ§Øª") : "Overview of all warranties" },
-    { id: "expiry_forecast" as ReportType, icon: Clock, label: isRTL ? tr("ØªÙÙØ¹Ø§Øª Ø§ÙØ§ÙØªÙØ§Ø¡") : "Expiry Forecast", desc: isRTL ? tr("Ø§ÙØ¶ÙØ§ÙØ§Øª Ø§ÙØªÙ Ø³ØªÙØªÙÙ ÙØ±ÙØ¨Ø§Ù") : "Warranties expiring soon" },
-    { id: "claims_overview" as ReportType, icon: Shield, label: isRTL ? tr("ÙØ¸Ø±Ø© Ø¹ÙÙ Ø§ÙÙØ·Ø§ÙØ¨Ø§Øª") : "Claims Overview", desc: isRTL ? tr("Ø­Ø§ÙØ© Ø§ÙÙØ·Ø§ÙØ¨Ø§Øª ÙØ§ÙØªÙØ¯Ù") : "Claim status and progress" },
-    { id: "supplier_performance" as ReportType, icon: TrendingUp, label: isRTL ? tr("Ø£Ø¯Ø§Ø¡ Ø§ÙÙÙØ±Ø¯ÙÙ") : "Supplier Performance", desc: isRTL ? tr("ØªÙÙÙÙ Ø§ÙÙÙØ±Ø¯ÙÙ ÙØ§ÙØ¨Ø§Ø¦Ø¹ÙÙ") : "Vendor and seller ratings" },
+    { id: "warranty_summary" as ReportType, icon: FileBarChart, label: isRTL ? tr("ملخص الضمانات") : "Warranty Summary", desc: isRTL ? tr("نظرة عامة على جميع الضمانات") : "Overview of all warranties" },
+    { id: "expiry_forecast" as ReportType, icon: Clock, label: isRTL ? tr("توقعات الانتهاء") : "Expiry Forecast", desc: isRTL ? tr("الضمانات التي ستنتهي قريباً") : "Warranties expiring soon" },
+    { id: "claims_overview" as ReportType, icon: Shield, label: isRTL ? tr("نظرة على المطالبات") : "Claims Overview", desc: isRTL ? tr("حالة المطالبات والتقدم") : "Claim status and progress" },
+    { id: "supplier_performance" as ReportType, icon: TrendingUp, label: isRTL ? tr("أداء الموردين") : "Supplier Performance", desc: isRTL ? tr("تقييم الموردين والبائعين") : "Vendor and seller ratings" },
   ];
 
   const timeRanges: { id: TimeRange; label: string }[] = [
-    { id: "7d", label: isRTL ? tr("7 Ø£ÙØ§Ù") : "7 days" },
-    { id: "30d", label: isRTL ? tr("30 ÙÙÙ") : "30 days" },
-    { id: "90d", label: isRTL ? tr("90 ÙÙÙ") : "90 days" },
-    { id: "12m", label: isRTL ? tr("12 Ø´ÙØ±") : "12 months" },
-    { id: "all", label: isRTL ? tr("Ø§ÙÙÙ") : "All time" },
+    { id: "7d", label: isRTL ? tr("7 أيام") : "7 days" },
+    { id: "30d", label: isRTL ? tr("30 يوم") : "30 days" },
+    { id: "90d", label: isRTL ? tr("90 يوم") : "90 days" },
+    { id: "12m", label: isRTL ? tr("12 شهر") : "12 months" },
+    { id: "all", label: isRTL ? tr("الكل") : "All time" },
   ];
 
   const summaryCards = [
-    { label: isRTL ? tr("Ø¥Ø¬ÙØ§ÙÙ Ø§ÙØ¶ÙØ§ÙØ§Øª") : "Total Warranties", value: stats.total, icon: FileText, color: "#007aff" },
-    { label: isRTL ? tr("ÙØ´Ø·Ø©") : "Active", value: stats.active, icon: CheckCircle, color: "#30d158" },
-    { label: isRTL ? tr("ØªÙØªÙÙ ÙØ±ÙØ¨Ø§Ù") : "Expiring Soon", value: stats.expiring, icon: AlertTriangle, color: "#ff9f0a" },
-    { label: isRTL ? tr("ÙÙØªÙÙØ©") : "Expired", value: stats.expired, icon: Clock, color: "#ff453a" },
+    { label: isRTL ? tr("إجمالي الضمانات") : "Total Warranties", value: stats.total, icon: FileText, color: "#007aff" },
+    { label: isRTL ? tr("نشطة") : "Active", value: stats.active, icon: CheckCircle, color: "#30d158" },
+    { label: isRTL ? tr("تنتهي قريباً") : "Expiring Soon", value: stats.expiring, icon: AlertTriangle, color: "#ff9f0a" },
+    { label: isRTL ? tr("منتهية") : "Expired", value: stats.expired, icon: Clock, color: "#ff453a" },
   ];
 
   const filteredWarranties = warranties.filter((warranty) => isDateInRange(warranty.created_at, timeRange));
   const filteredClaims = claims.filter((claim) => isDateInRange(claim.created_at, timeRange));
   const statusRows: ReportMetric[] = [
-    { label: isRTL ? tr("ÙØ´Ø·Ø©") : "Active", count: filteredWarranties.filter((w) => effectiveStatus(w) === "active" && !isExpiringSoon(w)).length, color: "#30d158" },
-    { label: isRTL ? tr("ØªÙØªÙÙ ÙØ±ÙØ¨Ø§Ù") : "Expiring Soon", count: filteredWarranties.filter((w) => isExpiringSoon(w)).length, color: "#ff9f0a" },
-    { label: isRTL ? tr("ÙÙØªÙÙØ©") : "Expired", count: filteredWarranties.filter((w) => effectiveStatus(w) === "expired").length, color: "#ff453a" },
-    { label: isRTL ? tr("ÙØ·Ø§ÙØ¨Ø§Øª") : "Claimed", count: filteredWarranties.filter((w) => effectiveStatus(w) === "claimed").length, color: "#007aff" },
+    { label: isRTL ? tr("نشطة") : "Active", count: filteredWarranties.filter((w) => effectiveStatus(w) === "active" && !isExpiringSoon(w)).length, color: "#30d158" },
+    { label: isRTL ? tr("تنتهي قريباً") : "Expiring Soon", count: filteredWarranties.filter((w) => isExpiringSoon(w)).length, color: "#ff9f0a" },
+    { label: isRTL ? tr("منتهية") : "Expired", count: filteredWarranties.filter((w) => effectiveStatus(w) === "expired").length, color: "#ff453a" },
+    { label: isRTL ? tr("مطالبات") : "Claimed", count: filteredWarranties.filter((w) => effectiveStatus(w) === "claimed").length, color: "#007aff" },
   ];
   const expiryRows: ReportMetric[] = [
     { label: isRTL ? "\u062e\u0644\u0627\u0644 7 \u0623\u064a\u0627\u0645" : "Next 7 days", count: filteredWarranties.filter((w) => {
@@ -188,7 +187,7 @@ export default function ReportsPage() {
       const endDate = warrantyEndDate(w);
       return !!endDate && endDate >= new Date() && endDate <= new Date(Date.now() + 90 * DAY_MS);
     }).length, color: "#1A1A2E" },
-    { label: isRTL ? tr("ÙÙØªÙÙØ©") : "Already expired", count: filteredWarranties.filter((w) => effectiveStatus(w) === "expired").length, color: "#ff453a" },
+    { label: isRTL ? tr("منتهية") : "Already expired", count: filteredWarranties.filter((w) => effectiveStatus(w) === "expired").length, color: "#ff453a" },
   ];
   const supplierCounts = groupCounts(filteredWarranties.map((warranty) => warranty.seller_name || (isRTL ? "\u063a\u064a\u0631 \u0645\u062d\u062f\u062f" : "Unspecified")));
   const supplierRows: ReportMetric[] = Object.entries(supplierCounts)
@@ -287,10 +286,10 @@ export default function ReportsPage() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between mb-8">
           <div>
             <h1 className="text-[28px] font-semibold text-[#1d1d1f] tracking-tight">
-              {isRTL ? tr("Ø§ÙØªÙØ§Ø±ÙØ±") : "Reports"}
+              {isRTL ? tr("التقارير") : "Reports"}
             </h1>
             <p className="text-[15px] text-[#86868b] mt-1">
-              {isRTL ? tr("ØªØ­ÙÙÙØ§Øª ÙØ±Ø¤Ù Ø­ÙÙ Ø¶ÙØ§ÙØ§ØªÙ") : "Analytics and insights about your warranties"}
+              {isRTL ? tr("تحليلات ورؤى حول ضماناتك") : "Analytics and insights about your warranties"}
             </p>
           </div>
         </div>
@@ -332,7 +331,7 @@ export default function ReportsPage() {
             <div className="bg-white rounded-2xl ring-1 ring-[#d2d2d7]/40 shadow-sm overflow-hidden">
               <div className="px-5 py-4 border-b border-[#d2d2d7]/30">
                 <h2 className="text-[15px] font-semibold text-[#1d1d1f]">
-                  {isRTL ? tr("ÙÙØ¹ Ø§ÙØªÙØ±ÙØ±") : "Report Type"}
+                  {isRTL ? tr("نوع التقرير") : "Report Type"}
                 </h2>
               </div>
               <div className="p-2">
@@ -404,7 +403,7 @@ export default function ReportsPage() {
             <div className="bg-white rounded-2xl ring-1 ring-[#d2d2d7]/40 shadow-sm overflow-hidden">
               <div className="px-5 py-4 border-b border-[#d2d2d7]/30 flex items-center justify-between">
                 <h2 className="text-[15px] font-semibold text-[#1d1d1f]">
-                  {isRTL ? tr("ØªÙØ§ØµÙÙ Ø§ÙØ­Ø§ÙØ©") : "Report Breakdown"}
+                  {isRTL ? tr("تفاصيل الحالة") : "Report Breakdown"}
                 </h2>
                 <Filter className="w-4 h-4 text-[#86868b]" />
               </div>
@@ -434,9 +433,9 @@ export default function ReportsPage() {
             {/* Quick Actions */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {[
-                { icon: BarChart3, label: isRTL ? tr("ØªÙØ±ÙØ± Ø´ÙØ±Ù") : "Monthly Report", desc: isRTL ? tr("ÙÙØ®Øµ Ø´ÙØ±Ù ÙØ§ÙÙ") : "Full monthly summary" },
-                { icon: PieChart, label: isRTL ? tr("ØªÙØ²ÙØ¹ Ø§ÙÙØ¦Ø§Øª") : "Category Split", desc: isRTL ? tr("ØªÙØ³ÙÙ Ø­Ø³Ø¨ Ø§ÙÙØ¦Ø©") : "Breakdown by category" },
-                { icon: TrendingUp, label: isRTL ? tr("ØªØ­ÙÙÙ Ø§ÙØ§ØªØ¬Ø§Ù") : "Trend Analysis", desc: isRTL ? tr("Ø§ØªØ¬Ø§ÙØ§Øª Ø§ÙØ¶ÙØ§Ù") : "Warranty trends over time" },
+                { icon: BarChart3, label: isRTL ? tr("تقرير شهري") : "Monthly Report", desc: isRTL ? tr("ملخص شهري كامل") : "Full monthly summary" },
+                { icon: PieChart, label: isRTL ? tr("توزيع الفئات") : "Category Split", desc: isRTL ? tr("تقسيم حسب الفئة") : "Breakdown by category" },
+                { icon: TrendingUp, label: isRTL ? tr("تحليل الاتجاه") : "Trend Analysis", desc: isRTL ? tr("اتجاهات الضمان") : "Warranty trends over time" },
               ].map((action, i) => (
                 <button
                   key={i}

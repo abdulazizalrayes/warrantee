@@ -11,7 +11,7 @@ export default function NotFound() {
         <p className="text-xl text-gray-600 mb-2">Page Not Found</p>
         <p className="text-gray-400 mb-8">The page you are looking for does not exist or has been moved.</p>
         <div className="flex gap-4 justify-center">
-          <Link href="/en" className="px-6 py-3 bg-[#4169E1] text-white rounded-xl font-medium hover:bg-[#3457c9] transition-all">
+          <Link href="/" className="px-6 py-3 bg-[#4169E1] text-white rounded-xl font-medium hover:bg-[#3457c9] transition-all">
             Go Home
           </Link>
         </div>

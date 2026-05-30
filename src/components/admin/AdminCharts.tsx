@@ -1,8 +1,8 @@
 'use client';
 
-// Warrantee â Admin Chart Components
+// Warrantee - Admin Chart Components
 // Lightweight SVG-based charts for Analytics and Revenue tabs
-// No external chart library needed â pure React + inline SVG
+// No external chart library needed - pure React + inline SVG
 
 import { useMemo } from 'react';
 
@@ -196,7 +196,7 @@ export function DonutChart({ data, size = 160, title, isRtl = false }: DonutChar
             {total}
           </text>
           <text x={center} y={center + 12} textAnchor="middle" fill="#94A3B8" fontSize="10">
-            {isRtl ? 'Ø¥Ø¬ÙØ§ÙÙ' : 'Total'}
+            {isRtl ? 'إجمالي' : 'Total'}
           </text>
         </svg>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -247,4 +247,3 @@ export function StatCard({ label, value, change, changeType = 'neutral', icon, c
     </div>
   );
 }
-

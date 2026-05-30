@@ -43,6 +43,14 @@
     ".next/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    ".codex-quarantine",
+    ".next/cache",
+    ".vercel",
+    "playwright-report",
+    "test-results",
+    "supabase/.temp",
+    "supabase/migrations 2",
+    "tests/e2e 2"
   ]
 }

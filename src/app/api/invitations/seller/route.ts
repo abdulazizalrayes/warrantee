@@ -30,6 +30,7 @@ export async function POST(request: NextRequest) {
 
   const body = await request.json();
   const { seller_email, seller_name, seller_phone, warranty_id } = body;
+  const locale = body.locale === 'ar' ? 'ar' : 'en';
 
   if (!seller_email) {
     return NextResponse.json({ error: 'seller_email is required' }, { status: 400 });
@@ -91,7 +92,8 @@ export async function POST(request: NextRequest) {
     .single();
 
   // Send invitation email via Resend
-  const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL}/en/seller/accept-invite?token=${invitation.token}`;
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://warrantee.io';
+  const inviteUrl = `${appUrl}/${locale}/seller/accept-invite?token=${invitation.token}`;
 
   try {
     await upsertHubSpotContact({
