@@ -8,7 +8,6 @@ const hasSupabaseAdmin = Boolean(
 );
 
 const claimTitlePrefix = "QA Business Flow Claim";
-const referenceNumber = "WR-QA-BUSINESS-FLOW-001";
 
 let qaWarrantyId: string | null = null;
 let qaUserId: string | null = null;
@@ -60,8 +59,14 @@ async function cleanupQaArtifacts() {
   await supabase.from("warranty_claims").delete().ilike("title", `${claimTitlePrefix}%`);
 }
 
-async function seedBusinessQaData() {
+function projectSlug(projectName: string) {
+  return projectName.replace(/[^a-z0-9]+/gi, "-").replace(/^-+|-+$/g, "").toUpperCase() || "DEFAULT";
+}
+
+async function seedBusinessQaData(projectName: string) {
   const email = process.env.E2E_USER_EMAIL!;
+  const slug = projectSlug(projectName);
+  const referenceNumber = `WR-QA-BUSINESS-FLOW-${slug}`;
   const supabase = adminClient();
   const { data: users, error: usersError } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 });
   if (usersError) throw usersError;
@@ -91,7 +96,7 @@ async function seedBusinessQaData() {
       reference_number: referenceNumber,
       product_name: "QA Business Flow Warranty",
       product_name_ar: "ضمان اختبار الأعمال",
-      sku: "QA-BUSINESS-001",
+      sku: `QA-BUSINESS-${slug}`,
       quantity: 1,
       start_date: "2026-01-01",
       end_date: "2028-01-01",
@@ -99,7 +104,7 @@ async function seedBusinessQaData() {
       warranty_start_date: "2026-01-01",
       warranty_end_date: "2028-01-01",
       description: "Seeded warranty used only for production business workflow QA.",
-      serial_number: "QA-BUSINESS-SN-001",
+      serial_number: `QA-BUSINESS-SN-${slug}`,
       category: "qa",
       product_category: "qa",
       seller_name: "QA Seller",
@@ -129,8 +134,8 @@ test.describe("deeper authenticated business workflows", () => {
   test.skip(!hasCredentials, "Set E2E_USER_EMAIL and E2E_USER_PASSWORD to enable signed-in workflow QA.");
   test.skip(!hasSupabaseAdmin, "Set Supabase admin env vars to seed and clean signed-in workflow QA data.");
 
-  test.beforeAll(async () => {
-    await seedBusinessQaData();
+  test.beforeAll(async ({}, testInfo) => {
+    await seedBusinessQaData(testInfo.project.name);
   });
 
   test.afterAll(async () => {

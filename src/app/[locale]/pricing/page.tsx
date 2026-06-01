@@ -146,7 +146,7 @@ export default function PricingPage() {
                       </p>
                     ) : (
                       <div>
-                        <span className="text-[28px] font-semibold tracking-tight text-[#1d1d1f]">$${plan.price}</span>
+                        <span className="text-[28px] font-semibold tracking-tight text-[#1d1d1f]">${plan.price}</span>
                         <span className="text-[14px] text-[#86868b]"> /{isRTL ? "شهر" : "month"}</span>
                         {plan.id === "pro" && (
                           <p className="text-[12px] text-[#30d158] font-medium mt-1">
