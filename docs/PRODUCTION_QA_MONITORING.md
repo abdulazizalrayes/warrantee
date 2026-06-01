@@ -1,10 +1,25 @@
 # Production QA And Monitoring Gate
 
-Last updated: 2026-05-23
+Last updated: 2026-06-01
 
 ## Purpose
 
 Warrantee should not move to production on screenshots, hope, or a single manual pass. Every rollout should pass an automated QA gate, then be watched by production monitoring after release.
+
+## Mandatory Amendment Rule
+
+Every Warrantee amendment must improve, enhance, or fix the product. No code, configuration, content, workflow, integration, analytics, security, or UX change should be treated as complete until it has been reviewed and tested against the actual user journey it affects.
+
+Before rollout, the owner of the change must confirm:
+
+- The change matches the requested business outcome and does not contradict existing product behavior, copy, pricing, language, analytics, security, or operational workflows.
+- The user experience and usability were checked as an actual user would experience them, including navigation, forms, empty/error/loading states, mobile behavior, accessibility basics, and visible copy.
+- The change does not introduce broken buttons, dead routes, bad redirects, overlapping UI, confusing states, data leakage, security weakening, provider/integration regressions, or localhost/preview-only dependencies.
+- The appropriate automated checks passed for the affected surface, and any skipped or unavailable check is documented as a risk with a replacement verification path.
+- Post-rollout production smoke/readiness checks pass when the change reaches production, and monitoring is reviewed for new Sentry, Vercel, API, payment, OCR, email, or database errors.
+- A rollback path is known before rollout for any customer-facing, payment, auth, database, or security-sensitive change.
+
+If a change cannot be adequately QA-tested, it must not be called fully done or fully operational. It can only be marked as pending verification with the exact blocker, affected workflow, risk, and next action.
 
 ## Automated QA Gate
 
