@@ -33,6 +33,7 @@ test.describe("protected app routing", () => {
 
     const currentUrl = new URL(page.url());
     expect(currentUrl.pathname).toBe("/en/auth");
+    expect(currentUrl.searchParams.has("token")).toBe(false);
     expect(currentUrl.searchParams.get("redirect")).toBe("/en/seller/accept-invite?token=smoke-token");
 
     errors.assertClean();

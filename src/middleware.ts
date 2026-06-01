@@ -33,6 +33,19 @@ function getAuthRedirectTarget(request: NextRequest) {
   return `${request.nextUrl.pathname}${request.nextUrl.search}`;
 }
 
+function buildCleanRedirectUrl(request: NextRequest, pathname: string) {
+  const url = request.nextUrl.clone();
+  url.pathname = pathname;
+  url.search = "";
+  return url;
+}
+
+function buildAuthRedirectUrl(request: NextRequest, locale: string) {
+  const url = buildCleanRedirectUrl(request, "/" + locale + "/auth");
+  url.searchParams.set("redirect", getAuthRedirectTarget(request));
+  return url;
+}
+
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const localeMatch = pathname.match(/^\/(en|ar)(\/|$)/);
@@ -168,10 +181,7 @@ export async function middleware(request: NextRequest) {
 
   if (isAdminArea || isApprovalArea) {
     if (!user) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/" + locale + "/auth";
-      url.searchParams.set("redirect", getAuthRedirectTarget(request));
-      return NextResponse.redirect(url);
+      return NextResponse.redirect(buildAuthRedirectUrl(request, locale));
     }
 
     const { data: profile } = await supabase
@@ -182,8 +192,7 @@ export async function middleware(request: NextRequest) {
 
     if (isAdminArea) {
       if (!profile || !["admin", "super_admin"].includes(profile.role)) {
-        const url = request.nextUrl.clone();
-        url.pathname = "/" + locale + "/dashboard";
+        const url = buildCleanRedirectUrl(request, "/" + locale + "/dashboard");
         return NextResponse.redirect(url);
       }
     }
@@ -191,8 +200,7 @@ export async function middleware(request: NextRequest) {
     if (isApprovalArea) {
       const approvalRoles = ["approver", "company_admin", "platform_admin", "admin", "super_admin"];
       if (!profile || !approvalRoles.includes(profile.role)) {
-        const url = request.nextUrl.clone();
-        url.pathname = "/" + locale + "/dashboard";
+        const url = buildCleanRedirectUrl(request, "/" + locale + "/dashboard");
         return NextResponse.redirect(url);
       }
     }
@@ -200,10 +208,7 @@ export async function middleware(request: NextRequest) {
 
   if (isProtectedAppArea && !isAdminArea && !isApprovalArea) {
     if (!user) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/" + locale + "/auth";
-      url.searchParams.set("redirect", getAuthRedirectTarget(request));
-      return NextResponse.redirect(url);
+      return NextResponse.redirect(buildAuthRedirectUrl(request, locale));
     }
   }
 
@@ -215,8 +220,7 @@ export async function middleware(request: NextRequest) {
     const isExplicitSignupIntent = requestedAuthTab === "signup";
 
     if (!pathname.includes("/auth/callback") && !isExplicitSignupIntent) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/" + locale + "/dashboard";
+      const url = buildCleanRedirectUrl(request, "/" + locale + "/dashboard");
       return NextResponse.redirect(url);
     }
   }
