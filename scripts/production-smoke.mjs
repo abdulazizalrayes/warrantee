@@ -9,6 +9,7 @@ const publicChecks = [
   { path: "/en/contact", expect: 200 },
   { path: "/en/api-docs", expect: 200 },
   { path: "/en/support", expect: 200 },
+  { path: "/en/seller/register", expect: 200, contains: "Become a Warrantee seller" },
   { path: "/robots.txt", expect: 200, contains: "Sitemap: https://warrantee.io/sitemap.xml" },
   { path: "/sitemap.xml", expect: 200, contains: "https://warrantee.io/en" },
   { path: `/${indexNowKey}.txt`, expect: 200, contains: indexNowKey },
@@ -25,6 +26,7 @@ const redirectChecks = [
   { path: "/en/documents", location: /\/en\/auth\?redirect=%2Fen%2Fdocuments$/ },
   { path: "/en/notifications", location: /\/en\/auth\?redirect=%2Fen%2Fnotifications$/ },
   { path: "/en/settings/team", location: /\/en\/auth\?redirect=%2Fen%2Fsettings%2Fteam$/ },
+  { path: "/en/seller/accept-invite?token=smoke-token", location: /\/en\/auth\?redirect=%2Fen%2Fseller%2Faccept-invite%3Ftoken%3Dsmoke-token$/ },
 ];
 
 const protectedApiChecks = [

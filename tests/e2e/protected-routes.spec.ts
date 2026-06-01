@@ -1,4 +1,4 @@
-import { test } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 import { expectProtectedRedirect, watchForPageErrors } from "./helpers";
 
 const protectedRoutes = [
@@ -25,4 +25,16 @@ test.describe("protected app routing", () => {
       errors.assertClean();
     });
   }
+
+  test("seller invite auth redirect preserves the token", async ({ page }, testInfo) => {
+    const errors = watchForPageErrors(page, testInfo);
+
+    await page.goto("/en/seller/accept-invite?token=smoke-token", { waitUntil: "domcontentloaded" });
+
+    const currentUrl = new URL(page.url());
+    expect(currentUrl.pathname).toBe("/en/auth");
+    expect(currentUrl.searchParams.get("redirect")).toBe("/en/seller/accept-invite?token=smoke-token");
+
+    errors.assertClean();
+  });
 });

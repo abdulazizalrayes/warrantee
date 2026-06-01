@@ -29,6 +29,10 @@ function applySecurityHeaders(response: NextResponse, hasAgentRouteInfo = false)
   return response;
 }
 
+function getAuthRedirectTarget(request: NextRequest) {
+  return `${request.nextUrl.pathname}${request.nextUrl.search}`;
+}
+
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const localeMatch = pathname.match(/^\/(en|ar)(\/|$)/);
@@ -70,10 +74,16 @@ export async function middleware(request: NextRequest) {
     "/settings",
     "/billing",
   ];
+  const publicAppPaths = ["/seller/register"];
+  const isPublicAppPath = publicAppPaths.some(
+    (publicPath) =>
+      normalizedPathname === publicPath ||
+      normalizedPathname.startsWith(`${publicPath}/`),
+  );
   const isProtectedAppArea = protectedAppPrefixes.some(
     (prefix) =>
       normalizedPathname === prefix || normalizedPathname.startsWith(`${prefix}/`)
-  );
+  ) && !isPublicAppPath;
 
   if (
     request.method === "GET" &&
@@ -160,7 +170,7 @@ export async function middleware(request: NextRequest) {
     if (!user) {
       const url = request.nextUrl.clone();
       url.pathname = "/" + locale + "/auth";
-      url.searchParams.set("redirect", pathname);
+      url.searchParams.set("redirect", getAuthRedirectTarget(request));
       return NextResponse.redirect(url);
     }
 
@@ -192,7 +202,7 @@ export async function middleware(request: NextRequest) {
     if (!user) {
       const url = request.nextUrl.clone();
       url.pathname = "/" + locale + "/auth";
-      url.searchParams.set("redirect", pathname);
+      url.searchParams.set("redirect", getAuthRedirectTarget(request));
       return NextResponse.redirect(url);
     }
   }

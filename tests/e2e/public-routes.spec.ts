@@ -11,6 +11,7 @@ const publicRoutes = [
   "/en/guide",
   "/en/api-docs",
   "/en/support",
+  "/en/seller/register",
   "/en/verify",
   "/en/auth",
 ];
