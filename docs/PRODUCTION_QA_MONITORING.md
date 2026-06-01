@@ -14,7 +14,7 @@ Before rollout, the owner of the change must confirm:
 
 - The change matches the requested business outcome and does not contradict existing product behavior, copy, pricing, language, analytics, security, or operational workflows.
 - The user experience and usability were checked as an actual user would experience them, including navigation, forms, empty/error/loading states, mobile behavior, accessibility basics, and visible copy.
-- The change does not introduce broken buttons, dead routes, bad redirects, overlapping UI, confusing states, data leakage, security weakening, provider/integration regressions, or localhost/preview-only dependencies.
+- The change does not introduce broken buttons, dead routes, bad redirects, overlapping UI, confusing states, data leakage, security weakening, provider/integration regressions, or development-only/preview-only dependencies.
 - The appropriate automated checks passed for the affected surface, and any skipped or unavailable check is documented as a risk with a replacement verification path.
 - Post-rollout production smoke/readiness checks pass when the change reaches production, and monitoring is reviewed for new Sentry, Vercel, API, payment, OCR, email, or database errors.
 - A rollback path is known before rollout for any customer-facing, payment, auth, database, or security-sensitive change.
