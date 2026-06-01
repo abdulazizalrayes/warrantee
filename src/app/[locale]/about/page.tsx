@@ -125,7 +125,7 @@ export default async function AboutPage({ params }: AboutPageProps) {
             <p className="text-navy/60 text-lg leading-relaxed mb-6">{page.originTwo}</p>
 
             <blockquote className="bg-navy/5 border-l-4 border-gold rounded-r-2xl p-8 my-10">
-              <p className="text-navy text-lg italic leading-relaxed">"{page.quote}"</p>
+              <p className="text-navy text-lg italic leading-relaxed">&ldquo;{page.quote}&rdquo;</p>
               <footer className="text-gold font-semibold mt-4">- {page.founder}</footer>
             </blockquote>
 

@@ -1,12 +1,11 @@
-// @ts-nocheck
 "use client";
 
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
-  Shield, FileText, BarChart3, Users, Globe, Mail, Lock, Clock, Check, ArrowRight
+  Shield, FileText, BarChart3, Users, Globe, Mail, Lock, Clock, ArrowRight
 } from "lucide-react";
-import { getDictionary, DIRECTION } from "@/lib/i18n";
+import { DIRECTION } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 
 const features = [
@@ -23,7 +22,6 @@ const features = [
 export default function FeaturesPage() {
   const params = useParams() ?? {};
   const locale = (params.locale as string) || "en";
-  const dict = getDictionary(locale);
   const isRTL = locale === "ar";
   const direction = DIRECTION[locale as Locale];
 

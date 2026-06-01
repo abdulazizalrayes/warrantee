@@ -25,6 +25,7 @@ const metaEventMap: Record<string, string> = {
   sign_up: "CompleteRegistration",
   purchase: "Purchase",
   contact_form_submit: "Lead",
+  seller_application_submit: "Lead",
   seller_invite_sent: "Lead",
   team_invite: "Lead",
   warranty_created: "WarrantyCreated",
@@ -170,6 +171,14 @@ export function trackSellerInvite() {
   emitEvent("seller_invite_sent", {
     event_category: "engagement",
     event_label: "seller_invite_sent",
+  });
+}
+
+export function trackSellerApplication(metadata: Record<string, unknown> = {}) {
+  emitEvent("seller_application_submit", {
+    event_category: "conversion",
+    event_label: "seller_application_submit",
+    ...metadata,
   });
 }
 

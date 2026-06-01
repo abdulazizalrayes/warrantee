@@ -1,8 +1,7 @@
-// @ts-nocheck
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
   Shield,
@@ -11,12 +10,8 @@ import {
   TrendingUp,
   UserPlus,
   Mail,
-  Clock,
-  CheckCircle2,
-  XCircle,
-  ChevronRight,
 } from "lucide-react";
-import { getDictionary, DIRECTION } from "@/lib/i18n";
+import { DIRECTION } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth-context";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
@@ -38,13 +33,31 @@ interface SellerOpportunitySummary {
   topProducts: Array<{ name: string; count: number }>;
   recent: Array<{
     id: string;
-    product_name: string;
+    product_name: string | null;
     seller_name: string | null;
     status: string | null;
     end_date: string | null;
     seller_id: string | null;
     claim_count: number;
   }>;
+}
+
+interface SellerOpportunityWarranty {
+  id: string;
+  product_name: string | null;
+  seller_name: string | null;
+  status: string | null;
+  end_date: string | null;
+  seller_id: string | null;
+  seller_email?: string | null;
+  recipient_user_id?: string | null;
+  buyer_id?: string | null;
+}
+
+interface SellerClaimSignal {
+  id: string;
+  warranty_id: string;
+  status: string | null;
 }
 
 const statusConfig: Record<string, { color: string; bg: string; dot: string; label: { en: string; ar: string } }> = {
@@ -55,9 +68,7 @@ const statusConfig: Record<string, { color: string; bg: string; dot: string; lab
 
 export default function SellerDashboardPage() {
   const params = useParams() ?? {};
-  const router = useRouter();
   const locale = (params.locale as string) || "en";
-  const dict = getDictionary(locale);
   const isRTL = locale === "ar";
   const direction = DIRECTION[locale as Locale];
   const { user, profile } = useAuth();
@@ -117,7 +128,7 @@ export default function SellerDashboardPage() {
 
       const normalizedEmail = (user.email || "").toLowerCase();
       const companyName = profile?.company_name?.trim() || "";
-      const matchedWarranties = new Map<string, any>();
+      const matchedWarranties = new Map<string, SellerOpportunityWarranty>();
 
       const { data: directWarrantyMatches } = await supabase
         .from("warranties")
@@ -126,7 +137,9 @@ export default function SellerDashboardPage() {
         .order("created_at", { ascending: false })
         .limit(50);
 
-      (directWarrantyMatches || []).forEach((warranty) => matchedWarranties.set(warranty.id, warranty));
+      ((directWarrantyMatches || []) as SellerOpportunityWarranty[]).forEach((warranty) => {
+        matchedWarranties.set(warranty.id, warranty);
+      });
 
       if (companyName) {
         const { data: companyNameMatches } = await supabase
@@ -136,7 +149,9 @@ export default function SellerDashboardPage() {
           .order("created_at", { ascending: false })
           .limit(50);
 
-        (companyNameMatches || []).forEach((warranty) => matchedWarranties.set(warranty.id, warranty));
+        ((companyNameMatches || []) as SellerOpportunityWarranty[]).forEach((warranty) => {
+          matchedWarranties.set(warranty.id, warranty);
+        });
       }
 
       const matchedWarrantyList = Array.from(matchedWarranties.values());
@@ -150,7 +165,7 @@ export default function SellerDashboardPage() {
           .in("warranty_id", warrantyIds);
 
         claimMap = new Map<string, number>();
-        (claimSignals || []).forEach((claim) => {
+        ((claimSignals || []) as SellerClaimSignal[]).forEach((claim) => {
           const current = claimMap.get(claim.warranty_id) || 0;
           claimMap.set(claim.warranty_id, current + 1);
         });
@@ -182,7 +197,7 @@ export default function SellerDashboardPage() {
       setLoading(false);
     };
     fetchData();
-  }, [user, supabase]);
+  }, [profile?.company_name, user, supabase]);
 
   if (loading) {
     return (

@@ -8,6 +8,12 @@ import { useSearchParams, useParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { ProtectedRouteNotice } from '@/components/dashboard/ProtectedRouteNotice';
 
+interface AdminInvitation {
+  email: string;
+  role: string;
+  invited_by_name?: string | null;
+}
+
 function AdminAcceptInviteContent() {
   const searchParams = useSearchParams();
   const token = searchParams?.get('token') ?? null;
@@ -16,7 +22,7 @@ function AdminAcceptInviteContent() {
   const locale = (params?.locale as string) || 'en';
   const isRtl = locale === 'ar';
 
-  const [invitation, setInvitation] = useState<any>(null);
+  const [invitation, setInvitation] = useState<AdminInvitation | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [accepting, setAccepting] = useState(false);
@@ -33,7 +39,7 @@ function AdminAcceptInviteContent() {
     async function loadInvitation() {
       try {
         const res = await fetch(`/api/admin/invitations/accept/${encodeURIComponent(inviteToken)}`);
-        const data = await res.json();
+        const data = (await res.json()) as AdminInvitation & { error?: string };
         if (!res.ok) {
           throw new Error(data.error || 'Invitation not found');
         }
@@ -55,7 +61,7 @@ function AdminAcceptInviteContent() {
       const res = await fetch(`/api/admin/invitations/accept/${encodeURIComponent(token)}`, {
         method: 'POST',
       });
-      const data = await res.json();
+      const data = (await res.json()) as { error?: string };
       if (!res.ok) {
         throw new Error(data.error || 'Failed to accept invitation');
       }
@@ -71,6 +77,10 @@ function AdminAcceptInviteContent() {
     admin: { en: 'Administrator', ar: 'مدير' },
     support: { en: 'Support Agent', ar: 'وكيل دعم' },
     super_admin: { en: 'Super Administrator', ar: 'مدير أعلى' },
+  };
+  const roleLabel = (role: string | undefined, language: 'en' | 'ar') => {
+    if (!role) return roleLabels.admin[language];
+    return roleLabels[role]?.[language] || role;
   };
 
   if (authLoading || loading) {
@@ -123,8 +133,8 @@ function AdminAcceptInviteContent() {
           </h2>
           <p style={{ color: '#64748B', marginBottom: '24px' }}>
             {isRtl
-              ? `تمت ترقية حسابك إلى ${roleLabels[invitation?.role]?.ar || invitation?.role}. يمكنك الآن الوصول إلى لوحة الإدارة.`
-              : `Your account has been upgraded to ${roleLabels[invitation?.role]?.en || invitation?.role}. You now have access to the admin panel.`}
+              ? `تمت ترقية حسابك إلى ${roleLabel(invitation?.role, 'ar')}. يمكنك الآن الوصول إلى لوحة الإدارة.`
+              : `Your account has been upgraded to ${roleLabel(invitation?.role, 'en')}. You now have access to the admin panel.`}
           </p>
           <a
             href={`/${locale}/admin`}
@@ -184,8 +194,8 @@ function AdminAcceptInviteContent() {
             {isRtl ? 'تمت دعوتك من قبل ' : 'You have been invited by '}
             <strong>{invitation?.invited_by_name || (isRtl ? 'مدير' : 'an administrator')}</strong>
             {isRtl
-              ? ` للانضمام كـ ${roleLabels[invitation?.role]?.ar || invitation?.role}`
-              : ` to join as ${roleLabels[invitation?.role]?.en || invitation?.role}`}
+              ? ` للانضمام كـ ${roleLabel(invitation?.role, 'ar')}`
+              : ` to join as ${roleLabel(invitation?.role, 'en')}`}
           </p>
           <p style={{ color: '#64748B', fontSize: '14px' }}>
             {isRtl ? 'البريد: ' : 'Email: '}{invitation?.email}

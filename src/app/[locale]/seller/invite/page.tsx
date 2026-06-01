@@ -1,18 +1,15 @@
-// @ts-nocheck
 "use client";
 
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { useAuth } from "@/lib/auth-context";
-import { getDictionary } from "@/lib/i18n";
 import { ProtectedRouteNotice } from "@/components/dashboard/ProtectedRouteNotice";
 
 export default function SellerInvitePage() {
   const { locale } = useParams() ?? {};
   const router = useRouter();
   const { user } = useAuth();
-  const dict = getDictionary((locale as string) || "en");
   const isRTL = locale === "ar";
   const supabase = createSupabaseBrowserClient();
 

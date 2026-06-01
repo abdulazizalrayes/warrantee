@@ -1,9 +1,10 @@
 'use client';
 
-// @ts-nocheck
 import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
+import { PageViewTracker } from '@/components/PageViewTracker';
+import { trackSellerApplication } from '@/lib/ga4-events';
 
 const supabase = createSupabaseBrowserClient();
 
@@ -37,6 +38,10 @@ export default function SellerRegisterPage() {
   const t = locale === 'ar' ? {
     title: '\u062a\u0633\u062c\u064a\u0644 \u0643\u0628\u0627\u0626\u0639',
     subtitle: '\u0627\u0646\u0636\u0645 \u0625\u0644\u0649 Warrantee \u0648\u0623\u0635\u062f\u0631 \u0636\u0645\u0627\u0646\u0627\u062a \u0631\u0642\u0645\u064a\u0629 \u0644\u0639\u0645\u0644\u0627\u0626\u0643',
+    eyebrow: '\u062a\u0623\u0647\u064a\u0644 \u0627\u0644\u0628\u0627\u0626\u0639',
+    proofOne: '\u0645\u0631\u0627\u062c\u0639\u0629 \u0645\u0646 \u0641\u0631\u064a\u0642 Warrantee',
+    proofTwo: '\u0628\u062f\u0648\u0646 \u0631\u0633\u0648\u0645 \u0625\u0639\u062f\u0627\u062f \u0623\u062b\u0646\u0627\u0621 \u0627\u0644\u0625\u0637\u0644\u0627\u0642',
+    proofThree: '\u062a\u062f\u0641\u0642\u0627\u062a \u0636\u0645\u0627\u0646 \u0639\u0631\u0628\u064a\u0629 \u0648\u0625\u0646\u062c\u0644\u064a\u0632\u064a\u0629',
     step1: '\u0645\u0639\u0644\u0648\u0645\u0627\u062a \u0627\u0644\u0634\u0631\u0643\u0629',
     step2: '\u0645\u0639\u0644\u0648\u0645\u0627\u062a \u0627\u0644\u062a\u0648\u0627\u0635\u0644',
     step3: '\u0633\u064a\u0627\u0633\u0629 \u0627\u0644\u0636\u0645\u0627\u0646',
@@ -60,8 +65,12 @@ export default function SellerRegisterPage() {
     home: '\u0627\u0644\u0639\u0648\u062f\u0629 \u0644\u0644\u0631\u0626\u064a\u0633\u064a\u0629',
     optional: '\u0627\u062e\u062a\u064a\u0627\u0631\u064a',
   } : {
-    title: 'Seller Registration',
-    subtitle: 'Join Warrantee and issue digital warranties for your customers',
+    title: 'Become a Warrantee seller',
+    subtitle: 'Apply once to activate digital warranty issuing, extension offers, and claim visibility for your customers.',
+    eyebrow: 'Seller onboarding',
+    proofOne: 'Reviewed by the Warrantee team',
+    proofTwo: 'No setup fee during launch pilot',
+    proofThree: 'Arabic and English warranty flows',
     step1: 'Company Info',
     step2: 'Contact Details',
     step3: 'Warranty Policy',
@@ -135,6 +144,11 @@ export default function SellerRegisterPage() {
         console.warn('Seller lead sync failed');
       }
 
+      trackSellerApplication({
+        locale,
+        industry: data.industry,
+        has_website: Boolean(data.website),
+      });
       setSubmitted(true);
     } catch (err) {
       console.error(err);
@@ -150,6 +164,7 @@ export default function SellerRegisterPage() {
 
   if (submitted) return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-emerald-50 via-white to-teal-50" dir={isRTL ? 'rtl' : 'ltr'}>
+      <PageViewTracker pageName="seller_application_submitted" pageType="conversion" locale={locale} />
       <div className="text-center max-w-md">
         <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4"><svg className="w-8 h-8 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg></div>
         <h2 className="text-xl font-bold text-gray-900 mb-2">{t.successTitle}</h2>
@@ -161,10 +176,19 @@ export default function SellerRegisterPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50 py-12 px-4" dir={isRTL ? 'rtl' : 'ltr'}>
+      <PageViewTracker pageName="seller_registration" pageType="seller_onboarding" locale={locale} extra={{ step }} />
       <div className="max-w-lg mx-auto">
         <div className="text-center mb-8">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">{t.eyebrow}</p>
           <h1 className="text-2xl font-bold text-gray-900">{t.title}</h1>
           <p className="text-gray-600 mt-2">{t.subtitle}</p>
+          <div className="mt-5 grid grid-cols-1 gap-2 text-start sm:grid-cols-3">
+            {[t.proofOne, t.proofTwo, t.proofThree].map((proof) => (
+              <div key={proof} className="rounded-xl border border-emerald-100 bg-white/70 px-3 py-2 text-xs font-medium text-gray-700 shadow-sm">
+                {proof}
+              </div>
+            ))}
+          </div>
         </div>
 
         <div className="flex items-center justify-center gap-2 mb-8">

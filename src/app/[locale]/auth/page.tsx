@@ -1,4 +1,3 @@
-// @ts-nocheck
 "use client";
 
 import { useEffect, useState } from "react";
@@ -149,12 +148,12 @@ export default function AuthPage() {
                   {isRTL ? "بوابة الدخول" : "Access portal"}
                 </p>
                 <h1 className="text-[34px] font-semibold tracking-tight sm:text-[48px]">
-                  {isRTL ? "ادخل إلى تجربة ضمان تبدو مكتملة فعلًا" : "Enter a warranty experience that feels complete"}
+                  {isRTL ? "ادخل إلى تجربة ضمان تبدو مكتملة فعلًا" : "Access your warranty workspace"}
                 </h1>
                 <p className="mt-4 max-w-xl text-[16px] leading-7 text-white/70 sm:text-[18px]">
                   {isRTL
                     ? "يجب أن تكون بوابة الدخول بنفس جودة المنتج نفسه: واضحة، مطمئنة، راقية، وسهلة للأفراد والشركات على حد سواء."
-                    : "The entry point should feel as considered as the product itself: calm, trustworthy, premium, and easy for both individuals and businesses."}
+                    : "Sign in to upload receipts, manage warranty records, approve business requests, file claims, and keep proof ready when you need it."}
                 </p>
               </div>
 
