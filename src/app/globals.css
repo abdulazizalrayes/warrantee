@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+@theme {
+  --color-navy: #1d1d1f;
+  --color-gold: #0071e3;
+  --color-warm-white: #fbfbfd;
+}
+
 @layer base {
   :root {
     --color-primary: #1d1d1f;

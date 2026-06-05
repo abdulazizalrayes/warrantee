@@ -1,8 +1,6 @@
-// @ts-nocheck
 "use client";
 
 import { use, useState, useEffect } from "react";
-import { getDictionary } from "@/lib/i18n";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 const supabase = createSupabaseBrowserClient();

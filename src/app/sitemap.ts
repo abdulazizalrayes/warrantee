@@ -1,8 +1,8 @@
 import { MetadataRoute } from 'next'
+import { LOCALES } from '@/lib/i18n'
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = 'https://warrantee.io'
-  const locales = ['en', 'ar']
 
   // Only include publicly accessible pages (no auth required)
   const publicPages = [
@@ -28,11 +28,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   const entries: MetadataRoute.Sitemap = []
 
-  for (const locale of locales) {
+  for (const locale of LOCALES) {
     for (const page of publicPages) {
       entries.push({
         url: `${baseUrl}/${locale}${page.path}`,
-        lastModified: new Date(),
         changeFrequency: page.changeFreq,
         priority: page.priority,
         alternates: {

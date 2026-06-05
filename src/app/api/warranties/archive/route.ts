@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
       success: true,
       message: 'Warranty and related claims archived successfully',
     });
-  } catch (err) {
+  } catch {
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -197,7 +197,7 @@ export async function PATCH(request: NextRequest) {
       success: true,
       message: 'Warranty and related claims restored successfully',
     });
-  } catch (err) {
+  } catch {
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

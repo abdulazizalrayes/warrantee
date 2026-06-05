@@ -1,8 +1,7 @@
-// @ts-nocheck
 'use client';
 
-import { useState, useEffect } from 'react';
-import { createClient } from '@/lib/supabase-client';
+import { useCallback, useEffect, useState } from 'react';
+import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
 
 type CoverageType = 'duration' | 'mileage' | 'usage_hours' | 'event_count' | 'custom';
 
@@ -81,7 +80,7 @@ function getProgressColor(percent: number, isExpired: boolean): string {
 export function CoverageItemsDisplay({ warrantyId }: { warrantyId: string }) {
   const [items, setItems] = useState<CoverageItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const supabase = createClient();
+  const supabase = createSupabaseBrowserClient();
 
   useEffect(() => {
     async function load() {
@@ -94,7 +93,7 @@ export function CoverageItemsDisplay({ warrantyId }: { warrantyId: string }) {
       setLoading(false);
     }
     load();
-  }, [warrantyId]);
+  }, [supabase, warrantyId]);
 
   if (loading) {
     return (
@@ -225,7 +224,7 @@ export function CoverageItemsEditor({
   defaultEndDate?: string;
 }) {
   const [items, setItems] = useState<CoverageItemDraft[]>([]);
-  const supabase = createClient();
+  const supabase = createSupabaseBrowserClient();
 
   useEffect(() => {
     if (warrantyId) {
@@ -234,10 +233,11 @@ export function CoverageItemsEditor({
         .select('*')
         .eq('warranty_id', warrantyId)
         .order('sort_order')
-        .then(({ data }) => {
+        .then((result: { data: CoverageItem[] | null }) => {
+          const { data } = result;
           if (data && data.length > 0) {
             setItems(
-              data.map((d: any) => ({
+              data.map((d: CoverageItem) => ({
                 id: d.id,
                 component_name: d.component_name || '',
                 component_name_ar: d.component_name_ar || '',
@@ -254,7 +254,7 @@ export function CoverageItemsEditor({
           }
         });
     }
-  }, [warrantyId]);
+  }, [supabase, warrantyId]);
 
   function addItem() {
     setItems([...items, { ...EMPTY_ITEM, start_date: defaultStartDate || '', end_date: defaultEndDate || '' }]);
@@ -268,7 +268,7 @@ export function CoverageItemsEditor({
     setItems(items.map((item, i) => (i === index ? { ...item, [field]: value } : item)));
   }
 
-  async function saveItems(targetWarrantyId: string) {
+  const saveItems = useCallback(async (targetWarrantyId: string) => {
     // Delete existing items for this warranty
     await supabase.from('warranty_coverage_items').delete().eq('warranty_id', targetWarrantyId);
 
@@ -290,13 +290,16 @@ export function CoverageItemsEditor({
     }));
 
     await supabase.from('warranty_coverage_items').insert(rows);
-  }
+  }, [items, supabase]);
 
   // Expose saveItems via a data attribute so parent forms can call it
   useEffect(() => {
-    (window as any).__coverageItemsSave = saveItems;
-    return () => { delete (window as any).__coverageItemsSave; };
-  }, [items]);
+    const coverageWindow = window as Window & {
+      __coverageItemsSave?: (targetWarrantyId: string) => Promise<void>;
+    };
+    coverageWindow.__coverageItemsSave = saveItems;
+    return () => { delete coverageWindow.__coverageItemsSave; };
+  }, [saveItems]);
 
   return (
     <div className="space-y-4">

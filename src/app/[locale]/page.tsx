@@ -1,4 +1,3 @@
-// @ts-nocheck
 import type { Metadata } from 'next';
 import { getDictionary, Locale, DIRECTION } from '@/lib/i18n';
 import { Navbar } from '@/components/Navbar';
@@ -7,6 +6,7 @@ import { buildPageMetadata } from '@/lib/page-metadata';
 import {
   Shield, Bell, FileCheck, BarChart3, Mail, Link2,
   Clock, CheckCircle, ArrowRight, Globe, ChevronRight,
+  BadgeCheck, KeyRound, QrCode, TrendingUp, Workflow,
 } from 'lucide-react';
 
 interface HomePageProps {
@@ -138,6 +138,104 @@ export default async function HomePage({ params }: HomePageProps) {
             </div>
           </div>
         </section>
+
+        {/* Product Passport Loop */}
+        <section className="py-20 px-4 sm:px-6">
+          <div className="max-w-[980px] mx-auto">
+            <div className="grid gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
+              <div>
+                <p className="text-[13px] font-semibold uppercase tracking-[0.18em] text-[#0071e3]">
+                  {locale === 'en' ? 'Post-purchase trust loop' : 'حلقة الثقة بعد الشراء'}
+                </p>
+                <h2 className="mt-3 text-[32px] sm:text-[40px] font-semibold leading-tight tracking-tight text-[#1d1d1f]">
+                  {locale === 'en'
+                    ? 'Turn every warranty into a verified product passport.'
+                    : 'حوّل كل ضمان إلى جواز منتج موثق.'}
+                </h2>
+                <p className="mt-4 text-[17px] leading-relaxed text-[#86868b]">
+                  {locale === 'en'
+                    ? 'Buyers scan once to confirm authenticity, open the certificate, file a claim, or request extension. Sellers keep the relationship alive after the sale.'
+                    : 'يمسح العميل مرة واحدة للتحقق من الأصالة، فتح الشهادة، تقديم مطالبة، أو طلب تمديد. ويبقى البائع متصلاً بالعميل بعد البيع.'}
+                </p>
+                <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                  <a
+                    href={`/${locale}/seller/register`}
+                    className="inline-flex items-center justify-center rounded-full bg-[#0071e3] px-6 py-3 text-[15px] font-medium text-white transition-colors hover:bg-[#0077ED]"
+                  >
+                    {locale === 'en' ? 'Start issuing warranties' : 'ابدأ إصدار الضمانات'}
+                    <ChevronRight className="w-4 h-4 ml-1.5" />
+                  </a>
+                  <a
+                    href={`/${locale}/api-docs`}
+                    className="inline-flex items-center justify-center rounded-full border border-[#d2d2d7] px-6 py-3 text-[15px] font-medium text-[#1d1d1f] transition-colors hover:bg-[#f5f5f7]"
+                  >
+                    {locale === 'en' ? 'View API options' : 'عرض خيارات API'}
+                  </a>
+                </div>
+              </div>
+
+              <div className="grid gap-4">
+                {[
+                  {
+                    icon: QrCode,
+                    title: locale === 'en' ? 'Scannable verification' : 'تحقق قابل للمسح',
+                    desc: locale === 'en'
+                      ? 'Each certificate and warranty page points to a live verification record instead of a static PDF.'
+                      : 'كل شهادة وصفحة ضمان تقود إلى سجل تحقق مباشر بدلاً من ملف ثابت.',
+                  },
+                  {
+                    icon: Workflow,
+                    title: locale === 'en' ? 'Claims and extension path' : 'مسار المطالبات والتمديد',
+                    desc: locale === 'en'
+                      ? 'The same passport routes buyers into claims and extension requests with the right context already attached.'
+                      : 'نفس جواز المنتج يوجّه العميل إلى المطالبات وطلبات التمديد مع السياق الصحيح.',
+                  },
+                  {
+                    icon: KeyRound,
+                    title: locale === 'en' ? 'API-ready for operations' : 'جاهز للتكامل التشغيلي',
+                    desc: locale === 'en'
+                      ? 'Registered users can connect ERP, ecommerce, and support workflows through scoped, rate-limited API tokens.'
+                      : 'يمكن للمستخدمين المسجلين ربط ERP والمتاجر والدعم عبر رموز API محددة الصلاحيات ومحدودة الطلبات.',
+                  },
+                ].map((item) => (
+                  <div key={item.title} className="rounded-2xl border border-black/[0.06] bg-white p-5 shadow-sm">
+                    <div className="flex items-start gap-4">
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#0071e3]/10">
+                        <item.icon className="h-5 w-5 text-[#0071e3]" aria-hidden="true" />
+                      </div>
+                      <div>
+                        <h3 className="text-[17px] font-semibold text-[#1d1d1f]">{item.title}</h3>
+                        <p className="mt-1 text-[15px] leading-relaxed text-[#86868b]">{item.desc}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-10 grid gap-4 rounded-2xl bg-[#f5f5f7] p-5 sm:grid-cols-3">
+              {[
+                {
+                  icon: BadgeCheck,
+                  label: locale === 'en' ? 'Verified proof at point of service' : 'إثبات موثق وقت الخدمة',
+                },
+                {
+                  icon: TrendingUp,
+                  label: locale === 'en' ? 'Extension demand becomes revenue signal' : 'طلب التمديد يتحول إلى إشارة إيراد',
+                },
+                {
+                  icon: Shield,
+                  label: locale === 'en' ? 'Support teams see fewer blind disputes' : 'فرق الدعم تقلل النزاعات غير الواضحة',
+                },
+              ].map((proof) => (
+                <div key={proof.label} className="flex items-start gap-3">
+                  <proof.icon className="mt-0.5 h-5 w-5 shrink-0 text-[#0071e3]" aria-hidden="true" />
+                  <p className="text-[14px] font-medium leading-relaxed text-[#1d1d1f]">{proof.label}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
         {/* How It Works */}
         <section id="how-it-works" className="py-20 px-4 sm:px-6 bg-[#f5f5f7]">
           <div className="max-w-[980px] mx-auto">
@@ -232,7 +330,7 @@ export default async function HomePage({ params }: HomePageProps) {
                 >
                   {idx === 1 && (
                     <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-[#0071e3] text-white px-4 py-1 rounded-full text-[11px] font-medium">
-                      {locale === 'en' ? 'First year free' : '\u0627\u0644\u0633\u0646\u0629 \u0627\u0644\u0623\u0648\u0644\u0649 \u0645\u062c\u0627\u0646\u064a\u0629'}
+                      {locale === 'en' ? 'First month free' : '\u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u0623\u0648\u0644 \u0645\u062c\u0627\u0646\u064a'}
                     </div>
                   )}
                   <div className="mb-6">

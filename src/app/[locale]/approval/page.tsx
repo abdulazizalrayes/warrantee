@@ -1,10 +1,8 @@
-// @ts-nocheck
 'use client';
 
-import { Suspense } from 'react';
-import { useEffect, useMemo, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
 import { useAuth } from '@/lib/auth-context';
 import { trackApprovalAction } from '@/lib/ga4-events';
@@ -108,7 +106,6 @@ function formatDate(value: string, locale: string) {
 
 function ApprovalPageInner() {
   const params = useParams() ?? {};
-  const router = useRouter();
   const searchParams = useSearchParams();
   const locale = (params?.locale as string) || 'en';
   const isRTL = locale === 'ar';
@@ -136,7 +133,7 @@ function ApprovalPageInner() {
     return null;
   };
 
-  const fetchItems = async () => {
+  const fetchItems = useCallback(async () => {
     if (!user) return;
     setLoading(true);
     setLoadError(null);
@@ -171,7 +168,7 @@ function ApprovalPageInner() {
       clearTimeout(timeout);
       setLoading(false);
     }
-  };
+  }, [canApprove, supabase, t.loadFailed, user]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -182,7 +179,7 @@ function ApprovalPageInner() {
       return;
     }
     fetchItems();
-  }, [authLoading, user, profile?.role, statusFilter]);
+  }, [authLoading, user, profile?.role, statusFilter, fetchItems]);
 
   const approveItem = async (id: string) => {
     setProcessingId(id);

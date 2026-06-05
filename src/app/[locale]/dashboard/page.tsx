@@ -1,4 +1,3 @@
-// @ts-nocheck
 "use client";
 
 import { useState, useEffect } from "react";
@@ -173,7 +172,7 @@ export default function DashboardPage() {
 
           <div className="grid gap-3 sm:grid-cols-3 lg:w-[440px]">
             <Link href={`/${locale}/warranties/new`} className="rounded-2xl border border-white/10 bg-white/5 p-4 transition hover:bg-white/10">
-              <Plus size={18} className="text-[#f5d76e]" />
+              <Plus size={18} className="text-[#0071e3]" />
               <p className="mt-3 text-[13px] font-medium">{isRTL ? "إضافة ضمان" : "Create warranty"}</p>
               <p className="mt-1 text-[12px] text-white/60">{isRTL ? "إدخال يدوي كامل مع مستندات" : "Full manual entry with documents"}</p>
             </Link>

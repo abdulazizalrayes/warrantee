@@ -22,6 +22,7 @@ export async function GET(
       .from("warranties")
       .select("*, warranty_documents(*), warranty_claims(*)")
       .eq("id", id)
+      .is("deleted_at", null)
       .or(buildWarrantyAccessOrClause(user.id))
       .single();
 
@@ -30,7 +31,7 @@ export async function GET(
     }
 
     return NextResponse.json({ data });
-  } catch (err) {
+  } catch {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
@@ -52,6 +53,7 @@ export async function PATCH(
       .from("warranties")
       .select("id, user_id, created_by, seller_id, issuer_user_id")
       .eq("id", id)
+      .is("deleted_at", null)
       .or(buildWarrantyAccessOrClause(user.id))
       .single();
 
@@ -108,7 +110,7 @@ export async function PATCH(
     }
 
     return NextResponse.json({ data });
-  } catch (err) {
+  } catch {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
@@ -130,6 +132,7 @@ export async function DELETE(
       .from("warranties")
       .select("id, user_id, created_by, seller_id, issuer_user_id")
       .eq("id", id)
+      .is("deleted_at", null)
       .or(buildWarrantyAccessOrClause(user.id))
       .single();
 
@@ -147,14 +150,15 @@ export async function DELETE(
     const { error } = await supabase
       .from("warranties")
       .update({ deleted_at: new Date().toISOString(), updated_at: new Date().toISOString() })
-      .eq("id", id);
+      .eq("id", id)
+      .is("deleted_at", null);
 
     if (error) {
       return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });
-  } catch (err) {
+  } catch {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

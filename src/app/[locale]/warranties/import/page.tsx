@@ -138,7 +138,7 @@ export default function ImportWarrantiesPage() {
         </h2>
         <button
           onClick={() => router.push(`/${locale}/warranties`)}
-          className="mt-4 bg-gold hover:bg-yellow-500 text-navy font-semibold py-3 px-6 rounded-lg transition"
+          className="mt-4 bg-[#0071e3] hover:bg-[#0077ED] text-white font-semibold py-3 px-6 rounded-lg transition"
         >
           {isRTL ? "\u0639\u0631\u0636 \u0627\u0644\u0636\u0645\u0627\u0646\u0627\u062A" : "View Warranties"}
         </button>
@@ -161,7 +161,7 @@ export default function ImportWarrantiesPage() {
       >
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:w-[420px]">
             <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-              <FileSpreadsheet className="mb-3 h-5 w-5 text-[#f5d76e]" />
+              <FileSpreadsheet className="mb-3 h-5 w-5 text-[#0071e3]" />
               <p className="text-[13px] font-medium">{isRTL ? "ملف واحد" : "Single source file"}</p>
               <p className="mt-1 text-[12px] text-white/60">{isRTL ? "CSV فقط لتدفق واضح وقابل للتدقيق" : "CSV-only for a clear, auditable workflow"}</p>
             </div>
@@ -255,7 +255,7 @@ export default function ImportWarrantiesPage() {
             <button
               onClick={handleImport}
               disabled={importing}
-              className="mt-4 w-full bg-gold hover:bg-yellow-500 text-navy font-semibold py-3 rounded-full transition disabled:opacity-50 disabled:cursor-not-allowed"
+              className="mt-4 w-full bg-[#0071e3] hover:bg-[#0077ED] text-white font-semibold py-3 rounded-full transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {importing
                 ? `${isRTL ? "\u062C\u0627\u0631\u064A \u0627\u0644\u0627\u0633\u062A\u064A\u0631\u0627\u062F..." : "Importing..."} (${imported}/${parsedData.length})`

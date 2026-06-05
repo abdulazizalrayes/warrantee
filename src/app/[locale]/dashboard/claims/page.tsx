@@ -1,6 +1,5 @@
-// @ts-nocheck
 'use client';
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
@@ -32,13 +31,14 @@ export default function ClaimsListPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [pg, setPg] = useState(0);
   const PS = 20;
   const t = isRTL
     ? {title:'المطالبات',search:'بحث...',none:'لا توجد مطالبات',noneD:'لم يتم العثور على مطالبات',empty:'لا توجد مطالبات بعد',emptyD:'ستظهر مطالباتك هنا',war:'الضمان',sev:'الخطورة',filed:'تاريخ',stat:'الحالة',prev:'السابق',next:'التالي',back:'العودة',all:'الكل',err:'حدث خطأ',retry:'إعادة'}
     : {title:'Claims',search:'Search claims...',none:'No claims found',noneD:'No claims match your filters.',empty:'No claims yet',emptyD:'File a claim from a warranty to see it here.',war:'Warranty',sev:'Severity',filed:'Filed',stat:'Status',prev:'Previous',next:'Next',back:'Back to Dashboard',all:'All',err:'Something went wrong',retry:'Retry'};
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true); setError('');
     try {
       if (!user) {
@@ -58,22 +58,25 @@ export default function ClaimsListPage() {
         q = q.eq('filed_by', user.id);
       }
       if (statusFilter !== 'all') q = q.eq('status', statusFilter);
-      if (search.trim()) q = q.or('title.ilike.%'+search+'%,claim_number.ilike.%'+search+'%');
+      if (debouncedSearch.trim()) q = q.or('title.ilike.%'+debouncedSearch+'%,claim_number.ilike.%'+debouncedSearch+'%');
       const { data, error: e } = await q;
       if (e) throw e;
       setClaims(data || []);
     } catch (e: any) { setError(e.message); }
     setLoading(false);
-  };
+  }, [debouncedSearch, pg, statusFilter, supabase, user]);
   useEffect(() => {
     if (authLoading) return;
     load();
-  }, [authLoading, user, statusFilter, pg]);
+  }, [authLoading, load]);
   useEffect(() => {
     if (authLoading) return;
-    const tm = setTimeout(() => { setPg(0); load(); }, 300);
+    const tm = setTimeout(() => {
+      setPg(0);
+      setDebouncedSearch(search);
+    }, 300);
     return () => clearTimeout(tm);
-  }, [authLoading, user, search]);
+  }, [authLoading, search]);
   const fmtD = (d: string) => d ? new Date(d).toLocaleDateString(isRTL?'ar-SA':'en-US',{year:'numeric',month:'short',day:'numeric'}) : '-';
   const Badge = ({s}: {s:string}) => { const c = statusCfg[s]||statusCfg.draft; return <span className={'px-2.5 py-1 rounded-full text-xs font-medium '+c.bg+' '+c.tx}>{isRTL?c.a:c.l}</span>; };
   if (error) return (<div className="min-h-[60vh] flex items-center justify-center" dir={isRTL?'rtl':'ltr'}><div className="text-center"><p className="text-red-600 mb-2">{t.err}</p><p className="text-sm text-gray-500 mb-4">{error}</p><button onClick={load} className="px-4 py-2 bg-[#4169E1] text-white rounded-lg text-sm">{t.retry}</button></div></div>);

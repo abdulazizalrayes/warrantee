@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { getClientIp, getRateLimitHeaders, rateLimit } from "@/lib/rate-limit";
+import { buildWarrantyAccessOrClause } from "@/lib/warranty-access";
 
 async function getAuthorizedWarranty(warrantyId: string) {
   const supabase = await createServerSupabaseClient();
@@ -16,7 +18,7 @@ async function getAuthorizedWarranty(warrantyId: string) {
     .from("warranties")
     .select("*")
     .eq("id", warrantyId)
-    .eq("user_id", user.id)
+    .or(buildWarrantyAccessOrClause(user.id))
     .single();
 
   if (error || !warranty) {
@@ -28,6 +30,18 @@ async function getAuthorizedWarranty(warrantyId: string) {
 
 export async function POST(request: NextRequest) {
   try {
+    const rateLimitResult = await rateLimit(getClientIp(request), {
+      maxRequests: 6,
+      windowMs: 10 * 60 * 1000,
+      identifier: "whatsapp",
+    });
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { error: "Too many requests" },
+        { status: 429, headers: getRateLimitHeaders(rateLimitResult) }
+      );
+    }
+
     const body = await request.json();
     const { warranty_id, phone, message_type } = body;
 
@@ -101,7 +115,7 @@ export async function POST(request: NextRequest) {
       message: "WhatsApp integration not configured. Set TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_WHATSAPP_NUMBER environment variables.",
       preview: { phone, messageText },
     });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

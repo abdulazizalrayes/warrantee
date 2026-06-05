@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -38,6 +37,24 @@ interface AnalyticsData {
   statusBreakdown: { status: string; count: number }[];
   topSuppliers: { supplier: string; count: number }[];
   coverageValue: number;
+}
+
+interface AnalyticsWarranty {
+  id: string;
+  status?: string | null;
+  start_date?: string | null;
+  end_date?: string | null;
+  created_at?: string | null;
+  category?: string | null;
+  seller_name?: string | null;
+  purchase_price?: string | number | null;
+}
+
+interface AnalyticsClaim {
+  id: string;
+  status?: string | null;
+  warranty_id?: string | null;
+  created_at?: string | null;
 }
 
 const translations = {
@@ -160,10 +177,12 @@ export default function AnalyticsPage() {
         return;
       }
 
-      const warrantyIds = (warranties || []).map((w) => w.id);
+      const warrantyRows = (warranties || []) as AnalyticsWarranty[];
+      const warrantyIds = warrantyRows.map((w) => w.id);
       const { data: claims, error: claimsError } = warrantyIds.length > 0
         ? await supabase.from('warranty_claims').select('id, status, warranty_id, created_at').in('warranty_id', warrantyIds)
         : { data: [], error: null };
+      const claimRows = (claims || []) as AnalyticsClaim[];
 
       if (claimsError) {
         console.warn('Analytics claims query warning:', claimsError);
@@ -171,21 +190,21 @@ export default function AnalyticsPage() {
 
       const now = new Date();
       const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-      const active = warranties.filter(w => {
+      const active = warrantyRows.filter((w) => {
         const end = parseDate(w.end_date);
         return end ? end > now : false;
       });
-      const expired = warranties.filter(w => {
+      const expired = warrantyRows.filter((w) => {
         const end = parseDate(w.end_date);
         return end ? end <= now : false;
       });
-      const expiringThisMonth = warranties.filter(w => {
+      const expiringThisMonth = warrantyRows.filter((w) => {
         const end = parseDate(w.end_date);
         if (!end) return false;
         return end > now && end <= endOfMonth;
       });
 
-      const durations = warranties.map(w => {
+      const durations = warrantyRows.map((w) => {
         const start = parseDate(w.start_date);
         const end = parseDate(w.end_date);
         if (!start || !end) return null;
@@ -195,7 +214,7 @@ export default function AnalyticsPage() {
         ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length) : 0;
 
       const catMap: Record<string, number> = {};
-      warranties.forEach(w => {
+      warrantyRows.forEach((w) => {
         const cat = w.category || 'Uncategorized';
         catMap[cat] = (catMap[cat] || 0) + 1;
       });
@@ -204,7 +223,7 @@ export default function AnalyticsPage() {
         .sort((a, b) => b.count - a.count);
 
       const statusMap: Record<string, number> = {};
-      warranties.forEach(w => {
+      warrantyRows.forEach((w) => {
         const status = w.status || 'active';
         statusMap[status] = (statusMap[status] || 0) + 1;
       });
@@ -216,12 +235,12 @@ export default function AnalyticsPage() {
         const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
         const monthEnd = new Date(d.getFullYear(), d.getMonth() + 1, 0);
         const monthStr = d.toLocaleDateString(locale === 'ar' ? 'ar-SA' : 'en-US', { month: 'short', year: '2-digit' });
-        const created = warranties.filter(w => {
+        const created = warrantyRows.filter((w) => {
           const cd = parseDate(w.created_at);
           if (!cd) return false;
           return cd >= d && cd <= monthEnd;
         }).length;
-        const expiredCount = warranties.filter(w => {
+        const expiredCount = warrantyRows.filter((w) => {
           const ed = parseDate(w.end_date);
           if (!ed) return false;
           return ed >= d && ed <= monthEnd;
@@ -230,22 +249,22 @@ export default function AnalyticsPage() {
       }
 
       const suppMap: Record<string, number> = {};
-      warranties.forEach(w => {
+      warrantyRows.forEach((w) => {
         if (w.seller_name) suppMap[w.seller_name] = (suppMap[w.seller_name] || 0) + 1;
       });
       const topSuppliers = Object.entries(suppMap)
         .map(([supplier, count]) => ({ supplier, count }))
         .sort((a, b) => b.count - a.count).slice(0, 5);
 
-      const coverageValue = warranties.reduce((sum, w) => sum + (parseFloat(w.purchase_price) || 0), 0);
+      const coverageValue = warrantyRows.reduce((sum, w) => sum + (Number(w.purchase_price) || 0), 0);
 
       setData({
-        totalWarranties: warranties.length,
+        totalWarranties: warrantyRows.length,
         activeWarranties: active.length,
         expiredWarranties: expired.length,
         expiringThisMonth: expiringThisMonth.length,
-        totalClaims: claims?.length || 0,
-        pendingClaims: claims?.filter(c => c.status === 'pending').length || 0,
+        totalClaims: claimRows.length,
+        pendingClaims: claimRows.filter((c) => c.status === 'pending').length,
         avgWarrantyDuration: avgDuration,
         categoryBreakdown, monthlyTrend, statusBreakdown, topSuppliers, coverageValue,
       });

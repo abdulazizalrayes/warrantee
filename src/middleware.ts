@@ -20,12 +20,17 @@ function applySecurityHeaders(response: NextResponse, hasAgentRouteInfo = false)
     "Strict-Transport-Security",
     "max-age=31536000; includeSubDomains",
   );
-  response.headers.append("Vary", "Accept");
+  response.headers.set("Vary", "Accept");
 
   if (hasAgentRouteInfo) {
     response.headers.set("Link", buildDiscoveryLinkHeader());
   }
 
+  return response;
+}
+
+function applyNoIndexHeader(response: NextResponse) {
+  response.headers.set("X-Robots-Tag", "noindex, nofollow");
   return response;
 }
 
@@ -97,6 +102,14 @@ export async function middleware(request: NextRequest) {
     (prefix) =>
       normalizedPathname === prefix || normalizedPathname.startsWith(`${prefix}/`)
   ) && !isPublicAppPath;
+  const isAuthArea =
+    normalizedPathname === "/auth" ||
+    normalizedPathname.startsWith("/auth/");
+  const shouldNoIndexPath =
+    isProtectedAppArea ||
+    isAdminArea ||
+    isApprovalArea ||
+    isAuthArea;
 
   if (
     request.method === "GET" &&
@@ -116,7 +129,7 @@ export async function middleware(request: NextRequest) {
           "Referrer-Policy": "strict-origin-when-cross-origin",
           "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
           "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
-          "X-Frame-Options": "SAMEORIGIN",
+          "X-Frame-Options": "DENY",
           "X-XSS-Protection": "1; mode=block",
           "X-DNS-Prefetch-Control": "on",
         },
@@ -176,6 +189,7 @@ export async function middleware(request: NextRequest) {
     pathname === "/auth/callback" ||
     pathname.match(/^\/(en|ar)\/auth\/callback/)
   ) {
+    applyNoIndexHeader(response);
     return response;
   }
 
@@ -223,6 +237,10 @@ export async function middleware(request: NextRequest) {
       const url = buildCleanRedirectUrl(request, "/" + locale + "/dashboard");
       return NextResponse.redirect(url);
     }
+  }
+
+  if (shouldNoIndexPath) {
+    applyNoIndexHeader(response);
   }
 
   return response;

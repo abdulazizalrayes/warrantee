@@ -1,4 +1,3 @@
-// @ts-nocheck
 "use client";
 
 import { useState, useEffect } from "react";
@@ -22,6 +21,15 @@ import {
   Users,
 } from "lucide-react";
 
+const SETTING_SECTION_IDS = [
+  "profile",
+  "notifications",
+  "team",
+  "language",
+  "subscription",
+  "security",
+] as const;
+
 export default function SettingsPage() {
   const params = useParams() ?? {};
   const router = useRouter();
@@ -42,7 +50,6 @@ export default function SettingsPage() {
   const [error, setError] = useState("");
   const [activeSection, setActiveSection] = useState("profile");
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [deleteConfirmInput, setDeleteConfirmInput] = useState("");
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
@@ -88,7 +95,6 @@ export default function SettingsPage() {
   };
 
   const handleDeleteAccount = async () => {
-    if (deleteConfirmInput !== "DELETE") return;
     setDeleting(true);
     try {
       setShowDeleteModal(false);
@@ -111,6 +117,16 @@ export default function SettingsPage() {
     { id: "subscription", label: isRTL ? "\u0627\u0644\u0627\u0634\u062a\u0631\u0627\u0643" : "Subscription", icon: CreditCard },
     { id: "security", label: isRTL ? "\u0627\u0644\u0623\u0645\u0627\u0646" : "Security", icon: Shield },
   ];
+
+  useEffect(() => {
+    const section =
+      typeof window === "undefined"
+        ? null
+        : new URLSearchParams(window.location.search).get("section");
+    if (section && SETTING_SECTION_IDS.includes(section as (typeof SETTING_SECTION_IDS)[number])) {
+      setActiveSection(section);
+    }
+  }, []);
 
   return (
     <div dir={direction} className="min-h-[80vh]">
@@ -432,7 +448,7 @@ export default function SettingsPage() {
                     <span className="text-[13px] font-medium text-white/60 uppercase tracking-wide">
                       {isRTL ? "\u0627\u0644\u062e\u0637\u0629" : "Plan"}
                     </span>
-                    <span className="text-[13px] font-medium bg-[#D4A853] text-[#1A1A2E] px-3 py-1 rounded-full">
+                    <span className="text-[13px] font-medium bg-[#0071e3] text-white px-3 py-1 rounded-full">
                       {isRTL ? "\u0646\u0634\u0637" : "Active"}
                     </span>
                   </div>
@@ -492,7 +508,7 @@ export default function SettingsPage() {
                       </div>
                     </div>
                     <button
-                      onClick={() => { setShowDeleteModal(true); setDeleteConfirmInput(""); }}
+                      onClick={() => setShowDeleteModal(true)}
                       className="text-[13px] font-medium text-[#ff3b30] hover:text-[#d70015] transition-colors"
                     >
                       {isRTL ? "\u062e\u0631\u0648\u062c" : "Sign Out"}
@@ -505,7 +521,7 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* Delete Account Confirmation Modal */}
+      {/* Sign Out Confirmation Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-8" dir={direction}>
@@ -519,16 +535,9 @@ export default function SettingsPage() {
             </h2>
             <p className="text-[15px] text-[#86868b] text-center mb-6">
               {isRTL
-                ? 'سننهي الجلسة الحالية فقط. اكتب "DELETE" للتأكيد.'
-                : 'This only ends your current session. Type DELETE to confirm.'}
+                ? "\u0633\u0646\u0646\u0647\u064a \u0627\u0644\u062c\u0644\u0633\u0629 \u0627\u0644\u062d\u0627\u0644\u064a\u0629 \u0641\u0642\u0637. \u0644\u0646 \u064a\u062a\u0645 \u062d\u0630\u0641 \u062d\u0633\u0627\u0628\u0643 \u0623\u0648 \u0628\u064a\u0627\u0646\u0627\u062a\u0643."
+                : "This only ends your current session. Your account and data will not be deleted."}
             </p>
-            <input
-              type="text"
-              value={deleteConfirmInput}
-              onChange={e => setDeleteConfirmInput(e.target.value)}
-              placeholder="DELETE"
-              className="w-full px-4 py-2.5 border border-[#d2d2d7] rounded-xl text-[15px] mb-4 focus:outline-none focus:ring-2 focus:ring-[#ff3b30]/30 focus:border-[#ff3b30]"
-            />
             <div className="flex gap-3">
               <button
                 onClick={() => setShowDeleteModal(false)}
@@ -538,7 +547,7 @@ export default function SettingsPage() {
               </button>
               <button
                 onClick={handleDeleteAccount}
-                disabled={deleteConfirmInput !== "DELETE" || deleting}
+                disabled={deleting}
                 className="flex-1 px-4 py-2.5 bg-[#ff3b30] text-white rounded-xl text-[15px] font-medium hover:bg-[#d70015] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {deleting ? "..." : (isRTL ? "خروج" : "Sign Out")}

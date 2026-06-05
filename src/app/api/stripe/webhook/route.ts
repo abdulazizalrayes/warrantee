@@ -1,17 +1,21 @@
-// @ts-nocheck
 import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 import { createClient } from "@supabase/supabase-js";
+import type Stripe from "stripe";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/types/database";
 import { getClientIp, getRateLimitHeaders, webhookRateLimit } from "@/lib/rate-limit";
 
 function getSupabaseAdmin() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
+  return createClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 }
 
-async function hasProcessedEvent(eventId: string, supabaseAdmin: any): Promise<boolean> {
+type SupabaseAdminClient = SupabaseClient<Database>;
+
+async function hasProcessedEvent(eventId: string, supabaseAdmin: SupabaseAdminClient): Promise<boolean> {
   try {
     const { data } = await supabaseAdmin
       .from("webhook_events")
@@ -26,7 +30,7 @@ async function hasProcessedEvent(eventId: string, supabaseAdmin: any): Promise<b
   }
 }
 
-async function markEventProcessed(event: any, supabaseAdmin: any) {
+async function markEventProcessed(event: Stripe.Event, supabaseAdmin: SupabaseAdminClient) {
   const { error } = await supabaseAdmin
     .from("webhook_events")
     .insert({
@@ -61,14 +65,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "No signature" }, { status: 400 });
   }
 
-  let event;
+  let event: Stripe.Event;
   try {
     event = stripe.webhooks.constructEvent(
       body,
       signature,
       webhookSecret
     );
-  } catch (err) {
+  } catch {
     // Log signature failures without exposing internal details
     console.warn("Webhook signature verification failed");
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
@@ -172,7 +176,7 @@ export async function POST(request: Request) {
     }
 
     await markEventProcessed(event, supabaseAdmin);
-  } catch (err) {
+  } catch {
     console.warn("Webhook processing error for event:", event.type);
     return NextResponse.json({ error: "Webhook processing failed" }, { status: 500 });
   }

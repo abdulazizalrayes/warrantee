@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { apiRateLimit, getClientIp, getRateLimitHeaders } from "@/lib/rate-limit";
 import webpush from "web-push";
 
 // Configure VAPID keys for web push
@@ -19,6 +20,14 @@ async function requireAuth() {
 // POST: Subscribe to push notifications
 export async function POST(request: NextRequest) {
   try {
+    const rateLimitResult = await apiRateLimit(getClientIp(request));
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { error: "Too many requests" },
+        { status: 429, headers: getRateLimitHeaders(rateLimitResult) }
+      );
+    }
+
     const { supabase, user } = await requireAuth();
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -53,9 +62,24 @@ export async function POST(request: NextRequest) {
   }
 }
 
+export async function GET() {
+  return NextResponse.json({
+    publicKey: VAPID_PUBLIC,
+    configured: Boolean(VAPID_PUBLIC),
+  });
+}
+
 // DELETE: Unsubscribe from push notifications
 export async function DELETE(request: NextRequest) {
   try {
+    const rateLimitResult = await apiRateLimit(getClientIp(request));
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { error: "Too many requests" },
+        { status: 429, headers: getRateLimitHeaders(rateLimitResult) }
+      );
+    }
+
     const { supabase, user } = await requireAuth();
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

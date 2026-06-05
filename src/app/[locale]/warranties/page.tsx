@@ -198,7 +198,7 @@ function WarrantiesPageInner() {
     };
 
     fetchWarranties();
-  }, [user, viewMode, statusFilter, searchQuery, page, reloadToken]);
+  }, [isRTL, user, viewMode, statusFilter, searchQuery, page, reloadToken]);
 
   useEffect(() => {
     const handleClick = (event: MouseEvent) => {

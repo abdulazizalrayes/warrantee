@@ -1,4 +1,3 @@
-// @ts-nocheck
 // Warrantee — Inbound Email Webhook Handler
 // POST /api/ingest/email
 // Receives parsed emails from Resend inbound webhook
@@ -6,7 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
-import type { Database } from '@/types/database';
+import type { Database, Json } from '@/types/database';
 import {
   matchSender,
   processDocument,
@@ -81,7 +80,7 @@ export async function POST(request: NextRequest) {
         html_body: payload.html || '',
         status: 'received',
         attachment_count: payload.attachments?.length || 0,
-        raw_payload: payload,
+        raw_payload: payload as unknown as Json,
         ip_address: getClientIp(request),
       })
       .select('id')
@@ -176,7 +175,7 @@ export async function POST(request: NextRequest) {
   <p><strong>Reference:</strong> Job #${job.id}</p>
   <p>You can view and manage your warranty by logging into your Warrantee account.</p>
   <div style="text-align: center; margin: 24px 0;">
-    <a href="${dashboardUrl}" style="background: #F5C542; color: #1A1A2E; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+    <a href="${dashboardUrl}" style="background: #0071e3; color: #ffffff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">
       View Dashboard
     </a>
   </div>
@@ -312,7 +311,7 @@ async function processAttachment(
       ocr_raw_text: ocrResult.raw_text,
       ocr_language_detected: ocrResult.language_detected,
       ocr_word_confidence: ocrResult.confidence,
-      extracted_fields: ocrResult.extracted_fields,
+      extracted_fields: ocrResult.extracted_fields as unknown as Json,
       aggregate_confidence: ocrResult.aggregate_confidence,
       sim_hash: simHash,
       processed_at: new Date().toISOString(),

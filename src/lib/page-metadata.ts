@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 const BASE_URL = "https://warrantee.io";
+const OG_IMAGE = `${BASE_URL}/opengraph-image`;
 
 type PageKey =
   | "home"
@@ -96,12 +97,12 @@ const PAGE_META: Record<
     en: {
       title: "Warrantee Pricing — Simple and Transparent Plans",
       description:
-        "Start free, scale as you grow. See Warrantee's pricing plans for individuals and businesses.",
+        "Start free or upgrade to Professional for $1/month with the first month free. Enterprise warranty management pricing is custom.",
     },
     ar: {
       title: "أسعار وارنتي — خطط بسيطة وواضحة",
       description:
-        "ابدأ مجانًا وتوسّع مع نمو أعمالك. اطّلع على خطط أسعار وارنتي للأفراد والشركات.",
+        "ابدأ مجانًا أو انتقل إلى الخطة الاحترافية مقابل دولار واحد شهريًا مع الشهر الأول مجانًا. أسعار المؤسسات مخصصة.",
     },
   },
   contact: {
@@ -261,11 +262,23 @@ export function buildPageMetadata(page: PageKey, locale: string): Metadata {
       title: meta.title,
       description: meta.description,
       url: `${BASE_URL}/${locale}${pagePath}`,
+      siteName: "Warrantee",
+      type: "website",
       locale: isAr ? "ar_SA" : "en_US",
+      images: [
+        {
+          url: OG_IMAGE,
+          width: 1200,
+          height: 630,
+          alt: "Warrantee - Warranty Management Platform",
+        },
+      ],
     },
     twitter: {
+      card: "summary_large_image",
       title: meta.title,
       description: meta.description,
+      images: [OG_IMAGE],
     },
   };
 }

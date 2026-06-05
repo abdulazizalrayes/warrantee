@@ -42,7 +42,11 @@ export function Footer({ locale, dictionary }: FooterProps) {
   ];
 
   return (
-    <footer className="bg-navy text-warm-white" role="contentinfo" aria-label="Site footer">
+    <footer
+      className="border-t border-black/[0.06] bg-[#fbfbfd] text-[#1d1d1f]"
+      role="contentinfo"
+      aria-label="Site footer"
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div
           className={`grid grid-cols-1 md:grid-cols-4 gap-8 mb-12 ${
@@ -50,11 +54,11 @@ export function Footer({ locale, dictionary }: FooterProps) {
           }`}
         >
           <div className={isRTL ? 'md:col-start-4' : ''}>
-            <Link href={`/${locale}`} className="inline-flex items-center gap-2 mb-4">
+            <Link href={`/${locale}`} dir="ltr" className="inline-flex items-center gap-2 mb-4">
               <span className="font-bold text-lg">Warrantee</span>
-              <span className="text-gold">.</span>
+              <span className="text-[#0071e3]">.</span>
             </Link>
-            <p className="text-sm text-warm-white/60 mb-4">
+            <p className="text-sm text-[#6e6e73] mb-4">
               {locale === 'en'
                 ? 'Trust the Terms™. Track every warranty with confidence.'
                 : 'ثق بالشروط™. تتبع كل ضمان بثقة.'}
@@ -63,14 +67,14 @@ export function Footer({ locale, dictionary }: FooterProps) {
               <LanguageToggle
                 currentLocale={locale}
                 variant="icon"
-                className="text-warm-white hover:text-gold"
+                className="text-[#1d1d1f] hover:text-[#0071e3]"
               />
             </div>
           </div>
 
           {footerSections.map((section) => (
             <div key={section.title} className={isRTL ? 'text-right' : ''}>
-              <h3 className="font-semibold text-warm-white mb-4 text-sm uppercase tracking-wide">
+              <h3 className="font-semibold text-[#1d1d1f] mb-4 text-sm uppercase tracking-wide">
                 {section.title}
               </h3>
               <ul className="space-y-3">
@@ -78,7 +82,7 @@ export function Footer({ locale, dictionary }: FooterProps) {
                   <li key={link.href}>
                     <Link
                       href={link.href}
-                      className="text-sm text-warm-white/60 hover:text-gold transition-colors"
+                      className="text-sm text-[#6e6e73] transition-colors hover:text-[#0071e3]"
                     >
                       {link.label}
                     </Link>
@@ -89,18 +93,18 @@ export function Footer({ locale, dictionary }: FooterProps) {
           ))}
         </div>
 
-        <div className="border-t border-warm-white/10 pt-8">
+        <div className="border-t border-black/[0.06] pt-8">
           <div
             className={`flex flex-col md:flex-row justify-between items-center gap-4 ${
               isRTL ? 'md:flex-row-reverse' : ''
             }`}
           >
-            <p className="text-sm text-warm-white/60">
+            <p className="text-sm text-[#6e6e73]">
               {locale === 'en'
                 ? `© ${currentYear} Warrantee. All rights reserved.`
                 : `© ${currentYear} Warrantee. جميع الحقوق محفوظة.`}
             </p>
-            <p className="text-sm font-medium text-gold">Trust the Terms™</p>
+            <p className="text-sm font-medium text-[#0071e3]">Trust the Terms™</p>
           </div>
         </div>
       </div>

@@ -19,7 +19,7 @@ export default function PWARegister() {
                 console.log("Push notifications available");
               }
             }
-          } catch (e) {
+          } catch {
             console.log("Push notification check skipped");
           }
         }

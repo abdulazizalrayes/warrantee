@@ -27,7 +27,7 @@ export function LanguageToggle({
     return (
       <Link
         href={getToggleHref()}
-        className={`inline-flex items-center justify-center transition-colors hover:text-gold ${className}`}
+        className={`inline-flex items-center justify-center transition-colors hover:text-[#0071e3] ${className}`}
         aria-label="Toggle language"
         title={currentLocale === 'en' ? 'العربية' : 'English'}
       >
@@ -39,7 +39,7 @@ export function LanguageToggle({
   return (
     <Link
       href={getToggleHref()}
-      className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-navy hover:text-warm-white ${className}`}
+      className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-[#f5f5f7] hover:text-[#0071e3] ${className}`}
     >
       {currentLocale === 'en' ? 'العربية' : 'English'}
     </Link>

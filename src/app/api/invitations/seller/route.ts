@@ -7,6 +7,9 @@ import { createServerClient } from '@supabase/ssr';
 import { Resend } from 'resend';
 import { upsertHubSpotContact } from '@/lib/hubspot';
 import { getBusinessInboxBcc, getEmailFromAddress } from '@/lib/email-config';
+import { getClientIp, getRateLimitHeaders, rateLimit } from '@/lib/rate-limit';
+import { isTrustedSameOriginRequest } from '@/lib/request-origin';
+import { isValidEmail, sanitizeString } from '@/lib/validation';
 
 let _resend: Resend | null = null;
 function getResend() {
@@ -17,6 +20,22 @@ function getResend() {
 }
 
 export async function POST(request: NextRequest) {
+  const rateLimitResult = await rateLimit(getClientIp(request), {
+    maxRequests: 10,
+    windowMs: 10 * 60 * 1000,
+    identifier: 'seller-invitation',
+  });
+  if (!rateLimitResult.success) {
+    return NextResponse.json(
+      { error: 'Too many requests' },
+      { status: 429, headers: getRateLimitHeaders(rateLimitResult) }
+    );
+  }
+
+  if (!isTrustedSameOriginRequest(request)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
   const cookieStore = await cookies();
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -29,11 +48,16 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { seller_email, seller_name, seller_phone, warranty_id } = body;
+  const seller_email = sanitizeString(String(body.seller_email || ''), 254).toLowerCase();
+  const seller_name = body.seller_name ? sanitizeString(String(body.seller_name), 160) : null;
+  const seller_phone = body.seller_phone ? sanitizeString(String(body.seller_phone), 60) : null;
+  const warranty_id = typeof body.warranty_id === 'string' && body.warranty_id.trim()
+    ? sanitizeString(body.warranty_id, 80)
+    : null;
   const locale = body.locale === 'ar' ? 'ar' : 'en';
 
-  if (!seller_email) {
-    return NextResponse.json({ error: 'seller_email is required' }, { status: 400 });
+  if (!isValidEmail(seller_email)) {
+    return NextResponse.json({ error: 'A valid seller_email is required' }, { status: 400 });
   }
 
   // Check if seller is already registered
@@ -55,7 +79,7 @@ export async function POST(request: NextRequest) {
     .from('seller_invitations')
     .select('id, status, created_at')
     .eq('seller_email', seller_email.toLowerCase())
-    .eq('inviter_id', user.id)
+    .or(`inviter_id.eq.${user.id},invited_by.eq.${user.id}`)
     .eq('status', 'pending')
     .single();
 
@@ -71,6 +95,7 @@ export async function POST(request: NextRequest) {
     .from('seller_invitations')
     .insert({
       inviter_id: user.id,
+      invited_by: user.id,
       seller_email: seller_email.toLowerCase(),
       seller_name: seller_name || null,
       seller_phone: seller_phone || null,

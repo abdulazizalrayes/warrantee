@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import { validateWarrantyInput, isValidDate, sanitizeString, isOneOf, VALID_WARRANTY_STATUSES } from "@/lib/validation";
@@ -66,6 +65,7 @@ export async function GET(request: NextRequest) {
     let query = supabase
       .from("warranties")
       .select("*", { count: "exact" })
+      .is("deleted_at", null)
       .or(accessFilter)
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);
@@ -215,7 +215,7 @@ export async function POST(request: NextRequest) {
 
     // Remove undefined fields
     const cleanBody = Object.fromEntries(
-      Object.entries(sanitizedBody).filter(([_, v]) => v !== undefined)
+      Object.entries(sanitizedBody).filter(([, v]) => v !== undefined)
     );
 
     const { data, error } = await supabase

@@ -1,4 +1,3 @@
-// @ts-nocheck
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -99,7 +98,7 @@ export default function WarrantyDetailPage() {
   }, [documents]);
 
   const statusLabel = useMemo(() => {
-    const labels = isRTL
+    const labels: Record<string, string> = isRTL
       ? {
           active: "نشط",
           pending_approval: "بانتظار الموافقة",

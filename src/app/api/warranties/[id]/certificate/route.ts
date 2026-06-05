@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { buildWarrantyAccessOrClause } from "@/lib/warranty-access";
 import { escapeHtml } from "@/lib/html-escape";
+import QRCode from "qrcode";
 
 export async function GET(
   _request: NextRequest,
@@ -67,23 +68,30 @@ export async function GET(
   }
 
   // Default: HTML
-  const html = buildHtml(warranty_data, isAr, isActive, verifyUrl, locale);
+  const html = await buildHtml(warranty_data, isAr, isActive, verifyUrl, locale);
   return new NextResponse(html, {
-    headers: { "Content-Type": "text/html; charset=utf-8" },
+    headers: {
+      "Content-Type": "text/html; charset=utf-8",
+      "Cache-Control": "no-store",
+    },
   });
 }
 
 async function generatePdf(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   warranty: any,
   isAr: boolean,
   isActive: boolean,
   verifyUrl: string,
   warrantyId: string,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   supabase: any
 ): Promise<NextResponse> {
   const PDFDocument = (await import("pdfkit")).default;
+  const qrBuffer = await QRCode.toBuffer(verifyUrl, {
+    width: 150,
+    margin: 2,
+    errorCorrectionLevel: "H",
+    color: { dark: "#1A1A2E", light: "#FFFFFF" },
+  });
 
   const chunks: Buffer[] = [];
   const doc = new PDFDocument({ size: "A4", margin: 50 });
@@ -195,6 +203,12 @@ async function generatePdf(
 
     y += 24;
 
+    doc.image(qrBuffer, margin + (contentWidth - 120) / 2, y, {
+      fit: [120, 120],
+    });
+
+    y += 136;
+
     // Footer
     doc
       .font("Helvetica")
@@ -247,14 +261,13 @@ async function generatePdf(
   });
 }
 
-function buildHtml(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function buildHtml(
   warranty: any,
   isAr: boolean,
   isActive: boolean,
   verifyUrl: string,
   locale: string
-): string {
+): Promise<string> {
   const productName = escapeHtml(warranty.product_name);
   const referenceNumber = escapeHtml(warranty.reference_number);
   const serialNumber = escapeHtml(warranty.serial_number || "-");
@@ -262,6 +275,12 @@ function buildHtml(
   const startDate = escapeHtml(warranty.start_date);
   const endDate = escapeHtml(warranty.end_date);
   const safeVerifyUrl = escapeHtml(verifyUrl);
+  const qrDataUrl = await QRCode.toDataURL(verifyUrl, {
+    width: 160,
+    margin: 2,
+    errorCorrectionLevel: "H",
+    color: { dark: "#1A1A2E", light: "#FFFFFF" },
+  });
 
   return `<!DOCTYPE html>
 <html dir="${isAr ? "rtl" : "ltr"}" lang="${locale}">
@@ -300,7 +319,7 @@ function buildHtml(
     <div class="field"><label>${isAr ? "تاريخ الانتهاء" : "End Date"}</label><p>${endDate}</p></div>
   </div>
   <div class="qr">
-    <img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(verifyUrl)}" alt="QR Code" />
+    <img src="${qrDataUrl}" alt="QR Code" />
     <div class="ref">${isAr ? "امسح للتحقق" : "Scan to verify"} | ${safeVerifyUrl}</div>
   </div>
   <div class="footer">${isAr ? "صادر عن منصة ضمانتي" : "Issued by Warrantee Platform"} | warrantee.io</div>

@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { Resend } from "resend";
 import { getEmailFromAddress } from "@/lib/email-config";
 
@@ -73,7 +72,7 @@ export function warrantyExpiryEmail(
         : `Your warranty for <strong>${productName}</strong> is expiring in <strong>${daysLeft} days</strong>. We recommend reviewing extension options.`}
     </p>
     <div style="text-align: center; margin: 24px 0;">
-      <a href="${warrantyUrl}" style="display: inline-block; background: #F5C542; color: #1A1A2E; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+      <a href="${warrantyUrl}" style="display: inline-block; background: #0071e3; color: #ffffff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">
         ${isAr ? "عرض الضمان" : "View Warranty"}
       </a>
     </div>
@@ -106,7 +105,7 @@ export function welcomeEmail(name: string, locale: string = "en") {
   <div style="background: white; border-radius: 8px; padding: 32px; border: 1px solid #e5e5e5;">
     <div style="text-align: center; margin-bottom: 24px;">
       <h1 style="color: #1A1A2E; font-size: 24px; margin: 0;">Warrantee</h1>
-      <p style="color: #F5C542; font-size: 14px; margin: 4px 0;">Trust the Terms™</p>
+      <p style="color: #0071e3; font-size: 14px; margin: 4px 0;">Trust the Terms™</p>
     </div>
     <h2 style="color: #1A1A2E; font-size: 18px;">
       ${isAr ? `مرحباً ${name}!` : `Welcome, ${name}!`}
@@ -117,7 +116,7 @@ export function welcomeEmail(name: string, locale: string = "en") {
         : "Thanks for joining Warrantee. You can now manage your warranties with ease."}
     </p>
     <div style="text-align: center; margin: 24px 0;">
-      <a href="${dashboardUrl}" style="display: inline-block; background: #F5C542; color: #1A1A2E; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+      <a href="${dashboardUrl}" style="display: inline-block; background: #0071e3; color: #ffffff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">
         ${isAr ? "ابدأ الآن" : "Get Started"}
       </a>
     </div>
@@ -155,7 +154,7 @@ export function claimNotificationEmail(
         : `A new claim (<strong>${claimNumber}</strong>) has been filed for <strong>${productName}</strong>.`}
     </p>
     <div style="text-align: center; margin: 24px 0;">
-      <a href="${claimUrl}" style="display: inline-block; background: #F5C542; color: #1A1A2E; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+      <a href="${claimUrl}" style="display: inline-block; background: #0071e3; color: #ffffff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">
         ${isAr ? "عرض المطالبة" : "View Claim"}
       </a>
     </div>

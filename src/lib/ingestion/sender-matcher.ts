@@ -1,16 +1,19 @@
-// @ts-nocheck
 // Warrantee — Sender Matching Engine
 // Matches incoming email senders to registered users
 
 import { createClient } from '@supabase/supabase-js';
-import type { SenderMatch, TrustLevel } from './types';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/types/database';
+import type { SenderMatch } from './types';
 
 function getSupabaseAdmin() {
-  return createClient(
+  return createClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 }
+
+type SupabaseAdminClient = SupabaseClient<Database>;
 
 /**
  * Match sender email to a registered user.
@@ -123,7 +126,7 @@ export async function matchSender(
   };
 }
 
-async function findBuyerFromCC(ccEmails: string[], supabaseAdmin: ReturnType<typeof createClient>): Promise<string | null> {
+async function findBuyerFromCC(ccEmails: string[], supabaseAdmin: SupabaseAdminClient): Promise<string | null> {
   for (const cc of ccEmails) {
     const { data } = await supabaseAdmin
       .from('profiles')

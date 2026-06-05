@@ -1,15 +1,6 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
-const discoveryLinkHeader = [
-  `</.well-known/api-catalog>; rel="api-catalog"`,
-  `</en/api-docs>; rel="service-doc"`,
-  `</.well-known/agent-card.json>; rel="agent-card"`,
-  `</.well-known/mcp.json>; rel="mcp-server-card"`,
-  `</llms.txt>; rel="describedby"; type="text/plain"`,
-  `</.well-known/agent-skills>; rel="describedby"; type="application/json"`,
-].join(", ");
-
 const contentSecurityPolicyReportOnly = [
   "default-src 'self'",
   "base-uri 'self'",
@@ -130,14 +121,12 @@ const nextConfig: NextConfig = {
         headers: [
           { key: "X-DNS-Prefetch-Control", value: "on" },
           { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" },
-          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+          { key: "X-Frame-Options", value: "DENY" },
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
           { key: "X-XSS-Protection", value: "1; mode=block" },
           { key: "Content-Security-Policy-Report-Only", value: contentSecurityPolicyReportOnly },
-          { key: "Link", value: discoveryLinkHeader },
-          { key: "Vary", value: "Accept" },
         ],
       },
       {
@@ -278,7 +267,7 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withSentryConfig(nextConfig, {
+const sentryBuildOptions = {
   org: process.env.SENTRY_ORG,
   project: process.env.SENTRY_PROJECT,
   authToken: process.env.SENTRY_AUTH_TOKEN,
@@ -293,4 +282,12 @@ export default withSentryConfig(nextConfig, {
       removeDebugLogging: true,
     },
   },
-});
+};
+
+const disableSentryNextConfig =
+  process.env.WARRANTEE_DISABLE_SENTRY_NEXT_CONFIG === "1" &&
+  process.env.VERCEL_ENV !== "production";
+
+export default disableSentryNextConfig
+  ? nextConfig
+  : withSentryConfig(nextConfig, sentryBuildOptions);

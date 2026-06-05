@@ -108,7 +108,7 @@ export default function CookieConsent() {
       <div className="max-w-2xl mx-auto bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
         <div className="p-6">
           <div className="flex items-center gap-2 mb-3">
-            <svg className="w-5 h-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-5 h-5 text-[#0071e3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
             </svg>
             <h3 className="font-semibold text-gray-900">{text.title}</h3>
@@ -122,7 +122,7 @@ export default function CookieConsent() {
                   <p className="font-medium text-sm text-gray-900">{text.necessary}</p>
                   <p className="text-xs text-gray-600">{text.necessaryDesc}</p>
                 </div>
-                <div className="w-10 h-6 bg-emerald-500 rounded-full relative">
+                <div className="w-10 h-6 bg-[#0071e3] rounded-full relative">
                   <div className="absolute top-1 right-1 w-4 h-4 bg-white rounded-full" />
                 </div>
               </div>
@@ -132,7 +132,7 @@ export default function CookieConsent() {
                   <p className="text-xs text-gray-600">{text.analyticsDesc}</p>
                 </div>
                 <button onClick={() => setConsent(p => ({ ...p, analytics: !p.analytics }))}
-                  className={`w-10 h-6 rounded-full relative transition-colors ${consent.analytics ? 'bg-emerald-500' : 'bg-gray-300'}`}>
+                  className={`w-10 h-6 rounded-full relative transition-colors ${consent.analytics ? 'bg-[#0071e3]' : 'bg-gray-300'}`}>
                   <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${consent.analytics ? (isRTL ? 'left-1' : 'right-1') : (isRTL ? 'right-1' : 'left-1')}`} />
                 </button>
               </div>
@@ -142,7 +142,7 @@ export default function CookieConsent() {
                   <p className="text-xs text-gray-600">{text.marketingDesc}</p>
                 </div>
                 <button onClick={() => setConsent(p => ({ ...p, marketing: !p.marketing }))}
-                  className={`w-10 h-6 rounded-full relative transition-colors ${consent.marketing ? 'bg-emerald-500' : 'bg-gray-300'}`}>
+                  className={`w-10 h-6 rounded-full relative transition-colors ${consent.marketing ? 'bg-[#0071e3]' : 'bg-gray-300'}`}>
                   <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${consent.marketing ? (isRTL ? 'left-1' : 'right-1') : (isRTL ? 'right-1' : 'left-1')}`} />
                 </button>
               </div>
@@ -151,7 +151,7 @@ export default function CookieConsent() {
 
           <div className="flex flex-wrap gap-2">
             <button onClick={acceptAll}
-              className="flex-1 px-4 py-2.5 bg-emerald-700 text-white text-sm font-medium rounded-lg hover:bg-emerald-800 transition-colors">
+              className="flex-1 px-4 py-2.5 bg-[#0071e3] text-white text-sm font-medium rounded-lg hover:bg-[#005bb5] transition-colors">
               {text.acceptAll}
             </button>
             <button onClick={rejectAll}
@@ -165,7 +165,7 @@ export default function CookieConsent() {
               </button>
             ) : (
               <button onClick={saveCustom}
-                className="flex-1 px-4 py-2.5 border border-emerald-300 text-emerald-700 text-sm font-medium rounded-lg hover:bg-emerald-50 transition-colors">
+                className="flex-1 px-4 py-2.5 border border-[#0071e3]/30 text-[#0071e3] text-sm font-medium rounded-lg hover:bg-[#0071e3]/5 transition-colors">
                 {text.savePreferences}
               </button>
             )}

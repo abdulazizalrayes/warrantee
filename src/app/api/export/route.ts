@@ -1,8 +1,11 @@
-// @ts-nocheck
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getClientIp, getRateLimitHeaders, rateLimit } from "@/lib/rate-limit";
 import { buildWarrantyAccessOrClause } from "@/lib/warranty-access";
+import { rowsToCsv } from "@/lib/csv";
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 export async function GET(request: NextRequest) {
   // Rate limiting
@@ -69,17 +72,7 @@ export async function GET(request: NextRequest) {
       if (data.length === 0) {
         return new NextResponse("No data to export", { status: 200, headers: { "Content-Type": "text/plain" } });
       }
-      const headers = Object.keys(data[0]);
-      const csvRows = [headers.join(",")];
-      for (const row of data) {
-        const values = headers.map(h => {
-          const val = row[h] ?? "";
-          const str = String(val).replace(/"/g, '""');
-          return str.includes(",") || str.includes('"') || str.includes("\n") ? `"${str}"` : str;
-        });
-        csvRows.push(values.join(","));
-      }
-      const csv = csvRows.join("\n");
+      const csv = rowsToCsv(data);
       return new NextResponse(csv, {
         status: 200,
         headers: {

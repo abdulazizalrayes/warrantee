@@ -139,7 +139,7 @@ export async function POST(request: NextRequest) {
       assignment,
       message: `Servicing handoff to ${servicingCompany.name_en || servicingCompany.name_ar} created`,
     });
-  } catch (err) {
+  } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -233,7 +233,7 @@ export async function DELETE(request: NextRequest) {
       success: true,
       message: 'Servicing handoff revoked successfully',
     });
-  } catch (err) {
+  } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -314,7 +314,7 @@ export async function GET(request: NextRequest) {
       handoffs: handoffs || [],
       active_count: (handoffs || []).filter((h: { revoked_at: string | null }) => !h.revoked_at).length,
     });
-  } catch (err) {
+  } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

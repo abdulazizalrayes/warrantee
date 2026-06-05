@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client';
 
 import { Fragment, useState, useEffect } from 'react';
@@ -24,6 +23,19 @@ interface Stats {
   claimsByStatus: { status: string; count: number }[];
   revenueByMonth: { month: string; amount: number }[];
 }
+
+type CreatedAtRow = { created_at?: string | null };
+type StatusRow = { status?: string | null };
+type WarrantyAdminRow = StatusRow & {
+  end_date?: string | null;
+  category?: string | null;
+};
+type UserAdminRow = CreatedAtRow & {
+  account_type?: string | null;
+};
+type RevenueAdminRow = CreatedAtRow & {
+  amount?: number | null;
+};
 
 // ─── TRANSLATIONS ──────────────────────────────────────
 const rawTranslations = {
@@ -145,7 +157,7 @@ const t = {
 };
 
 // ─── MINI CHART COMPONENTS ─────────────────────────────
-function BarChart({ data, labelKey, valueKey, color = '#D4AF37', height = 160 }: any) {
+function BarChart({ data, labelKey, valueKey, color = '#0071e3', height = 160 }: any) {
   if (!data?.length) return <div className="text-xs text-gray-400 py-8 text-center">No data</div>;
   const max = Math.max(...data.map((d: any) => d[valueKey] || 0), 1);
   return (
@@ -196,9 +208,9 @@ function DonutChart({ data, colors, height = 140 }: any) {
   );
 }
 
-function SparkNumber({ label, value, sub, icon, color = '#D4AF37' }: any) {
+function SparkNumber({ label, value, sub, icon, color = '#0071e3' }: any) {
   return (
-    <div className="bg-[#12122a] rounded-xl p-4 border border-[#2a2a4a] hover:border-[#D4AF37]/30 transition-all group">
+    <div className="bg-[#12122a] rounded-xl p-4 border border-[#2a2a4a] hover:border-[#0071e3]/30 transition-all group">
       <div className="flex items-start justify-between mb-2">
         <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: color + '18' }}>
           <svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke={color} strokeWidth={2}>
@@ -294,7 +306,7 @@ export default function AdminPage() {
       setLoading(false);
     };
     check();
-  }, []);
+  }, [locale, router]);
 
   // ─── SIGN OUT ─────────────────────────────────────────
   const handleSignOut = async () => {
@@ -333,40 +345,40 @@ export default function AdminPage() {
 
     // Compute monthly registrations
     const monthMap: Record<string, number> = {};
-    u.forEach((p: any) => {
+    u.forEach((p: CreatedAtRow) => {
       const m = p.created_at?.substring(0, 7); if (m) monthMap[m] = (monthMap[m] || 0) + 1;
     });
     const usersByMonth = Object.entries(monthMap).sort().map(([month, count]) => ({ month: month.substring(5), count }));
 
     // Category breakdown
     const catMap: Record<string, number> = {};
-    w.forEach((wr: any) => { const c = wr.category || 'Other'; catMap[c] = (catMap[c] || 0) + 1; });
+    w.forEach((wr: WarrantyAdminRow) => { const c = wr.category || 'Other'; catMap[c] = (catMap[c] || 0) + 1; });
     const warrantiesByCategory = Object.entries(catMap).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([category, count]) => ({ category, count }));
 
     // Claims by status
     const claimStatusMap: Record<string, number> = {};
-    cl.forEach((c: any) => { const s = c.status || 'unknown'; claimStatusMap[s] = (claimStatusMap[s] || 0) + 1; });
+    cl.forEach((c: StatusRow) => { const s = c.status || 'unknown'; claimStatusMap[s] = (claimStatusMap[s] || 0) + 1; });
     const claimsByStatus = Object.entries(claimStatusMap).map(([status, count]) => ({ status, count }));
 
     // Revenue by month
     const revMap: Record<string, number> = {};
-    rv.forEach((r: any) => {
+    rv.forEach((r: RevenueAdminRow) => {
       const m = r.created_at?.substring(0, 7); if (m) revMap[m] = (revMap[m] || 0) + (r.amount || 0);
     });
     const revenueByMonth = Object.entries(revMap).sort().map(([month, amount]) => ({ month: month.substring(5), amount }));
 
     setStats({
       totalUsers: u.length, totalWarranties: w.length, totalCompanies: co.length, totalClaims: cl.length,
-      activeWarranties: w.filter(x => x.end_date > now.substring(0, 10) && x.status === 'active').length,
-      expiredWarranties: w.filter(x => x.end_date <= now.substring(0, 10) || x.status === 'expired').length,
-      pendingClaims: cl.filter(x => x.status === 'pending' || x.status === 'filed').length,
-      consumerUsers: u.filter(x => x.account_type === 'personal' || x.account_type === 'consumer').length,
-      businessUsers: u.filter(x => x.account_type === 'business').length,
-      openTickets: tk.filter(x => x.status === 'open' || x.status === 'in_progress').length,
-      fraudSignals: fr.filter(x => x.status === 'open' || x.status === 'investigating').length,
-      totalRevenue: rv.reduce((s, r) => s + (r.amount || 0), 0),
-      activeSubscriptions: sb.filter(x => x.status === 'active' || x.status === 'trialing').length,
-      ingestionSuccess: ig.filter(x => ['auto_confirmed', 'confirmed', 'ocr_complete'].includes(x.status)).length,
+      activeWarranties: w.filter((x: WarrantyAdminRow) => (x.end_date || '') > now.substring(0, 10) && x.status === 'active').length,
+      expiredWarranties: w.filter((x: WarrantyAdminRow) => (x.end_date || '') <= now.substring(0, 10) || x.status === 'expired').length,
+      pendingClaims: cl.filter((x: StatusRow) => x.status === 'pending' || x.status === 'filed').length,
+      consumerUsers: u.filter((x: UserAdminRow) => x.account_type === 'personal' || x.account_type === 'consumer').length,
+      businessUsers: u.filter((x: UserAdminRow) => x.account_type === 'business').length,
+      openTickets: tk.filter((x: StatusRow) => x.status === 'open' || x.status === 'in_progress').length,
+      fraudSignals: fr.filter((x: StatusRow) => x.status === 'open' || x.status === 'investigating').length,
+      totalRevenue: rv.reduce((s: number, r: RevenueAdminRow) => s + (r.amount || 0), 0),
+      activeSubscriptions: sb.filter((x: StatusRow) => x.status === 'active' || x.status === 'trialing').length,
+      ingestionSuccess: ig.filter((x: StatusRow) => ['auto_confirmed', 'confirmed', 'ocr_complete'].includes(x.status || '')).length,
       ingestionTotal: ig.length,
       recentActivity: actR.data || [],
       usersByMonth, warrantiesByCategory, claimsByStatus, revenueByMonth,
@@ -418,7 +430,7 @@ export default function AdminPage() {
       loadConfig();
       loadExtensionPolicies();
     }
-  }, [activeTab]);
+  }, [activeTab, isSuperAdmin]);
 
   const logAudit = async (action: string, entityType: string, entityId: string, details: any, prev?: any, next?: any, risk?: string) => {
     await supabase.from('admin_audit_log').insert({
@@ -635,7 +647,7 @@ export default function AdminPage() {
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-[#0a0a1a]">
       <div className="flex flex-col items-center gap-4">
-        <div className="w-10 h-10 border-2 border-[#D4AF37] border-t-transparent rounded-full animate-spin" />
+        <div className="w-10 h-10 border-2 border-[#0071e3] border-t-transparent rounded-full animate-spin" />
         <p className="text-sm text-gray-500">Loading admin portal...</p>
       </div>
     </div>
@@ -645,7 +657,7 @@ export default function AdminPage() {
     <div className="min-h-screen flex items-center justify-center bg-[#0a0a1a] p-4" dir={isRTL ? 'rtl' : 'ltr'}>
       <div className="text-center">
         <p className="text-gray-400 mb-4">{text.unauthorized}</p>
-        <Link href={`/${locale}/dashboard`} className="text-[#D4AF37] hover:underline">{text.backToDashboard}</Link>
+        <Link href={`/${locale}/dashboard`} className="text-[#0071e3] hover:underline">{text.backToDashboard}</Link>
       </div>
     </div>
   );
@@ -658,14 +670,14 @@ export default function AdminPage() {
         <div className="max-w-[1600px] mx-auto px-4 lg:px-6">
           <div className="flex items-center justify-between h-14">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#D4AF37] to-[#F5D76E] flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#0071e3] to-[#64d2ff] flex items-center justify-center">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1A1A2E" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
                 </svg>
               </div>
               <div>
                 <h1 className="text-sm font-bold text-white leading-none">{text.title}</h1>
-                <p className="text-[10px] text-[#D4AF37]/60 tracking-widest uppercase">{text.subtitle}</p>
+                <p className="text-[10px] text-[#0071e3]/60 tracking-widest uppercase">{text.subtitle}</p>
               </div>
             </div>
 
@@ -706,7 +718,7 @@ export default function AdminPage() {
               )}
               <button onClick={() => setActiveTab(tab.id)}
                 className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition mb-0.5 ${
-                  activeTab === tab.id ? 'bg-[#D4AF37]/10 text-[#D4AF37] border border-[#D4AF37]/20' : 'text-gray-400 hover:text-gray-200 hover:bg-[#1a1a3a]/50 border border-transparent'
+                  activeTab === tab.id ? 'bg-[#0071e3]/10 text-[#0071e3] border border-[#0071e3]/20' : 'text-gray-400 hover:text-gray-200 hover:bg-[#1a1a3a]/50 border border-transparent'
                 }`}>
                 <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d={tab.icon}/></svg>
                 {tab.label}
@@ -727,7 +739,7 @@ export default function AdminPage() {
             {tabs.map(tab => (
               <button key={tab.id} onClick={() => setActiveTab(tab.id)}
                 className={`px-3 py-1.5 text-[11px] font-medium rounded-md whitespace-nowrap transition ${
-                  activeTab === tab.id ? 'bg-[#D4AF37]/10 text-[#D4AF37]' : 'text-gray-500 hover:text-gray-300'
+                  activeTab === tab.id ? 'bg-[#0071e3]/10 text-[#0071e3]' : 'text-gray-500 hover:text-gray-300'
                 }`}>{tab.label}</button>
             ))}
           </div>
@@ -738,14 +750,14 @@ export default function AdminPage() {
           <section className="mb-6 rounded-2xl border border-[#1a1a3a] bg-gradient-to-br from-[#0e0e20] via-[#12122a] to-[#171733] p-5 lg:p-6">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div className="space-y-3">
-                <Link href={`/${locale}/dashboard`} className="inline-flex items-center gap-2 text-xs font-medium text-[#D4AF37] hover:text-[#f5d76e] transition">
+                <Link href={`/${locale}/dashboard`} className="inline-flex items-center gap-2 text-xs font-medium text-[#0071e3] hover:text-[#0077ED] transition">
                   <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d={isRTL ? 'M13 5l7 7-7 7M5 12h15' : 'M11 19l-7-7 7-7m-7 7h16'} />
                   </svg>
                   {text.backToDashboard}
                 </Link>
                 <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[#D4AF37]/70">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[#0071e3]/70">
                     {locale === 'ar' ? 'مركز قيادة الادمن' : 'Admin Command Center'}
                   </p>
                   <h2 className="mt-2 text-2xl font-semibold tracking-tight text-white">{activeTabLabel}</h2>
@@ -756,7 +768,7 @@ export default function AdminPage() {
               <div className="flex flex-wrap gap-2">
                 <button
                   onClick={loadAllData}
-                  className="inline-flex items-center gap-2 rounded-full border border-[#2a2a4a] bg-[#12122a] px-4 py-2 text-xs font-medium text-gray-200 transition hover:border-[#D4AF37]/30 hover:text-white"
+                  className="inline-flex items-center gap-2 rounded-full border border-[#2a2a4a] bg-[#12122a] px-4 py-2 text-xs font-medium text-gray-200 transition hover:border-[#0071e3]/30 hover:text-white"
                 >
                   <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m14.836 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -765,7 +777,7 @@ export default function AdminPage() {
                 </button>
                 <button
                   onClick={() => router.push(`/${locale}/dashboard`)}
-                  className="inline-flex items-center gap-2 rounded-full bg-[#D4AF37] px-4 py-2 text-xs font-semibold text-[#1A1A2E] transition hover:bg-[#f5d76e]"
+                  className="inline-flex items-center gap-2 rounded-full bg-[#0071e3] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[#0077ED]"
                 >
                   {locale === 'ar' ? 'فتح تجربة العميل' : 'Open customer app'}
                 </button>
@@ -779,7 +791,7 @@ export default function AdminPage() {
               {/* KPI Cards */}
               <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-3">
                 <SparkNumber label={text.totalUsers} value={stats.totalUsers} sub={`${stats.consumerUsers}C / ${stats.businessUsers}B`} icon="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" color="#3B82F6" />
-                <SparkNumber label={text.totalWarranties} value={stats.totalWarranties} sub={`${stats.activeWarranties} ${text.active}`} icon="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" color="#D4AF37" />
+                <SparkNumber label={text.totalWarranties} value={stats.totalWarranties} sub={`${stats.activeWarranties} ${text.active}`} icon="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" color="#0071e3" />
                 <SparkNumber label={text.totalCompanies} value={stats.totalCompanies} icon="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" color="#8B5CF6" />
                 <SparkNumber label={text.totalClaims} value={stats.totalClaims} sub={`${stats.pendingClaims} ${text.pending}`} icon="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" color="#F59E0B" />
                 <SparkNumber label={text.openTickets} value={stats.openTickets} icon="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" color="#F97316" />
@@ -806,7 +818,7 @@ export default function AdminPage() {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 <div className="bg-[#0e0e20] rounded-xl border border-[#1a1a3a] p-5">
                   <h3 className="text-sm font-semibold text-gray-200 mb-4">{text.warrantiesByCategory}</h3>
-                  <BarChart data={stats.warrantiesByCategory} labelKey="category" valueKey="count" color="#D4AF37" />
+                  <BarChart data={stats.warrantiesByCategory} labelKey="category" valueKey="count" color="#0071e3" />
                 </div>
                 <div className="bg-[#0e0e20] rounded-xl border border-[#1a1a3a] p-5">
                   <h3 className="text-sm font-semibold text-gray-200 mb-4">{text.platformHealth}</h3>
@@ -821,7 +833,7 @@ export default function AdminPage() {
                     </div>
                     <div className="grid grid-cols-2 gap-3 mt-4">
                       <div className="bg-[#12122a] rounded-lg p-3 text-center">
-                        <p className="text-lg font-bold text-[#D4AF37]">{fmtMoney(stats.totalRevenue)}</p>
+                        <p className="text-lg font-bold text-[#0071e3]">{fmtMoney(stats.totalRevenue)}</p>
                         <p className="text-[10px] text-gray-500">{text.revenue}</p>
                       </div>
                       <div className="bg-[#12122a] rounded-lg p-3 text-center">
@@ -834,12 +846,12 @@ export default function AdminPage() {
                 <div className="bg-[#0e0e20] rounded-xl border border-[#1a1a3a] p-5">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-sm font-semibold text-gray-200">{text.recentActivity}</h3>
-                    <button onClick={loadAllData} className="text-[10px] text-[#D4AF37] hover:underline">{text.refresh}</button>
+                    <button onClick={loadAllData} className="text-[10px] text-[#0071e3] hover:underline">{text.refresh}</button>
                   </div>
                   <div className="space-y-2 max-h-[280px] overflow-y-auto pr-1">
                     {stats.recentActivity.length === 0 ? <p className="text-xs text-gray-600">{text.noData}</p> : stats.recentActivity.slice(0, 15).map((a, i) => (
                       <div key={i} className="flex items-start gap-2.5 p-2 rounded-lg hover:bg-[#12122a] transition">
-                        <div className="w-1.5 h-1.5 rounded-full bg-[#D4AF37] mt-1.5 flex-shrink-0" />
+                        <div className="w-1.5 h-1.5 rounded-full bg-[#0071e3] mt-1.5 flex-shrink-0" />
                         <div className="min-w-0 flex-1">
                           <p className="text-xs text-gray-300 truncate">{a.action}</p>
                           <p className="text-[10px] text-gray-600">{fmtDateTime(a.created_at)}</p>
@@ -859,7 +871,7 @@ export default function AdminPage() {
                 <h2 className="text-lg font-bold">{text.usersTab} <span className="text-sm font-normal text-gray-500">({users.length})</span></h2>
                 <div className="flex gap-2">
                   {['all', 'personal', 'business'].map(f => (
-                    <button key={f} onClick={() => setUserFilter(f)} className={`text-[11px] px-3 py-1 rounded-md border transition ${userFilter === f ? 'border-[#D4AF37]/30 bg-[#D4AF37]/10 text-[#D4AF37]' : 'border-[#2a2a4a] text-gray-500 hover:text-gray-300'}`}>
+                    <button key={f} onClick={() => setUserFilter(f)} className={`text-[11px] px-3 py-1 rounded-md border transition ${userFilter === f ? 'border-[#0071e3]/30 bg-[#0071e3]/10 text-[#0071e3]' : 'border-[#2a2a4a] text-gray-500 hover:text-gray-300'}`}>
                       {f === 'all' ? text.all : f === 'personal' ? text.consumers : text.businesses}
                     </button>
                   ))}
@@ -931,7 +943,7 @@ export default function AdminPage() {
                 <h2 className="text-lg font-bold">{text.warrantiesTab} <span className="text-sm font-normal text-gray-500">({warranties.length})</span></h2>
                 <div className="flex gap-2">
                   {['all', 'active', 'expired'].map(f => (
-                    <button key={f} onClick={() => setWarrantyFilter(f)} className={`text-[11px] px-3 py-1 rounded-md border transition ${warrantyFilter === f ? 'border-[#D4AF37]/30 bg-[#D4AF37]/10 text-[#D4AF37]' : 'border-[#2a2a4a] text-gray-500 hover:text-gray-300'}`}>
+                    <button key={f} onClick={() => setWarrantyFilter(f)} className={`text-[11px] px-3 py-1 rounded-md border transition ${warrantyFilter === f ? 'border-[#0071e3]/30 bg-[#0071e3]/10 text-[#0071e3]' : 'border-[#2a2a4a] text-gray-500 hover:text-gray-300'}`}>
                       {f === 'all' ? text.all : f === 'active' ? text.active : text.expired}
                     </button>
                   ))}
@@ -1006,7 +1018,7 @@ export default function AdminPage() {
                 <h2 className="text-lg font-bold">{text.claimsTab} <span className="text-sm font-normal text-gray-500">({claims.length})</span></h2>
                 <div className="flex gap-2">
                   {['all', 'pending', 'approved', 'rejected'].map(f => (
-                    <button key={f} onClick={() => setClaimFilter(f)} className={`text-[11px] px-3 py-1 rounded-md border transition ${claimFilter === f ? 'border-[#D4AF37]/30 bg-[#D4AF37]/10 text-[#D4AF37]' : 'border-[#2a2a4a] text-gray-500 hover:text-gray-300'}`}>
+                    <button key={f} onClick={() => setClaimFilter(f)} className={`text-[11px] px-3 py-1 rounded-md border transition ${claimFilter === f ? 'border-[#0071e3]/30 bg-[#0071e3]/10 text-[#0071e3]' : 'border-[#2a2a4a] text-gray-500 hover:text-gray-300'}`}>
                       {f === 'all' ? text.all : f}
                     </button>
                   ))}
@@ -1047,7 +1059,7 @@ export default function AdminPage() {
                 <h2 className="text-lg font-bold">{text.supportTitle} <span className="text-sm font-normal text-gray-500">({tickets.length})</span></h2>
                 <div className="flex gap-2">
                   {['all', 'open', 'in_progress', 'closed'].map(f => (
-                    <button key={f} onClick={() => setTicketFilter(f)} className={`text-[11px] px-3 py-1 rounded-md border transition ${ticketFilter === f ? 'border-[#D4AF37]/30 bg-[#D4AF37]/10 text-[#D4AF37]' : 'border-[#2a2a4a] text-gray-500 hover:text-gray-300'}`}>
+                    <button key={f} onClick={() => setTicketFilter(f)} className={`text-[11px] px-3 py-1 rounded-md border transition ${ticketFilter === f ? 'border-[#0071e3]/30 bg-[#0071e3]/10 text-[#0071e3]' : 'border-[#2a2a4a] text-gray-500 hover:text-gray-300'}`}>
                       {f === 'all' ? text.all : f.replace('_', ' ')}
                     </button>
                   ))}
@@ -1137,7 +1149,7 @@ export default function AdminPage() {
                   <p className="text-[10px] text-gray-500">{locale === 'ar' ? 'فشل' : 'Failed'}</p>
                 </div>
                 <div className="bg-[#0e0e20] rounded-xl border border-[#1a1a3a] p-4 text-center">
-                  <p className="text-2xl font-bold text-[#D4AF37]">{stats.ingestionTotal > 0 ? Math.round((stats.ingestionSuccess / stats.ingestionTotal) * 100) : 0}%</p>
+                  <p className="text-2xl font-bold text-[#0071e3]">{stats.ingestionTotal > 0 ? Math.round((stats.ingestionSuccess / stats.ingestionTotal) * 100) : 0}%</p>
                   <p className="text-[10px] text-gray-500">{locale === 'ar' ? 'نسبة النجاح' : 'Success Rate'}</p>
                 </div>
               </div>
@@ -1177,7 +1189,7 @@ export default function AdminPage() {
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
                 <SparkNumber label={text.totalRevenueLabel} value={fmtMoney(stats.totalRevenue)} icon="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" color="#10B981" />
                 <SparkNumber label={text.activeSubsLabel} value={stats.activeSubscriptions} icon="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" color="#3B82F6" />
-                <SparkNumber label={text.mrrLabel} value={fmtMoney(subscriptions.filter(s => s.status === 'active').length * 1)} icon="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" color="#D4AF37" />
+                <SparkNumber label={text.mrrLabel} value={fmtMoney(subscriptions.filter(s => s.status === 'active').length * 1)} icon="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" color="#0071e3" />
                 <SparkNumber label={text.extensionRevLabel} value={fmtMoney(revenueEvents.filter(r => r.event_type === 'extension').reduce((s, r) => s + (r.amount || 0), 0))} icon="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" color="#8B5CF6" />
               </div>
               <div className="bg-[#0e0e20] rounded-xl border border-[#1a1a3a] overflow-hidden">
@@ -1221,7 +1233,7 @@ export default function AdminPage() {
                         : 'Approve per product whether extensions should come from the seller, Warrantee, or a third party, and track wishlist demand.'}
                     </p>
                   </div>
-                  <button onClick={loadExtensionPolicies} className="text-xs text-[#D4AF37] hover:underline">
+                  <button onClick={loadExtensionPolicies} className="text-xs text-[#0071e3] hover:underline">
                     {text.refresh}
                   </button>
                 </div>
@@ -1357,13 +1369,13 @@ export default function AdminPage() {
                               />
                             </div>
                           </td>
-                          <td className="px-4 py-3 text-[#D4AF37] font-semibold">
+                          <td className="px-4 py-3 text-[#0071e3] font-semibold">
                             {entry.wishlistCount || 0}
                           </td>
                           <td className="px-4 py-3">
                             <button
                               onClick={() => saveExtensionPolicy(entry.warranty.id)}
-                              className="px-3 py-1.5 bg-[#D4AF37] text-[#1A1A2E] rounded-lg text-xs font-semibold hover:bg-yellow-500 transition"
+                              className="px-3 py-1.5 bg-[#0071e3] text-white rounded-lg text-xs font-semibold hover:bg-[#0077ED] transition"
                             >
                               {text.save}
                             </button>
@@ -1386,7 +1398,7 @@ export default function AdminPage() {
                     <tbody className="divide-y divide-[#1a1a3a]">
                       {systemConfig.map(c => (
                         <tr key={c.id || c.key} className="hover:bg-[#12122a]/50 transition">
-                          <td className="px-4 py-3 font-mono text-[#D4AF37]">{c.key}</td>
+                          <td className="px-4 py-3 font-mono text-[#0071e3]">{c.key}</td>
                           <td className="px-4 py-3 text-gray-200 font-mono">{typeof c.value === 'object' ? JSON.stringify(c.value) : String(c.value)}</td>
                           <td className="px-4 py-3 text-gray-500">{c.description || EM_DASH}</td>
                           <td className="px-4 py-3 text-gray-500">{fmtDate(c.updated_at)}</td>
@@ -1409,14 +1421,14 @@ export default function AdminPage() {
                 <p className="text-xs font-medium text-gray-400 mb-3">{text.addAdmin}</p>
                 <div className="flex gap-3 flex-wrap">
                   <input type="email" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder={text.emailPlaceholder}
-                    className="flex-1 min-w-[250px] px-4 py-2.5 bg-[#12122a] border border-[#2a2a4a] rounded-lg text-xs text-gray-200 outline-none focus:border-[#D4AF37]/50" dir="ltr" />
+                    className="flex-1 min-w-[250px] px-4 py-2.5 bg-[#12122a] border border-[#2a2a4a] rounded-lg text-xs text-gray-200 outline-none focus:border-[#0071e3]/50" dir="ltr" />
                   <select value={inviteRole} onChange={e => setInviteRole(e.target.value as any)}
                     className="px-4 py-2.5 bg-[#12122a] border border-[#2a2a4a] rounded-lg text-xs text-gray-200 outline-none">
                     <option value="admin">{text.admin}</option>
                     <option value="support">{text.support}</option>
                   </select>
                   <button onClick={handleAddMember} disabled={teamLoading || !inviteEmail.trim()}
-                    className="px-6 py-2.5 bg-[#D4AF37] hover:bg-yellow-500 text-[#1A1A2E] font-semibold rounded-lg text-xs disabled:opacity-50 transition">
+                    className="px-6 py-2.5 bg-[#0071e3] hover:bg-[#0077ED] text-white font-semibold rounded-lg text-xs disabled:opacity-50 transition">
                     {text.invite}
                   </button>
                 </div>
@@ -1474,10 +1486,10 @@ export default function AdminPage() {
             <div>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-bold">{text.auditTitle}</h2>
-                <button onClick={loadAudit} className="text-xs text-[#D4AF37] hover:underline">{text.refresh}</button>
+                <button onClick={loadAudit} className="text-xs text-[#0071e3] hover:underline">{text.refresh}</button>
               </div>
               {auditLoading ? (
-                <div className="flex justify-center py-12"><div className="w-6 h-6 border-2 border-[#D4AF37] border-t-transparent rounded-full animate-spin" /></div>
+                <div className="flex justify-center py-12"><div className="w-6 h-6 border-2 border-[#0071e3] border-t-transparent rounded-full animate-spin" /></div>
               ) : (
                 <div className="bg-[#0e0e20] rounded-xl border border-[#1a1a3a] overflow-hidden">
                   <div className="overflow-x-auto">

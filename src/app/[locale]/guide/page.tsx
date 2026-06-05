@@ -4,18 +4,22 @@ import { useState } from "react";
 import { useParams } from "next/navigation";
 import { BookOpen, Shield, FileText, Upload, Bell, ChevronRight, Sparkles, ArrowRight, HelpCircle, Zap } from "lucide-react";
 import Link from "next/link";
+import { Navbar } from "@/components/Navbar";
+import { Footer } from "@/components/Footer";
+import { getDictionary, type Locale } from "@/lib/i18n";
 
 export default function GuidePage() {
   const params = useParams() ?? {};
   const locale = params?.locale as string || "en";
   const isRTL = locale === "ar";
+  const dictionary = getDictionary(locale as Locale);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const tr = (value: string) => value;
 
   const steps = [
-    { icon: Upload, title: isRTL ? tr("أضف ضمانك الأول") : "Add Your First Warranty", desc: isRTL ? tr("ارفع صورة أو أدخل التفاصيل يدوياً. المسح الذكي يملأ الحقول تلقائياً.") : "Upload a photo or enter details manually. Smart Scan auto-fills fields for you.", color: "#007aff" },
+    { icon: Upload, title: isRTL ? tr("أضف ضمانك الأول") : "Add Your First Warranty", desc: isRTL ? tr("ارفع صورة أو أدخل التفاصيل يدوياً. المسح الذكي يملأ الحقول تلقائياً.") : "Upload a photo or enter details manually. Smart Scan auto-fills fields for you.", color: "#0071e3" },
     { icon: Shield, title: isRTL ? tr("تتبع الحالة") : "Track Status", desc: isRTL ? tr("راقب حالة الضمانات النشطة والمنتهية والتي ستنتهي.") : "Monitor active, expiring, and expired warranties at a glance.", color: "#30d158" },
-    { icon: Bell, title: isRTL ? tr("احصل على تنبيهات") : "Get Notified", desc: isRTL ? tr("استلم تنبيهات قبل انتهاء الضمان حتى لا تفوتك.") : "Receive alerts before warranties expire so you never miss a claim.", color: "#ff9f0a" },
+    { icon: Bell, title: isRTL ? tr("احصل على تنبيهات") : "Get Notified", desc: isRTL ? tr("استلم تنبيهات قبل انتهاء الضمان حتى لا تفوتك.") : "Receive alerts before warranties expire so you never miss a claim.", color: "#0071e3" },
     { icon: FileText, title: isRTL ? tr("قدم مطالبة") : "File a Claim", desc: isRTL ? tr("قدم مطالبة ضمان بضغطة واحدة وتابع التقدم.") : "Submit a warranty claim in one click and track its progress.", color: "#ff453a" },
   ];
 
@@ -27,12 +31,13 @@ export default function GuidePage() {
   ];
 
   return (
-    <div dir={isRTL ? "rtl" : "ltr"} className="min-h-screen bg-[#f5f5f7]">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
+    <div dir={isRTL ? "rtl" : "ltr"} className="min-h-screen bg-[#fbfbfd]">
+      <Navbar locale={locale as Locale} dictionary={dictionary} />
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 py-12">
         {/* Header */}
         <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-[#1A1A2E] to-[#2d2d5e] mb-4">
-            <BookOpen className="w-7 h-7 text-white" />
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#0071e3]/10 mb-4">
+            <BookOpen className="w-7 h-7 text-[#0071e3]" />
           </div>
           <h1 className="text-[28px] font-semibold text-[#1d1d1f] tracking-tight">
             {isRTL ? tr("دليل الاستخدام") : "Getting Started Guide"}
@@ -81,7 +86,7 @@ export default function GuidePage() {
               >
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <HelpCircle className="w-4 h-4 text-[#007aff] flex-shrink-0" />
+                    <HelpCircle className="w-4 h-4 text-[#0071e3] flex-shrink-0" />
                     <span className="text-[14px] font-medium text-[#1d1d1f]">{faq.q}</span>
                   </div>
                   <ChevronRight className={"w-4 h-4 text-[#86868b] transition-transform " + (openFaq === i ? "rotate-90" : "")} />
@@ -97,24 +102,25 @@ export default function GuidePage() {
         </div>
 
         {/* CTA Banner */}
-        <div className="bg-gradient-to-br from-[#1A1A2E] to-[#2d2d5e] rounded-2xl p-8 text-center">
-          <Sparkles className="w-8 h-8 text-[#ff9f0a] mx-auto mb-3" />
-          <h2 className="text-[20px] font-semibold text-white mb-2">
+        <div className="rounded-2xl border border-[#0071e3]/10 bg-[#f5f9ff] p-8 text-center shadow-sm">
+          <Sparkles className="w-8 h-8 text-[#0071e3] mx-auto mb-3" />
+          <h2 className="text-[20px] font-semibold text-[#1d1d1f] mb-2">
             {isRTL ? tr("جاهز للبدء؟") : "Ready to get started?"}
           </h2>
-          <p className="text-[14px] text-white/70 mb-5 max-w-md mx-auto">
+          <p className="text-[14px] text-[#6e6e73] mb-5 max-w-md mx-auto">
             {isRTL ? tr("أضف ضمانك الأول الآن وابدأ في حماية مشترياتك") : "Add your first warranty now and start protecting your purchases"}
           </p>
           <Link
             href={"/" + locale + "/warranties/new"}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-white text-[#1A1A2E] rounded-full text-[14px] font-semibold hover:bg-white/90 transition-colors"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-[#0071e3] text-white rounded-full text-[14px] font-semibold hover:bg-[#0077ED] transition-colors"
           >
             <Zap className="w-4 h-4" />
             {isRTL ? tr("أضف ضمان") : "Add Warranty"}
             <ArrowRight className={"w-4 h-4 " + (isRTL ? "rotate-180" : "")} />
           </Link>
         </div>
-      </div>
+      </main>
+      <Footer locale={locale as Locale} dictionary={dictionary} />
     </div>
   );
 }

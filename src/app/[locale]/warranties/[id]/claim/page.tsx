@@ -1,11 +1,10 @@
-// @ts-nocheck
 "use client";
 
 import { useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { CheckCircle, Paperclip, X, Upload } from "lucide-react";
 import { SubpageHeroHeader } from "@/components/dashboard/SubpageHeroHeader";
-import { getDictionary, DIRECTION } from "@/lib/i18n";
+import { DIRECTION } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth-context";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
@@ -16,7 +15,6 @@ export default function FileClaimPage() {
   const router = useRouter();
   const locale = (params.locale as string) || "en";
   const warrantyId = params.id as string;
-  const dict = getDictionary(locale);
   const isRTL = locale === "ar";
   const direction = DIRECTION[locale as Locale];
   const { user } = useAuth();

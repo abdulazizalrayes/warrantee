@@ -159,5 +159,5 @@ export function useMultiTableRealtime(
       channels.forEach((ch) => ch.unsubscribe());
       channelsRef.current = [];
     };
-  }, [enabled, supabase]); // Note: subscriptions array should be stable (useMemo)
+  }, [enabled, subscriptions, supabase]);
 }

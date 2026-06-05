@@ -1,4 +1,3 @@
-// @ts-nocheck
 "use client";
 
 import { useEffect, useRef, useState } from "react";
@@ -55,7 +54,7 @@ export default function NewWarrantyPage() {
   const [invoiceReference, setInvoiceReference] = useState("");
   const [termsAndConditions, setTermsAndConditions] = useState("");
   const [customClauses, setCustomClauses] = useState("");
-  const [language, setLanguage] = useState(locale);
+  const [language] = useState(locale);
   const [files, setFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
   const [createdWarrantyId, setCreatedWarrantyId] = useState<string | null>(null);
@@ -337,41 +336,41 @@ export default function NewWarrantyPage() {
         <div>
           <label className="block text-sm font-medium text-navy mb-1">{dict.warranty.fields.product_name} ({isRTL ? "\u0625\u0646\u062c\u0644\u064a\u0632\u064a" : "English"}) *</label>
           <input type="text" value={productName} onChange={(e) => setProductName(e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold focus:border-transparent" required />
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0071e3]/30 focus:border-[#0071e3]" required />
         </div>
         <div>
           <label className="block text-sm font-medium text-navy mb-1">{dict.warranty.fields.product_name} ({isRTL ? "\u0639\u0631\u0628\u064a" : "Arabic"})</label>
           <input type="text" value={productNameAr} onChange={(e) => setProductNameAr(e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold focus:border-transparent" dir="rtl" />
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0071e3]/30 focus:border-[#0071e3]" dir="rtl" />
         </div>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div>
           <label className="block text-sm font-medium text-navy mb-1">SKU</label>
           <input type="text" value={sku} onChange={(e) => setSku(e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold focus:border-transparent" dir="ltr" />
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0071e3]/30 focus:border-[#0071e3]" dir="ltr" />
         </div>
         <div>
           <label className="block text-sm font-medium text-navy mb-1">{dict.warranty.fields.serial_number}</label>
           <input type="text" value={serialNumber} onChange={(e) => setSerialNumber(e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold focus:border-transparent" dir="ltr" />
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0071e3]/30 focus:border-[#0071e3]" dir="ltr" />
         </div>
         <div>
           <label className="block text-sm font-medium text-navy mb-1">{isRTL ? "\u0627\u0644\u0643\u0645\u064a\u0629" : "Quantity"}</label>
           <input type="number" value={quantity} onChange={(e) => setQuantity(parseInt(e.target.value) || 1)} min={1}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold focus:border-transparent" />
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0071e3]/30 focus:border-[#0071e3]" />
         </div>
       </div>
       <div>
         <label className="block text-sm font-medium text-navy mb-1">{isRTL ? "\u0627\u0644\u0641\u0626\u0629" : "Category"} *</label>
         <select value={category} onChange={(e) => setCategory(e.target.value)}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold focus:border-transparent">
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0071e3]/30 focus:border-[#0071e3]">
           {CATEGORIES.map((c) => (<option key={c.value} value={c.value}>{isRTL ? c.ar : c.en}</option>))}
         </select>
       </div>
       <div className="flex justify-end">
         <button onClick={() => setStep(2)} disabled={!canProceedStep1}
-          className="bg-gold hover:bg-yellow-500 text-navy font-semibold py-3 px-6 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+          className="bg-[#0071e3] hover:bg-[#0077ED] text-white font-semibold py-3 px-6 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
           {dict.common.next}
           {!isRTL ? <ArrowRight size={18} /> : <ArrowLeft size={18} />}
         </button>
@@ -386,52 +385,52 @@ export default function NewWarrantyPage() {
         <div>
           <label className="block text-sm font-medium text-navy mb-1">{dict.warranty.fields.start_date} *</label>
           <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold focus:border-transparent" required />
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0071e3]/30 focus:border-[#0071e3]" required />
         </div>
         <div>
           <label className="block text-sm font-medium text-navy mb-1">{dict.warranty.fields.warranty_end_date} *</label>
           <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} min={startDate}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold focus:border-transparent" required />
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0071e3]/30 focus:border-[#0071e3]" required />
         </div>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-navy mb-1">{isRTL ? "\u0627\u0633\u0645 \u0627\u0644\u0628\u0627\u0626\u0639" : "Seller Name"}</label>
           <input type="text" value={sellerName} onChange={(e) => setSellerName(e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold focus:border-transparent" />
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0071e3]/30 focus:border-[#0071e3]" />
         </div>
         <div>
           <label className="block text-sm font-medium text-navy mb-1">{isRTL ? "\u0628\u0631\u064a\u062f \u0627\u0644\u0628\u0627\u0626\u0639" : "Seller Email"}</label>
           <input type="email" value={sellerEmail} onChange={(e) => setSellerEmail(e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold focus:border-transparent" dir="ltr" />
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0071e3]/30 focus:border-[#0071e3]" dir="ltr" />
         </div>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-navy mb-1">{isRTL ? "\u0645\u0631\u062c\u0639 \u0623\u0645\u0631 \u0627\u0644\u0634\u0631\u0627\u0621" : "PO Reference"}</label>
           <input type="text" value={poReference} onChange={(e) => setPoReference(e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold focus:border-transparent" dir="ltr" />
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0071e3]/30 focus:border-[#0071e3]" dir="ltr" />
         </div>
         <div>
           <label className="block text-sm font-medium text-navy mb-1">{isRTL ? "\u0645\u0631\u062c\u0639 \u0627\u0644\u0641\u0627\u062a\u0648\u0631\u0629" : "Invoice Reference"}</label>
           <input type="text" value={invoiceReference} onChange={(e) => setInvoiceReference(e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold focus:border-transparent" dir="ltr" />
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0071e3]/30 focus:border-[#0071e3]" dir="ltr" />
         </div>
       </div>
       <div>
         <label className="block text-sm font-medium text-navy mb-1">{dict.warranty.fields.terms_conditions}</label>
         <textarea value={termsAndConditions} onChange={(e) => setTermsAndConditions(e.target.value)} rows={3}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold focus:border-transparent resize-none" />
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0071e3]/30 focus:border-[#0071e3] resize-none" />
       </div>
       <div>
         <label className="block text-sm font-medium text-navy mb-1">{isRTL ? "\u0628\u0646\u0648\u062f \u0645\u062e\u0635\u0635\u0629" : "Custom Clauses"}</label>
         <textarea value={customClauses} onChange={(e) => setCustomClauses(e.target.value)} rows={2}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold focus:border-transparent resize-none" />
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0071e3]/30 focus:border-[#0071e3] resize-none" />
       </div>
       <div className="flex gap-3">
         <button onClick={() => setStep(1)} className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-medium text-navy">{dict.common.back}</button>
         <button onClick={() => setStep(3)} disabled={!canProceedStep2}
-          className="flex-1 bg-gold hover:bg-yellow-500 text-navy font-semibold py-3 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+          className="flex-1 bg-[#0071e3] hover:bg-[#0077ED] text-white font-semibold py-3 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
           {dict.common.next}
           {!isRTL ? <ArrowRight size={18} /> : <ArrowLeft size={18} />}
         </button>
@@ -445,8 +444,8 @@ export default function NewWarrantyPage() {
       <p className="text-sm text-gray-600">{isRTL ? "\u0627\u0631\u0641\u0642 \u0627\u0644\u0641\u0648\u0627\u062a\u064a\u0631 \u0623\u0648 \u0627\u0644\u0645\u0633\u062a\u0646\u062d\u0627\u062a \u0627\u0644\u0645\u062a\u0639\u0644\u0642\u0629 \u0628\u0627\u0644\u0636\u0645\u0627\u0646 (\u0627\u062e\u062a\u064a\u0627\u0631\u064a)" : "Attach invoices or warranty-related documents (optional)"}</p>
       <div onClick={() => fileInputRef.current?.click()}
         onDrop={handleDrop} onDragOver={handleDragOver} onDragLeave={handleDragLeave}
-        className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition ${dragOver ? "border-gold bg-yellow-50" : "border-gray-300 hover:border-gold"}`}>
-        <Upload size={32} className={`mx-auto mb-2 ${dragOver ? "text-gold" : "text-gray-400"}`} />
+        className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition ${dragOver ? "border-[#0071e3] bg-[#0071e3]/5" : "border-gray-300 hover:border-[#0071e3]"}`}>
+        <Upload size={32} className={`mx-auto mb-2 ${dragOver ? "text-[#0071e3]" : "text-gray-400"}`} />
         <p className="text-sm text-gray-600">{isRTL ? "\u0627\u0633\u062d\u0628 \u0627\u0644\u0645\u0644\u0641\u0627\u062a \u0647\u0646\u0627 \u0623\u0648 \u0627\u0636\u063a\u0637 \u0644\u0644\u0631\u0641\u0639" : "Drag & drop files here or click to upload"}</p>
         <p className="text-xs text-gray-400 mt-1">{isRTL ? "\u062c\u0645\u064a\u0639 \u0623\u0646\u0648\u0627\u0639 \u0627\u0644\u0645\u0644\u0641\u0627\u062a \u0645\u062f\u0639\u0648\u0645\u0629 (\u062d\u062f 10MB)" : "All file types accepted (max 10MB)"}</p>
         <input ref={fileInputRef} type="file" multiple onChange={handleFileSelect} className="hidden" />
@@ -476,7 +475,7 @@ export default function NewWarrantyPage() {
           {isRTL ? "\u062d\u0641\u0638 \u0643\u0645\u0633\u0648\u062f\u0629" : "Save as Draft"}
         </button>
         <button onClick={() => handleSubmit(false)} disabled={loading}
-          className="flex-1 bg-gold hover:bg-yellow-500 text-navy font-semibold py-3 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+          className="flex-1 bg-[#0071e3] hover:bg-[#0077ED] text-white font-semibold py-3 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
           {loading || uploading ? dict.common.loading : isRTL ? "\u0625\u0646\u0634\u0627\u0621 \u0627\u0644\u0636\u0645\u0627\u0646" : "Create Warranty"}
         </button>
       </div>
@@ -497,7 +496,7 @@ export default function NewWarrantyPage() {
       ) : null}
       <div className="flex gap-3 justify-center">
         <button onClick={() => router.push(`/${locale}/warranties/${createdWarrantyId}`)}
-          className="bg-gold hover:bg-yellow-500 text-navy font-semibold py-3 px-6 rounded-lg transition">
+          className="bg-[#0071e3] hover:bg-[#0077ED] text-white font-semibold py-3 px-6 rounded-lg transition">
           {isRTL ? "\u0639\u0631\u0636 \u0627\u0644\u0636\u0645\u0627\u0646" : "View Warranty"}
         </button>
         <button onClick={() => { setStep(1); setProductName(""); setProductNameAr(""); setSku(""); setSerialNumber(""); setQuantity(1); setStartDate(new Date().toISOString().split("T")[0]); setEndDate(""); setSellerName(""); setSellerEmail(""); setFiles([]); setCreatedWarrantyId(null); setCompletionNotice(null); }}

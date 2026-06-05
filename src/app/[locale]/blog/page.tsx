@@ -69,7 +69,7 @@ export default async function BlogPage({ params }: BlogPageProps) {
       <main>
         <section className="px-4 py-20 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-5xl">
-            <p className="mb-4 text-sm font-semibold uppercase tracking-[0.24em] text-gold">
+            <p className="mb-4 text-sm font-semibold uppercase tracking-[0.24em] text-[#0071e3]">
               {locale === 'en' ? 'Warrantee resources' : 'موارد وارنتي'}
             </p>
             <h1 className="max-w-3xl text-4xl font-bold tracking-tight text-navy md:text-6xl">
@@ -89,12 +89,12 @@ export default async function BlogPage({ params }: BlogPageProps) {
           <div className="mx-auto grid max-w-5xl gap-6 md:grid-cols-3">
             {items.map((post) => (
               <article key={post.title} className="rounded-3xl border border-navy/10 bg-white p-7 shadow-sm">
-                <p className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-gold">{post.eyebrow}</p>
+                <p className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-[#0071e3]">{post.eyebrow}</p>
                 <h2 className="text-xl font-bold text-navy">{post.title}</h2>
                 <p className="mt-4 text-sm leading-7 text-navy/60">{post.description}</p>
                 <Link
                   href={`/${locale}${post.href}`}
-                  className="mt-6 inline-flex text-sm font-semibold text-gold hover:text-gold/80"
+                  className="mt-6 inline-flex text-sm font-semibold text-[#0071e3] hover:text-[#0077ED]"
                 >
                   {locale === 'en' ? 'Read related guide' : 'اقرأ الدليل المرتبط'}
                 </Link>

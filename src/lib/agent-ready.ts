@@ -8,6 +8,8 @@ export const PUBLIC_AGENT_PATHS = new Set([
   "/ar",
   "/en/about",
   "/ar/about",
+  "/en/blog",
+  "/ar/blog",
   "/en/features",
   "/ar/features",
   "/en/pricing",
@@ -22,6 +24,8 @@ export const PUBLIC_AGENT_PATHS = new Set([
   "/ar/verify",
   "/en/api-docs",
   "/ar/api-docs",
+  "/en/support",
+  "/ar/support",
   "/en/terms",
   "/ar/terms",
   "/en/privacy",
@@ -33,6 +37,7 @@ export const PUBLIC_AGENT_PATHS = new Set([
 export type AgentPageKey =
   | "home"
   | "about"
+  | "blog"
   | "features"
   | "pricing"
   | "contact"
@@ -40,6 +45,7 @@ export type AgentPageKey =
   | "guide"
   | "verify"
   | "api-docs"
+  | "support"
   | "terms"
   | "privacy"
   | "cookies";
@@ -77,12 +83,12 @@ const PAGE_CONTENT: Record<AgentPageKey, AgentPageContent> = {
       en: [
         `Visit ${BASE_URL}/en/features for capabilities.`,
         `Visit ${BASE_URL}/en/api-docs for integration guidance.`,
-        `Visit ${BASE_URL}/verify to validate public warranties.`,
+        `Visit ${BASE_URL}/en/verify to validate public warranties.`,
       ],
       ar: [
         `زر ${BASE_URL}/ar/features للاطلاع على القدرات.`,
         `زر ${BASE_URL}/ar/api-docs للاطلاع على تكاملات النظام.`,
-        `زر ${BASE_URL}/verify للتحقق من الضمانات العامة.`,
+        `زر ${BASE_URL}/ar/verify للتحقق من الضمانات العامة.`,
       ],
     },
   },
@@ -91,6 +97,13 @@ const PAGE_CONTENT: Record<AgentPageKey, AgentPageContent> = {
     summary: {
       en: "Warrantee focuses on making warranty operations reliable, auditable, and multilingual for Saudi Arabia and the GCC.",
       ar: "تركز وارنتي على جعل عمليات الضمان موثوقة وقابلة للتدقيق ومتعددة اللغات للمملكة ودول الخليج.",
+    },
+  },
+  blog: {
+    title: { en: "Warrantee Blog", ar: "مدونة وارنتي" },
+    summary: {
+      en: "The Warrantee blog publishes practical warranty management guides covering tracking, claims workflows, extensions, bilingual operations, seller onboarding, and integrations.",
+      ar: "تنشر مدونة وارنتي أدلة عملية لإدارة الضمانات تشمل التتبع وسير عمل المطالبات والتمديدات والتشغيل ثنائي اللغة وانضمام البائعين والتكاملات.",
     },
   },
   features: {
@@ -103,8 +116,8 @@ const PAGE_CONTENT: Record<AgentPageKey, AgentPageContent> = {
   pricing: {
     title: { en: "Warrantee Pricing", ar: "أسعار وارنتي" },
     summary: {
-      en: "Warrantee offers free, business, and enterprise-oriented pricing tiers depending on warranty volume, workflow depth, and integration needs.",
-      ar: "تقدم وارنتي خططاً مجانية وتجارية ومؤسسية بحسب حجم الضمانات وعمق سير العمل واحتياجات التكامل.",
+      en: "Warrantee offers Free, Professional, and Enterprise pricing tiers depending on warranty volume, workflow depth, team needs, and integration requirements.",
+      ar: "تقدم وارنتي خططاً مجانية واحترافية ومؤسسية بحسب حجم الضمانات وعمق سير العمل واحتياجات الفريق والتكامل.",
     },
   },
   contact: {
@@ -138,20 +151,27 @@ const PAGE_CONTENT: Record<AgentPageKey, AgentPageContent> = {
   "api-docs": {
     title: { en: "Warrantee API Documentation", ar: "توثيق API لوارنتي" },
     summary: {
-      en: "Warrantee exposes REST APIs for warranty listing, creation, retrieval, updating, verification, coverage, certificates, extensions, and related workflows. Authenticated requests use bearer tokens from Supabase-backed auth.",
-      ar: "توفر وارنتي واجهات REST لعرض الضمانات وإنشائها واسترجاعها وتحديثها والتحقق منها والتغطية والشهادات والتمديدات وسير العمل المرتبط بها. تعتمد الطلبات الموثقة على رموز Bearer من نظام المصادقة المبني على Supabase.",
+      en: "Warrantee exposes REST APIs for warranty listing, creation, retrieval, updating, verification, coverage, certificates, extensions, and related workflows. Authenticated warranty-management requests use Supabase-backed Bearer tokens or scoped per-user integration tokens.",
+      ar: "توفر وارنتي واجهات REST لعرض الضمانات وإنشائها واسترجاعها وتحديثها والتحقق منها والتغطية والشهادات والتمديدات وسير العمل المرتبط بها. تعتمد طلبات إدارة الضمانات الموثقة على رموز Bearer أو رموز تكامل محددة الصلاحيات لكل مستخدم.",
     },
     bullets: {
       en: [
         "Base API URL: https://warrantee.io/api/v1",
-        "Authentication: Bearer token",
-        "Rate limiting is applied to protect the service",
+        "Authentication: Bearer token or scoped x-api-key integration token",
+        "Rate limiting is applied per user/token and at the IP edge; accounts can hold up to 20 active integration tokens",
       ],
       ar: [
         "الرابط الأساسي للواجهة: https://warrantee.io/api/v1",
-        "المصادقة: Bearer token",
-        "يتم تطبيق حدود للطلبات لحماية الخدمة",
+        "المصادقة: Bearer token أو رمز تكامل x-api-key محدد الصلاحيات",
+        "يتم تطبيق حدود للطلبات لكل مستخدم/رمز وعلى مستوى IP، ويمكن للحساب الاحتفاظ بما يصل إلى 20 رمز تكامل نشط",
       ],
+    },
+  },
+  support: {
+    title: { en: "Warrantee Support", ar: "دعم وارنتي" },
+    summary: {
+      en: "Support resources cover Warrantee accounts, warranties, claims, seller onboarding, API integrations, and contact options for help.",
+      ar: "تغطي موارد الدعم حسابات وارنتي والضمانات والمطالبات وانضمام البائعين وتكاملات API وخيارات التواصل للحصول على المساعدة.",
     },
   },
   terms: {

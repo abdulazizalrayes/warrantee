@@ -109,7 +109,7 @@ export default async function AboutPage({ params }: AboutPageProps) {
       <Navbar locale={locale} dictionary={dictionary} />
 
       <main id="main-content">
-        <section className="pt-24 pb-16 px-4 sm:px-6 lg:px-8 text-center bg-gradient-to-b from-gold/5 to-transparent">
+        <section className="pt-24 pb-16 px-4 sm:px-6 lg:px-8 text-center bg-[#fbfbfd]">
           <div className="max-w-3xl mx-auto">
             <h1 className="text-5xl md:text-6xl font-bold text-navy tracking-tight mb-6">
               {page.storyTitle}
@@ -124,9 +124,9 @@ export default async function AboutPage({ params }: AboutPageProps) {
             <p className="text-navy/60 text-lg leading-relaxed mb-6">{page.originOne}</p>
             <p className="text-navy/60 text-lg leading-relaxed mb-6">{page.originTwo}</p>
 
-            <blockquote className="bg-navy/5 border-l-4 border-gold rounded-r-2xl p-8 my-10">
+            <blockquote className="bg-[#f5f9ff] border-l-4 border-[#0071e3] rounded-r-2xl p-8 my-10">
               <p className="text-navy text-lg italic leading-relaxed">&ldquo;{page.quote}&rdquo;</p>
-              <footer className="text-gold font-semibold mt-4">- {page.founder}</footer>
+              <footer className="text-[#0071e3] font-semibold mt-4">- {page.founder}</footer>
             </blockquote>
 
             <h2 className="text-3xl font-bold text-navy mb-6">{page.missionTitle}</h2>
@@ -134,16 +134,16 @@ export default async function AboutPage({ params }: AboutPageProps) {
           </div>
         </section>
 
-        <section className="py-16 px-4 sm:px-6 lg:px-8 bg-navy/[0.02]">
+        <section className="py-16 px-4 sm:px-6 lg:px-8 bg-[#fbfbfd]">
           <div className="max-w-5xl mx-auto">
             <h2 className="text-3xl font-bold text-navy mb-10 text-center">{page.valuesTitle}</h2>
             <div className="grid md:grid-cols-2 gap-6">
               {page.values.map((value) => (
                 <div
                   key={value.title}
-                  className="p-8 bg-warm-white border border-navy/5 rounded-2xl hover:border-gold/20 transition-all"
+                  className="p-8 bg-warm-white border border-navy/5 rounded-2xl hover:border-[#0071e3]/20 transition-all"
                 >
-                  <value.icon className="w-8 h-8 text-gold mb-4" />
+                  <value.icon className="w-8 h-8 text-[#0071e3] mb-4" />
                   <h3 className="font-bold text-lg text-navy mb-2">{value.title}</h3>
                   <p className="text-navy/60 text-sm leading-relaxed">{value.desc}</p>
                 </div>
@@ -154,12 +154,12 @@ export default async function AboutPage({ params }: AboutPageProps) {
 
         <section className="py-20 px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl mx-auto text-center">
-            <div className="bg-navy rounded-3xl p-12">
-              <h2 className="text-3xl font-bold text-white mb-4">{page.ctaTitle}</h2>
-              <p className="text-white/60 mb-8">{page.ctaText}</p>
+            <div className="rounded-3xl border border-[#0071e3]/10 bg-[#f5f9ff] p-12 shadow-sm">
+              <h2 className="text-3xl font-bold text-[#1d1d1f] mb-4">{page.ctaTitle}</h2>
+              <p className="text-[#6e6e73] mb-8">{page.ctaText}</p>
               <Link
                 href={`/${locale}/auth?tab=signup`}
-                className="inline-flex items-center gap-2 px-8 py-4 bg-gold text-navy font-semibold rounded-xl hover:bg-gold/90 transition-all"
+                className="inline-flex items-center gap-2 px-8 py-4 bg-[#0071e3] text-white font-semibold rounded-full hover:bg-[#0077ED] transition-all"
               >
                 {page.cta}
                 <ArrowRight className="w-4 h-4" />

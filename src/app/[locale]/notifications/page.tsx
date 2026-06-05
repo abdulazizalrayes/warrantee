@@ -1,4 +1,3 @@
-// @ts-nocheck
 "use client";
 
 import { useState, useEffect } from "react";
@@ -98,12 +97,12 @@ export default function NotificationsPage() {
         schema: "public",
         table: "notifications",
         filter: `user_id=eq.${user.id}`,
-      }, (payload) => {
+      }, (payload: { new: Notification }) => {
         setNotifications((prev) => [payload.new as Notification, ...prev]);
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [user]);
+  }, [supabase, user]);
 
   async function fetchNotifications() {
     try {

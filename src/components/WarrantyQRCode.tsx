@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
+import QRCode from 'qrcode';
 
 interface QRCodeProps {
   warrantyId: string;
@@ -12,7 +13,6 @@ interface QRCodeProps {
 export default function WarrantyQRCode({ warrantyId, size = 200, showDownload = true }: QRCodeProps) {
   const pathname = usePathname();
   const locale = pathname?.startsWith('/ar') ? 'ar' : 'en';
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [dataUrl, setDataUrl] = useState('');
 
   const t = {
@@ -22,81 +22,28 @@ export default function WarrantyQRCode({ warrantyId, size = 200, showDownload = 
   const text = t[locale as keyof typeof t] || t.en;
 
   useEffect(() => {
-    if (!canvasRef.current) return;
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
     const verifyUrl = `${window.location.origin}/${locale}/verify/${warrantyId}`;
-    
-    // Simple QR-like pattern using warranty data hash
-    canvas.width = size;
-    canvas.height = size;
-    
-    // Background
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, size, size);
-    
-    // Generate pattern from warranty ID
-    const moduleCount = 25;
-    const moduleSize = size / moduleCount;
-    const data = verifyUrl;
-    
-    // Create deterministic pattern from URL
-    let hash = 0;
-    for (let i = 0; i < data.length; i++) {
-      const char = data.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash;
-    }
-    
-    ctx.fillStyle = '#000000';
-    
-    // Position detection patterns (corners)
-    const drawFinder = (x: number, y: number) => {
-      const s = moduleSize;
-      ctx.fillRect(x, y, s * 7, s * 7);
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(x + s, y + s, s * 5, s * 5);
-      ctx.fillStyle = '#000000';
-      ctx.fillRect(x + s * 2, y + s * 2, s * 3, s * 3);
+
+    let cancelled = false;
+    QRCode.toDataURL(verifyUrl, {
+      width: size,
+      margin: 2,
+      errorCorrectionLevel: 'H',
+      color: {
+        dark: '#1d1d1f',
+        light: '#ffffff',
+      },
+    })
+      .then((url) => {
+        if (!cancelled) setDataUrl(url);
+      })
+      .catch(() => {
+        if (!cancelled) setDataUrl('');
+      });
+
+    return () => {
+      cancelled = true;
     };
-    
-    drawFinder(0, 0);
-    drawFinder(size - moduleSize * 7, 0);
-    drawFinder(0, size - moduleSize * 7);
-    
-    // Data modules
-    let seed = Math.abs(hash);
-    for (let row = 0; row < moduleCount; row++) {
-      for (let col = 0; col < moduleCount; col++) {
-        // Skip finder pattern areas
-        if ((row < 8 && col < 8) || (row < 8 && col > moduleCount - 9) || (row > moduleCount - 9 && col < 8)) continue;
-        
-        seed = (seed * 1103515245 + 12345) & 0x7fffffff;
-        if (seed % 3 !== 0) {
-          ctx.fillStyle = '#000000';
-          ctx.fillRect(col * moduleSize, row * moduleSize, moduleSize - 0.5, moduleSize - 0.5);
-        }
-      }
-    }
-    
-    // Center logo area
-    const centerX = (size - moduleSize * 5) / 2;
-    const centerY = (size - moduleSize * 5) / 2;
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(centerX - 2, centerY - 2, moduleSize * 5 + 4, moduleSize * 5 + 4);
-    ctx.fillStyle = '#059669';
-    ctx.beginPath();
-    ctx.arc(size / 2, size / 2, moduleSize * 2, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#ffffff';
-    ctx.font = `bold ${moduleSize * 2}px system-ui`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('W', size / 2, size / 2 + 1);
-    
-    setDataUrl(canvas.toDataURL('image/png'));
   }, [warrantyId, size, locale]);
 
   const handleDownload = () => {
@@ -110,7 +57,21 @@ export default function WarrantyQRCode({ warrantyId, size = 200, showDownload = 
   return (
     <div className="flex flex-col items-center gap-3" dir={locale === 'ar' ? 'rtl' : 'ltr'}>
       <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-        <canvas ref={canvasRef} className="block" style={{ width: size, height: size }} />
+        {dataUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={dataUrl}
+            alt={text.scanTo}
+            className="block"
+            style={{ width: size, height: size }}
+          />
+        ) : (
+          <div
+            className="animate-pulse rounded-lg bg-[#f5f5f7]"
+            style={{ width: size, height: size }}
+            aria-label={text.scanTo}
+          />
+        )}
       </div>
       <p className="text-xs text-gray-500">{text.scanTo}</p>
       <p className="text-xs font-mono text-gray-400">{text.warrantyId}: {warrantyId.slice(0, 8)}...</p>

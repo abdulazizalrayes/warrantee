@@ -1,4 +1,3 @@
-// @ts-nocheck
 "use client";
 
 import { useState, useEffect } from "react";
@@ -42,8 +41,8 @@ const plans = [
   {
     id: "pro",
     icon: Zap,
-    iconColor: "text-[#D4A853]",
-    iconBg: "bg-[#D4A853]/10",
+    iconColor: "text-[#0071e3]",
+    iconBg: "bg-[#0071e3]/10",
     price: 1,
     popular: true,
     features_en: ["Unlimited warranties", "Advanced analytics", "Priority support", "Up to 5 team members", "Custom workflows", "Bilingual certificates", "8% commission"],
@@ -215,7 +214,7 @@ export default function BillingPage() {
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
-                    <Crown className="w-5 h-5 text-[#D4A853]" />
+                    <Crown className="w-5 h-5 text-[#0071e3]" />
                   </div>
                   <div>
                     <p className="text-[13px] font-medium text-white/60 uppercase tracking-wide">
@@ -226,7 +225,7 @@ export default function BillingPage() {
                     </p>
                   </div>
                 </div>
-                <span className="text-[13px] font-medium bg-[#D4A853] text-[#1A1A2E] px-3 py-1 rounded-full">
+                <span className="text-[13px] font-medium bg-[#0071e3] text-white px-3 py-1 rounded-full">
                   {subscription.status === "trialing" ? (isRTL ? "تجريبي" : "Trial") : (isRTL ? "نشط" : "Active")}
                 </span>
               </div>
@@ -276,14 +275,14 @@ export default function BillingPage() {
                   key={plan.id}
                   className={`bg-white rounded-2xl ring-1 shadow-sm overflow-hidden transition-all duration-200 hover:shadow-md relative ${
                     plan.popular
-                      ? "ring-[#D4A853] ring-2"
+                      ? "ring-[#0071e3] ring-2"
                       : isCurrentPlan
                       ? "ring-[#0071e3] ring-2"
                       : "ring-[#d2d2d7]/40"
                   }`}
                 >
                   {plan.popular && (
-                    <div className="bg-[#D4A853] text-[#1A1A2E] text-[12px] font-semibold text-center py-1.5 tracking-wide uppercase">
+                    <div className="bg-[#0071e3] text-white text-[12px] font-semibold text-center py-1.5 tracking-wide uppercase">
                       {isRTL ? "الأكثر شعبية" : "Most Popular"}
                     </div>
                   )}

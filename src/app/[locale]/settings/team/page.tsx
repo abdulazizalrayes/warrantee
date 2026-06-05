@@ -1,7 +1,6 @@
-// @ts-nocheck
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { DashboardPageShell } from "@/components/dashboard/DashboardPageShell";
 import { PageBackButton } from "@/components/PageBackButton";
@@ -93,11 +92,7 @@ export default function TeamManagementPage() {
   const [allowedDomain, setAllowedDomain] = useState("");
   const [accessDenied, setAccessDenied] = useState(false);
 
-  useEffect(() => {
-    loadMembers();
-  }, []);
-
-  async function loadMembers() {
+  const loadMembers = useCallback(async () => {
     setLoading(true);
     const res = await fetch("/api/team/members", { cache: "no-store" });
     const payload = await res.json().catch(() => ({}));
@@ -117,7 +112,11 @@ export default function TeamManagementPage() {
     setAllowedDomain(payload?.allowedDomain || "");
     setAccessDenied(false);
     setLoading(false);
-  }
+  }, [t.error]);
+
+  useEffect(() => {
+    loadMembers();
+  }, [loadMembers]);
 
   async function handleInvite(e: React.FormEvent) {
     e.preventDefault();

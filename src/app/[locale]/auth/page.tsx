@@ -93,13 +93,13 @@ export default function AuthPage() {
     setMessage(""); setErrorMsg("");
     trackAuthIntent("oauth_start", "google", { locale, tab: activeTab });
     const { error } = await signInWithGoogle(locale, nextPath);
-    if (error) setErrorMsg(error.message || error);
+    if (error) setErrorMsg(error);
   };
   const handleAppleAuth = async () => {
     setMessage(""); setErrorMsg("");
     trackAuthIntent("oauth_start", "apple", { locale, tab: activeTab });
     const { error } = await signInWithApple(locale, nextPath);
-    if (error) setErrorMsg(error.message || error);
+    if (error) setErrorMsg(error);
   };
   const handleSignOutForSignup = async () => {
     setLoading(true); setMessage(""); setErrorMsg("");
@@ -130,7 +130,7 @@ export default function AuthPage() {
       <div className="mx-auto flex min-h-screen max-w-7xl items-center px-4 py-10 sm:px-6 lg:px-8">
         <div className="grid w-full gap-6 lg:grid-cols-[1.05fr_0.95fr]">
           <section className="relative overflow-hidden rounded-[36px] bg-[#1A1A2E] px-7 py-8 text-white shadow-[0_30px_80px_rgba(15,23,42,0.18)] sm:px-10 sm:py-10">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(212,168,83,0.24),transparent_32%),radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.08),transparent_28%)]" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(0,113,227,0.18),transparent_32%),radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.08),transparent_28%)]" />
             <div className="relative z-10">
               <Link
                 href={`/${locale}`}
@@ -141,7 +141,7 @@ export default function AuthPage() {
               </Link>
 
               <div className="mt-10 max-w-xl">
-                <div className="mb-5 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[#D4A853] text-[#1A1A2E] shadow-sm">
+                <div className="mb-5 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[#0071e3] text-white shadow-sm">
                   <LockKeyhole className="h-6 w-6" />
                 </div>
                 <p className="mb-3 text-[12px] font-semibold uppercase tracking-[0.22em] text-white/55">
@@ -161,7 +161,7 @@ export default function AuthPage() {
                 {trustPoints.map(({ icon: Icon, label }) => (
                   <div key={label} className="flex items-center gap-3 rounded-2xl bg-white/8 px-4 py-4 backdrop-blur-sm">
                     <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10">
-                      <Icon className="h-5 w-5 text-[#D4A853]" />
+                      <Icon className="h-5 w-5 text-[#0071e3]" />
                     </div>
                     <p className="text-[14px] text-white/88">{label}</p>
                   </div>
@@ -190,7 +190,7 @@ export default function AuthPage() {
               )}
 
               {user && activeTab === "signup" && (
-                <div className="mb-4 rounded-2xl border border-[#D4A853]/35 bg-[#fff8e5] p-4 text-sm text-[#1A1A2E]">
+                <div className="mb-4 rounded-2xl border border-[#0071e3]/35 bg-[#eef6ff] p-4 text-sm text-[#1A1A2E]">
                   <p className="font-semibold">
                     {isRTL ? "\u0623\u0646\u062a \u0645\u0633\u062c\u0644 \u0627\u0644\u062f\u062e\u0648\u0644 \u0628\u0627\u0644\u0641\u0639\u0644" : "You are already signed in"}
                   </p>
@@ -202,7 +202,7 @@ export default function AuthPage() {
                   <div className="mt-3 flex flex-col gap-2 sm:flex-row">
                     <Link
                       href={`/${locale}/dashboard`}
-                      className="inline-flex justify-center rounded-full bg-[#1A1A2E] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[#2d2d5e]"
+                      className="inline-flex justify-center rounded-full bg-[#0071e3] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[#0077ED]"
                     >
                       {isRTL ? "\u0627\u0644\u0630\u0647\u0627\u0628 \u0644\u0644\u0648\u062d\u0629" : "Go to dashboard"}
                     </Link>
@@ -210,7 +210,7 @@ export default function AuthPage() {
                       type="button"
                       onClick={handleSignOutForSignup}
                       disabled={isFormLoading}
-                      className="inline-flex justify-center rounded-full border border-[#D4A853]/60 px-4 py-2 text-xs font-semibold text-[#1A1A2E] transition hover:bg-white disabled:opacity-50"
+                      className="inline-flex justify-center rounded-full border border-[#0071e3]/60 px-4 py-2 text-xs font-semibold text-[#1A1A2E] transition hover:bg-white disabled:opacity-50"
                     >
                       {isRTL ? "\u0633\u062c\u0644 \u0627\u0644\u062e\u0631\u0648\u062c \u0644\u0625\u0646\u0634\u0627\u0621 \u062d\u0633\u0627\u0628" : "Sign out to create account"}
                     </button>
@@ -220,17 +220,17 @@ export default function AuthPage() {
 
               <div className="overflow-hidden rounded-[28px] border border-[#e5e5ea] bg-white">
                 <div className="flex border-b border-[#e5e5ea] bg-[#fbfbfd]">
-                  <button onClick={() => { setActiveTab("login"); setMessage(""); setErrorMsg(""); }} className={`flex-1 px-6 py-4 font-medium transition-colors ${activeTab === "login" ? "border-b-2 border-[#D4A853] bg-white text-[#1A1A2E]" : "text-[#6e6e73] hover:text-[#1A1A2E]"}`}>{dict.auth.login}</button>
-                  <button onClick={() => { setActiveTab("signup"); setMessage(""); setErrorMsg(""); }} className={`flex-1 px-6 py-4 font-medium transition-colors ${activeTab === "signup" ? "border-b-2 border-[#D4A853] bg-white text-[#1A1A2E]" : "text-[#6e6e73] hover:text-[#1A1A2E]"}`}>{dict.auth.signup}</button>
+                  <button onClick={() => { setActiveTab("login"); setMessage(""); setErrorMsg(""); }} className={`flex-1 px-6 py-4 font-medium transition-colors ${activeTab === "login" ? "border-b-2 border-[#0071e3] bg-white text-[#1A1A2E]" : "text-[#6e6e73] hover:text-[#1A1A2E]"}`}>{dict.auth.login}</button>
+                  <button onClick={() => { setActiveTab("signup"); setMessage(""); setErrorMsg(""); }} className={`flex-1 px-6 py-4 font-medium transition-colors ${activeTab === "signup" ? "border-b-2 border-[#0071e3] bg-white text-[#1A1A2E]" : "text-[#6e6e73] hover:text-[#1A1A2E]"}`}>{dict.auth.signup}</button>
                 </div>
 
                 <div className="p-7">
                   {activeTab === "login" ? (
                     <form onSubmit={authMode === "magic" ? handleMagicLink : handlePasswordLogin} className="space-y-5">
-                      <div><label htmlFor="login-email" className="mb-2 block text-sm font-medium text-[#1A1A2E]">{dict.auth.email}</label><input id="login-email" name="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" className="w-full rounded-2xl border border-[#d2d2d7] px-4 py-3 text-[#1d1d1f] outline-none transition focus:border-[#D4A853] focus:ring-2 focus:ring-[#D4A853]/20" required dir="ltr" /></div>
-                      {authMode === "password" && (<div><label htmlFor="login-password" className="mb-2 block text-sm font-medium text-[#1A1A2E]">{dict.auth.password}</label><div className="relative"><input id="login-password" name="password" type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022" className="w-full rounded-2xl border border-[#d2d2d7] px-4 py-3 text-[#1d1d1f] outline-none transition focus:border-[#D4A853] focus:ring-2 focus:ring-[#D4A853]/20" required dir="ltr" /><button type="button" aria-label={showPassword ? "Hide password" : "Show password"} onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 transition hover:text-gray-600">{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button></div></div>)}
-                      <button type="submit" disabled={isFormLoading} className="flex w-full items-center justify-center gap-2 rounded-full bg-[#1A1A2E] py-3 text-sm font-semibold text-white transition hover:bg-[#2d2d5e] disabled:cursor-not-allowed disabled:opacity-50"><Mail size={18} />{isFormLoading ? dict.common.loading : authMode === "magic" ? dict.auth.magic_link : dict.auth.sign_in}</button>
-                      <div className="text-center"><button type="button" onClick={() => setAuthMode(authMode === "magic" ? "password" : "magic")} className="text-sm font-medium text-[#D4A853] transition hover:text-[#c39534]">{authMode === "magic" ? (isRTL ? "\u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062f\u062e\u0648\u0644 \u0628\u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631" : "Sign in with password instead") : (isRTL ? "\u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062f\u062e\u0648\u0644 \u0628\u0627\u0644\u0631\u0627\u0628\u0637 \u0627\u0644\u0633\u062d\u0631\u064a" : "Sign in with magic link instead")}</button></div>
+                      <div><label htmlFor="login-email" className="mb-2 block text-sm font-medium text-[#1A1A2E]">{dict.auth.email}</label><input id="login-email" name="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" className="w-full rounded-2xl border border-[#d2d2d7] px-4 py-3 text-[#1d1d1f] outline-none transition focus:border-[#0071e3] focus:ring-2 focus:ring-[#0071e3]/20" required dir="ltr" /></div>
+                      {authMode === "password" && (<div><label htmlFor="login-password" className="mb-2 block text-sm font-medium text-[#1A1A2E]">{dict.auth.password}</label><div className="relative"><input id="login-password" name="password" type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022" className="w-full rounded-2xl border border-[#d2d2d7] px-4 py-3 text-[#1d1d1f] outline-none transition focus:border-[#0071e3] focus:ring-2 focus:ring-[#0071e3]/20" required dir="ltr" /><button type="button" aria-label={showPassword ? "Hide password" : "Show password"} onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 transition hover:text-gray-600">{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button></div></div>)}
+                      <button type="submit" disabled={isFormLoading} className="flex w-full items-center justify-center gap-2 rounded-full bg-[#0071e3] py-3 text-sm font-semibold text-white transition hover:bg-[#0077ED] disabled:cursor-not-allowed disabled:opacity-50"><Mail size={18} />{isFormLoading ? dict.common.loading : authMode === "magic" ? dict.auth.magic_link : dict.auth.sign_in}</button>
+                      <div className="text-center"><button type="button" onClick={() => setAuthMode(authMode === "magic" ? "password" : "magic")} className="text-sm font-medium text-[#0071e3] transition hover:text-[#0077ED]">{authMode === "magic" ? (isRTL ? "\u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062f\u062e\u0648\u0644 \u0628\u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631" : "Sign in with password instead") : (isRTL ? "\u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062f\u062e\u0648\u0644 \u0628\u0627\u0644\u0631\u0627\u0628\u0637 \u0627\u0644\u0633\u062d\u0631\u064a" : "Sign in with magic link instead")}</button></div>
                       {authMode === "password" && (
                         <div className="text-center">
                           <Link href={`/${locale}/forgot-password`} className="text-sm text-[#6e6e73] transition hover:text-[#1A1A2E]">
@@ -246,12 +246,12 @@ export default function AuthPage() {
                     </form>
                   ) : (
                     <form onSubmit={handleSignUp} className="space-y-5">
-                      <div><label htmlFor="signup-full-name" className="mb-2 block text-sm font-medium text-[#1A1A2E]">{isRTL ? "\u0627\u0644\u0627\u0633\u0645 \u0627\u0644\u0643\u0627\u0645\u0644" : "Full Name"}</label><input id="signup-full-name" name="fullName" type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} className="w-full rounded-2xl border border-[#d2d2d7] px-4 py-3 text-[#1d1d1f] outline-none transition focus:border-[#D4A853] focus:ring-2 focus:ring-[#D4A853]/20" required /></div>
-                      <div><label htmlFor="signup-email" className="mb-2 block text-sm font-medium text-[#1A1A2E]">{dict.auth.email}</label><input id="signup-email" name="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" className="w-full rounded-2xl border border-[#d2d2d7] px-4 py-3 text-[#1d1d1f] outline-none transition focus:border-[#D4A853] focus:ring-2 focus:ring-[#D4A853]/20" required dir="ltr" /></div>
-                      <div><label htmlFor="signup-password" className="mb-2 block text-sm font-medium text-[#1A1A2E]">{dict.auth.password}</label><div className="relative"><input id="signup-password" name="password" type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} className="w-full rounded-2xl border border-[#d2d2d7] px-4 py-3 text-[#1d1d1f] outline-none transition focus:border-[#D4A853] focus:ring-2 focus:ring-[#D4A853]/20" required minLength={8} dir="ltr" /><button type="button" aria-label={showPassword ? "Hide password" : "Show password"} onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 transition hover:text-gray-600">{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button></div><p className="mt-1 text-xs text-[#86868b]">{isRTL ? "8 \u0623\u062d\u0631\u0641 \u0639\u0644\u0649 \u0627\u0644\u0623\u0642\u0644" : "Minimum 8 characters"}</p></div>
-                      <div><label className="mb-2 block text-sm font-medium text-[#1A1A2E]">{isRTL ? "\u0646\u0648\u0639 \u0627\u0644\u062d\u0633\u0627\u0628" : "Account Type"}</label><div className="grid grid-cols-2 gap-3"><label className={`cursor-pointer rounded-2xl border px-4 py-3 transition ${accountType === "consumer" ? "border-[#D4A853] bg-[#D4A853]/8" : "border-[#d2d2d7] bg-white"}`}><input type="radio" name="accountType" value="consumer" checked={accountType === "consumer"} onChange={(e) => setAccountType(e.target.value as "consumer" | "business")} className="sr-only" /><span className="text-sm font-medium text-[#1A1A2E]">{isRTL ? "\u0645\u0633\u062a\u0647\u0644\u0643" : "Consumer"}</span></label><label className={`cursor-pointer rounded-2xl border px-4 py-3 transition ${accountType === "business" ? "border-[#D4A853] bg-[#D4A853]/8" : "border-[#d2d2d7] bg-white"}`}><input type="radio" name="accountType" value="business" checked={accountType === "business"} onChange={(e) => setAccountType(e.target.value as "consumer" | "business")} className="sr-only" /><span className="text-sm font-medium text-[#1A1A2E]">{isRTL ? "\u0634\u0631\u0643\u0629" : "Business"}</span></label></div></div>
-                      {accountType === "business" && (<div><label htmlFor="signup-company-name" className="mb-2 block text-sm font-medium text-[#1A1A2E]">{isRTL ? "\u0627\u0633\u0645 \u0627\u0644\u0634\u0631\u0643\u0629" : "Company Name"}</label><input id="signup-company-name" name="companyName" type="text" value={companyName} onChange={(e) => setCompanyName(e.target.value)} className="w-full rounded-2xl border border-[#d2d2d7] px-4 py-3 text-[#1d1d1f] outline-none transition focus:border-[#D4A853] focus:ring-2 focus:ring-[#D4A853]/20" required={accountType === "business"} /></div>)}
-                      <button type="submit" disabled={isFormLoading} className="w-full rounded-full bg-[#1A1A2E] py-3 text-sm font-semibold text-white transition hover:bg-[#2d2d5e] disabled:cursor-not-allowed disabled:opacity-50">{isFormLoading ? dict.common.loading : dict.auth.create_account}</button>
+                      <div><label htmlFor="signup-full-name" className="mb-2 block text-sm font-medium text-[#1A1A2E]">{isRTL ? "\u0627\u0644\u0627\u0633\u0645 \u0627\u0644\u0643\u0627\u0645\u0644" : "Full Name"}</label><input id="signup-full-name" name="fullName" type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} className="w-full rounded-2xl border border-[#d2d2d7] px-4 py-3 text-[#1d1d1f] outline-none transition focus:border-[#0071e3] focus:ring-2 focus:ring-[#0071e3]/20" required /></div>
+                      <div><label htmlFor="signup-email" className="mb-2 block text-sm font-medium text-[#1A1A2E]">{dict.auth.email}</label><input id="signup-email" name="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" className="w-full rounded-2xl border border-[#d2d2d7] px-4 py-3 text-[#1d1d1f] outline-none transition focus:border-[#0071e3] focus:ring-2 focus:ring-[#0071e3]/20" required dir="ltr" /></div>
+                      <div><label htmlFor="signup-password" className="mb-2 block text-sm font-medium text-[#1A1A2E]">{dict.auth.password}</label><div className="relative"><input id="signup-password" name="password" type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} className="w-full rounded-2xl border border-[#d2d2d7] px-4 py-3 text-[#1d1d1f] outline-none transition focus:border-[#0071e3] focus:ring-2 focus:ring-[#0071e3]/20" required minLength={8} dir="ltr" /><button type="button" aria-label={showPassword ? "Hide password" : "Show password"} onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 transition hover:text-gray-600">{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button></div><p className="mt-1 text-xs text-[#86868b]">{isRTL ? "8 \u0623\u062d\u0631\u0641 \u0639\u0644\u0649 \u0627\u0644\u0623\u0642\u0644" : "Minimum 8 characters"}</p></div>
+                      <div><label className="mb-2 block text-sm font-medium text-[#1A1A2E]">{isRTL ? "\u0646\u0648\u0639 \u0627\u0644\u062d\u0633\u0627\u0628" : "Account Type"}</label><div className="grid grid-cols-2 gap-3"><label className={`cursor-pointer rounded-2xl border px-4 py-3 transition ${accountType === "consumer" ? "border-[#0071e3] bg-[#0071e3]/8" : "border-[#d2d2d7] bg-white"}`}><input type="radio" name="accountType" value="consumer" checked={accountType === "consumer"} onChange={(e) => setAccountType(e.target.value as "consumer" | "business")} className="sr-only" /><span className="text-sm font-medium text-[#1A1A2E]">{isRTL ? "\u0645\u0633\u062a\u0647\u0644\u0643" : "Consumer"}</span></label><label className={`cursor-pointer rounded-2xl border px-4 py-3 transition ${accountType === "business" ? "border-[#0071e3] bg-[#0071e3]/8" : "border-[#d2d2d7] bg-white"}`}><input type="radio" name="accountType" value="business" checked={accountType === "business"} onChange={(e) => setAccountType(e.target.value as "consumer" | "business")} className="sr-only" /><span className="text-sm font-medium text-[#1A1A2E]">{isRTL ? "\u0634\u0631\u0643\u0629" : "Business"}</span></label></div></div>
+                      {accountType === "business" && (<div><label htmlFor="signup-company-name" className="mb-2 block text-sm font-medium text-[#1A1A2E]">{isRTL ? "\u0627\u0633\u0645 \u0627\u0644\u0634\u0631\u0643\u0629" : "Company Name"}</label><input id="signup-company-name" name="companyName" type="text" value={companyName} onChange={(e) => setCompanyName(e.target.value)} className="w-full rounded-2xl border border-[#d2d2d7] px-4 py-3 text-[#1d1d1f] outline-none transition focus:border-[#0071e3] focus:ring-2 focus:ring-[#0071e3]/20" required={accountType === "business"} /></div>)}
+                      <button type="submit" disabled={isFormLoading} className="w-full rounded-full bg-[#0071e3] py-3 text-sm font-semibold text-white transition hover:bg-[#0077ED] disabled:cursor-not-allowed disabled:opacity-50">{isFormLoading ? dict.common.loading : dict.auth.create_account}</button>
                       {message && (<div className="rounded-2xl border border-green-200 bg-green-50 p-3 text-sm text-green-800">{message}</div>)}
                       {errorMsg && (<div className="flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-800"><AlertCircle size={16} className="shrink-0" />{errorMsg}</div>)}
                       <div className="relative"><div className="absolute inset-0 flex items-center"><div className="w-full border-t border-[#e5e5ea]"></div></div><div className="relative flex justify-center text-sm"><span className="bg-white px-2 text-[#86868b]">{isRTL ? "\u0623\u0648" : "OR"}</span></div></div>
@@ -263,7 +263,7 @@ export default function AuthPage() {
               </div>
 
               <p className="mt-6 text-center text-sm text-[#6e6e73]">
-                {activeTab === "login" ? (<>{dict.auth.no_account}{" "}<button onClick={() => setActiveTab("signup")} className="font-semibold text-[#D4A853] transition hover:text-[#c39534]">{dict.auth.signup}</button></>) : (<>{dict.auth.have_account}{" "}<button onClick={() => setActiveTab("login")} className="font-semibold text-[#D4A853] transition hover:text-[#c39534]">{dict.auth.login}</button></>)}
+                {activeTab === "login" ? (<>{dict.auth.no_account}{" "}<button onClick={() => setActiveTab("signup")} className="font-semibold text-[#0071e3] transition hover:text-[#0077ED]">{dict.auth.signup}</button></>) : (<>{dict.auth.have_account}{" "}<button onClick={() => setActiveTab("login")} className="font-semibold text-[#0071e3] transition hover:text-[#0077ED]">{dict.auth.login}</button></>)}
               </p>
             </div>
           </section>

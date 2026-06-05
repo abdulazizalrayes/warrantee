@@ -120,7 +120,7 @@ export default function SellerDashboardPage() {
       const { data: inv } = await supabase
         .from("seller_invitations")
         .select("id, seller_name, seller_email, status, created_at")
-        .eq("invited_by", user.id)
+        .or(`inviter_id.eq.${user.id},invited_by.eq.${user.id}`)
         .order("created_at", { ascending: false })
         .limit(10);
 

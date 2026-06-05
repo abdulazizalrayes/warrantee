@@ -5,11 +5,15 @@ import { useParams } from 'next/navigation';
 import { Mail, MessageCircle, Send } from 'lucide-react';
 import { trackContactForm } from '@/lib/ga4-events';
 import { PageViewTracker } from '@/components/PageViewTracker';
+import { Footer } from '@/components/Footer';
+import { Navbar } from '@/components/Navbar';
+import { getDictionary, type Locale } from '@/lib/i18n';
 
 export default function ContactPage() {
   const params = useParams() ?? {};
   const locale = params.locale === 'ar' ? 'ar' : 'en';
   const isRTL = locale === 'ar';
+  const dictionary = getDictionary(locale as Locale);
   const copy = isRTL
     ? {
         sentTitle: 'تم إرسال الرسالة',
@@ -109,30 +113,35 @@ export default function ContactPage() {
 
   if (submitted) {
     return (
-      <div dir={isRTL ? 'rtl' : 'ltr'} className="min-h-screen bg-warm-white flex items-center justify-center px-4">
-        <div className="text-center max-w-md">
-          <div className="w-16 h-16 bg-gold/10 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Send className="w-8 h-8 text-gold" />
+      <div dir={isRTL ? 'rtl' : 'ltr'} className="min-h-screen bg-[#fbfbfd] text-[#1d1d1f]">
+        <Navbar locale={locale as Locale} dictionary={dictionary} />
+        <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-20">
+          <div className="text-center max-w-md">
+            <div className="w-16 h-16 bg-[#0071e3]/10 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Send className="w-8 h-8 text-[#0071e3]" />
+            </div>
+            <h1 className="text-3xl font-bold text-[#1d1d1f] mb-4">{copy.sentTitle}</h1>
+            <p className="text-[#6e6e73] mb-8">
+              {copy.sentBody}
+            </p>
+            <a
+              href={`/${locale}`}
+              className="px-8 py-3 bg-[#0071e3] text-white font-semibold rounded-full hover:bg-[#0077ED] transition-all inline-block"
+            >
+              {copy.home}
+            </a>
           </div>
-          <h1 className="text-3xl font-bold text-navy mb-4">{copy.sentTitle}</h1>
-          <p className="text-navy/60 mb-8">
-            {copy.sentBody}
-          </p>
-          <a
-            href={`/${locale}`}
-            className="px-8 py-3 bg-gold text-navy font-semibold rounded-xl hover:bg-gold/90 transition-all inline-block"
-          >
-            {copy.home}
-          </a>
-        </div>
+        </main>
+        <Footer locale={locale as Locale} dictionary={dictionary} />
       </div>
     );
   }
 
   return (
-    <div dir={isRTL ? 'rtl' : 'ltr'} className="min-h-screen bg-warm-white">
+    <div dir={isRTL ? 'rtl' : 'ltr'} className="min-h-screen bg-[#fbfbfd] text-[#1d1d1f]">
+      <Navbar locale={locale as Locale} dictionary={dictionary} />
       <PageViewTracker pageName="contact_page" pageType="marketing" locale={locale} />
-      <section className="pt-24 pb-12 px-4 sm:px-6 lg:px-8 text-center bg-gradient-to-b from-gold/5 to-transparent">
+      <section className="pt-24 pb-12 px-4 sm:px-6 lg:px-8 text-center bg-[#fbfbfd]">
         <div className="max-w-3xl mx-auto">
           <h1 className="text-5xl font-bold text-navy tracking-tight mb-4">{copy.title}</h1>
           <p className="text-xl text-navy/60">
@@ -143,11 +152,11 @@ export default function ContactPage() {
 
       <section className="px-4 sm:px-6 lg:px-8 pb-8">
         <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-6">
-          <div className="bg-white rounded-2xl border-2 border-gold/20 p-8 text-center hover:border-gold/40 transition-colors">
-            <Mail className="w-10 h-10 text-gold mx-auto mb-4" />
+          <div className="bg-white rounded-2xl border-2 border-[#0071e3]/20 p-8 text-center hover:border-[#0071e3]/40 transition-colors">
+            <Mail className="w-10 h-10 text-[#0071e3] mx-auto mb-4" />
             <h3 className="font-bold text-lg text-navy mb-2">{copy.email}</h3>
             <p className="text-navy/60 text-sm mb-3">{copy.emailHint}</p>
-            <a href="mailto:hello@warrantee.io" className="text-gold font-semibold hover:underline">
+            <a href="mailto:hello@warrantee.io" className="text-[#0071e3] font-semibold hover:underline">
               hello@warrantee.io
             </a>
           </div>
@@ -177,7 +186,7 @@ export default function ContactPage() {
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl border border-navy/10 focus:outline-none focus:border-gold focus:ring-2 focus:ring-gold/20 text-sm"
+                  className="w-full px-4 py-3 rounded-xl border border-navy/10 focus:outline-none focus:border-[#0071e3] focus:ring-2 focus:ring-[#0071e3]/20 text-sm"
                   placeholder={copy.namePlaceholder}
                 />
               </div>
@@ -188,7 +197,7 @@ export default function ContactPage() {
                   required
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl border border-navy/10 focus:outline-none focus:border-gold focus:ring-2 focus:ring-gold/20 text-sm"
+                  className="w-full px-4 py-3 rounded-xl border border-navy/10 focus:outline-none focus:border-[#0071e3] focus:ring-2 focus:ring-[#0071e3]/20 text-sm"
                   placeholder="you@company.com"
                 />
               </div>
@@ -200,7 +209,7 @@ export default function ContactPage() {
                   type="text"
                   value={formData.company}
                   onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl border border-navy/10 focus:outline-none focus:border-gold focus:ring-2 focus:ring-gold/20 text-sm"
+                  className="w-full px-4 py-3 rounded-xl border border-navy/10 focus:outline-none focus:border-[#0071e3] focus:ring-2 focus:ring-[#0071e3]/20 text-sm"
                   placeholder={copy.companyPlaceholder}
                 />
               </div>
@@ -209,7 +218,7 @@ export default function ContactPage() {
                 <select
                   value={formData.subject}
                   onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl border border-navy/10 focus:outline-none focus:border-gold focus:ring-2 focus:ring-gold/20 text-sm"
+                  className="w-full px-4 py-3 rounded-xl border border-navy/10 focus:outline-none focus:border-[#0071e3] focus:ring-2 focus:ring-[#0071e3]/20 text-sm"
                 >
                   <option value="general">{copy.subjects.general}</option>
                   <option value="support">{copy.subjects.support}</option>
@@ -227,14 +236,14 @@ export default function ContactPage() {
                 value={formData.message}
                 onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                 rows={5}
-                className="w-full px-4 py-3 rounded-xl border border-navy/10 focus:outline-none focus:border-gold focus:ring-2 focus:ring-gold/20 text-sm resize-vertical"
+                className="w-full px-4 py-3 rounded-xl border border-navy/10 focus:outline-none focus:border-[#0071e3] focus:ring-2 focus:ring-[#0071e3]/20 text-sm resize-vertical"
                 placeholder={copy.messagePlaceholder}
               />
             </div>
             <button
               type="submit"
               disabled={submitting}
-              className="px-8 py-3 bg-gold text-navy font-semibold rounded-xl hover:bg-gold/90 transition-all inline-flex items-center gap-2"
+              className="px-8 py-3 bg-[#0071e3] text-white font-semibold rounded-full hover:bg-[#0077ED] transition-all inline-flex items-center gap-2"
             >
               {submitting ? copy.sending : copy.submit}
               <Send className="w-4 h-4" />
@@ -242,6 +251,7 @@ export default function ContactPage() {
           </form>
         </div>
       </section>
+      <Footer locale={locale as Locale} dictionary={dictionary} />
     </div>
   );
 }

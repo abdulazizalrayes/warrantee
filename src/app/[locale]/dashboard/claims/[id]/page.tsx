@@ -1,8 +1,7 @@
-// @ts-nocheck
 'use client';
 
-import { useState, useEffect } from 'react';
-import { usePathname, useParams, useRouter } from 'next/navigation';
+import { useCallback, useEffect, useState } from 'react';
+import { usePathname, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
 
@@ -52,7 +51,6 @@ const actionBtnCfg: Record<string,{bg:string;hover:string}> = {
 export default function ClaimDetailPage() {
   const pathname = usePathname();
   const params = useParams() ?? {};
-  const router = useRouter();
   const locale = pathname?.startsWith('/ar') ? 'ar' : 'en';
   const isRTL = locale === 'ar';
   const claimId = params.id as string;
@@ -88,9 +86,7 @@ export default function ClaimDetailPage() {
     noTransitions:'No actions available',filedBy:'Filed By'
   };
 
-  useEffect(() => { loadClaim(); }, [claimId]);
-
-  const loadClaim = async () => {
+  const loadClaim = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
@@ -121,7 +117,9 @@ export default function ClaimDetailPage() {
       setError(e.message);
     }
     setLoading(false);
-  };
+  }, [claimId]);
+
+  useEffect(() => { loadClaim(); }, [loadClaim]);
 
   const changeStatus = async (newStatus: string) => {
     if (changingStatus) return;

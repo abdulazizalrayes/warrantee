@@ -18,6 +18,16 @@ describe("agent-ready helpers", () => {
       pageKey: "home",
       canonicalPath: "/en",
     });
+    expect(getAgentRouteInfo("/en/support")).toMatchObject({
+      locale: "en",
+      pageKey: "support",
+      canonicalPath: "/en/support",
+    });
+    expect(getAgentRouteInfo("/en/blog")).toMatchObject({
+      locale: "en",
+      pageKey: "blog",
+      canonicalPath: "/en/blog",
+    });
     expect(getAgentRouteInfo("/en/dashboard")).toBeNull();
   });
 

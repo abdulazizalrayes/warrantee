@@ -1,44 +1,14 @@
-// @ts-nocheck
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-import { sendEmail, warrantyExpiryEmail } from "@/lib/email";
 import { requireInternalBearer } from "@/lib/internal-auth";
-
-function getSupabaseAdmin() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
+import { sendExpiryReminders } from "@/lib/server/expiry-reminders";
 
 export async function POST(request: Request) {
-  const authError = requireInternalBearer(request, process.env.CRON_SECRET);
-  if (authError) return authError;
+  try {
+    const authError = requireInternalBearer(request, process.env.CRON_SECRET);
+    if (authError) return authError;
 
-  const supabaseAdmin = getSupabaseAdmin();
-  const alertDays = [30, 15, 7];
-  let totalSent = 0;
-
-  for (const days of alertDays) {
-    const { data: expiring } = await supabaseAdmin.rpc("get_expiring_warranties", { days_ahead: days });
-    if (!expiring) continue;
-
-    for (const warranty of expiring) {
-      const { data: profile } = await supabaseAdmin.from("profiles").select("email, full_name, preferred_locale, email_notifications").eq("id", warranty.created_by).single();
-      if (!profile || !profile.email_notifications) continue;
-
-      const locale = profile.preferred_locale || "en";
-      const warrantyUrl = `https://warrantee.io/${locale}/warranties/${warranty.id}`;
-      const { subject, html } = warrantyExpiryEmail(profile.full_name || "User", warranty.product_name, days, warrantyUrl, locale);
-
-      const { data: existing } = await supabaseAdmin.from("notifications").select("id").eq("user_id", warranty.created_by).eq("warranty_id", warranty.id).eq("type", `warranty_expiring_${days}d`).single();
-      if (existing) continue;
-
-      const emailResult = await sendEmail({ to: profile.email, subject, html });
-      await supabaseAdmin.from("notifications").insert({ user_id: warranty.created_by, type: `warranty_expiring_${days}d`, title: `Warranty Expiring in ${days} Days`, title_ar: `الضمان ينتهي خلال ${days} يوم`, body: `${warranty.product_name} warranty expires on ${warranty.end_date}`, body_ar: `ضمان ${warranty.product_name} ينتهي في ${warranty.end_date}`, warranty_id: warranty.id, action_url: warrantyUrl, is_email_sent: emailResult.success });
-      totalSent++;
-    }
+    return NextResponse.json(await sendExpiryReminders());
+  } catch {
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
-
-  return NextResponse.json({ success: true, notifications_sent: totalSent });
 }

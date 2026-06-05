@@ -1,4 +1,3 @@
-// @ts-nocheck
 "use client";
 
 import { useEffect, useState } from "react";
@@ -129,7 +128,7 @@ export default function DashboardLayout({
           table: "notifications",
           filter: `user_id=eq.${user.id}`,
         },
-        (payload) => {
+        (payload: { new: HeaderNotification }) => {
           setNotifications((prev) => [
             payload.new as HeaderNotification,
             ...prev,
@@ -184,7 +183,7 @@ export default function DashboardLayout({
               {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
             <Link href={`/${locale}`} className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gold rounded-lg flex items-center justify-center text-navy font-bold">W</div>
+              <div className="w-8 h-8 bg-[#0071e3] rounded-lg flex items-center justify-center text-white font-bold">W</div>
               <span className="font-bold text-navy text-lg hidden sm:inline">Warrantee</span>
             </Link>
           </div>
@@ -312,7 +311,7 @@ export default function DashboardLayout({
             </div>
             <div className="relative">
               <button onClick={() => setUserMenuOpen(!userMenuOpen)} className="flex items-center gap-2 p-1 hover:bg-gray-100 rounded-lg transition">
-                <div className="w-8 h-8 bg-gradient-to-br from-gold to-yellow-400 rounded-full flex items-center justify-center text-navy font-bold text-sm">{initials}</div>
+                <div className="w-8 h-8 bg-[#0071e3] rounded-full flex items-center justify-center text-white font-bold text-sm">{initials}</div>
                 <ChevronDown size={16} className="text-navy" />
               </button>
               {userMenuOpen && (

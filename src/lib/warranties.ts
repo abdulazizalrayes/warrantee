@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { createClient } from "@/lib/supabase/client";
 
 const supabase = createClient();
@@ -18,6 +17,12 @@ export interface WarrantyInput {
   currency?: string;
   retailer?: string;
   notes?: string;
+}
+
+interface WarrantySummaryRow {
+  status: string;
+  warranty_end_date: string;
+  purchase_price: number | null;
 }
 
 export async function getWarranties() {
@@ -98,15 +103,16 @@ export async function getDashboardStats() {
   const now = new Date();
   const thirtyDays = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
-  const total = warranties?.length || 0;
-  const active = warranties?.filter(w => w.status === "active" && new Date(w.warranty_end_date) > now).length || 0;
-  const expiringSoon = warranties?.filter(w => {
+  const warrantyRows = (warranties || []) as WarrantySummaryRow[];
+  const total = warrantyRows.length;
+  const active = warrantyRows.filter((w) => w.status === "active" && new Date(w.warranty_end_date) > now).length;
+  const expiringSoon = warrantyRows.filter((w) => {
     const end = new Date(w.warranty_end_date);
     return w.status === "active" && end > now && end <= thirtyDays;
-  }).length || 0;
-  const expired = warranties?.filter(w => new Date(w.warranty_end_date) <= now).length || 0;
+  }).length;
+  const expired = warrantyRows.filter((w) => new Date(w.warranty_end_date) <= now).length;
 
-  const totalValue = warranties?.reduce((sum, w) => sum + (w.purchase_price || 0), 0) || 0;
+  const totalValue = warrantyRows.reduce((sum, w) => sum + (w.purchase_price || 0), 0);
 
   return { total, active, expiringSoon, expired, totalValue };
 }

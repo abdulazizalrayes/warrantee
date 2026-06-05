@@ -1,8 +1,8 @@
-// @ts-nocheck
 import type { Metadata, Viewport } from "next";
 import { notFound } from "next/navigation";
 import { isValidLocale, DIRECTION } from "@/lib/i18n";
 import { getOrganizationJsonLd } from "@/lib/jsonld";
+import { PublicBreadcrumbs } from "@/components/PublicBreadcrumbs";
 import "@/app/globals.css";
 import dynamic from "next/dynamic";
 
@@ -43,13 +43,13 @@ export const metadata: Metadata = {
     siteName: "Warrantee",
     locale: "en_US",
     type: "website",
-    images: [{ url: "https://warrantee.io/og-image.png", width: 1200, height: 630, alt: "Warrantee — Warranty Management Platform" }],
+    images: [{ url: "https://warrantee.io/opengraph-image", width: 1200, height: 630, alt: "Warrantee — Warranty Management Platform" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Warrantee — Trust the Terms™",
     description: "Track, manage, transfer, and claim warranties. Bilingual AR+EN. Free to start.",
-    images: ["https://warrantee.io/og-image.png"],
+    images: ["https://warrantee.io/opengraph-image"],
     creator: "@warrantee_io",
   },
 };
@@ -101,7 +101,12 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
       <GoogleAnalytics />
       <MetaPixel />
       <Hotjar />
-      <RouteProviders><main id="main-content">{children}</main></RouteProviders>
+      <RouteProviders>
+        <main id="main-content">
+          <PublicBreadcrumbs locale={locale} visual={false} />
+          {children}
+        </main>
+      </RouteProviders>
       <CookieConsent />
     </>
   );

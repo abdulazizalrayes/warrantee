@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { NextRequest, NextResponse } from "next/server";
 import { apiRateLimit, getClientIp, getRateLimitHeaders, ocrRateLimit } from "@/lib/rate-limit";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -264,8 +263,14 @@ async function extractTextFromDocument(dataUri: string): Promise<OCRDocumentExtr
 }
 
 // Warranty field extraction from OCR text
+type ExtractedWarrantyFields = {
+  confidence: number;
+  raw_text: string;
+  [field: string]: string | number;
+};
+
 function extractWarrantyFields(text: string) {
-  const result: Record<string, string | number> = { confidence: 0, raw_text: text.substring(0, 500) };
+  const result: ExtractedWarrantyFields = { confidence: 0, raw_text: text.substring(0, 500) };
 
   // Product name patterns
   const productPatterns = [

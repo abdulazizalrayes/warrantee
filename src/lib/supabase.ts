@@ -9,6 +9,10 @@ export function getSupabase(): SupabaseClient {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseAnonKey) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("Supabase environment variables are not configured");
+    }
+
     console.warn("Supabase environment variables not set. Using placeholder.");
     supabaseInstance = createClient(
       "https://placeholder.supabase.co",

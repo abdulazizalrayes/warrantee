@@ -3,9 +3,9 @@ import crypto from 'crypto';
 import { emailTemplates } from '@/lib/email-templates';
 
 function safeCompare(a: string, b: string) {
-  const aBuffer = Buffer.from(a);
-  const bBuffer = Buffer.from(b);
-  return aBuffer.length === bBuffer.length && crypto.timingSafeEqual(aBuffer, bBuffer);
+  const aHash = crypto.createHash('sha256').update(a).digest();
+  const bHash = crypto.createHash('sha256').update(b).digest();
+  return crypto.timingSafeEqual(aHash, bHash);
 }
 
 function authorizeEmailSend(request: NextRequest) {
@@ -13,7 +13,7 @@ function authorizeEmailSend(request: NextRequest) {
   if (!configuredSecret) {
     return NextResponse.json(
       { error: 'Email send endpoint is not configured for authenticated use' },
-      { status: 500 }
+      { status: 503 }
     );
   }
 

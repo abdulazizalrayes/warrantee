@@ -6,6 +6,10 @@ function getSupabaseConfig() {
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!url || !key) {
+    if (process.env.NODE_ENV === "production" || process.env.VERCEL_ENV === "production") {
+      throw new Error("Supabase server environment variables are not configured");
+    }
+
     console.warn("Supabase server environment variables not set. Using placeholder.");
     return {
       url: "https://placeholder.supabase.co",

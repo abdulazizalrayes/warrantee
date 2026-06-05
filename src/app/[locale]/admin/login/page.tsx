@@ -129,7 +129,7 @@ export default function AdminLoginPage() {
           width: '40px',
           height: '40px',
           border: '3px solid rgba(212, 175, 55, 0.3)',
-          borderTopColor: '#D4AF37',
+          borderTopColor: '#0071e3',
           borderRadius: '50%',
           animation: 'spin 0.8s linear infinite',
         }} />
@@ -166,7 +166,7 @@ export default function AdminLoginPage() {
             height: '64px',
             margin: '0 auto 16px',
             borderRadius: '50%',
-            background: 'linear-gradient(135deg, #D4AF37, #F5D76E)',
+            background: 'linear-gradient(135deg, #0071e3, #64d2ff)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -177,7 +177,7 @@ export default function AdminLoginPage() {
             </svg>
           </div>
           <h1 style={{
-            color: '#D4AF37',
+            color: '#0071e3',
             fontSize: '28px',
             fontWeight: '700',
             margin: '0 0 4px',
@@ -209,7 +209,7 @@ export default function AdminLoginPage() {
                 padding: '14px',
                 borderRadius: '10px',
                 border: 'none',
-                background: 'linear-gradient(135deg, #D4AF37, #C9A032)',
+                background: 'linear-gradient(135deg, #0071e3, #0077ED)',
                 color: '#1A1A2E',
                 fontSize: '16px',
                 fontWeight: '600',
@@ -260,7 +260,7 @@ export default function AdminLoginPage() {
                 border: 'none',
                 background: status === 'sent'
                   ? 'linear-gradient(135deg, #2ECC71, #27AE60)'
-                  : 'linear-gradient(135deg, #D4AF37, #C9A032)',
+                  : 'linear-gradient(135deg, #0071e3, #0077ED)',
                 color: status === 'sent' ? '#FFFFFF' : '#1A1A2E',
                 fontSize: '16px',
                 fontWeight: '600',

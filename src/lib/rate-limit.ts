@@ -1,4 +1,3 @@
-// @ts-nocheck
 // Rate limiter with Upstash Redis support + in-memory fallback
 // Set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN in Vercel env vars
 
@@ -14,7 +13,7 @@ const rateLimitMap = new Map<string, RateLimitEntry>();
 
 // Clean up expired entries every 5 minutes
 if (typeof setInterval !== "undefined") {
-  setInterval(() => {
+  const cleanupTimer = setInterval(() => {
     const now = Date.now();
     for (const [key, entry] of rateLimitMap.entries()) {
       if (now > entry.resetTime) {
@@ -22,6 +21,7 @@ if (typeof setInterval !== "undefined") {
       }
     }
   }, 5 * 60 * 1000);
+  cleanupTimer.unref?.();
 }
 
 // ============================================================
@@ -30,6 +30,7 @@ if (typeof setInterval !== "undefined") {
 const REDIS_URL = process.env.UPSTASH_REDIS_REST_URL;
 const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
 const useRedis = Boolean(REDIS_URL && REDIS_TOKEN);
+const requireRedis = process.env.RATE_LIMIT_REQUIRE_REDIS === "1";
 
 async function redisRateLimit(
   key: string,
@@ -139,6 +140,10 @@ export async function rateLimit(
     return redisRateLimit(key, config.maxRequests, config.windowMs);
   }
 
+  if (requireRedis) {
+    return { success: false, remaining: 0, resetIn: config.windowMs };
+  }
+
   return memoryRateLimit(key, config.maxRequests, config.windowMs);
 }
 
@@ -149,7 +154,7 @@ export function getRateLimitHeaders(result: {
   return {
     "X-RateLimit-Remaining": result.remaining.toString(),
     "X-RateLimit-Reset": Math.ceil(result.resetIn / 1000).toString(),
-    "X-RateLimit-Backend": useRedis ? "redis" : "memory",
+    "X-RateLimit-Backend": useRedis ? "redis" : requireRedis ? "unconfigured" : "memory",
   };
 }
 

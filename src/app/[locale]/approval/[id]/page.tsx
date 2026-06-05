@@ -1,9 +1,8 @@
-// @ts-nocheck
 'use client';
 
-import { Suspense, useEffect, useMemo, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
 import { useAuth } from '@/lib/auth-context';
 import { trackApprovalAction } from '@/lib/ga4-events';
@@ -104,7 +103,6 @@ function formatDate(value: string, locale: string) {
 
 function ApprovalDetailPageInner() {
   const params = useParams() ?? {};
-  const router = useRouter();
   const searchParams = useSearchParams();
   const locale = (params?.locale as string) || 'en';
   const isRTL = locale === 'ar';
@@ -125,7 +123,7 @@ function ApprovalDetailPageInner() {
 
   const withView = (basePath: string) => `${basePath}${basePath.includes('?') ? '&' : '?'}view=${viewMode}`;
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     if (!user || !itemId) return;
     setLoading(true);
 
@@ -145,13 +143,13 @@ function ApprovalDetailPageInner() {
     setDocuments(docs || []);
 
     setLoading(false);
-  };
+  }, [itemId, supabase, user]);
 
   useEffect(() => {
     if (authLoading) return;
     if (!user) return;
     loadData();
-  }, [authLoading, user, itemId]);
+  }, [authLoading, user, loadData]);
 
   const performAction = async (action: 'approve' | 'reject' | 'submit') => {
     if (!itemId) return;

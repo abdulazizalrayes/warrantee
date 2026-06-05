@@ -1,13 +1,15 @@
-// @ts-nocheck
 "use client";
 
 import { useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Check, Shield, Zap, Building2 } from "lucide-react";
-import { DIRECTION } from "@/lib/i18n";
+import { DIRECTION, getDictionary } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth-context";
+import { PublicBreadcrumbs } from "@/components/PublicBreadcrumbs";
+import { Navbar } from "@/components/Navbar";
+import { Footer } from "@/components/Footer";
 
 const plans = [
   {
@@ -26,8 +28,8 @@ const plans = [
   {
     id: "pro",
     icon: Zap,
-    iconColor: "text-[#D4A853]",
-    iconBg: "bg-[#D4A853]/10",
+    iconColor: "text-[#0071e3]",
+    iconBg: "bg-[#0071e3]/10",
     price: 1,
     popular: true,
     features_en: ["Unlimited warranties", "Advanced analytics", "Priority support", "Up to 5 team members", "Custom workflows", "Bilingual certificates", "8% commission"],
@@ -40,8 +42,8 @@ const plans = [
   {
     id: "enterprise",
     icon: Building2,
-    iconColor: "text-[#0071e3]",
-    iconBg: "bg-[#0071e3]/10",
+    iconColor: "text-[#1d1d1f]",
+    iconBg: "bg-[#f5f5f7]",
     price: -1,
     features_en: ["Everything in Professional", "Unlimited team members", "Dedicated account manager", "Custom integrations", "SLA guarantee"],
     features_ar: ["كل ما في الاحترافي", "أعضاء غير محدودين", "مدير حساب مخصص", "تكاملات مخصصة", "ضمان SLA"],
@@ -57,6 +59,7 @@ export default function PricingPage() {
   const locale = (params.locale as string) || "en";
   const isRTL = locale === "ar";
   const direction = DIRECTION[locale as Locale];
+  const dictionary = getDictionary(locale as Locale);
   const { user } = useAuth();
   const [checkoutPlan, setCheckoutPlan] = useState<string | null>(null);
 
@@ -95,16 +98,23 @@ export default function PricingPage() {
 
   return (
     <div dir={direction} className="min-h-screen bg-[#fbfbfd]">
-      <div className="max-w-5xl mx-auto px-6 py-20">
+      <Navbar locale={locale as Locale} dictionary={dictionary} />
+      <PublicBreadcrumbs locale={locale} includeJsonLd={false} />
+      <main className="mx-auto max-w-5xl px-6 py-20">
         {/* Header */}
         <div className="text-center mb-16">
           <h1 className="text-[40px] sm:text-[48px] font-semibold tracking-tight text-[#1d1d1f]">
             {isRTL ? "اختر خطتك" : "Choose Your Plan"}
           </h1>
-          <p className="text-[17px] text-[#86868b] mt-3 max-w-xl mx-auto">
+          <p className="text-[17px] text-[#6e6e73] mt-3 max-w-xl mx-auto">
             {isRTL
               ? "ابدأ مجاناً للأفراد أو احصل على ميزات متقدمة لشركتك بدولار واحد فقط شهرياً"
               : "Start free for individuals or unlock advanced features for your business at just $1/month"}
+          </p>
+          <p className="mt-5 text-[13px] font-medium text-[#6e6e73]">
+            {isRTL
+              ? "الخطة المجانية لا تتطلب بطاقة. الشهر الأول مجاني للاحترافي."
+              : "No card needed for Free. First month free on Professional."}
           </p>
         </div>
 
@@ -119,12 +129,14 @@ export default function PricingPage() {
             return (
               <div
                 key={plan.id}
-                className={`bg-white rounded-2xl ring-1 shadow-sm overflow-hidden transition-all duration-200 hover:shadow-md relative ${
-                  plan.popular ? "ring-[#D4A853] ring-2" : "ring-[#d2d2d7]/40"
+                className={`relative overflow-hidden rounded-2xl bg-white ring-1 shadow-sm transition-all duration-200 hover:shadow-md ${
+                  plan.popular
+                    ? "ring-2 ring-[#0071e3]"
+                    : "ring-[#d2d2d7]/40"
                 }`}
               >
                 {plan.popular && (
-                  <div className="bg-[#D4A853] text-[#1A1A2E] text-[12px] font-semibold text-center py-1.5 tracking-wide uppercase">
+                  <div className="bg-[#0071e3] text-white text-[12px] font-semibold text-center py-1.5 tracking-wide uppercase">
                     {isRTL ? "الأكثر شعبية" : "Most Popular"}
                   </div>
                 )}
@@ -133,7 +145,7 @@ export default function PricingPage() {
                     <Icon className={`w-5 h-5 ${plan.iconColor}`} />
                   </div>
                   <h3 className="text-[17px] font-semibold text-[#1d1d1f]">{name}</h3>
-                  <p className="text-[13px] text-[#86868b] mt-0.5">{desc}</p>
+                  <p className="text-[13px] text-[#6e6e73] mt-0.5">{desc}</p>
 
                   <div className="mt-4 mb-5">
                     {plan.price === 0 ? (
@@ -147,7 +159,7 @@ export default function PricingPage() {
                     ) : (
                       <div>
                         <span className="text-[28px] font-semibold tracking-tight text-[#1d1d1f]">${plan.price}</span>
-                        <span className="text-[14px] text-[#86868b]"> /{isRTL ? "شهر" : "month"}</span>
+                        <span className="text-[14px] text-[#6e6e73]"> /{isRTL ? "شهر" : "month"}</span>
                         {plan.id === "pro" && (
                           <p className="text-[12px] text-[#30d158] font-medium mt-1">
                             {isRTL ? "الشهر الأول مجاني!" : "First month free!"}
@@ -174,7 +186,7 @@ export default function PricingPage() {
                     disabled={checkoutPlan === plan.id}
                     className={`w-full py-2.5 rounded-full text-[14px] font-medium transition-all duration-200 text-center block ${
                       plan.popular
-                        ? "bg-[#1A1A2E] hover:bg-[#2d2d5e] text-white shadow-sm hover:shadow-md"
+                        ? "bg-[#0071e3] hover:bg-[#0077ED] text-white shadow-sm hover:shadow-md"
                         : "bg-[#f5f5f7] hover:bg-[#e8e8ed] text-[#1d1d1f]"
                     }`}
                   >
@@ -182,6 +194,8 @@ export default function PricingPage() {
                       ? isRTL ? "\u062c\u0627\u0631\u064a \u0627\u0644\u062a\u062d\u0648\u064a\u0644..." : "Redirecting..."
                       : plan.price === -1
                       ? isRTL ? "تواصل معنا" : "Contact Sales"
+                      : plan.id === "pro"
+                      ? isRTL ? "ابدأ الاحترافي" : "Start Professional"
                       : isRTL ? "ابدأ الآن" : "Get Started"}
                   </button>
                 </div>
@@ -192,14 +206,15 @@ export default function PricingPage() {
 
         {/* FAQ / Bottom CTA */}
         <div className="text-center mt-16">
-          <p className="text-[15px] text-[#86868b]">
+          <p className="text-[15px] text-[#6e6e73]">
             {isRTL ? "هل لديك أسئلة؟" : "Have questions?"}{" "}
-            <Link href={`/${locale}/contact`} className="text-[#0071e3] hover:underline">
+            <Link href={`/${locale}/contact`} className="text-[#0071e3] font-medium hover:underline">
               {isRTL ? "تواصل معنا" : "Contact us"}
             </Link>
           </p>
         </div>
-      </div>
+      </main>
+      <Footer locale={locale as Locale} dictionary={dictionary} />
     </div>
   );
 }

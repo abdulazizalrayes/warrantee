@@ -4,7 +4,7 @@
 
 ## About
 
-Warrantee is a SaaS platform that helps consumers and businesses manage product warranties digitally. Supporting both Arabic (RTL) and English, it provides warranty tracking, claims management, and seller integration.
+Warrantee is a SaaS platform that helps consumers, sellers, and businesses manage product warranties digitally. It supports Arabic (RTL) and English, warranty tracking, claims management, seller onboarding, public verification, certificates, and integrations.
 
 ## Features
 
@@ -20,12 +20,39 @@ Warrantee is a SaaS platform that helps consumers and businesses manage product 
 - Public warranty verification/lookup
 - Data export (CSV/PDF)
 
-## URLs
+## Public URLs
 
 - Main site: https://warrantee.io
 - English: https://warrantee.io/en
 - Arabic: https://warrantee.io/ar
-- API: https://warrantee.io/api/v1
+- About: https://warrantee.io/en/about
+- Blog: https://warrantee.io/en/blog
+- Features: https://warrantee.io/en/features
+- Pricing: https://warrantee.io/en/pricing
+- Guide: https://warrantee.io/en/guide
+- FAQ: https://warrantee.io/en/faq
+- Support: https://warrantee.io/en/support
+- Contact: https://warrantee.io/en/contact
+- Public warranty verification: https://warrantee.io/en/verify
+- API documentation: https://warrantee.io/en/api-docs
+- Privacy: https://warrantee.io/en/privacy
+- Terms: https://warrantee.io/en/terms
+
+## Machine Discovery
+
+- Sitemap: https://warrantee.io/sitemap.xml
+- Robots: https://warrantee.io/robots.txt
+- API catalog: https://warrantee.io/.well-known/api-catalog
+- Agent card: https://warrantee.io/.well-known/agent-card.json
+- Agent skills: https://warrantee.io/.well-known/agent-skills
+- MCP card: https://warrantee.io/.well-known/mcp.json
+
+## Access Boundaries
+
+- Public pages are crawlable and localized under `/en` and `/ar`.
+- Account dashboards, warranty records, claims, billing, settings, and seller workspaces require authentication.
+- API routes under `/api/` are not public crawling targets.
+- Do not infer private warranty data from public documentation.
 
 ## Contact
 
@@ -34,4 +61,4 @@ Warrantee is a SaaS platform that helps consumers and businesses manage product 
 
 ## Version
 
-v1.0.0 — Phase 1
+v1.0.0 - Phase 1

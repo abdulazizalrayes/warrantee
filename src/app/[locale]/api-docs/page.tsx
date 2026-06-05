@@ -1,18 +1,20 @@
 'use client';
 
-// @ts-nocheck
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Copy, Check, Code2, Key, Globe } from 'lucide-react';
+import { ArrowLeft, Copy, Check, Code2, Key, Globe, ShieldCheck } from 'lucide-react';
 import { useState } from 'react';
+import { Footer } from '@/components/Footer';
+import { Navbar } from '@/components/Navbar';
+import { DIRECTION, getDictionary, type Locale } from '@/lib/i18n';
 
 const translations = {
   en: {
     title: 'API Documentation',
     subtitle: 'Integrate Warrantee with ERP, ecommerce, and internal systems',
-    back: 'Back to Dashboard',
+    back: 'Back to Home',
     auth: 'Authentication',
-    authDesc: 'Use either a user Bearer token or a dedicated integration token via x-api-key for ERP/server-to-server use.',
+    authDesc: 'API access is limited to registered Warrantee users. Use a signed-in user Bearer token or create a dedicated server integration token via x-api-key.',
     baseUrl: 'Base URL',
     endpoints: 'Endpoints',
     listWarranties: 'List Warranties',
@@ -26,16 +28,25 @@ const translations = {
     optional: 'Optional',
     copied: 'Copied!',
     rateLimit: 'Rate Limiting',
-    rateLimitDesc: '100 requests per minute per API key',
+    rateLimitDesc: '100 requests per minute per signed-in user or integration token, plus IP-level abuse throttles.',
     integrationNotes: 'Integration Notes',
-    integrationDesc: 'Use Idempotency-Key on create requests, keep a stable reference number when possible, and prefer server-to-server integration tokens for ERP sync jobs.',
+    integrationDesc: 'Use Idempotency-Key on create requests, keep a stable reference number when possible, and use scoped server-to-server integration tokens for ERP sync jobs.',
+    security: 'Security Model',
+    securityDesc: 'Every warranty request is authenticated, scoped to the owner, seller, or issuer records of the resolved user, rate-limited, and returned with no-store cache headers.',
+    tokenManagement: 'Integration Tokens',
+    tokenManagementDesc: 'Create up to 20 active tokens from a signed-in session. Warrantee shows the secret once, stores only a hash, supports read/write scopes, expiry, last-used tracking, and revocation.',
+    createToken: 'Create token',
+    revokeToken: 'Revoke token',
+    scopes: 'Scopes',
+    scopesDesc: 'warranties:read for list/detail access and warranties:write for create/update/delete access.',
+    responseHeaders: 'Responses include X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset, Cache-Control: no-store, and Vary: Authorization, x-api-key.',
   },
   ar: {
     title: '\u0648\u062b\u0627\u0626\u0642 API',
     subtitle: '\u062f\u0645\u062c Warrantee \u0645\u0639 \u0623\u0646\u0638\u0645\u0629 ERP \u0648\u0627\u0644\u0645\u062A\u0627\u062C\u0631 \u0648\u0627\u0644\u0623\u0646\u0638\u0645\u0629 \u0627\u0644\u062F\u0627\u062E\u0644\u064A\u0629',
-    back: '\u0627\u0644\u0639\u0648\u062f\u0629 \u0625\u0644\u0649 \u0644\u0648\u062d\u0629 \u0627\u0644\u062a\u062d\u0643\u0645',
+    back: '\u0627\u0644\u0639\u0648\u062f\u0629 \u0625\u0644\u0649 \u0627\u0644\u0631\u0626\u064a\u0633\u064a\u0629',
     auth: '\u0627\u0644\u0645\u0635\u0627\u062f\u0642\u0629',
-    authDesc: '\u064a\u0645\u0643\u0646 \u0627\u0633\u062a\u062e\u062f\u0627\u0645 \u0631\u0645\u0632 Bearer \u0644\u0644\u0645\u0633\u062a\u062e\u062f\u0645 \u0623\u0648 \u0631\u0645\u0632 \u062a\u0643\u0627\u0645\u0644 \u0645\u062e\u0635\u0635 \u0639\u0628\u0631 x-api-key \u0644\u062A\u0643\u0627\u0645\u0644\u0627\u062a ERP \u0648\u0627\u0644\u062e\u0627\u062f\u0645 \u0625\u0644\u0649 \u0627\u0644\u062e\u0627\u062f\u0645.',
+    authDesc: '\u0627\u0644\u0648\u0635\u0648\u0644 \u0644\u0644\u0648\u0627\u062C\u0647\u0629 \u0645\u062D\u0635\u0648\u0631 \u0628\u0645\u0633\u062A\u062E\u062F\u0645\u064A Warrantee \u0627\u0644\u0645\u0633\u062C\u0644\u064A\u0646. \u0627\u0633\u062A\u062E\u062F\u0645 \u0631\u0645\u0632 Bearer \u0644\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u0623\u0648 \u0623\u0646\u0634\u0626 \u0631\u0645\u0632 \u062A\u0643\u0627\u0645\u0644 \u0645\u062E\u0635\u0635 \u0639\u0628\u0631 x-api-key.',
     baseUrl: '\u0627\u0644\u0631\u0627\u0628\u0637 \u0627\u0644\u0623\u0633\u0627\u0633\u064a',
     endpoints: '\u0646\u0642\u0627\u0637 \u0627\u0644\u0648\u0635\u0648\u0644',
     listWarranties: '\u0642\u0627\u0626\u0645\u0629 \u0627\u0644\u0636\u0645\u0627\u0646\u0627\u062a',
@@ -49,9 +60,18 @@ const translations = {
     optional: '\u0627\u062e\u062a\u064a\u0627\u0631\u064a',
     copied: '\u062a\u0645 \u0627\u0644\u0646\u0633\u062e!',
     rateLimit: '\u062d\u062f\u0648\u062f \u0627\u0644\u0637\u0644\u0628\u0627\u062a',
-    rateLimitDesc: '100 \u0637\u0644\u0628 \u0641\u064a \u0627\u0644\u062f\u0642\u064a\u0642\u0629',
+    rateLimitDesc: '100 \u0637\u0644\u0628 \u0641\u064A \u0627\u0644\u062F\u0642\u064A\u0642\u0629 \u0644\u0643\u0644 \u0645\u0633\u062A\u062E\u062F\u0645 \u0645\u0633\u062C\u0644 \u0623\u0648 \u0631\u0645\u0632 \u062A\u0643\u0627\u0645\u0644\u060C \u0645\u0639 \u062D\u062F\u0648\u062F \u0625\u0636\u0627\u0641\u064A\u0629 \u0639\u0644\u0649 IP \u0644\u0645\u0646\u0639 \u0627\u0644\u0625\u0633\u0627\u0621\u0629.',
     integrationNotes: '\u0645\u0644\u0627\u062d\u0638\u0627\u062a \u0627\u0644\u062a\u0643\u0627\u0645\u0644',
-    integrationDesc: '\u0627\u0633\u062A\u062E\u062F\u0645 Idempotency-Key \u0645\u0639 \u0637\u0644\u0628\u0627\u062A \u0627\u0644\u0625\u0646\u0634\u0627\u0621\u060c \u0648\u062d\u0627\u0641\u0638 \u0639\u0644\u0649 \u0631\u0642\u0645 \u0645\u0631\u062c\u0639\u064a \u062B\u0627\u0628\u062A \u0645\u062A\u0649 \u0623\u0645\u0643\u0646\u060c \u0648\u0627\u0633\u062A\u062E\u062F\u0645 \u0631\u0645\u0648\u0632 \u0627\u0644\u062A\u0643\u0627\u0645\u0644 \u0644\u0645\u0632\u0627\u0645\u0646\u0629 ERP \u0627\u0644\u062E\u0627\u062F\u0645\u064A\u0629.',
+    integrationDesc: '\u0627\u0633\u062A\u062E\u062F\u0645 Idempotency-Key \u0645\u0639 \u0637\u0644\u0628\u0627\u062A \u0627\u0644\u0625\u0646\u0634\u0627\u0621\u060c \u0648\u062D\u0627\u0641\u0638 \u0639\u0644\u0649 \u0631\u0642\u0645 \u0645\u0631\u062C\u0639\u064A \u062B\u0627\u0628\u062A \u0645\u062A\u0649 \u0623\u0645\u0643\u0646\u060c \u0648\u0627\u0633\u062A\u062E\u062F\u0645 \u0631\u0645\u0648\u0632 \u062A\u0643\u0627\u0645\u0644 \u0645\u062D\u062F\u062F\u0629 \u0627\u0644\u0635\u0644\u0627\u062D\u064A\u0627\u062A \u0644\u0645\u0632\u0627\u0645\u0646\u0629 ERP.',
+    security: '\u0646\u0645\u0648\u0630\u062C \u0627\u0644\u0623\u0645\u0627\u0646',
+    securityDesc: '\u0643\u0644 \u0637\u0644\u0628 \u0636\u0645\u0627\u0646 \u064A\u062A\u0637\u0644\u0628 \u0645\u0635\u0627\u062F\u0642\u0629\u060C \u0648\u064A\u0642\u062A\u0635\u0631 \u0639\u0644\u0649 \u0633\u062C\u0644\u0627\u062A \u0627\u0644\u0645\u0627\u0644\u0643 \u0623\u0648 \u0627\u0644\u0628\u0627\u0626\u0639 \u0623\u0648 \u0627\u0644\u0645\u0635\u062F\u0631 \u0644\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u0627\u0644\u0645\u062D\u062F\u062F\u060C \u0645\u0639 \u062D\u062F\u0648\u062F \u0637\u0644\u0628\u0627\u062A \u0648\u0631\u0624\u0648\u0633 no-store.',
+    tokenManagement: '\u0631\u0645\u0648\u0632 \u0627\u0644\u062A\u0643\u0627\u0645\u0644',
+    tokenManagementDesc: '\u0623\u0646\u0634\u0626 \u062D\u062A\u0649 20 \u0631\u0645\u0632\u0627\u064B \u0646\u0634\u0637\u0627\u064B \u0645\u0646 \u062C\u0644\u0633\u0629 \u0645\u0633\u062C\u0644\u0629. \u064A\u0638\u0647\u0631 \u0627\u0644\u0633\u0631 \u0645\u0631\u0629 \u0648\u0627\u062D\u062F\u0629\u060C \u0648\u064A\u062A\u0645 \u062D\u0641\u0638 \u0627\u0644\u0647\u0627\u0634 \u0641\u0642\u0637\u060C \u0645\u0639 \u0635\u0644\u0627\u062D\u064A\u0627\u062A \u0642\u0631\u0627\u0621\u0629/\u0643\u062A\u0627\u0628\u0629 \u0648\u062A\u0627\u0631\u064A\u062E \u0627\u0646\u062A\u0647\u0627\u0621 \u0648\u0625\u0644\u063A\u0627\u0621.',
+    createToken: '\u0625\u0646\u0634\u0627\u0621 \u0631\u0645\u0632',
+    revokeToken: '\u0625\u0644\u063A\u0627\u0621 \u0631\u0645\u0632',
+    scopes: '\u0627\u0644\u0635\u0644\u0627\u062D\u064A\u0627\u062A',
+    scopesDesc: 'warranties:read \u0644\u0644\u0642\u0631\u0627\u0621\u0629 \u0648 warranties:write \u0644\u0644\u0625\u0646\u0634\u0627\u0621 \u0648\u0627\u0644\u062A\u062D\u062F\u064A\u062B \u0648\u0627\u0644\u062D\u0630\u0641.',
+    responseHeaders: '\u062A\u062A\u0636\u0645\u0646 \u0627\u0644\u0627\u0633\u062A\u062C\u0627\u0628\u0627\u062A X-RateLimit-Limit \u0648 X-RateLimit-Remaining \u0648 X-RateLimit-Reset \u0648 Cache-Control: no-store \u0648 Vary: Authorization, x-api-key.',
   }
 };
 
@@ -72,8 +92,10 @@ const methodColors: Record<string, string> = {
 
 export default function ApiDocsPage() {
   const params = useParams() ?? {};
-  const locale = (params?.locale as string) || 'en';
+  const locale = ((params?.locale as string) === 'ar' ? 'ar' : 'en') as Locale;
   const isRTL = locale === 'ar';
+  const dictionary = getDictionary(locale);
+  const direction = DIRECTION[locale];
   const t = translations[locale as keyof typeof translations] || translations.en;
   const [copied, setCopied] = useState('');
 
@@ -84,14 +106,29 @@ export default function ApiDocsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA]" dir={isRTL ? 'rtl' : 'ltr'}>
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-[#fbfbfd] text-[#1d1d1f]" dir={direction}>
+      <Navbar locale={locale} dictionary={dictionary} />
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="mb-8">
-          <Link href={`/${locale}/dashboard`} className="text-[#4169E1] hover:underline flex items-center gap-2 mb-2 text-sm">
+          <Link href={`/${locale}`} className="text-[#0071e3] hover:underline flex items-center gap-2 mb-2 text-sm">
             <ArrowLeft className="w-4 h-4" /> {t.back}
           </Link>
           <h1 className="text-3xl font-bold text-gray-900">{t.title}</h1>
           <p className="text-gray-500 mt-1">{t.subtitle}</p>
+          <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+            <Link
+              href={`/${locale}/auth?redirect=${encodeURIComponent(`/${locale}/settings`)}`}
+              className="inline-flex items-center justify-center rounded-full bg-[#0071e3] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0077ed]"
+            >
+              {isRTL ? 'إنشاء رمز تكامل' : 'Create integration token'}
+            </Link>
+            <Link
+              href={`/${locale}/seller/register`}
+              className="inline-flex items-center justify-center rounded-full border border-[#d2d2d7] px-5 py-2.5 text-sm font-semibold text-[#1d1d1f] transition hover:bg-[#f5f5f7]"
+            >
+              {isRTL ? 'انضم كبائع' : 'Onboard as seller'}
+            </Link>
+          </div>
         </div>
 
         {/* Base URL */}
@@ -130,6 +167,36 @@ export default function ApiDocsPage() {
         {/* Rate Limiting */}
         <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-6">
           <p className="text-sm text-yellow-800 font-medium">{t.rateLimit}: {t.rateLimitDesc}</p>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+          <div className="flex items-center gap-2 mb-3">
+            <ShieldCheck className="w-5 h-5 text-[#4169E1]" />
+            <h3 className="font-semibold text-gray-900">{t.security}</h3>
+          </div>
+          <p className="text-gray-600 text-sm mb-3">{t.securityDesc}</p>
+          <p className="text-gray-600 text-sm">{t.responseHeaders}</p>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+          <h3 className="font-semibold text-gray-900 mb-2">{t.tokenManagement}</h3>
+          <p className="text-gray-600 text-sm mb-4">{t.tokenManagementDesc}</p>
+          <div className="grid gap-3 md:grid-cols-2">
+            <div className="rounded-lg border border-gray-100 bg-gray-50 p-3">
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">{t.createToken}</p>
+              <code className="text-sm text-gray-800" dir="ltr">POST /api/integration-tokens</code>
+            </div>
+            <div className="rounded-lg border border-gray-100 bg-gray-50 p-3">
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">{t.revokeToken}</p>
+              <code className="text-sm text-gray-800" dir="ltr">DELETE /api/integration-tokens/:id</code>
+            </div>
+          </div>
+          <div className="mt-4 rounded-lg bg-gray-900 p-3">
+            <code className="text-sm text-gray-300" dir="ltr">
+              {`{ "name": "ERP production", "scopes": ["warranties:read", "warranties:write"], "rate_limit_per_minute": 100 }`}
+            </code>
+          </div>
+          <p className="mt-3 text-sm text-gray-600"><span className="font-medium">{t.scopes}:</span> {t.scopesDesc}</p>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
@@ -176,7 +243,8 @@ export default function ApiDocsPage() {
             </div>
           </div>
         </div>
-      </div>
+      </main>
+      <Footer locale={locale} dictionary={dictionary} />
     </div>
   );
 }

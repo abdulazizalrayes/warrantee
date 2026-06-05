@@ -1,4 +1,3 @@
-// @ts-nocheck
 
 import { isValidEmail, sanitizeString } from "@/lib/validation";
 

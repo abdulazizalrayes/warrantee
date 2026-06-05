@@ -1,15 +1,18 @@
-// @ts-nocheck
 // Warrantee — Fraud Detection & Duplicate Detection Engine
 
 import { createClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database, Json } from '@/types/database';
 import type { FraudSeverity, OCRExtractedFields } from './types';
 
 function getSupabaseAdmin() {
-  return createClient(
+  return createClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 }
+
+type SupabaseAdminClient = SupabaseClient<Database>;
 
 export interface FraudSignal {
   signal_type: string;
@@ -127,7 +130,7 @@ export async function detectFraud(
         attachment_id: attachmentId,
         signal_type: s.signal_type,
         severity: s.severity,
-        details: s.details,
+        details: s.details as Json,
       }))
     );
   }
@@ -136,7 +139,7 @@ export async function detectFraud(
 }
 
 async function checkDuplicateFileHash(
-  fileHash: string, currentAttachmentId: string, supabaseAdmin: ReturnType<typeof createClient>
+  fileHash: string, currentAttachmentId: string, supabaseAdmin: SupabaseAdminClient
 ): Promise<{ id: string; ingestion_job_id: string } | null> {
   const { data } = await supabaseAdmin
     .from('ingestion_attachments')
@@ -149,7 +152,7 @@ async function checkDuplicateFileHash(
 }
 
 async function checkDuplicateSerial(
-  serialNumber: string, currentUserId: string | null, supabaseAdmin: ReturnType<typeof createClient>
+  serialNumber: string, currentUserId: string | null, supabaseAdmin: SupabaseAdminClient
 ): Promise<{ id: string; user_id: string } | null> {
   const { data } = await supabaseAdmin
     .from('warranties')
@@ -172,7 +175,7 @@ async function checkDuplicateSerial(
   return null;
 }
 
-async function checkSenderVolume(email: string, supabaseAdmin: ReturnType<typeof createClient>): Promise<{ last24h: number; last1h: number }> {
+async function checkSenderVolume(email: string, supabaseAdmin: SupabaseAdminClient): Promise<{ last24h: number; last1h: number }> {
   const now = new Date();
   const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
   const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
