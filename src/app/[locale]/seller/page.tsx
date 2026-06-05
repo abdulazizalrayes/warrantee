@@ -102,21 +102,6 @@ export default function SellerDashboardPage() {
         return;
       }
 
-      const { data: membership } = await supabase
-        .from("company_members")
-        .select("company_id")
-        .eq("user_id", user.id)
-        .eq("is_active", true)
-        .single();
-
-      if (membership) {
-        const { data: statsData } = await supabase.rpc(
-          "get_seller_dashboard_stats",
-          { company_uuid: membership.company_id }
-        );
-        if (statsData) setStats(statsData as unknown as SellerStats);
-      }
-
       const { data: inv } = await supabase
         .from("seller_invitations")
         .select("id, seller_name, seller_email, status, created_at")
@@ -157,6 +142,8 @@ export default function SellerDashboardPage() {
       const matchedWarrantyList = Array.from(matchedWarranties.values());
       const warrantyIds = matchedWarrantyList.map((warranty) => warranty.id);
       let claimMap = new Map<string, number>();
+      let openClaims = 0;
+      let extensionsSold = 0;
 
       if (warrantyIds.length > 0) {
         const { data: claimSignals } = await supabase
@@ -168,7 +155,21 @@ export default function SellerDashboardPage() {
         ((claimSignals || []) as SellerClaimSignal[]).forEach((claim) => {
           const current = claimMap.get(claim.warranty_id) || 0;
           claimMap.set(claim.warranty_id, current + 1);
+          if (["open", "pending", "submitted", "under_review", "in_progress"].includes(claim.status || "")) {
+            openClaims += 1;
+          }
         });
+
+        const { count: extensionCount, error: extensionError } = await supabase
+          .from("warranty_extensions")
+          .select("id", { count: "exact", head: true })
+          .in("warranty_id", warrantyIds)
+          .eq("is_purchased", true);
+        if (extensionError) {
+          console.warn("[Seller] Extension stats unavailable:", extensionError.message);
+        } else {
+          extensionsSold = extensionCount ?? 0;
+        }
       }
 
       const productCounts = new Map<string, number>();
@@ -193,6 +194,14 @@ export default function SellerDashboardPage() {
           .sort((a, b) => b.count - a.count)
           .slice(0, 3),
         recent: recentOpportunities,
+      });
+      setStats({
+        warranties_issued: matchedWarrantyList.length,
+        active_warranties: matchedWarrantyList.filter((warranty) => warranty.status === "active").length,
+        open_claims: openClaims,
+        extensions_sold: extensionsSold,
+        total_commission: 0,
+        claims_rate: matchedWarrantyList.length > 0 ? openClaims / matchedWarrantyList.length : 0,
       });
       setLoading(false);
     };

@@ -23,7 +23,7 @@ import emailTemplates from '@/lib/email-templates';
 import { createBuyerConfirmationToken } from '@/lib/provisional-warranties';
 import { sanitizeInboundAttachmentFilename } from '@/lib/ingestion/attachments';
 import { escapeHtml } from '@/lib/html-escape';
-import { getClientIp, getRateLimitHeaders, webhookRateLimit } from '@/lib/rate-limit';
+import { getClientIp, getRateLimitHeaders, rateLimit, webhookRateLimit } from '@/lib/rate-limit';
 
 function getSupabaseAdmin() {
   return createClient<Database>(
@@ -36,7 +36,8 @@ type SupabaseAdminClient = ReturnType<typeof getSupabaseAdmin>;
 type InboundAttachment = NonNullable<ResendInboundPayload['attachments']>[number];
 
 export async function POST(request: NextRequest) {
-  const webhookLimitResult = await webhookRateLimit(getClientIp(request));
+  const clientIp = getClientIp(request);
+  const webhookLimitResult = await webhookRateLimit(clientIp);
   if (!webhookLimitResult.success) {
     return NextResponse.json(
       { error: 'Too many webhook attempts' },
@@ -59,7 +60,7 @@ export async function POST(request: NextRequest) {
 
     // 2. Rate limiting
     const fromEmail = payload.from.toLowerCase().trim();
-    const isAllowed = await checkRateLimit(fromEmail, supabaseAdmin);
+    const isAllowed = await checkRateLimit(fromEmail, clientIp);
     if (!isAllowed) {
       console.warn(`[Ingest] Rate limited: ${fromEmail}`);
       return NextResponse.json({ error: 'Rate limited' }, { status: 429 });
@@ -81,7 +82,7 @@ export async function POST(request: NextRequest) {
         status: 'received',
         attachment_count: payload.attachments?.length || 0,
         raw_payload: payload as unknown as Json,
-        ip_address: getClientIp(request),
+        ip_address: clientIp,
       })
       .select('id')
       .single();
@@ -473,14 +474,20 @@ function verifyResendSignature(body: string, signature: string | null): boolean 
   return crypto.timingSafeEqual(sigBuf, expectedBuf);
 }
 
-async function checkRateLimit(email: string, supabaseAdmin: SupabaseAdminClient): Promise<boolean> {
-  const { data } = await supabaseAdmin.rpc('check_rate_limit', {
-    p_identifier: email,
-    p_type: 'email',
-    p_max_requests: RATE_LIMITS.PER_EMAIL_PER_HOUR,
-    p_window_minutes: 60,
-  });
-  return data !== false;
+async function checkRateLimit(email: string, clientIp: string): Promise<boolean> {
+  const [emailLimit, globalLimit] = await Promise.all([
+    rateLimit(email, {
+      maxRequests: RATE_LIMITS.PER_EMAIL_PER_HOUR,
+      windowMs: 60 * 60 * 1000,
+      identifier: 'email-ingest-sender',
+    }),
+    rateLimit(clientIp, {
+      maxRequests: RATE_LIMITS.GLOBAL_PER_HOUR,
+      windowMs: 60 * 60 * 1000,
+      identifier: 'email-ingest-global',
+    }),
+  ]);
+  return emailLimit.success && globalLimit.success;
 }
 
 function extractName(fromField: string): string | null {

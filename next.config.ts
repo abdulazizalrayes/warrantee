@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
-const contentSecurityPolicyReportOnly = [
+const contentSecurityPolicy = [
   "default-src 'self'",
   "base-uri 'self'",
   "object-src 'none'",
@@ -126,7 +126,7 @@ const nextConfig: NextConfig = {
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
           { key: "X-XSS-Protection", value: "1; mode=block" },
-          { key: "Content-Security-Policy-Report-Only", value: contentSecurityPolicyReportOnly },
+          { key: "Content-Security-Policy", value: contentSecurityPolicy },
         ],
       },
       {

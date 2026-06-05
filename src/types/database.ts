@@ -102,6 +102,60 @@ export interface Database {
         }
         Relationships: []
       }
+      subscriptions: {
+        Row: {
+          id: string
+          user_id: string
+          plan_id: string
+          status: string
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          current_period_start: string | null
+          current_period_end: string | null
+          trial_start: string | null
+          trial_end: string | null
+          cancel_at_period_end: boolean
+          warranty_limit: number
+          team_limit: number
+          metadata: Json
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          plan_id?: string
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          current_period_start?: string | null
+          current_period_end?: string | null
+          trial_start?: string | null
+          trial_end?: string | null
+          cancel_at_period_end?: boolean
+          warranty_limit?: number
+          team_limit?: number
+          metadata?: Json
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          plan_id?: string
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          current_period_start?: string | null
+          current_period_end?: string | null
+          trial_start?: string | null
+          trial_end?: string | null
+          cancel_at_period_end?: boolean
+          warranty_limit?: number
+          team_limit?: number
+          metadata?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       warranties: {
         Row: {
           id: string

@@ -9,6 +9,7 @@ import type { Locale } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth-context";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { ProtectedRouteNotice } from "@/components/dashboard/ProtectedRouteNotice";
+import { buildWarrantyAccessOrClause } from "@/lib/warranty-access";
 
 interface SubscriptionInfo {
   plan_id: string;
@@ -67,6 +68,22 @@ const plans = [
   },
 ];
 
+function buildFreeSubscription(warrantiesUsed = 0): SubscriptionInfo {
+  return {
+    plan_id: "free",
+    status: "active",
+    current_period_start: null,
+    current_period_end: null,
+    trial_start: null,
+    trial_end: null,
+    cancel_at_period_end: false,
+    warranty_limit: 10,
+    team_limit: 1,
+    warranties_used: warrantiesUsed,
+    team_members_used: 1,
+  };
+}
+
 export default function BillingPage() {
   const params = useParams() ?? {};
   const router = useRouter();
@@ -89,8 +106,37 @@ export default function BillingPage() {
       return;
     }
     const fetchSub = async () => {
-      const { data } = await supabase.rpc("get_user_subscription", { user_uuid: user.id });
-      if (data) setSubscription(data as unknown as SubscriptionInfo);
+      const safeWarrantyCount = async () => {
+        const { count, error } = await supabase
+          .from("warranties")
+          .select("id", { count: "exact", head: true })
+          .or(buildWarrantyAccessOrClause(user.id));
+        if (error) {
+          console.warn("[Billing] Warranty usage unavailable:", error.message);
+          return 0;
+        }
+        return count ?? 0;
+      };
+
+      const warrantiesUsed = await safeWarrantyCount();
+      const { data, error } = await supabase
+        .from("subscriptions")
+        .select("plan_id, status, current_period_start, current_period_end, trial_start, trial_end, cancel_at_period_end, warranty_limit, team_limit")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (error) {
+        console.warn("[Billing] Subscription state unavailable:", error.message);
+        setSubscription(buildFreeSubscription(warrantiesUsed));
+      } else if (data) {
+        setSubscription({
+          ...(data as Omit<SubscriptionInfo, "warranties_used" | "team_members_used">),
+          warranties_used: warrantiesUsed,
+          team_members_used: 1,
+        });
+      } else {
+        setSubscription(buildFreeSubscription(warrantiesUsed));
+      }
       setLoading(false);
     };
     fetchSub();

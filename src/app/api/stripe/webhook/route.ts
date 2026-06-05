@@ -3,8 +3,9 @@ import { stripe } from "@/lib/stripe";
 import { createClient } from "@supabase/supabase-js";
 import type Stripe from "stripe";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "@/types/database";
+import type { Database, Json } from "@/types/database";
 import { getClientIp, getRateLimitHeaders, webhookRateLimit } from "@/lib/rate-limit";
+import { PLANS } from "@/lib/stripe";
 
 function getSupabaseAdmin() {
   return createClient<Database>(
@@ -14,6 +15,96 @@ function getSupabaseAdmin() {
 }
 
 type SupabaseAdminClient = SupabaseClient<Database>;
+
+type SubscriptionLike = Stripe.Subscription & {
+  current_period_start?: number | null;
+  current_period_end?: number | null;
+  cancel_at_period_end?: boolean | null;
+  trial_start?: number | null;
+  trial_end?: number | null;
+};
+
+function objectId(value: string | { id?: string } | null | undefined) {
+  if (!value) return null;
+  return typeof value === "string" ? value : value.id || null;
+}
+
+function timestampToIso(value: number | null | undefined) {
+  return value ? new Date(value * 1000).toISOString() : null;
+}
+
+function planLimits(planId: string) {
+  const plan = PLANS[planId as keyof typeof PLANS] || PLANS.free;
+  return {
+    warranty_limit: plan.warranty_limit,
+    team_limit: plan.team_limit,
+  };
+}
+
+async function upsertSubscriptionState(
+  supabaseAdmin: SupabaseAdminClient,
+  input: {
+    userId: string;
+    planId: string;
+    status: string;
+    stripeCustomerId: string | null;
+    stripeSubscriptionId: string | null;
+    currentPeriodStart: string | null;
+    currentPeriodEnd: string | null;
+    trialStart: string | null;
+    trialEnd: string | null;
+    cancelAtPeriodEnd: boolean;
+    metadata?: Json;
+  }
+) {
+  const { error } = await supabaseAdmin
+    .from("subscriptions")
+    .upsert(
+      {
+        user_id: input.userId,
+        plan_id: input.planId,
+        status: input.status,
+        stripe_customer_id: input.stripeCustomerId,
+        stripe_subscription_id: input.stripeSubscriptionId,
+        current_period_start: input.currentPeriodStart,
+        current_period_end: input.currentPeriodEnd,
+        trial_start: input.trialStart,
+        trial_end: input.trialEnd,
+        cancel_at_period_end: input.cancelAtPeriodEnd,
+        ...planLimits(input.planId),
+        metadata: input.metadata || {},
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "user_id" }
+    );
+
+  if (error) throw error;
+}
+
+async function syncStripeSubscription(
+  supabaseAdmin: SupabaseAdminClient,
+  subscription: SubscriptionLike,
+  fallbackUserId?: string | null,
+  fallbackPlanId?: string | null,
+) {
+  const userId = subscription.metadata?.user_id || fallbackUserId;
+  if (!userId) return;
+
+  const planId = subscription.metadata?.plan_id || fallbackPlanId || "pro";
+  await upsertSubscriptionState(supabaseAdmin, {
+    userId,
+    planId,
+    status: subscription.status,
+    stripeCustomerId: objectId(subscription.customer),
+    stripeSubscriptionId: subscription.id,
+    currentPeriodStart: timestampToIso(subscription.current_period_start),
+    currentPeriodEnd: timestampToIso(subscription.current_period_end),
+    trialStart: timestampToIso(subscription.trial_start),
+    trialEnd: timestampToIso(subscription.trial_end),
+    cancelAtPeriodEnd: Boolean(subscription.cancel_at_period_end),
+    metadata: subscription.metadata as Json,
+  });
+}
 
 async function hasProcessedEvent(eventId: string, supabaseAdmin: SupabaseAdminClient): Promise<boolean> {
   try {
@@ -128,10 +219,22 @@ export async function POST(request: Request) {
             if (warrantyError) throw warrantyError;
           }
         }
+
+        const subscriptionId = objectId(session.subscription);
+        if (userId && subscriptionId) {
+          const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+          await syncStripeSubscription(
+            supabaseAdmin,
+            subscription as SubscriptionLike,
+            userId,
+            session.metadata?.plan_id || null
+          );
+        }
         break;
       }
 
       case "customer.subscription.updated": {
+        await syncStripeSubscription(supabaseAdmin, event.data.object as SubscriptionLike);
         break;
       }
 

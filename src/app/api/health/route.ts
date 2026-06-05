@@ -11,7 +11,6 @@ export async function GET(request: Request) {
   const checks = {
     status: "ok",
     timestamp: new Date().toISOString(),
-    uptime: process.uptime ? process.uptime() : null,
     checks: {} as Record<string, { status: string; latency?: number }>,
   };
 

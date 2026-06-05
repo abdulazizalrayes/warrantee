@@ -129,19 +129,19 @@ async function checkSecurityHeaders() {
     "x-frame-options",
     "referrer-policy",
     "permissions-policy",
-    "content-security-policy-report-only",
+    "content-security-policy",
   ];
   const missing = requiredHeaders.filter((header) => !response.headers.get(header));
   if (missing.length > 0) {
     throw new Error(`Missing security headers: ${missing.join(", ")}`);
   }
 
-  const csp = response.headers.get("content-security-policy-report-only") || "";
+  const csp = response.headers.get("content-security-policy") || "";
   if (!csp.includes("default-src 'self'") || !csp.includes("object-src 'none'")) {
-    throw new Error("CSP report-only header is missing core directives");
+    throw new Error("CSP header is missing core directives");
   }
 
-  return { name: "security-headers", status: "ok", csp: "report-only" };
+  return { name: "security-headers", status: "ok", csp: "enforced" };
 }
 
 async function checkSupabase() {

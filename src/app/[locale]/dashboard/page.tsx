@@ -8,6 +8,7 @@ import { getDictionary, DIRECTION } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth-context";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { buildWarrantyAccessOrClause } from "@/lib/warranty-access";
 
 interface DashboardStats {
   active_warranties: number;
@@ -64,13 +65,106 @@ export default function DashboardPage() {
 
     const fetchDashboardData = async () => {
       setLoading(true);
-      const { data: statsData } = await supabase.rpc("get_user_dashboard_stats", { user_uuid: user.id });
-      if (statsData) setStats(statsData as unknown as DashboardStats);
+      const warrantyAccess = buildWarrantyAccessOrClause(user.id);
+      const today = new Date().toISOString().slice(0, 10);
+      const soon = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+      const safeCount = async (
+        label: string,
+        query: PromiseLike<{ count: number | null; error: { message: string } | null }>
+      ) => {
+        const { count, error } = await query;
+        if (error) {
+          console.warn(`[Dashboard] ${label} count unavailable:`, error.message);
+          return 0;
+        }
+        return count ?? 0;
+      };
 
-      const { data: warranties } = await supabase.from("warranties").select("id, product_name, product_name_ar, status, end_date, reference_number, seller_name, created_at").or(`created_by.eq.${user.id},recipient_user_id.eq.${user.id}`).order("created_at", { ascending: false }).limit(5);
+      const [
+        activeWarranties,
+        totalWarranties,
+        pendingApproval,
+        expiringSoon,
+        openClaims,
+        unreadNotifications,
+      ] = await Promise.all([
+        safeCount(
+          "active warranties",
+          supabase
+            .from("warranties")
+            .select("id", { count: "exact", head: true })
+            .or(warrantyAccess)
+            .eq("status", "active")
+        ),
+        safeCount(
+          "total warranties",
+          supabase
+            .from("warranties")
+            .select("id", { count: "exact", head: true })
+            .or(warrantyAccess)
+        ),
+        safeCount(
+          "pending approvals",
+          supabase
+            .from("warranties")
+            .select("id", { count: "exact", head: true })
+            .or(warrantyAccess)
+            .eq("status", "pending_approval")
+        ),
+        safeCount(
+          "expiring warranties",
+          supabase
+            .from("warranties")
+            .select("id", { count: "exact", head: true })
+            .or(warrantyAccess)
+            .eq("status", "active")
+            .gte("end_date", today)
+            .lte("end_date", soon)
+        ),
+        safeCount(
+          "open claims",
+          supabase
+            .from("warranty_claims")
+            .select("id", { count: "exact", head: true })
+            .eq("user_id", user.id)
+            .in("status", ["open", "pending", "submitted", "under_review", "in_progress"])
+        ),
+        safeCount(
+          "unread notifications",
+          supabase
+            .from("notifications")
+            .select("id", { count: "exact", head: true })
+            .eq("user_id", user.id)
+            .eq("read", false)
+        ),
+      ]);
+
+      setStats({
+        active_warranties: activeWarranties,
+        expiring_soon: expiringSoon,
+        pending_approval: pendingApproval,
+        total_warranties: totalWarranties,
+        open_claims: openClaims,
+        unread_notifications: unreadNotifications,
+      });
+
+      const { data: warranties } = await supabase
+        .from("warranties")
+        .select("id, product_name, product_name_ar, status, end_date, reference_number, seller_name, created_at")
+        .or(warrantyAccess)
+        .order("created_at", { ascending: false })
+        .limit(5);
       if (warranties) setRecentWarranties(warranties as RecentWarranty[]);
 
-      const { data: expiring } = await supabase.rpc("get_expiring_warranties", { days_ahead: 30 });
+      const { data: expiring } = await supabase
+        .from("warranties")
+        .select("id, product_name, product_name_ar, status, end_date, reference_number, seller_name, created_at")
+        .or(warrantyAccess)
+        .eq("status", "active")
+        .gte("end_date", today)
+        .lte("end_date", soon)
+        .order("end_date", { ascending: true })
+        .limit(5);
       if (expiring) setExpiringWarranties((expiring as RecentWarranty[]).slice(0, 5));
 
       const { data: activity } = await supabase.from("activity_log").select("id, action, entity_type, entity_id, metadata, created_at").eq("actor_id", user.id).order("created_at", { ascending: false }).limit(8);
