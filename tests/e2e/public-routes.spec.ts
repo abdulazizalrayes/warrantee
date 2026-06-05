@@ -25,7 +25,7 @@ test.describe("public experience", () => {
       await expect(page).toHaveTitle(/Warrantee/i);
       await expect(page.locator("body")).not.toContainText(/Something went wrong|Internal error/i);
 
-      errors.assertClean();
+      await errors.assertClean();
     });
   }
 

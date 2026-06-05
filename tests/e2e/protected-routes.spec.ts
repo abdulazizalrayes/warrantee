@@ -22,7 +22,7 @@ test.describe("protected app routing", () => {
 
       await expectProtectedRedirect(page, route);
 
-      errors.assertClean();
+      await errors.assertClean();
     });
   }
 
@@ -36,6 +36,6 @@ test.describe("protected app routing", () => {
     expect(currentUrl.searchParams.has("token")).toBe(false);
     expect(currentUrl.searchParams.get("redirect")).toBe("/en/seller/accept-invite?token=smoke-token");
 
-    errors.assertClean();
+    await errors.assertClean();
   });
 });

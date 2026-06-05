@@ -30,7 +30,7 @@ test.describe("authenticated operating shell", () => {
       await expect(page.getByRole("link", { name: /^Notifications$/i }).first()).toBeVisible();
       await expect(page.getByRole("link", { name: /^Settings$/i }).first()).toBeVisible();
 
-      errors.assertClean();
+      await errors.assertClean();
     });
   }
 });

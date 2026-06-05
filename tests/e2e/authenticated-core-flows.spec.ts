@@ -141,7 +141,7 @@ test.describe("authenticated core operating flows", () => {
         await expect(page.getByRole("link", { name: /^Settings$/i }).first()).toBeVisible();
       }
 
-      errors.assertClean();
+      await errors.assertClean();
     });
   }
 
@@ -162,6 +162,6 @@ test.describe("authenticated core operating flows", () => {
     await expect(page.getByRole("heading", { name: /Extend Warranty/i })).toBeVisible();
     await expect(page.getByLabel(/Extension Period/i)).toBeVisible();
 
-    errors.assertClean();
+    await errors.assertClean();
   });
 });

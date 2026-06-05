@@ -79,6 +79,14 @@ export default function DashboardPage() {
         }
         return count ?? 0;
       };
+      const { data: visibleWarrantyRows, error: visibleWarrantyError } = await supabase
+        .from("warranties")
+        .select("id")
+        .or(warrantyAccess);
+      if (visibleWarrantyError) {
+        console.warn("[Dashboard] warranty scope unavailable:", visibleWarrantyError.message);
+      }
+      const visibleWarrantyIds = ((visibleWarrantyRows || []) as Array<{ id: string }>).map((warranty) => warranty.id);
 
       const [
         activeWarranties,
@@ -123,11 +131,13 @@ export default function DashboardPage() {
         ),
         safeCount(
           "open claims",
-          supabase
-            .from("warranty_claims")
-            .select("id", { count: "exact", head: true })
-            .eq("user_id", user.id)
-            .in("status", ["open", "pending", "submitted", "under_review", "in_progress"])
+          visibleWarrantyIds.length
+            ? supabase
+              .from("warranty_claims")
+              .select("id", { count: "exact", head: true })
+              .in("warranty_id", visibleWarrantyIds)
+              .not("status", "in", "(approved,rejected,resolved,closed)")
+            : Promise.resolve({ count: 0, error: null })
         ),
         safeCount(
           "unread notifications",
@@ -135,7 +145,7 @@ export default function DashboardPage() {
             .from("notifications")
             .select("id", { count: "exact", head: true })
             .eq("user_id", user.id)
-            .eq("read", false)
+            .eq("is_read", false)
         ),
       ]);
 

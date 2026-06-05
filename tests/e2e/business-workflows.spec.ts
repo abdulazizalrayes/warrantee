@@ -199,6 +199,6 @@ test.describe("deeper authenticated business workflows", () => {
     });
     expect(selfDeleteResponse.status()).toBe(422);
 
-    errors.assertClean();
+    await errors.assertClean();
   });
 });

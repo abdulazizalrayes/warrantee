@@ -401,6 +401,6 @@ test.describe("fully operational production workflows", () => {
     expect(checkoutPayload.sessionId).toBeTruthy();
     expect(checkoutPayload.url).toMatch(/^https:\/\/checkout\.stripe\.com\//);
 
-    errors.assertClean();
+    await errors.assertClean();
   });
 });

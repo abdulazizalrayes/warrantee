@@ -37,6 +37,15 @@ describe("operational hardening", () => {
     expect(readiness).toContain('csp: "enforced"');
   });
 
+  it("keeps dashboard browser counts aligned with production schema", () => {
+    const dashboard = readProjectFile("src/app/[locale]/dashboard/page.tsx");
+
+    expect(dashboard).toContain('.eq("is_read", false)');
+    expect(dashboard).not.toContain('.eq("read", false)');
+    expect(dashboard).toContain('.in("warranty_id", visibleWarrantyIds)');
+    expect(dashboard).not.toMatch(/from\("warranty_claims"\)[\s\S]{0,300}\.eq\("user_id", user\.id\)/);
+  });
+
   it("defines subscription state with RLS and webhook-only writes", () => {
     const migration = readProjectFile(
       "supabase/migrations/20260605175727_subscription_billing_state.sql"
