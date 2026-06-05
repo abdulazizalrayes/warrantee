@@ -9,7 +9,11 @@ const publicChecks = [
   { path: "/en/contact", expect: 200 },
   { path: "/en/api-docs", expect: 200 },
   { path: "/en/support", expect: 200 },
-  { path: "/en/seller/register", expect: 200, contains: "Become a Warrantee seller" },
+  {
+    path: "/en/seller/register",
+    expect: 200,
+    containsAny: ["Issue digital warranties faster", "Become a Warrantee seller"],
+  },
   { path: "/robots.txt", expect: 200, contains: "Sitemap: https://warrantee.io/sitemap.xml" },
   { path: "/sitemap.xml", expect: 200, contains: "https://warrantee.io/en" },
   { path: `/${indexNowKey}.txt`, expect: 200, contains: indexNowKey },
@@ -34,6 +38,9 @@ const protectedApiChecks = [
   { path: "/api/claims", method: "GET", expect: 401 },
   { path: "/api/notifications", method: "GET", expect: 401 },
   { path: "/api/team/members", method: "GET", expect: 401 },
+  { path: "/api/integration-tokens", method: "GET", expect: 401 },
+  { path: "/api/integration-tokens", method: "POST", expect: 401, body: {} },
+  { path: "/api/integration-tokens/00000000-0000-4000-8000-000000000000", method: "DELETE", expect: 401 },
   { path: "/api/v1/warranties", method: "GET", expect: 401 },
   { path: "/api/cron/check-expiry", method: "GET", expect: [401, 503] },
   { path: "/api/push/send", method: "POST", expect: 401, body: {} },
@@ -55,7 +62,7 @@ async function fetchWithTimeout(url, options = {}) {
   }
 }
 
-async function checkPublic({ path, expect, contains }) {
+async function checkPublic({ path, expect, contains, containsAny }) {
   const url = `${baseUrl}${path}`;
   const response = await fetchWithTimeout(url, { redirect: "follow" });
   const expected = Array.isArray(expect) ? expect : [expect];
@@ -67,6 +74,13 @@ async function checkPublic({ path, expect, contains }) {
     const body = await response.text();
     if (!body.includes(contains)) {
       throw new Error(`${path} did not contain required text: ${contains}`);
+    }
+  }
+
+  if (containsAny) {
+    const body = await response.text();
+    if (!containsAny.some((requiredText) => body.includes(requiredText))) {
+      throw new Error(`${path} did not contain any required text: ${containsAny.join(" | ")}`);
     }
   }
 
