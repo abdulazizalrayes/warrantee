@@ -95,6 +95,17 @@ GA4 console blocker:
   - team_invite
   - warranty_created
   - warranty_scan
+
+Google Search Console access record:
+- Warrantee Search Console is under `abdulaziz.alrayes@gmail.com`.
+- Property: `https://warrantee.io/`
+- Console URL: `https://search.google.com/search-console?resource_id=https%3A%2F%2Fwarrantee.io%2F`
+- Use this property only for Warrantee sitemap submission, URL inspection, indexing checks, and search performance review.
+- 2026-06-06 readback: `/sitemap.xml` is submitted with status `Success`, last read May 31, 2026, and 28 discovered pages.
+- 2026-06-06 URL Inspection: `/en`, `/ar`, `/en/pricing`, `/en/features`, and `/en/verify` are on Google and indexed.
+- 2026-06-06 URL Inspection: `/en/faq` is `Crawled - currently not indexed`; `/en/api-docs` is `Discovered - currently not indexed`. Both are allowed and sitemap-discovered.
+- Request Indexing for `/en/faq` and `/en/api-docs` was attempted but blocked by Google's daily `Quota Exceeded` response; retry after quota reset.
+- Search Console Manual Actions and Security Issues showed no issues detected.
 - Do not mark generic add_to_cart, generate_lead, or share as Warrantee conversions unless they are intentionally used elsewhere.
 
 GA4 dashboard operating view:

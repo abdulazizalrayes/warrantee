@@ -1,6 +1,33 @@
 # Warrantee Operational Status
 
-Last updated: 2026-05-24
+Last updated: 2026-06-06
+
+## 2026-06-06 Search Console And SEO Validation
+
+- Google Search Console access was verified in the Chrome profile for `abdulaziz.alrayes@gmail.com`.
+- Warrantee property: `https://warrantee.io/`.
+- Search Console URL: `https://search.google.com/search-console?resource_id=https%3A%2F%2Fwarrantee.io%2F`.
+- Search Console overview showed 24 indexed pages, 19 not indexed pages, and 4 total web search clicks.
+- `/sitemap.xml` is submitted in Search Console with status `Success`, last read May 31, 2026, and 28 discovered pages.
+- URL Inspection results:
+  - `https://warrantee.io/en`: URL is on Google; page is indexed.
+  - `https://warrantee.io/ar`: URL is on Google; page is indexed.
+  - `https://warrantee.io/en/pricing`: URL is on Google; page is indexed.
+  - `https://warrantee.io/en/features`: URL is on Google; page is indexed.
+  - `https://warrantee.io/en/verify`: URL is on Google; page is indexed.
+  - `https://warrantee.io/en/faq`: not currently on Google; Search Console reports `Crawled - currently not indexed`, crawl allowed, fetch successful, indexing allowed, sitemap discovered.
+  - `https://warrantee.io/en/api-docs`: not currently on Google; Search Console reports `Discovered - currently not indexed`, sitemap discovered.
+- Request Indexing was attempted for the not-indexed URLs, but Google returned `Quota Exceeded`; retry after the daily Search Console quota resets.
+- Page indexing report showed 19 not-indexed URLs across 6 reasons: `Excluded by noindex tag` 4, `Page with redirect` 1, `Discovered - currently not indexed` 6, `Crawled - currently not indexed` 2, `Blocked by robots.txt` 5, and `Not found (404)` 1.
+- Search Console HTTPS report showed 0 non-HTTPS URLs and no critical issues.
+- Search Console Manual Actions and Security Issues both showed no issues detected.
+- Google Rich Results Test passed:
+  - `/en`: 2 valid items, Organization and Software Apps.
+  - `/ar`: 2 valid items, Organization and Software Apps.
+  - `/en/pricing`: 3 valid items, Breadcrumbs, Organization, and Software Apps.
+- Live production SEO crawl verified priority URLs return 200, publish a canonical URL, expose five reciprocal `hreflang` alternates (`en`, `en-US`, `ar`, `ar-SA`, `x-default`), include parseable JSON-LD, and have no public-page `noindex`.
+- `npm run indexnow:submit` resubmitted 28 public sitemap URLs to IndexNow and Bing with HTTP 200 responses.
+- `npm run smoke:prod`, `npm run readiness:operational`, and `npm run guard:loopback` passed after the Search Console check.
 
 ## 2026-05-24 Recheck
 
@@ -19,13 +46,13 @@ Launch status depends on the stricter readiness gate. If the new `stripe-webhook
 
 The latest end-to-end launch recheck found a local env-pull inconsistency, then verified the deployed production API directly:
 
-- Local `.env.production.local` still has empty `STRIPE_SECRET_KEY` and `MISTRAL_API_KEY` values, so local operational checkout cannot complete from that file alone.
+- Local env pulls may not expose sensitive provider secrets, so production provider health should be verified through production-safe readiness probes rather than by echoing local secret values.
 - The deployed production API passed readiness and the full operational E2E, including Stripe Checkout and OCR.
 - `GOOGLE_CLOUD_VISION_API_KEY` is present, but Google Vision still returns a billing-disabled 403 from the configured Cloud project; the deployed OCR path no longer depends on it for launch availability.
 
 Corrections made in the May 24 pass:
 
-- Added an in-house production OCR fallback so image OCR does not hard-fail while the Google reseller/billing path and Mistral key are unresolved.
+- Added an in-house production OCR fallback so image OCR does not hard-fail while hosted OCR providers are unavailable.
 - Fixed the Tesseract worker path that caused the Sentry `Cannot find module '/var/task/.next/worker-script/node/index.js'` production error.
 - Sanitized OCR provider logging so upstream error payloads are not dumped into application logs.
 - Hardened document upload/delete, inbound email attachment names, public warranty verification query construction, and Hotjar script injection.
@@ -36,7 +63,7 @@ Current launch position:
 - Code-level launch hardening is substantially complete.
 - Production smoke, readiness, RLS, and operational E2E now pass on the May 24 deployment.
 - Warrantee is ready for controlled production operation.
-- For OCR scale, install a real `MISTRAL_API_KEY`; the Tesseract fallback is an availability bridge, not the preferred long-term provider.
+- Production readiness now verifies Mistral OCR as the active provider; the Tesseract fallback remains an availability bridge, not the preferred long-term provider.
 
 ## Closed
 
@@ -93,6 +120,11 @@ Current launch position:
   - measurement ID: `G-ZQJ4LRG4GN`
   - GTM container: `GTM-N6G95MQL`
   - no new GA4 account, property, stream, or GTM container was created
+- Google Search Console access is recorded for Warrantee only:
+  - Google account: `abdulaziz.alrayes@gmail.com`
+  - Search Console property: `https://warrantee.io/`
+  - Search Console URL: `https://search.google.com/search-console?resource_id=https%3A%2F%2Fwarrantee.io%2F`
+  - use this property for Warrantee sitemap submission, URL inspection, indexing checks, and search performance review
 - GA4 Key events are configured and read back in the existing property:
   - `sign_up`
   - `warranty_created`
@@ -153,7 +185,7 @@ Current launch position:
   - Sentry is tagged by environment, release, product, and runtime surface
   - production smoke, Sentry readiness, business E2E, load, and RLS checks are available through package scripts
 
-## Still Open Before "Fully Operational"
+## Open Monitoring And External Items
 
 - Google Cloud Vision image OCR is still blocked by the configured Google Cloud project requiring billing to be enabled, but this is no longer a launch blocker because production OCR passed through the deployed provider/fallback path.
 - Google Cloud self-serve billing is blocked for the Saudi Arabia billing address. Google redirects the project to CNTXT reseller onboarding for Google Cloud in KSA; the next step requires an explicit CNTXT Google sign-in and likely reseller billing setup if Google Vision remains part of the provider plan.
@@ -167,6 +199,7 @@ Current launch position:
   - additional social pages beyond LinkedIn
 - Meta paid acquisition is prepared at the playbook/agent-skill level, but no Meta ad account has been connected and no campaign has been launched.
 - Bing Webmaster Tools should still be used to inspect sampled submitted URLs after IndexNow processing; the May 23 public search sample shows the homepage indexed, but submission acceptance does not guarantee immediate indexing or ranking for deeper URLs.
+- Google Search Console Request Indexing for `/en/faq` and `/en/api-docs` should be retried after the daily quota resets.
 
 ## Current Definition Of Done
 
