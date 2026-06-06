@@ -1,6 +1,13 @@
 # Warrantee Operational Status
 
-Last updated: 2026-06-06
+Last updated: 2026-06-07
+
+## 2026-06-07 Search Console Indexing Retry
+
+- Rechecked the Warrantee Search Console property under `abdulaziz.alrayes@gmail.com`.
+- `https://warrantee.io/en/faq` remains not on Google; URL Inspection still reports `Crawled - currently not indexed`, crawl allowed, fetch successful, indexing allowed, and sitemap discovery. Request Indexing was retried and Google returned `Quota Exceeded` with the instruction to try again tomorrow. The Discovery/Sitemaps panel also showed `Temporary processing error` during the live inspection retry.
+- `https://warrantee.io/en/api-docs` remains not on Google; URL Inspection still reports `Discovered - currently not indexed` with sitemap discovery. Request Indexing was retried and Google returned `Quota Exceeded` with the instruction to try again tomorrow.
+- No Warrantee code, sitemap, robots, canonical, `hreflang`, or structured-data fix is indicated by this retry. The remaining action is external: retry Search Console Request Indexing after Google's daily quota resets.
 
 ## 2026-06-06 Search Console And SEO Validation
 
@@ -199,7 +206,7 @@ Current launch position:
   - additional social pages beyond LinkedIn
 - Meta paid acquisition is prepared at the playbook/agent-skill level, but no Meta ad account has been connected and no campaign has been launched.
 - Bing Webmaster Tools should still be used to inspect sampled submitted URLs after IndexNow processing; the May 23 public search sample shows the homepage indexed, but submission acceptance does not guarantee immediate indexing or ranking for deeper URLs.
-- Google Search Console Request Indexing for `/en/faq` and `/en/api-docs` should be retried after the daily quota resets.
+- Google Search Console Request Indexing for `/en/faq` and `/en/api-docs` should be retried again after the next daily quota reset; the 2026-06-07 retry still returned Google's `Quota Exceeded` response.
 
 ## Current Definition Of Done
 

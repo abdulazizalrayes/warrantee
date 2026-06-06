@@ -105,6 +105,7 @@ Google Search Console access record:
 - 2026-06-06 URL Inspection: `/en`, `/ar`, `/en/pricing`, `/en/features`, and `/en/verify` are on Google and indexed.
 - 2026-06-06 URL Inspection: `/en/faq` is `Crawled - currently not indexed`; `/en/api-docs` is `Discovered - currently not indexed`. Both are allowed and sitemap-discovered.
 - Request Indexing for `/en/faq` and `/en/api-docs` was attempted but blocked by Google's daily `Quota Exceeded` response; retry after quota reset.
+- 2026-06-07 retry: `/en/faq` and `/en/api-docs` still returned Google's daily `Quota Exceeded` response when Request Indexing was retried. `/en/faq` remains `Crawled - currently not indexed`; `/en/api-docs` remains `Discovered - currently not indexed`. No local Warrantee SEO code fix is indicated by the retry.
 - Search Console Manual Actions and Security Issues showed no issues detected.
 - Do not mark generic add_to_cart, generate_lead, or share as Warrantee conversions unless they are intentionally used elsewhere.
 
