@@ -8,6 +8,7 @@ import {
   type Locale,
 } from "@/lib/i18n";
 import { getOrganizationJsonLd } from "@/lib/jsonld";
+import { DocumentShell } from "@/components/DocumentShell";
 import { PublicBreadcrumbs } from "@/components/PublicBreadcrumbs";
 import "@/app/globals.css";
 import dynamic from "next/dynamic";
@@ -77,14 +78,9 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
   const activeLocale = locale as Locale;
   const direction = DIRECTION[activeLocale];
   const langCode = getLocaleLanguageTag(activeLocale);
-  // Inline script runs before React hydration to set lang/dir on <html> synchronously,
-  // preventing a flash of wrong direction on RTL locales. suppressHydrationWarning on
-  // <html>/<body> in the root layout tells React to ignore the expected attribute mismatch.
-  const localeScript = `document.documentElement.lang="${langCode}";document.documentElement.dir="${direction}";`;
 
   return (
-    <>
-      <script dangerouslySetInnerHTML={{ __html: localeScript }} />
+    <DocumentShell lang={langCode} dir={direction}>
       <meta name="theme-color" content="#1A1A2E" />
       {/* Bing Webmaster verification */}
       <meta name="msvalidate.01" content="E1C23BBDB660B5FBF84E7E6B1AE1B743" />
@@ -115,6 +111,6 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
         </main>
       </RouteProviders>
       <CookieConsent />
-    </>
+    </DocumentShell>
   );
 }
