@@ -53,7 +53,7 @@ describe("SEO and AI-search readiness metadata", () => {
       "Enterprise",
     ]);
     expect(software.description).toContain("Warranty management software");
-    expect(serialized).toContain("Product");
+    expect(serialized).not.toContain("\"@type\":\"Product\"");
     expect(serialized).toContain("Professional launch offer");
     expect(serialized).toContain("first month free");
     expect(serialized).not.toContain("first year free");
