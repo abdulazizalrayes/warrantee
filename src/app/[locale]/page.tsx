@@ -63,9 +63,9 @@ export default async function HomePage({ params }: HomePageProps) {
               </a>
             </div>
             <p className="mt-8 text-[13px] text-[#86868b]">
-              {locale === 'en'
-                ? 'No credit card required. Free forever plan available.'
-                : '\u0644\u0627 \u062a\u0648\u062c\u062f \u062d\u0627\u062c\u0629 \u0644\u0628\u0637\u0627\u0642\u0629 \u0627\u0626\u062a\u0645\u0627\u0646. \u062e\u0637\u0629 \u0645\u062c\u0627\u0646\u064a\u0629 \u062f\u0627\u0626\u0645\u0629 \u0645\u062a\u0627\u062d\u0629.'}
+              {!isRTL
+                ? 'No credit card required. Free plan available.'
+                : '\u0644\u0627 \u062a\u0648\u062c\u062f \u062d\u0627\u062c\u0629 \u0644\u0628\u0637\u0627\u0642\u0629 \u0627\u0626\u062a\u0645\u0627\u0646. \u062e\u0637\u0629 \u0645\u062c\u0627\u0646\u064a\u0629 \u0645\u062a\u0627\u062d\u0629.'}
             </p>
           </div>
         </section>
@@ -74,12 +74,12 @@ export default async function HomePage({ params }: HomePageProps) {
           <div className="max-w-[980px] mx-auto">
             <div className="max-w-[680px] mx-auto text-center mb-16">
               <h2 className="text-[32px] sm:text-[40px] font-semibold leading-tight tracking-tight mb-4 text-[#1d1d1f]">
-                {locale === 'en'
+                {!isRTL
                   ? 'Warranties shouldn\u2019t be this hard.'
                   : '\u0627\u0644\u0636\u0645\u0627\u0646\u0627\u062a \u0644\u0627 \u064a\u062c\u0628 \u0623\u0646 \u062a\u0643\u0648\u0646 \u0628\u0647\u0630\u0647 \u0627\u0644\u0635\u0639\u0648\u0628\u0629.'}
               </h2>
               <p className="text-[17px] text-[#86868b] leading-relaxed">
-                {locale === 'en'
+                {!isRTL
                   ? 'Managing warranties across your organization is complex. Track them with clarity and confidence.'
                   : '\u0625\u062f\u0627\u0631\u0629 \u0627\u0644\u0636\u0645\u0627\u0646\u0627\u062a \u0639\u0628\u0631 \u0645\u0624\u0633\u0633\u062a\u0643 \u0645\u0639\u0642\u062f\u0629. \u062a\u062a\u0628\u0639\u0647\u0627 \u0628\u0648\u0636\u0648\u062d \u0648\u062b\u0642\u0629.'}
               </p>
@@ -87,17 +87,17 @@ export default async function HomePage({ params }: HomePageProps) {
             <div className="grid sm:grid-cols-2 gap-5">
               {[
                 { icon: Clock,
-                  title: locale === 'en' ? 'Missing Deadlines' : '\u0641\u0642\u062f\u0627\u0646 \u0627\u0644\u0645\u0648\u0627\u0639\u064a\u062f',
-                  desc: locale === 'en' ? 'Forget expiration dates and lose coverage when you need it most.' : '\u0646\u0633\u064a\u0627\u0646 \u062a\u0648\u0627\u0631\u064a\u062e \u0627\u0646\u062a\u0647\u0627\u0621 \u0627\u0644\u0635\u0644\u0627\u062d\u064a\u0629 \u0648\u0641\u0642\u062f\u0627\u0646 \u0627\u0644\u062a\u063a\u0637\u064a\u0629 \u0639\u0646\u062f\u0645\u0627 \u062a\u062d\u062a\u0627\u062c\u0647\u0627 \u0623\u0643\u062b\u0631.' },
+                  title: !isRTL ? 'Missing Deadlines' : '\u0641\u0642\u062f\u0627\u0646 \u0627\u0644\u0645\u0648\u0627\u0639\u064a\u062f',
+                  desc: !isRTL ? 'Forget expiration dates and lose coverage when you need it most.' : '\u0646\u0633\u064a\u0627\u0646 \u062a\u0648\u0627\u0631\u064a\u062e \u0627\u0646\u062a\u0647\u0627\u0621 \u0627\u0644\u0635\u0644\u0627\u062d\u064a\u0629 \u0648\u0641\u0642\u062f\u0627\u0646 \u0627\u0644\u062a\u063a\u0637\u064a\u0629 \u0639\u0646\u062f\u0645\u0627 \u062a\u062d\u062a\u0627\u062c\u0647\u0627 \u0623\u0643\u062b\u0631.' },
                 { icon: FileCheck,
-                  title: locale === 'en' ? 'Manual Approvals' : '\u0627\u0644\u0645\u0648\u0627\u0641\u0642\u0627\u062a \u0627\u0644\u064a\u062f\u0648\u064a\u0629',
-                  desc: locale === 'en' ? 'Back-and-forth emails and spreadsheets slow down your team.' : '\u0631\u0633\u0627\u0626\u0644 \u0627\u0644\u0628\u0631\u064a\u062f \u0627\u0644\u0625\u0644\u0643\u062a\u0631\u0648\u0646\u064a \u0648\u0627\u0644\u062c\u062f\u0627\u0648\u0644 \u062a\u0628\u0637\u0626 \u0641\u0631\u064a\u0642\u0643.' },
+                  title: !isRTL ? 'Manual Approvals' : '\u0627\u0644\u0645\u0648\u0627\u0641\u0642\u0627\u062a \u0627\u0644\u064a\u062f\u0648\u064a\u0629',
+                  desc: !isRTL ? 'Back-and-forth emails and spreadsheets slow down your team.' : '\u0631\u0633\u0627\u0626\u0644 \u0627\u0644\u0628\u0631\u064a\u062f \u0627\u0644\u0625\u0644\u0643\u062a\u0631\u0648\u0646\u064a \u0648\u0627\u0644\u062c\u062f\u0627\u0648\u0644 \u062a\u0628\u0637\u0626 \u0641\u0631\u064a\u0642\u0643.' },
                 { icon: Shield,
-                  title: locale === 'en' ? 'Unverified Claims' : '\u0627\u062f\u0639\u0627\u0621\u0627\u062a \u063a\u064a\u0631 \u0645\u062d\u0642\u0642\u0629',
-                  desc: locale === 'en' ? 'Lack of audit trails and documentation lead to disputes.' : '\u063a\u064a\u0627\u0628 \u0645\u0633\u0627\u0631\u0627\u062a \u0627\u0644\u062a\u062f\u0642\u064a\u0642 \u0648\u0627\u0644\u062a\u0648\u062b\u064a\u0642 \u064a\u0624\u062f\u064a \u0625\u0644\u0649 \u0646\u0632\u0627\u0639\u0627\u062a.' },
+                  title: !isRTL ? 'Unverified Claims' : '\u0627\u062f\u0639\u0627\u0621\u0627\u062a \u063a\u064a\u0631 \u0645\u062d\u0642\u0642\u0629',
+                  desc: !isRTL ? 'Lack of audit trails and documentation lead to disputes.' : '\u063a\u064a\u0627\u0628 \u0645\u0633\u0627\u0631\u0627\u062a \u0627\u0644\u062a\u062f\u0642\u064a\u0642 \u0648\u0627\u0644\u062a\u0648\u062b\u064a\u0642 \u064a\u0624\u062f\u064a \u0625\u0644\u0649 \u0646\u0632\u0627\u0639\u0627\u062a.' },
                 { icon: Globe,
-                  title: locale === 'en' ? 'Language Barriers' : '\u062d\u0648\u0627\u062c\u0632 \u0627\u0644\u0644\u063a\u0629',
-                  desc: locale === 'en' ? 'Managing warranties across Arabic and English adds translation overhead.' : '\u0625\u062f\u0627\u0631\u0629 \u0627\u0644\u0636\u0645\u0627\u0646\u0627\u062a \u0628\u0627\u0644\u0639\u0631\u0628\u064a\u0629 \u0648\u0627\u0644\u0625\u0646\u062c\u0644\u064a\u0632\u064a\u0629 \u062a\u062a\u0637\u0644\u0628 \u062a\u0643\u0627\u0644\u064a\u0641 \u062a\u0631\u062c\u0645\u0629.' },
+                  title: !isRTL ? 'Language Barriers' : '\u062d\u0648\u0627\u062c\u0632 \u0627\u0644\u0644\u063a\u0629',
+                  desc: !isRTL ? 'Managing warranties across Arabic and English adds translation overhead.' : '\u0625\u062f\u0627\u0631\u0629 \u0627\u0644\u0636\u0645\u0627\u0646\u0627\u062a \u0628\u0627\u0644\u0639\u0631\u0628\u064a\u0629 \u0648\u0627\u0644\u0625\u0646\u062c\u0644\u064a\u0632\u064a\u0629 \u062a\u062a\u0637\u0644\u0628 \u062a\u0643\u0627\u0644\u064a\u0641 \u062a\u0631\u062c\u0645\u0629.' },
               ].map((pain, idx) => (
                 <div key={idx} className="bg-white rounded-2xl p-6 hover:shadow-md transition-shadow">
                   <pain.icon className="w-6 h-6 text-[#0071e3] mb-3" />
@@ -117,7 +117,7 @@ export default async function HomePage({ params }: HomePageProps) {
                 {dictionary.features.title}
               </h2>
               <p className="text-[17px] text-[#86868b] leading-relaxed">
-                {locale === 'en'
+                {!isRTL
                   ? 'All the tools you need to manage warranties at scale.'
                   : '\u062c\u0645\u064a\u0639 \u0627\u0644\u0623\u062f\u0648\u0627\u062a \u0627\u0644\u062a\u064a \u062a\u062d\u062a\u0627\u062c\u0647\u0627 \u0644\u0625\u062f\u0627\u0631\u0629 \u0627\u0644\u0636\u0645\u0627\u0646\u0627\u062a \u0628\u062d\u062c\u0645 \u0643\u0628\u064a\u0631.'}
               </p>
@@ -145,15 +145,15 @@ export default async function HomePage({ params }: HomePageProps) {
             <div className="grid gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
               <div>
                 <p className="text-[13px] font-semibold uppercase tracking-[0.18em] text-[#0071e3]">
-                  {locale === 'en' ? 'Post-purchase trust loop' : 'حلقة الثقة بعد الشراء'}
+                  {!isRTL ? 'Post-purchase trust loop' : 'حلقة الثقة بعد الشراء'}
                 </p>
                 <h2 className="mt-3 text-[32px] sm:text-[40px] font-semibold leading-tight tracking-tight text-[#1d1d1f]">
-                  {locale === 'en'
+                  {!isRTL
                     ? 'Turn every warranty into a verified product passport.'
                     : 'حوّل كل ضمان إلى جواز منتج موثق.'}
                 </h2>
                 <p className="mt-4 text-[17px] leading-relaxed text-[#86868b]">
-                  {locale === 'en'
+                  {!isRTL
                     ? 'Buyers scan once to confirm authenticity, open the certificate, file a claim, or request extension. Sellers keep the relationship alive after the sale.'
                     : 'يمسح العميل مرة واحدة للتحقق من الأصالة، فتح الشهادة، تقديم مطالبة، أو طلب تمديد. ويبقى البائع متصلاً بالعميل بعد البيع.'}
                 </p>
@@ -162,14 +162,14 @@ export default async function HomePage({ params }: HomePageProps) {
                     href={`/${locale}/seller/register`}
                     className="inline-flex items-center justify-center rounded-full bg-[#0071e3] px-6 py-3 text-[15px] font-medium text-white transition-colors hover:bg-[#0077ED]"
                   >
-                    {locale === 'en' ? 'Start issuing warranties' : 'ابدأ إصدار الضمانات'}
+                    {!isRTL ? 'Start issuing warranties' : 'ابدأ إصدار الضمانات'}
                     <ChevronRight className="w-4 h-4 ml-1.5" />
                   </a>
                   <a
                     href={`/${locale}/api-docs`}
                     className="inline-flex items-center justify-center rounded-full border border-[#d2d2d7] px-6 py-3 text-[15px] font-medium text-[#1d1d1f] transition-colors hover:bg-[#f5f5f7]"
                   >
-                    {locale === 'en' ? 'View API options' : 'عرض خيارات API'}
+                    {!isRTL ? 'View API options' : 'عرض خيارات API'}
                   </a>
                 </div>
               </div>
@@ -178,22 +178,22 @@ export default async function HomePage({ params }: HomePageProps) {
                 {[
                   {
                     icon: QrCode,
-                    title: locale === 'en' ? 'Scannable verification' : 'تحقق قابل للمسح',
-                    desc: locale === 'en'
+                    title: !isRTL ? 'Scannable verification' : 'تحقق قابل للمسح',
+                    desc: !isRTL
                       ? 'Each certificate and warranty page points to a live verification record instead of a static PDF.'
                       : 'كل شهادة وصفحة ضمان تقود إلى سجل تحقق مباشر بدلاً من ملف ثابت.',
                   },
                   {
                     icon: Workflow,
-                    title: locale === 'en' ? 'Claims and extension path' : 'مسار المطالبات والتمديد',
-                    desc: locale === 'en'
+                    title: !isRTL ? 'Claims and extension path' : 'مسار المطالبات والتمديد',
+                    desc: !isRTL
                       ? 'The same passport routes buyers into claims and extension requests with the right context already attached.'
                       : 'نفس جواز المنتج يوجّه العميل إلى المطالبات وطلبات التمديد مع السياق الصحيح.',
                   },
                   {
                     icon: KeyRound,
-                    title: locale === 'en' ? 'API-ready for operations' : 'جاهز للتكامل التشغيلي',
-                    desc: locale === 'en'
+                    title: !isRTL ? 'API-ready for operations' : 'جاهز للتكامل التشغيلي',
+                    desc: !isRTL
                       ? 'Registered users can connect ERP, ecommerce, and support workflows through scoped, rate-limited API tokens.'
                       : 'يمكن للمستخدمين المسجلين ربط ERP والمتاجر والدعم عبر رموز API محددة الصلاحيات ومحدودة الطلبات.',
                   },
@@ -217,15 +217,15 @@ export default async function HomePage({ params }: HomePageProps) {
               {[
                 {
                   icon: BadgeCheck,
-                  label: locale === 'en' ? 'Verified proof at point of service' : 'إثبات موثق وقت الخدمة',
+                  label: !isRTL ? 'Verified proof at point of service' : 'إثبات موثق وقت الخدمة',
                 },
                 {
                   icon: TrendingUp,
-                  label: locale === 'en' ? 'Extension demand becomes revenue signal' : 'طلب التمديد يتحول إلى إشارة إيراد',
+                  label: !isRTL ? 'Extension demand becomes revenue signal' : 'طلب التمديد يتحول إلى إشارة إيراد',
                 },
                 {
                   icon: Shield,
-                  label: locale === 'en' ? 'Support teams see fewer blind disputes' : 'فرق الدعم تقلل النزاعات غير الواضحة',
+                  label: !isRTL ? 'Support teams see fewer blind disputes' : 'فرق الدعم تقلل النزاعات غير الواضحة',
                 },
               ].map((proof) => (
                 <div key={proof.label} className="flex items-start gap-3">
@@ -244,7 +244,7 @@ export default async function HomePage({ params }: HomePageProps) {
                 {dictionary.how_it_works.title}
               </h2>
               <p className="text-[17px] text-[#86868b] leading-relaxed">
-                {locale === 'en'
+                {!isRTL
                   ? 'Get started in minutes with our intuitive workflow.'
                   : '\u0627\u0628\u062f\u0623 \u0641\u064a \u062f\u0642\u0627\u0626\u0642 \u0645\u0639 \u0633\u064a\u0631 \u0639\u0645\u0644\u0646\u0627 \u0627\u0644\u0628\u062f\u064a\u0647\u064a.'}
               </p>
@@ -269,18 +269,18 @@ export default async function HomePage({ params }: HomePageProps) {
             <div className="grid md:grid-cols-2 gap-12 items-center">
               <div className={isRTL ? 'md:order-2' : ''}>
                 <h2 className="text-[32px] sm:text-[40px] font-semibold leading-tight tracking-tight mb-4 text-[#1d1d1f]">
-                  {locale === 'en' ? 'Never Lose Coverage Again' : '\u0644\u0627 \u062a\u0641\u0642\u062f \u0627\u0644\u062a\u063a\u0637\u064a\u0629 \u0623\u0628\u062f\u0627\u064b \u0645\u0631\u0629 \u0623\u062e\u0631\u0649'}
+                  {!isRTL ? 'Never Lose Coverage Again' : '\u0644\u0627 \u062a\u0641\u0642\u062f \u0627\u0644\u062a\u063a\u0637\u064a\u0629 \u0623\u0628\u062f\u0627\u064b \u0645\u0631\u0629 \u0623\u062e\u0631\u0649'}
                 </h2>
                 <p className="text-[17px] text-[#86868b] mb-8 leading-relaxed">
-                  {locale === 'en'
+                  {!isRTL
                     ? 'Extend warranties before expiration. Sellers offer extensions directly through Warrantee, and buyers purchase them instantly.'
                     : '\u0645\u062f \u0627\u0644\u0636\u0645\u0627\u0646\u0627\u062a \u0642\u0628\u0644 \u0627\u0646\u062a\u0647\u0627\u0621 \u0627\u0644\u0635\u0644\u0627\u062d\u064a\u0629. \u064a\u0642\u062f\u0645 \u0627\u0644\u0628\u0627\u0626\u0639\u0648\u0646 \u0627\u0644\u062a\u0645\u062f\u064a\u062f\u0627\u062a \u0645\u0628\u0627\u0634\u0631\u0629 \u0639\u0628\u0631 Warrantee.'}
                 </p>
                 <ul className="space-y-4">
                   {[
-                    locale === 'en' ? 'Flexible extension terms' : '\u0634\u0631\u0648\u0637 \u062a\u0645\u062f\u064a\u062f \u0645\u0631\u0646\u0629',
-                    locale === 'en' ? 'Instant approval process' : '\u0639\u0645\u0644\u064a\u0629 \u0645\u0648\u0627\u0641\u0642\u0629 \u0641\u0648\u0631\u064a\u0629',
-                    locale === 'en' ? 'Transparent pricing' : '\u062a\u0633\u0639\u064a\u0631 \u0634\u0641\u0627\u0641',
+                    !isRTL ? 'Flexible extension terms' : '\u0634\u0631\u0648\u0637 \u062a\u0645\u062f\u064a\u062f \u0645\u0631\u0646\u0629',
+                    !isRTL ? 'Instant approval process' : '\u0639\u0645\u0644\u064a\u0629 \u0645\u0648\u0627\u0641\u0642\u0629 \u0641\u0648\u0631\u064a\u0629',
+                    !isRTL ? 'Transparent pricing' : '\u062a\u0633\u0639\u064a\u0631 \u0634\u0641\u0627\u0641',
                   ].map((item, idx) => (
                     <li key={idx} className="flex items-center gap-3">
                       <CheckCircle className="w-5 h-5 text-[#30d158] flex-shrink-0" />
@@ -292,10 +292,10 @@ export default async function HomePage({ params }: HomePageProps) {
               <div className={isRTL ? 'md:order-1' : ''}>
                 <div className="bg-[#f5f5f7] rounded-3xl p-8 space-y-4">
                   {[
-                    { label: locale === 'en' ? 'Seller' : '\u0627\u0644\u0628\u0627\u0626\u0639', color: 'bg-[#f5f5f7] border border-[#d2d2d7]' },
-                    { label: locale === 'en' ? 'Extension Offer' : '\u0639\u0631\u0636 \u0627\u0644\u062a\u0645\u062f\u064a\u062f', color: 'bg-[#0071e3]/10 border border-[#0071e3]/20' },
-                    { label: locale === 'en' ? 'Buyer' : '\u0627\u0644\u0645\u0634\u062a\u0631\u064a', color: 'bg-[#f5f5f7] border border-[#d2d2d7]' },
-                    { label: locale === 'en' ? 'Extended Coverage' : '\u062a\u063a\u0637\u064a\u0629 \u0645\u0645\u062f\u062f\u0629', color: 'bg-[#30d158]/10 border border-[#30d158]/20' },
+                    { label: !isRTL ? 'Seller' : '\u0627\u0644\u0628\u0627\u0626\u0639', color: 'bg-[#f5f5f7] border border-[#d2d2d7]' },
+                    { label: !isRTL ? 'Extension Offer' : '\u0639\u0631\u0636 \u0627\u0644\u062a\u0645\u062f\u064a\u062f', color: 'bg-[#0071e3]/10 border border-[#0071e3]/20' },
+                    { label: !isRTL ? 'Buyer' : '\u0627\u0644\u0645\u0634\u062a\u0631\u064a', color: 'bg-[#f5f5f7] border border-[#d2d2d7]' },
+                    { label: !isRTL ? 'Extended Coverage' : '\u062a\u063a\u0637\u064a\u0629 \u0645\u0645\u062f\u062f\u0629', color: 'bg-[#30d158]/10 border border-[#30d158]/20' },
                   ].map((step, idx) => (
                     <div key={idx} className="flex items-center gap-3">
                       {idx > 0 && <ArrowRight className="w-4 h-4 text-[#86868b] flex-shrink-0" />}
@@ -330,7 +330,7 @@ export default async function HomePage({ params }: HomePageProps) {
                 >
                   {idx === 1 && (
                     <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-[#0071e3] text-white px-4 py-1 rounded-full text-[11px] font-medium">
-                      {locale === 'en' ? 'First month free' : '\u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u0623\u0648\u0644 \u0645\u062c\u0627\u0646\u064a'}
+                      {!isRTL ? 'Launch offer: first month free' : '\u0639\u0631\u0636 \u0625\u0637\u0644\u0627\u0642: \u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u0623\u0648\u0644 \u0645\u062c\u0627\u0646\u064a'}
                     </div>
                   )}
                   <div className="mb-6">
@@ -342,7 +342,7 @@ export default async function HomePage({ params }: HomePageProps) {
                       <span className="text-[40px] font-semibold tracking-tight text-[#1d1d1f]">{plan.price}</span>
                       {plan.price !== 'Custom' && plan.price !== '\u0645\u062e\u0635\u0635' && (
                         <span className="text-[14px] text-[#86868b]">
-                          / {locale === 'en' ? 'month' : '\u0634\u0647\u0631'}
+                          / {!isRTL ? 'month' : '\u0634\u0647\u0631'}
                         </span>
                       )}
                     </div>
@@ -375,10 +375,10 @@ export default async function HomePage({ params }: HomePageProps) {
         <section id="contact" className="py-24 px-4 sm:px-6">
           <div className="max-w-[580px] mx-auto text-center">
             <h2 className="text-[32px] sm:text-[40px] font-semibold leading-tight tracking-tight mb-4 text-[#1d1d1f]">
-              {locale === 'en' ? 'Ready to protect what matters?' : '\u0647\u0644 \u0623\u0646\u062a \u0645\u0633\u062a\u0639\u062f \u0644\u062d\u0645\u0627\u064a\u0629 \u0645\u0627 \u064a\u0647\u0645\u061f'}
+              {!isRTL ? 'Ready to protect what matters?' : '\u0647\u0644 \u0623\u0646\u062a \u0645\u0633\u062a\u0639\u062f \u0644\u062d\u0645\u0627\u064a\u0629 \u0645\u0627 \u064a\u0647\u0645\u061f'}
             </h2>
             <p className="text-[17px] text-[#86868b] mb-8 leading-relaxed">
-              {locale === 'en'
+              {!isRTL
                 ? 'Start your free account today. No credit card required.'
                 : '\u0627\u0628\u062f\u0623 \u062d\u0633\u0627\u0628\u0643 \u0627\u0644\u0645\u062c\u0627\u0646\u064a \u0627\u0644\u064a\u0648\u0645. \u0644\u0627 \u062a\u0648\u062c\u062f \u062d\u0627\u062c\u0629 \u0644\u0628\u0637\u0627\u0642\u0629 \u0627\u0626\u062a\u0645\u0627\u0646.'}
             </p>
@@ -387,7 +387,7 @@ export default async function HomePage({ params }: HomePageProps) {
                 href={`/${locale}/auth`}
                 className="inline-flex items-center justify-center px-7 py-3 bg-[#0071e3] hover:bg-[#0077ED] text-white font-normal text-[17px] rounded-full transition-colors"
               >
-                {locale === 'en' ? 'Get Started' : '\u0627\u0628\u062f\u0623 \u0627\u0644\u0622\u0646'}
+                {!isRTL ? 'Get Started' : '\u0627\u0628\u062f\u0623 \u0627\u0644\u0622\u0646'}
                 <ChevronRight className="w-4 h-4 ml-1.5" />
               </a>
               <a

@@ -5,8 +5,7 @@ import Link from "next/link";
 import {
   Shield, FileText, BarChart3, Users, Globe, Mail, Lock, Clock, ArrowRight
 } from "lucide-react";
-import { DIRECTION, getDictionary } from "@/lib/i18n";
-import type { Locale } from "@/lib/i18n";
+import { DIRECTION, getDictionary, normalizeLocale } from "@/lib/i18n";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 
@@ -23,21 +22,21 @@ const features = [
 
 export default function FeaturesPage() {
   const params = useParams() ?? {};
-  const locale = (params.locale as string) || "en";
+  const locale = normalizeLocale(String(params.locale || "en"));
   const isRTL = locale === "ar";
-  const direction = DIRECTION[locale as Locale];
-  const dictionary = getDictionary(locale as Locale);
+  const direction = DIRECTION[locale];
+  const dictionary = getDictionary(locale);
 
   return (
     <div dir={direction} className="min-h-screen bg-[#fbfbfd]">
-      <Navbar locale={locale as Locale} dictionary={dictionary} />
+      <Navbar locale={locale} dictionary={dictionary} />
       <main className="max-w-5xl mx-auto px-6 py-20">
         <div className="text-center mb-16">
           <h1 className="text-[40px] sm:text-[48px] font-semibold tracking-tight text-[#1d1d1f]">
             {isRTL ? "ميزات المنصة" : "Platform Features"}
           </h1>
           <p className="text-[17px] text-[#86868b] mt-3 max-w-2xl mx-auto">
-            {isRTL ? "كل ما تحتاجه لإدارة الضمانات بكفاءة في قطاع البناء السعودي" : "Everything you need to manage warranties efficiently in the Saudi construction sector"}
+            {isRTL ? "كل ما تحتاجه لإدارة الضمانات بكفاءة للشركات والبائعين في السعودية ودول الخليج" : "Everything businesses and sellers need to manage warranties efficiently in Saudi Arabia and the GCC"}
           </p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
@@ -65,7 +64,7 @@ export default function FeaturesPage() {
           </div>
         </div>
       </main>
-      <Footer locale={locale as Locale} dictionary={dictionary} />
+      <Footer locale={locale} dictionary={dictionary} />
     </div>
   );
 }

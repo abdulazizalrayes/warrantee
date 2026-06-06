@@ -3,8 +3,14 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { getDictionary, DIRECTION } from "@/lib/i18n";
-import type { Locale } from "@/lib/i18n";
+import {
+  DIRECTION,
+  LOCALES,
+  LOCALE_LABELS,
+  LOCALE_LANGUAGE_TAGS,
+  getDictionary,
+  normalizeLocale,
+} from "@/lib/i18n";
 import { useAuth } from "@/lib/auth-context";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { DashboardPageShell } from "@/components/dashboard/DashboardPageShell";
@@ -33,10 +39,10 @@ const SETTING_SECTION_IDS = [
 export default function SettingsPage() {
   const params = useParams() ?? {};
   const router = useRouter();
-  const locale = (params.locale as string) || "en";
+  const locale = normalizeLocale(String(params.locale || "en"));
   const dict = getDictionary(locale);
   const isRTL = locale === "ar";
-  const direction = DIRECTION[locale as Locale];
+  const direction = DIRECTION[locale];
   const { user, profile, refreshProfile } = useAuth();
   const supabase = createSupabaseBrowserClient();
 
@@ -395,32 +401,25 @@ export default function SettingsPage() {
                   {isRTL ? "\u0627\u062e\u062a\u0631 \u0644\u063a\u0629 \u0627\u0644\u0639\u0631\u0636" : "Choose your display language"}
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <button
-                    onClick={() => setPreferredLocale("en")}
-                    className={`flex items-center gap-4 p-4 rounded-xl border-2 transition-all duration-200 ${
-                      preferredLocale === "en" ? "border-[#0071e3] bg-[#0071e3]/5" : "border-[#d2d2d7]/40 hover:border-[#d2d2d7]"
-                    }`}
-                  >
-                    <div className="w-10 h-10 rounded-full bg-[#f5f5f7] flex items-center justify-center text-[17px] font-medium">EN</div>
-                    <div className="text-left rtl:text-right">
-                      <p className="text-[15px] font-medium text-[#1d1d1f]">English</p>
-                      <p className="text-[13px] text-[#86868b]">United States</p>
-                    </div>
-                    {preferredLocale === "en" && <Check className="w-5 h-5 text-[#0071e3] ml-auto rtl:mr-auto rtl:ml-0" />}
-                  </button>
-                  <button
-                    onClick={() => setPreferredLocale("ar")}
-                    className={`flex items-center gap-4 p-4 rounded-xl border-2 transition-all duration-200 ${
-                      preferredLocale === "ar" ? "border-[#0071e3] bg-[#0071e3]/5" : "border-[#d2d2d7]/40 hover:border-[#d2d2d7]"
-                    }`}
-                  >
-                    <div className="w-10 h-10 rounded-full bg-[#f5f5f7] flex items-center justify-center text-[17px] font-medium">AR</div>
-                    <div className="text-left rtl:text-right">
-                      <p className="text-[15px] font-medium text-[#1d1d1f]">{"العربية"}</p>
-                      <p className="text-[13px] text-[#86868b]">{"المملكة العربية السعودية"}</p>
-                    </div>
-                    {preferredLocale === "ar" && <Check className="w-5 h-5 text-[#0071e3] ml-auto rtl:mr-auto rtl:ml-0" />}
-                  </button>
+                  {LOCALES.map((language) => (
+                    <button
+                      key={language}
+                      type="button"
+                      onClick={() => setPreferredLocale(language)}
+                      className={`flex items-center gap-4 p-4 rounded-xl border-2 transition-all duration-200 ${
+                        preferredLocale === language ? "border-[#0071e3] bg-[#0071e3]/5" : "border-[#d2d2d7]/40 hover:border-[#d2d2d7]"
+                      }`}
+                    >
+                      <div className="w-10 h-10 rounded-full bg-[#f5f5f7] flex items-center justify-center text-[13px] font-semibold">
+                        {LOCALE_LABELS[language].short}
+                      </div>
+                      <div className="text-left rtl:text-right">
+                        <p className="text-[15px] font-medium text-[#1d1d1f]">{LOCALE_LABELS[language].native}</p>
+                        <p className="text-[13px] text-[#86868b]">{LOCALE_LABELS[language].english} · {LOCALE_LANGUAGE_TAGS[language]}</p>
+                      </div>
+                      {preferredLocale === language && <Check className="w-5 h-5 text-[#0071e3] ml-auto rtl:mr-auto rtl:ml-0" />}
+                    </button>
+                  ))}
                 </div>
               </div>
               <div className="flex items-center gap-4 pt-2">
@@ -454,7 +453,7 @@ export default function SettingsPage() {
                   </div>
                   <p className="text-[28px] font-semibold tracking-tight">{isRTL ? "\u0645\u062c\u0627\u0646\u064a" : "Free"}</p>
                   <p className="text-[15px] text-white/60 mt-1">
-                    {isRTL ? "\u0636\u0645\u0627\u0646\u0627\u062a \u063a\u064a\u0631 \u0645\u062d\u062f\u0648\u062f\u0629. \u0627\u0644\u0633\u0646\u0629 \u0627\u0644\u0623\u0648\u0644\u0649 \u0645\u062c\u0627\u0646\u064a\u0629." : "Unlimited warranties. First year free."}
+                    {isRTL ? "\u0627\u0644\u062E\u0637\u0629 \u0627\u0644\u0645\u062C\u0627\u0646\u064A\u0629 \u062A\u0634\u0645\u0644 \u062D\u062A\u0649 10 \u0636\u0645\u0627\u0646\u0627\u062A. \u0639\u0631\u0636 \u0627\u0644\u0627\u062D\u062A\u0631\u0627\u0641\u064A: \u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u0623\u0648\u0644 \u0645\u062C\u0627\u0646\u064A." : "Free includes up to 10 warranties. Professional launch offer: first month free."}
                   </p>
                 </div>
                 <Link href={`/${locale}/billing`}

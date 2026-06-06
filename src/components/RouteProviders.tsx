@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
+import { LOCALES } from "@/lib/i18n";
 
 const AuthProvider = dynamic(() =>
   import("@/lib/auth-context").then((mod) => mod.AuthProvider)
@@ -32,7 +33,7 @@ const AUTH_ROUTE_PREFIXES = [
 
 function stripLocale(pathname: string) {
   const parts = pathname.split("/").filter(Boolean);
-  if (parts[0] === "en" || parts[0] === "ar") {
+  if (LOCALES.includes(parts[0] as (typeof LOCALES)[number])) {
     return `/${parts.slice(1).join("/")}`;
   }
   return pathname || "/";

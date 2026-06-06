@@ -2,16 +2,17 @@
 
 import { useParams } from "next/navigation";
 import { getFAQJsonLd } from "@/lib/jsonld";
+import { getContentLocale, normalizeLocale } from "@/lib/i18n";
 
 const faqs = {
   en: [
     {
       q: "What is Warrantee?",
-      a: "Warrantee is a bilingual warranty management platform designed for the Saudi construction sector. It helps contractors, suppliers, and project owners track, manage, and enforce warranty obligations digitally."
+      a: "Warrantee.io is a bilingual warranty management platform for businesses and sellers in Saudi Arabia and the GCC. It helps teams track, extend, verify, and manage warranty claims digitally."
     },
     {
       q: "How much does Warrantee cost?",
-      a: "Warrantee offers a Free plan for individuals, a Professional plan at $1/month for businesses, and an Enterprise plan with custom pricing. Visit our pricing page for full details."
+      a: "Warrantee.io offers a Free plan with no credit card required, a Professional launch offer at $1/month with the first month free, and Enterprise plans with custom pricing."
     },
     {
       q: "Is Warrantee available in Arabic?",
@@ -49,11 +50,11 @@ const faqs = {
   ar: [
     {
       q: "\u0645\u0627 \u0647\u0648 Warrantee\u061F",
-      a: "Warrantee \u0647\u0648 \u0645\u0646\u0635\u0629 \u0625\u062F\u0627\u0631\u0629 \u0627\u0644\u0636\u0645\u0627\u0646\u0627\u062A \u062B\u0646\u0627\u0626\u064A\u0629 \u0627\u0644\u0644\u063A\u0629 \u0645\u0635\u0645\u0645\u0629 \u0644\u0642\u0637\u0627\u0639 \u0627\u0644\u0628\u0646\u0627\u0621 \u0627\u0644\u0633\u0639\u0648\u062F\u064A. \u062A\u0633\u0627\u0639\u062F \u0627\u0644\u0645\u0642\u0627\u0648\u0644\u064A\u0646 \u0648\u0627\u0644\u0645\u0648\u0631\u062F\u064A\u0646 \u0648\u0645\u0644\u0627\u0643 \u0627\u0644\u0645\u0634\u0627\u0631\u064A\u0639 \u0639\u0644\u0649 \u062A\u062A\u0628\u0639 \u0648\u0625\u062F\u0627\u0631\u0629 \u0627\u0644\u062A\u0632\u0627\u0645\u0627\u062A \u0627\u0644\u0636\u0645\u0627\u0646 \u0631\u0642\u0645\u064A\u064B\u0627."
+      a: "Warrantee.io \u0647\u0648 \u0645\u0646\u0635\u0629 \u0625\u062F\u0627\u0631\u0629 \u0627\u0644\u0636\u0645\u0627\u0646\u0627\u062A \u062B\u0646\u0627\u0626\u064A\u0629 \u0627\u0644\u0644\u063A\u0629 \u0644\u0644\u0634\u0631\u0643\u0627\u062A \u0648\u0627\u0644\u0628\u0627\u0626\u0639\u064A\u0646 \u0641\u064A \u0627\u0644\u0633\u0639\u0648\u062F\u064A\u0629 \u0648\u062F\u0648\u0644 \u0627\u0644\u062E\u0644\u064A\u062C. \u062A\u0633\u0627\u0639\u062F \u0639\u0644\u0649 \u062A\u062A\u0628\u0639 \u0648\u062A\u0645\u062F\u064A\u062F \u0648\u062A\u0648\u062B\u064A\u0642 \u0648\u0625\u062F\u0627\u0631\u0629 \u0645\u0637\u0627\u0644\u0628\u0627\u062A \u0627\u0644\u0636\u0645\u0627\u0646 \u0631\u0642\u0645\u064A\u064B\u0627."
     },
     {
       q: "\u0643\u0645 \u062A\u0643\u0644\u0641\u0629 Warrantee\u061F",
-      a: "\u064A\u0642\u062F\u0645 Warrantee \u062E\u0637\u0629 \u0645\u062C\u0627\u0646\u064A\u0629 \u0644\u0644\u0623\u0641\u0631\u0627\u062F\u060C \u0648\u062E\u0637\u0629 \u0627\u062D\u062A\u0631\u0627\u0641\u064A\u0629 \u0628\u062F\u0648\u0644\u0627\u0631 \u0648\u0627\u062D\u062F \u0634\u0647\u0631\u064A\u064B\u0627 \u0644\u0644\u0634\u0631\u0643\u0627\u062A\u060C \u0648\u062E\u0637\u0629 \u0645\u0624\u0633\u0633\u064A\u0629 \u0628\u0623\u0633\u0639\u0627\u0631 \u0645\u062E\u0635\u0635\u0629."
+      a: "\u064A\u0642\u062F\u0645 Warrantee.io \u062E\u0637\u0629 \u0645\u062C\u0627\u0646\u064A\u0629 \u0628\u062F\u0648\u0646 \u062D\u0627\u062C\u0629 \u0644\u0628\u0637\u0627\u0642\u0629 \u0627\u0626\u062A\u0645\u0627\u0646\u064A\u0629\u060C \u0648\u0639\u0631\u0636 \u0625\u0637\u0644\u0627\u0642 \u0644\u0644\u062E\u0637\u0629 \u0627\u0644\u0627\u062D\u062A\u0631\u0627\u0641\u064A\u0629 \u0628\u062F\u0648\u0644\u0627\u0631 \u0648\u0627\u062D\u062F \u0634\u0647\u0631\u064A\u064B\u0627 \u0645\u0639 \u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u0623\u0648\u0644 \u0645\u062C\u0627\u0646\u064B\u0627\u060C \u0648\u062E\u0637\u0629 \u0645\u0624\u0633\u0633\u064A\u0629 \u0628\u0623\u0633\u0639\u0627\u0631 \u0645\u062E\u0635\u0635\u0629."
     },
     {
       q: "\u0647\u0644 Warrantee \u0645\u062A\u0627\u062D \u0628\u0627\u0644\u0639\u0631\u0628\u064A\u0629\u061F",
@@ -76,9 +77,10 @@ const faqs = {
 
 export default function FAQPage() {
   const params = useParams() ?? {};
-  const locale = (params?.locale as string) || "en";
+  const locale = normalizeLocale(String(params?.locale || "en"));
+  const contentLocale = getContentLocale(locale);
   const isRTL = locale === "ar";
-  const items = faqs[locale as keyof typeof faqs] || faqs.en;
+  const items = faqs[contentLocale] || faqs.en;
 
   return (
     <div dir={isRTL ? "rtl" : "ltr"} className="min-h-screen bg-gray-50">

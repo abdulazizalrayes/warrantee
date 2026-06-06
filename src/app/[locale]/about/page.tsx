@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowRight, Eye, Globe, Shield, Smile } from "lucide-react";
 import { Footer } from "@/components/Footer";
 import { Navbar } from "@/components/Navbar";
-import { DIRECTION, getDictionary, Locale } from "@/lib/i18n";
+import { DIRECTION, getContentLocale, getDictionary, normalizeLocale } from "@/lib/i18n";
 
 interface AboutPageProps {
   params: Promise<{ locale: string }>;
@@ -99,10 +99,11 @@ const content = {
 
 export default async function AboutPage({ params }: AboutPageProps) {
   const { locale: localeParam } = await params;
-  const locale = (localeParam === "ar" ? "ar" : "en") as Locale;
+  const locale = normalizeLocale(localeParam);
+  const contentLocale = getContentLocale(locale);
   const dictionary = getDictionary(locale);
   const isRTL = DIRECTION[locale] === "rtl";
-  const page = content[locale];
+  const page = content[contentLocale];
 
   return (
     <div className="bg-warm-white text-navy font-sans" dir={isRTL ? "rtl" : "ltr"}>

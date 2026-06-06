@@ -5,8 +5,15 @@ import {
   getAgentRouteInfo,
   isAgentMarkdownRequest,
 } from "@/lib/agent-ready";
+import {
+  DEFAULT_LOCALE,
+  LOCALE_PREFIX_PATTERN,
+  normalizeLocale,
+} from "@/lib/locales";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+
+const LOCALE_PREFIX_RE = new RegExp(`^/(${LOCALE_PREFIX_PATTERN})(/|$)`);
 
 function applySecurityHeaders(response: NextResponse, hasAgentRouteInfo = false) {
   response.headers.set("X-Frame-Options", "DENY");
@@ -53,8 +60,8 @@ function buildAuthRedirectUrl(request: NextRequest, locale: string) {
 
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
-  const localeMatch = pathname.match(/^\/(en|ar)(\/|$)/);
-  const locale = localeMatch ? localeMatch[1] : "en";
+  const localeMatch = pathname.match(LOCALE_PREFIX_RE);
+  const locale = normalizeLocale(localeMatch?.[1] || DEFAULT_LOCALE);
   const agentRouteInfo = getAgentRouteInfo(pathname);
   const isIndexNowKeyPath = /^\/[A-Za-z0-9-]{8,128}\.txt$/.test(pathname);
   const isPlatformAssetPath =
@@ -74,11 +81,12 @@ export async function middleware(request: NextRequest) {
   const isAdminArea =
     pathname.startsWith("/admin") ||
     pathname.startsWith("/dashboard/admin") ||
-    pathname.match(/^\/(en|ar)\/admin/);
+    pathname.match(new RegExp(`^/(${LOCALE_PREFIX_PATTERN})/admin`));
   const isApprovalArea =
-    pathname.match(/^\/(en|ar)\/approval/) ||
+    pathname.match(new RegExp(`^/(${LOCALE_PREFIX_PATTERN})/approval`)) ||
     pathname.startsWith("/approval");
-  const normalizedPathname = pathname.replace(/^\/(en|ar)(?=\/|$)/, "") || "/";
+  const normalizedPathname =
+    pathname.replace(new RegExp(`^/(${LOCALE_PREFIX_PATTERN})(?=/|$)`), "") || "/";
   const protectedAppPrefixes = [
     "/dashboard",
     "/seller",
@@ -187,7 +195,7 @@ export async function middleware(request: NextRequest) {
 
   if (
     pathname === "/auth/callback" ||
-    pathname.match(/^\/(en|ar)\/auth\/callback/)
+    pathname.match(new RegExp(`^/(${LOCALE_PREFIX_PATTERN})/auth/callback`))
   ) {
     applyNoIndexHeader(response);
     return response;
@@ -227,7 +235,8 @@ export async function middleware(request: NextRequest) {
   }
 
   if (
-    (pathname.startsWith("/auth/") || pathname.match(/^\/(en|ar)\/auth/)) &&
+    (pathname.startsWith("/auth/") ||
+      pathname.match(new RegExp(`^/(${LOCALE_PREFIX_PATTERN})/auth`))) &&
     user
   ) {
     const requestedAuthTab = request.nextUrl.searchParams.get("tab");

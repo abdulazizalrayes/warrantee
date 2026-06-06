@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
-import { getDictionary, Locale, DIRECTION } from '@/lib/i18n';
+import { DIRECTION, getContentLocale, getDictionary, normalizeLocale } from '@/lib/i18n';
 
 interface BlogPageProps {
   params: Promise<{ locale: string }>;
@@ -58,10 +58,11 @@ const posts = {
 
 export default async function BlogPage({ params }: BlogPageProps) {
   const { locale: localeParam } = await params;
-  const locale = (localeParam === 'ar' ? 'ar' : 'en') as Locale;
+  const locale = normalizeLocale(localeParam);
+  const contentLocale = getContentLocale(locale);
   const dictionary = getDictionary(locale);
   const isRTL = DIRECTION[locale] === 'rtl';
-  const items = posts[locale];
+  const items = posts[contentLocale];
 
   return (
     <div dir={isRTL ? 'rtl' : 'ltr'} className="min-h-screen bg-warm-white text-navy">
@@ -70,17 +71,17 @@ export default async function BlogPage({ params }: BlogPageProps) {
         <section className="px-4 py-20 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-5xl">
             <p className="mb-4 text-sm font-semibold uppercase tracking-[0.24em] text-[#0071e3]">
-              {locale === 'en' ? 'Warrantee resources' : 'موارد وارنتي'}
+              {isRTL ? 'موارد وارنتي' : 'Warrantee resources'}
             </p>
             <h1 className="max-w-3xl text-4xl font-bold tracking-tight text-navy md:text-6xl">
-              {locale === 'en'
-                ? 'Warranty management guides for teams that need proof, speed, and trust.'
-                : 'أدلة إدارة الضمانات للفرق التي تحتاج إلى إثبات وسرعة وثقة.'}
+              {isRTL
+                ? 'أدلة إدارة الضمانات للفرق التي تحتاج إلى إثبات وسرعة وثقة.'
+                : 'Warranty management guides for teams that need proof, speed, and trust.'}
             </h1>
             <p className="mt-6 max-w-3xl text-lg leading-8 text-navy/60">
-              {locale === 'en'
-                ? 'Use this hub to understand warranty tracking, claim workflows, document evidence, seller onboarding, and API-ready warranty operations.'
-                : 'استخدم هذا المركز لفهم تتبع الضمانات وسير المطالبات وأدلة المستندات وانضمام البائعين وتشغيل الضمانات عبر API.'}
+              {isRTL
+                ? 'استخدم هذا المركز لفهم تتبع الضمانات وسير المطالبات وأدلة المستندات وانضمام البائعين وتشغيل الضمانات عبر API.'
+                : 'Use this hub to understand warranty tracking, claim workflows, document evidence, seller onboarding, and API-ready warranty operations.'}
             </p>
           </div>
         </section>
@@ -96,7 +97,7 @@ export default async function BlogPage({ params }: BlogPageProps) {
                   href={`/${locale}${post.href}`}
                   className="mt-6 inline-flex text-sm font-semibold text-[#0071e3] hover:text-[#0077ED]"
                 >
-                  {locale === 'en' ? 'Read related guide' : 'اقرأ الدليل المرتبط'}
+                  {isRTL ? 'اقرأ الدليل المرتبط' : 'Read related guide'}
                 </Link>
               </article>
             ))}

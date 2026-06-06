@@ -2,12 +2,13 @@
 
 import { useEffect } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { normalizeLocale } from '@/lib/i18n';
 
 export default function WarrantyExtendRedirectPage() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const router = useRouter();
-  const locale = pathname?.startsWith('/ar') ? 'ar' : 'en';
+  const locale = normalizeLocale(pathname?.split('/').filter(Boolean)[0]);
   const warrantyId = searchParams?.get('id') || '';
 
   useEffect(() => {

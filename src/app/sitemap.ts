@@ -1,5 +1,5 @@
 import { MetadataRoute } from 'next'
-import { LOCALES } from '@/lib/i18n'
+import { INDEXED_LOCALES } from '@/lib/i18n'
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = 'https://warrantee.io'
@@ -28,7 +28,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   const entries: MetadataRoute.Sitemap = []
 
-  for (const locale of LOCALES) {
+  for (const locale of INDEXED_LOCALES) {
     for (const page of publicPages) {
       entries.push({
         url: `${baseUrl}/${locale}${page.path}`,
@@ -37,7 +37,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
         alternates: {
           languages: {
             en: `${baseUrl}/en${page.path}`,
+            'en-US': `${baseUrl}/en${page.path}`,
             ar: `${baseUrl}/ar${page.path}`,
+            'ar-SA': `${baseUrl}/ar${page.path}`,
             'x-default': `${baseUrl}/en${page.path}`,
           },
         },

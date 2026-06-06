@@ -1,10 +1,16 @@
-# Warrantee - Trust the Terms
+# Warrantee.io - Trust the Terms
 
 > Bilingual warranty management platform for the Middle East
 
 ## About
 
-Warrantee is a SaaS platform that helps consumers, sellers, and businesses manage product warranties digitally. It supports Arabic (RTL) and English, warranty tracking, claims management, seller onboarding, public verification, certificates, and integrations.
+Warrantee.io is a SaaS warranty management platform that helps businesses, sellers, and consumers manage product warranties digitally. It supports Arabic (RTL) and English, warranty tracking, claims management, seller onboarding, public verification, certificates, and integrations.
+
+## Pricing Summary
+
+- Free plan: no credit card required, up to 10 warranties, one user, basic dashboard, and email support.
+- Professional launch offer: $1/month, first month free, unlimited warranties, up to 5 team members, advanced analytics, custom workflows, bilingual certificates, and priority support.
+- Enterprise: custom pricing for larger teams, custom integrations, account management, advanced security, and SLA support.
 
 ## Features
 

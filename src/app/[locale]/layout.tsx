@@ -1,6 +1,12 @@
 import type { Metadata, Viewport } from "next";
 import { notFound } from "next/navigation";
-import { isValidLocale, DIRECTION } from "@/lib/i18n";
+import {
+  DIRECTION,
+  INDEXED_LOCALES,
+  getLocaleLanguageTag,
+  isValidLocale,
+  type Locale,
+} from "@/lib/i18n";
 import { getOrganizationJsonLd } from "@/lib/jsonld";
 import { PublicBreadcrumbs } from "@/components/PublicBreadcrumbs";
 import "@/app/globals.css";
@@ -14,8 +20,8 @@ const Hotjar = dynamic(() => import("@/components/Hotjar"));
 const CookieConsent = dynamic(() => import("@/components/CookieConsent"));
 
 export const metadata: Metadata = {
-  title: "Warrantee — Trust the Terms™",
-  description: "Warrantee is the warranty management platform for businesses and consumers. Track, approve, and extend warranties with confidence. Bilingual Arabic and English.",
+  title: "Warrantee.io — Trust the Terms™",
+  description: "Warrantee.io is the warranty management platform for businesses and sellers. Track, approve, extend, verify, and claim warranties with confidence. Bilingual Arabic and English. Free plan available.",
   keywords: [
     "warranty management", "warranty tracking", "warranty tracking app", "warranty reminder",
     "warranty management software", "warranty management platform", "warranty claim management",
@@ -25,7 +31,7 @@ export const metadata: Metadata = {
     "warrantee", "warrantee.io", "SaaS", "GCC", "Saudi Arabia", "UAE", "warranty app",
   ],
   robots: "index, follow",
-  authors: [{ name: "Warrantee" }],
+  authors: [{ name: "Warrantee.io" }],
   icons: {
     icon: [
       { url: "/favicon.svg", type: "image/svg+xml" },
@@ -37,18 +43,18 @@ export const metadata: Metadata = {
     google: "4tG-gxxHOu8AVF1Mm-qHOJIoq1SHqJmvGsx72zR97v8",
   },
   openGraph: {
-    title: "Warrantee — Trust the Terms™",
-    description: "Track, manage, transfer, and claim warranties in one place. Bilingual Arabic & English. Free to start.",
+    title: "Warrantee.io — Trust the Terms™",
+    description: "Track, manage, transfer, verify, and claim warranties in one place. Bilingual Arabic and English. Free plan available.",
     url: "https://warrantee.io",
-    siteName: "Warrantee",
+    siteName: "Warrantee.io",
     locale: "en_US",
     type: "website",
-    images: [{ url: "https://warrantee.io/opengraph-image", width: 1200, height: 630, alt: "Warrantee — Warranty Management Platform" }],
+    images: [{ url: "https://warrantee.io/opengraph-image", width: 1200, height: 630, alt: "Warrantee.io — Warranty Management Platform" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Warrantee — Trust the Terms™",
-    description: "Track, manage, transfer, and claim warranties. Bilingual AR+EN. Free to start.",
+    title: "Warrantee.io — Trust the Terms™",
+    description: "Track, manage, transfer, verify, and claim warranties. Bilingual AR+EN. Free plan available.",
     images: ["https://warrantee.io/opengraph-image"],
     creator: "@warrantee_io",
   },
@@ -62,14 +68,15 @@ interface LocaleLayoutProps {
 }
 
 export async function generateStaticParams() {
-  return [{ locale: "en" }, { locale: "ar" }];
+  return INDEXED_LOCALES.map((locale) => ({ locale }));
 }
 
 export default async function LocaleLayout({ children, params }: LocaleLayoutProps) {
   const { locale } = await params;
   if (!isValidLocale(locale)) notFound();
-  const direction = DIRECTION[locale];
-  const langCode = locale === "ar" ? "ar-SA" : "en-US";
+  const activeLocale = locale as Locale;
+  const direction = DIRECTION[activeLocale];
+  const langCode = getLocaleLanguageTag(activeLocale);
   // Inline script runs before React hydration to set lang/dir on <html> synchronously,
   // preventing a flash of wrong direction on RTL locales. suppressHydrationWarning on
   // <html>/<body> in the root layout tells React to ignore the expected attribute mismatch.
@@ -90,8 +97,8 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
       <meta name="distribution" content="global" />
       <meta name="rating" content="general" />
       <meta name="revisit-after" content="7 days" />
-      <meta name="apple-mobile-web-app-title" content="Warrantee" />
-      <meta name="application-name" content="Warrantee" />
+      <meta name="apple-mobile-web-app-title" content="Warrantee.io" />
+      <meta name="application-name" content="Warrantee.io" />
       <meta name="mobile-web-app-capable" content="yes" />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(getOrganizationJsonLd()) }} />
       <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:bg-white focus:px-4 focus:py-2 focus:rounded focus:shadow-lg focus:text-blue-700 focus:outline-none">

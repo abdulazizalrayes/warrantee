@@ -11,6 +11,7 @@ interface FooterProps {
 
 export function Footer({ locale, dictionary }: FooterProps) {
   const isRTL = DIRECTION[locale] === 'rtl';
+  const isArabic = locale === 'ar';
   const currentYear = new Date().getFullYear();
 
   const footerSections = [
@@ -20,23 +21,23 @@ export function Footer({ locale, dictionary }: FooterProps) {
         { label: dictionary.nav.features, href: `/${locale}#features` },
         { label: dictionary.how_it_works.title, href: `/${locale}#how-it-works` },
         { label: dictionary.nav.pricing, href: `/${locale}#pricing` },
-        { label: locale === 'en' ? 'Blog & Guides' : 'المدونة والأدلة', href: `/${locale}/blog` },
-        { label: locale === 'en' ? 'API & ERP Integrations' : 'تكاملات API وERP', href: `/${locale}/api-docs` },
+        { label: isArabic ? 'المدونة والأدلة' : 'Blog & Guides', href: `/${locale}/blog` },
+        { label: isArabic ? 'تكاملات API وERP' : 'API & ERP Integrations', href: `/${locale}/api-docs` },
       ],
     },
     {
       title: dictionary.footer.company,
       links: [
-        { label: locale === 'en' ? 'About' : 'عن وارنتي', href: `/${locale}/about` },
+        { label: isArabic ? 'عن وارنتي' : 'About', href: `/${locale}/about` },
         { label: dictionary.nav.contact, href: `/${locale}#contact` },
       ],
     },
     {
       title: dictionary.footer.legal,
       links: [
-        { label: locale === 'en' ? 'Privacy Policy' : 'سياسة الخصوصية', href: `/${locale}/privacy` },
-        { label: locale === 'en' ? 'Terms of Service' : 'شروط الخدمة', href: `/${locale}/terms` },
-        { label: locale === 'en' ? 'Cookie Policy' : 'سياسة ملفات تعريف الارتباط', href: `/${locale}/cookies` },
+        { label: isArabic ? 'سياسة الخصوصية' : 'Privacy Policy', href: `/${locale}/privacy` },
+        { label: isArabic ? 'شروط الخدمة' : 'Terms of Service', href: `/${locale}/terms` },
+        { label: isArabic ? 'سياسة ملفات تعريف الارتباط' : 'Cookie Policy', href: `/${locale}/cookies` },
       ],
     },
   ];
@@ -59,9 +60,9 @@ export function Footer({ locale, dictionary }: FooterProps) {
               <span className="text-[#0071e3]">.</span>
             </Link>
             <p className="text-sm text-[#6e6e73] mb-4">
-              {locale === 'en'
-                ? 'Trust the Terms™. Track every warranty with confidence.'
-                : 'ثق بالشروط™. تتبع كل ضمان بثقة.'}
+              {isArabic
+                ? 'ثق بالشروط™. تتبع كل ضمان بثقة.'
+                : 'Trust the Terms™. Track every warranty with confidence.'}
             </p>
             <div className="flex gap-3 items-center">
               <LanguageToggle
@@ -100,9 +101,9 @@ export function Footer({ locale, dictionary }: FooterProps) {
             }`}
           >
             <p className="text-sm text-[#6e6e73]">
-              {locale === 'en'
-                ? `© ${currentYear} Warrantee. All rights reserved.`
-                : `© ${currentYear} Warrantee. جميع الحقوق محفوظة.`}
+              {isArabic
+                ? `© ${currentYear} Warrantee. جميع الحقوق محفوظة.`
+                : `© ${currentYear} Warrantee. All rights reserved.`}
             </p>
             <p className="text-sm font-medium text-[#0071e3]">Trust the Terms™</p>
           </div>

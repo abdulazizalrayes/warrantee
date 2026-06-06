@@ -6,7 +6,7 @@ import { useParams } from "next/navigation";
 import { ArrowRight, BadgeCheck, Hash, Search, ShieldCheck } from "lucide-react";
 import { Footer } from "@/components/Footer";
 import { Navbar } from "@/components/Navbar";
-import { DIRECTION, getDictionary, type Locale } from "@/lib/i18n";
+import { DIRECTION, getContentLocale, getDictionary, normalizeLocale } from "@/lib/i18n";
 
 type VerificationResult = {
   id: string;
@@ -70,11 +70,12 @@ function formatDate(value: string | null | undefined, locale: string) {
 
 export default function VerifyWarrantyPage() {
   const params = useParams() ?? {};
-  const locale = ((params.locale as string) === "ar" ? "ar" : "en") as Locale;
+  const locale = normalizeLocale(String(params.locale || "en"));
+  const contentLocale = getContentLocale(locale);
   const isRTL = locale === "ar";
   const direction = DIRECTION[locale];
   const dictionary = getDictionary(locale);
-  const l = copy[locale];
+  const l = copy[contentLocale];
   const [query, setQuery] = useState("");
   const [result, setResult] = useState<VerificationResult | null>(null);
   const [loading, setLoading] = useState(false);

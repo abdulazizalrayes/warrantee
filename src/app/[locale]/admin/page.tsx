@@ -4,6 +4,7 @@ import { Fragment, useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
 import Link from 'next/link';
+import { getContentLocale, normalizeLocale } from '@/lib/i18n';
 
 const supabase = createSupabaseBrowserClient();
 
@@ -228,10 +229,11 @@ function SparkNumber({ label, value, sub, icon, color = '#0071e3' }: any) {
 // ─── MAIN COMPONENT ────────────────────────────────────
 export default function AdminPage() {
   const pathname = usePathname();
-  const locale = pathname?.startsWith('/ar') ? 'ar' : 'en';
+  const locale = normalizeLocale(pathname?.split('/').filter(Boolean)[0]);
+  const contentLocale = getContentLocale(locale);
   const router = useRouter();
   const isRTL = locale === 'ar';
-  const text = t[locale as keyof typeof t] || t.en;
+  const text = t[contentLocale] || t.en;
 
   const [loading, setLoading] = useState(true);
   const [authorized, setAuthorized] = useState(false);

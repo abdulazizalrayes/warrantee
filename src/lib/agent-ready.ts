@@ -1,4 +1,9 @@
-import type { Locale } from "@/lib/i18n";
+import {
+  getContentLocale,
+  isIndexedLocale,
+  type IndexedLocale,
+  type Locale,
+} from "@/lib/i18n";
 
 const BASE_URL = "https://warrantee.io";
 
@@ -51,10 +56,10 @@ export type AgentPageKey =
   | "cookies";
 
 type AgentPageContent = {
-  title: Record<Locale, string>;
-  summary: Record<Locale, string>;
-  bullets?: Record<Locale, string[]>;
-  nextActions?: Record<Locale, string[]>;
+  title: Record<IndexedLocale, string>;
+  summary: Record<IndexedLocale, string>;
+  bullets?: Record<IndexedLocale, string[]>;
+  nextActions?: Record<IndexedLocale, string[]>;
 };
 
 const PAGE_CONTENT: Record<AgentPageKey, AgentPageContent> = {
@@ -221,7 +226,8 @@ export function getAgentRouteInfo(pathname: string): AgentRouteInfo | null {
   }
 
   const segments = normalizedPath.split("/").filter(Boolean);
-  const locale = (segments[0] as Locale) || "en";
+  const localeSegment = segments[0] || "en";
+  const locale = (isIndexedLocale(localeSegment) ? localeSegment : "en") as Locale;
   const subPath = segments.slice(1).join("/");
 
   const pageKey = (subPath === "" ? "home" : subPath) as AgentPageKey;
@@ -243,11 +249,12 @@ export function buildAgentMarkdown(pathname: string): string | null {
   }
 
   const { locale, pageKey, canonicalPath } = routeInfo;
+  const contentLocale = getContentLocale(locale);
   const content = PAGE_CONTENT[pageKey];
-  const title = content.title[locale];
-  const summary = content.summary[locale];
-  const bullets = content.bullets?.[locale] ?? [];
-  const nextActions = content.nextActions?.[locale] ?? [];
+  const title = content.title[contentLocale];
+  const summary = content.summary[contentLocale];
+  const bullets = content.bullets?.[contentLocale] ?? [];
+  const nextActions = content.nextActions?.[contentLocale] ?? [];
 
   const lines = [
     `# ${title}`,

@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import DashboardLayout from "../dashboard/layout";
+import { LOCALE_PREFIX_PATTERN } from "@/lib/i18n";
 
 export default function SellerLayout({
   children,
@@ -9,7 +10,7 @@ export default function SellerLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname() || "";
-  const normalizedPath = pathname.replace(/^\/(en|ar)(?=\/|$)/, "") || "/";
+  const normalizedPath = pathname.replace(new RegExp(`^/(${LOCALE_PREFIX_PATTERN})(?=/|$)`), "") || "/";
   const isPublicRegistration =
     normalizedPath === "/seller/register" ||
     normalizedPath.startsWith("/seller/register/");

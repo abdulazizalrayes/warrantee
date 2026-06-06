@@ -1,4 +1,11 @@
-import { DEFAULT_LOCALE, isValidLocale, type Locale } from "@/lib/i18n";
+import {
+  DEFAULT_LOCALE,
+  LOCALE_PREFIX_PATTERN,
+  getContentLocale,
+  isValidLocale,
+  type IndexedLocale,
+  type Locale,
+} from "@/lib/i18n";
 
 const SITE_URL = "https://warrantee.io";
 
@@ -12,12 +19,12 @@ export type PublicBreadcrumb = {
   items: BreadcrumbItem[];
 };
 
-const HOME_LABELS: Record<Locale, string> = {
+const HOME_LABELS: Record<IndexedLocale, string> = {
   en: "Home",
   ar: "الرئيسية",
 };
 
-const PUBLIC_PAGE_LABELS: Record<string, Record<Locale, string>> = {
+const PUBLIC_PAGE_LABELS: Record<string, Record<IndexedLocale, string>> = {
   "/about": { en: "About", ar: "عن Warrantee" },
   "/api-docs": { en: "API docs", ar: "وثائق API" },
   "/blog": { en: "Blog", ar: "المدونة" },
@@ -43,7 +50,10 @@ function normalizePath(pathname: string | null | undefined): string {
   const withoutQuery = pathname.split("?")[0]?.split("#")[0] || "/";
   const withoutTrailingSlash =
     withoutQuery.length > 1 ? withoutQuery.replace(/\/+$/, "") : withoutQuery;
-  const withoutLocale = withoutTrailingSlash.replace(/^\/(en|ar)(?=\/|$)/, "");
+  const withoutLocale = withoutTrailingSlash.replace(
+    new RegExp(`^/(${LOCALE_PREFIX_PATTERN})(?=/|$)`),
+    "",
+  );
 
   return withoutLocale || "/";
 }
@@ -63,6 +73,7 @@ export function getPublicBreadcrumb(
   pathname: string | null | undefined,
 ): PublicBreadcrumb | null {
   const locale = normalizeLocale(localeInput);
+  const contentLocale = getContentLocale(locale);
   const normalizedPath = normalizePath(pathname);
   const matchedPage = matchPublicPage(normalizedPath);
 
@@ -72,11 +83,11 @@ export function getPublicBreadcrumb(
     locale,
     items: [
       {
-        name: HOME_LABELS[locale],
+        name: HOME_LABELS[contentLocale],
         href: `/${locale}`,
       },
       {
-        name: PUBLIC_PAGE_LABELS[matchedPage][locale],
+        name: PUBLIC_PAGE_LABELS[matchedPage][contentLocale],
         href: `/${locale}${normalizedPath}`,
       },
     ],

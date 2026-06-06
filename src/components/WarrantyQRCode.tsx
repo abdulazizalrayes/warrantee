@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import QRCode from 'qrcode';
+import { normalizeLocale } from '@/lib/i18n';
 
 interface QRCodeProps {
   warrantyId: string;
@@ -12,7 +13,7 @@ interface QRCodeProps {
 
 export default function WarrantyQRCode({ warrantyId, size = 200, showDownload = true }: QRCodeProps) {
   const pathname = usePathname();
-  const locale = pathname?.startsWith('/ar') ? 'ar' : 'en';
+  const locale = normalizeLocale(pathname?.split('/').filter(Boolean)[0]);
   const [dataUrl, setDataUrl] = useState('');
 
   const t = {

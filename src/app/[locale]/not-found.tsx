@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { normalizeLocale } from "@/lib/i18n";
 
 export default function NotFound() {
   const pathname = usePathname();
-  const locale = pathname?.startsWith("/ar") ? "ar" : "en";
+  const locale = normalizeLocale(pathname?.split("/").filter(Boolean)[0]);
   const isRTL = locale === "ar";
 
   return (

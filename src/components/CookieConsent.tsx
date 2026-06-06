@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { defaultCookieConsent, readStoredCookieConsent } from '@/lib/cookie-consent';
+import { normalizeLocale } from '@/lib/i18n';
 
 interface ConsentState {
   necessary: boolean;
@@ -13,7 +14,7 @@ interface ConsentState {
 
 export default function CookieConsent() {
   const pathname = usePathname();
-  const locale = pathname?.startsWith('/ar') ? 'ar' : 'en';
+  const locale = normalizeLocale(pathname?.split('/').filter(Boolean)[0]);
   const isRTL = locale === 'ar';
   const [showBanner, setShowBanner] = useState(false);
   const [showDetails, setShowDetails] = useState(false);

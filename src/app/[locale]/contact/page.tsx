@@ -7,13 +7,13 @@ import { trackContactForm } from '@/lib/ga4-events';
 import { PageViewTracker } from '@/components/PageViewTracker';
 import { Footer } from '@/components/Footer';
 import { Navbar } from '@/components/Navbar';
-import { getDictionary, type Locale } from '@/lib/i18n';
+import { getDictionary, normalizeLocale } from '@/lib/i18n';
 
 export default function ContactPage() {
   const params = useParams() ?? {};
-  const locale = params.locale === 'ar' ? 'ar' : 'en';
+  const locale = normalizeLocale(String(params.locale || 'en'));
   const isRTL = locale === 'ar';
-  const dictionary = getDictionary(locale as Locale);
+  const dictionary = getDictionary(locale);
   const copy = isRTL
     ? {
         sentTitle: 'تم إرسال الرسالة',
@@ -114,7 +114,7 @@ export default function ContactPage() {
   if (submitted) {
     return (
       <div dir={isRTL ? 'rtl' : 'ltr'} className="min-h-screen bg-[#fbfbfd] text-[#1d1d1f]">
-        <Navbar locale={locale as Locale} dictionary={dictionary} />
+        <Navbar locale={locale} dictionary={dictionary} />
         <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-20">
           <div className="text-center max-w-md">
             <div className="w-16 h-16 bg-[#0071e3]/10 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -132,14 +132,14 @@ export default function ContactPage() {
             </a>
           </div>
         </main>
-        <Footer locale={locale as Locale} dictionary={dictionary} />
+        <Footer locale={locale} dictionary={dictionary} />
       </div>
     );
   }
 
   return (
     <div dir={isRTL ? 'rtl' : 'ltr'} className="min-h-screen bg-[#fbfbfd] text-[#1d1d1f]">
-      <Navbar locale={locale as Locale} dictionary={dictionary} />
+      <Navbar locale={locale} dictionary={dictionary} />
       <PageViewTracker pageName="contact_page" pageType="marketing" locale={locale} />
       <section className="pt-24 pb-12 px-4 sm:px-6 lg:px-8 text-center bg-[#fbfbfd]">
         <div className="max-w-3xl mx-auto">
@@ -251,7 +251,7 @@ export default function ContactPage() {
           </form>
         </div>
       </section>
-      <Footer locale={locale as Locale} dictionary={dictionary} />
+      <Footer locale={locale} dictionary={dictionary} />
     </div>
   );
 }

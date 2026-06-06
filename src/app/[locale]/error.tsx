@@ -1,6 +1,7 @@
 "use client";
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
+import { normalizeLocale } from "@/lib/i18n";
 
 export default function ErrorBoundary({
   error,
@@ -14,7 +15,7 @@ export default function ErrorBoundary({
   }, [error]);
 
   const pathname = usePathname();
-  const locale = pathname?.startsWith("/ar") ? "ar" : "en";
+  const locale = normalizeLocale(pathname?.split("/").filter(Boolean)[0]);
   const isRTL = locale === "ar";
 
   return (

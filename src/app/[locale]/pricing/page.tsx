@@ -4,8 +4,7 @@ import { useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Check, Shield, Zap, Building2 } from "lucide-react";
-import { DIRECTION, getDictionary } from "@/lib/i18n";
-import type { Locale } from "@/lib/i18n";
+import { DIRECTION, getDictionary, normalizeLocale } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth-context";
 import { PublicBreadcrumbs } from "@/components/PublicBreadcrumbs";
 import { Navbar } from "@/components/Navbar";
@@ -31,6 +30,8 @@ const plans = [
     iconColor: "text-[#0071e3]",
     iconBg: "bg-[#0071e3]/10",
     price: 1,
+    pricePrefix_en: "Launch offer",
+    pricePrefix_ar: "عرض إطلاق",
     popular: true,
     features_en: ["Unlimited warranties", "Advanced analytics", "Priority support", "Up to 5 team members", "Custom workflows", "Bilingual certificates", "8% commission"],
     features_ar: ["ضمانات غير محدودة", "تحليلات متقدمة", "دعم أولوية", "حتى 5 أعضاء", "سير عمل مخصص", "شهادات ثنائية", "عمولة 8%"],
@@ -56,10 +57,10 @@ const plans = [
 
 export default function PricingPage() {
   const params = useParams() ?? {};
-  const locale = (params.locale as string) || "en";
+  const locale = normalizeLocale(String(params.locale || "en"));
   const isRTL = locale === "ar";
-  const direction = DIRECTION[locale as Locale];
-  const dictionary = getDictionary(locale as Locale);
+  const direction = DIRECTION[locale];
+  const dictionary = getDictionary(locale);
   const { user } = useAuth();
   const [checkoutPlan, setCheckoutPlan] = useState<string | null>(null);
 
@@ -98,7 +99,7 @@ export default function PricingPage() {
 
   return (
     <div dir={direction} className="min-h-screen bg-[#fbfbfd]">
-      <Navbar locale={locale as Locale} dictionary={dictionary} />
+      <Navbar locale={locale} dictionary={dictionary} />
       <PublicBreadcrumbs locale={locale} includeJsonLd={false} />
       <main className="mx-auto max-w-5xl px-6 py-20">
         {/* Header */}
@@ -108,13 +109,13 @@ export default function PricingPage() {
           </h1>
           <p className="text-[17px] text-[#6e6e73] mt-3 max-w-xl mx-auto">
             {isRTL
-              ? "ابدأ مجاناً للأفراد أو احصل على ميزات متقدمة لشركتك بدولار واحد فقط شهرياً"
-              : "Start free for individuals or unlock advanced features for your business at just $1/month"}
+              ? "ابدأ بالخطة المجانية دون بطاقة ائتمانية، أو فعّل عرض الإطلاق للاحترافي بدولار واحد شهرياً"
+              : "Start with a Free plan, no card required, or unlock the Professional launch offer at $1/month"}
           </p>
           <p className="mt-5 text-[13px] font-medium text-[#6e6e73]">
             {isRTL
-              ? "الخطة المجانية لا تتطلب بطاقة. الشهر الأول مجاني للاحترافي."
-              : "No card needed for Free. First month free on Professional."}
+              ? "الخطة المجانية تشمل حتى 10 ضمانات. عرض الاحترافي: الشهر الأول مجاني."
+              : "Free includes up to 10 warranties. Professional launch offer: first month free."}
           </p>
         </div>
 
@@ -161,9 +162,14 @@ export default function PricingPage() {
                         <span className="text-[28px] font-semibold tracking-tight text-[#1d1d1f]">${plan.price}</span>
                         <span className="text-[14px] text-[#6e6e73]"> /{isRTL ? "شهر" : "month"}</span>
                         {plan.id === "pro" && (
-                          <p className="text-[12px] text-[#30d158] font-medium mt-1">
-                            {isRTL ? "الشهر الأول مجاني!" : "First month free!"}
-                          </p>
+                          <>
+                            <p className="text-[12px] text-[#0071e3] font-medium mt-1">
+                              {isRTL ? plan.pricePrefix_ar : plan.pricePrefix_en}
+                            </p>
+                            <p className="text-[12px] text-[#30d158] font-medium mt-1">
+                              {isRTL ? "الشهر الأول مجاني!" : "First month free!"}
+                            </p>
+                          </>
                         )}
                       </div>
                     )}
@@ -214,7 +220,7 @@ export default function PricingPage() {
           </p>
         </div>
       </main>
-      <Footer locale={locale as Locale} dictionary={dictionary} />
+      <Footer locale={locale} dictionary={dictionary} />
     </div>
   );
 }

@@ -5,8 +5,7 @@ import { usePathname } from 'next/navigation';
 import { Check, ShieldCheck } from 'lucide-react';
 import { PageViewTracker } from '@/components/PageViewTracker';
 import { trackSellerApplication } from '@/lib/ga4-events';
-import { DIRECTION, getDictionary } from '@/lib/i18n';
-import type { Locale } from '@/lib/i18n';
+import { DIRECTION, getDictionary, normalizeLocale } from '@/lib/i18n';
 import { Footer } from '@/components/Footer';
 import { Navbar } from '@/components/Navbar';
 import { PublicBreadcrumbs } from '@/components/PublicBreadcrumbs';
@@ -27,7 +26,7 @@ interface SellerData {
 
 export default function SellerRegisterPage() {
   const pathname = usePathname();
-  const locale = (pathname?.startsWith('/ar') ? 'ar' : 'en') as Locale;
+  const locale = normalizeLocale(pathname?.split('/').filter(Boolean)[0]);
   const isRTL = locale === 'ar';
   const dictionary = getDictionary(locale);
   const [step, setStep] = useState(1);

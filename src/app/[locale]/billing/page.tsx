@@ -45,6 +45,8 @@ const plans = [
     iconColor: "text-[#0071e3]",
     iconBg: "bg-[#0071e3]/10",
     price: 1,
+    pricePrefix_en: "Launch offer",
+    pricePrefix_ar: "عرض إطلاق",
     popular: true,
     features_en: ["Unlimited warranties", "Advanced analytics", "Priority support", "Up to 5 team members", "Custom workflows", "Bilingual certificates", "8% commission"],
     features_ar: ["ضمانات غير محدودة", "تحليلات متقدمة", "دعم أولوية", "حتى 5 أعضاء", "سير عمل مخصص", "شهادات ثنائية", "عمولة 8%"],
@@ -349,7 +351,10 @@ export default function BillingPage() {
                           <span className="text-[28px] font-semibold tracking-tight text-[#1d1d1f]">${plan.price}</span>
                           <span className="text-[14px] text-[#86868b]"> /{isRTL ? "شهر" : "month"}</span>
                           {plan.id === "pro" && (
-                            <p className="text-[12px] text-[#30d158] font-medium mt-1">{isRTL ? "الشهر الأول مجاني!" : "First month free!"}</p>
+                            <>
+                              <p className="text-[12px] text-[#0071e3] font-medium mt-1">{isRTL ? plan.pricePrefix_ar : plan.pricePrefix_en}</p>
+                              <p className="text-[12px] text-[#30d158] font-medium mt-1">{isRTL ? "الشهر الأول مجاني!" : "First month free!"}</p>
+                            </>
                           )}
                         </div>
                       )}

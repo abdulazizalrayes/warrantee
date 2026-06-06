@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { LOCALES } from "@/lib/i18n";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://warrantee.io"),
@@ -14,10 +15,11 @@ const webMcpScript = `
   const modelContext = window.navigator && window.navigator.modelContext;
   if (!modelContext || typeof modelContext.provideContext !== "function") return;
 
+  const supportedLocales = ${JSON.stringify(LOCALES)};
   const absolute = (path) => new URL(path, window.location.origin).toString();
   const currentLocale = () => {
     const firstSegment = window.location.pathname.split("/").filter(Boolean)[0];
-    return firstSegment === "ar" ? "ar" : "en";
+    return supportedLocales.includes(firstSegment) ? firstSegment : "en";
   };
   const localized = (path) => absolute("/" + currentLocale() + path);
 

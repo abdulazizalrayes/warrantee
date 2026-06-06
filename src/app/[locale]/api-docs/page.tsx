@@ -6,7 +6,7 @@ import { ArrowLeft, Copy, Check, Code2, Key, Globe, ShieldCheck } from 'lucide-r
 import { useState } from 'react';
 import { Footer } from '@/components/Footer';
 import { Navbar } from '@/components/Navbar';
-import { DIRECTION, getDictionary, type Locale } from '@/lib/i18n';
+import { DIRECTION, getContentLocale, getDictionary, normalizeLocale } from '@/lib/i18n';
 
 const translations = {
   en: {
@@ -92,11 +92,12 @@ const methodColors: Record<string, string> = {
 
 export default function ApiDocsPage() {
   const params = useParams() ?? {};
-  const locale = ((params?.locale as string) === 'ar' ? 'ar' : 'en') as Locale;
+  const locale = normalizeLocale(String(params?.locale || 'en'));
+  const contentLocale = getContentLocale(locale);
   const isRTL = locale === 'ar';
   const dictionary = getDictionary(locale);
   const direction = DIRECTION[locale];
-  const t = translations[locale as keyof typeof translations] || translations.en;
+  const t = translations[contentLocale] || translations.en;
   const [copied, setCopied] = useState('');
 
   const copyText = (text: string, id: string) => {

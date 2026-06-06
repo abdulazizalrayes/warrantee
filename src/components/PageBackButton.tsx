@@ -2,6 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight } from "lucide-react";
+import { LOCALE_PREFIX_PATTERN } from "@/lib/i18n";
+
+const LANDING_PAGE_RE = new RegExp(`^/(${LOCALE_PREFIX_PATTERN})?/?$`);
 
 export function PageBackButton({
   fallbackHref,
@@ -24,7 +27,7 @@ export function PageBackButton({
           const referrerUrl = new URL(referrer);
           const sameOrigin = referrerUrl.origin === currentUrl.origin;
           const samePath = referrerUrl.pathname === currentUrl.pathname;
-          const notLandingPage = !/^\/(en|ar)?\/?$/.test(referrerUrl.pathname);
+          const notLandingPage = !LANDING_PAGE_RE.test(referrerUrl.pathname);
 
           if (sameOrigin && !samePath && notLandingPage) {
             router.back();

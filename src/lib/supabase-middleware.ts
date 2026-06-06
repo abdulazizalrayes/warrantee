@@ -1,5 +1,8 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { LOCALE_PREFIX_PATTERN, normalizeLocale } from "@/lib/i18n";
+
+const LOCALE_PREFIX_RE = new RegExp(`^/(${LOCALE_PREFIX_PATTERN})(/|$)`);
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
@@ -7,8 +10,8 @@ export async function updateSession(request: NextRequest) {
   });
 
   const { pathname } = request.nextUrl;
-  const localeMatch = pathname.match(/^\/(en|ar)(\/|$)/);
-  const locale = localeMatch ? localeMatch[1] : "en";
+  const localeMatch = pathname.match(LOCALE_PREFIX_RE);
+  const locale = normalizeLocale(localeMatch?.[1]);
 
   // Root redirect - no auth needed
   if (pathname === "/") {

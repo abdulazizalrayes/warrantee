@@ -2,11 +2,12 @@
 
 import { useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
+import { normalizeLocale } from '@/lib/i18n';
 
 export default function ClaimsRedirect() {
   const pathname = usePathname();
   const router = useRouter();
-  const locale = pathname?.startsWith('/ar') ? 'ar' : 'en';
+  const locale = normalizeLocale(pathname?.split('/').filter(Boolean)[0]);
 
   useEffect(() => {
     router.replace('/' + locale + '/dashboard/claims');

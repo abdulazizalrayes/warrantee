@@ -20,7 +20,7 @@ import {
 import { Footer } from "@/components/Footer";
 import { Navbar } from "@/components/Navbar";
 import WarrantyQRCode from "@/components/WarrantyQRCode";
-import { DIRECTION, getDictionary, type Locale } from "@/lib/i18n";
+import { DIRECTION, getContentLocale, getDictionary, normalizeLocale } from "@/lib/i18n";
 
 type PublicWarranty = {
   id: string;
@@ -115,9 +115,10 @@ function formatDate(value: string | null | undefined, locale: string) {
 
 export default function VerifyPage() {
   const params = useParams() ?? {};
-  const locale = ((params.locale as string) === "ar" ? "ar" : "en") as Locale;
+  const locale = normalizeLocale(String(params.locale || "en"));
+  const contentLocale = getContentLocale(locale);
   const id = String(params.id || "");
-  const l = copy[locale];
+  const l = copy[contentLocale];
   const dictionary = getDictionary(locale);
   const direction = DIRECTION[locale];
   const isRTL = locale === "ar";
@@ -208,7 +209,7 @@ export default function VerifyPage() {
               href={`/${locale}/verify`}
               className="mt-8 inline-flex rounded-full bg-[#0071e3] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#0077ed]"
             >
-              {locale === "ar" ? "البحث مرة أخرى" : "Search again"}
+              {isRTL ? "البحث مرة أخرى" : "Search again"}
             </Link>
           </div>
         </main>

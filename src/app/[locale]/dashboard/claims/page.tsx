@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
 import { ProtectedRouteNotice } from '@/components/dashboard/ProtectedRouteNotice';
+import { normalizeLocale } from '@/lib/i18n';
 
 const STATUSES = ['all','draft','submitted','under_review','awaiting_info','approved','rejected','resolved','closed'];
 const statusCfg: Record<string,{l:string;a:string;bg:string;tx:string}> = {
@@ -23,7 +24,7 @@ const sevCfg: Record<string,{l:string;c:string}> = {low:{l:'Low',c:'text-green-6
 
 export default function ClaimsListPage() {
   const pathname = usePathname();
-  const locale = pathname?.startsWith('/ar') ? 'ar' : 'en';
+  const locale = normalizeLocale(pathname?.split('/').filter(Boolean)[0]);
   const isRTL = locale === 'ar';
   const { user, loading: authLoading } = useAuth();
   const supabase = createSupabaseBrowserClient();

@@ -2,13 +2,15 @@
 
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { getContentLocale, normalizeLocale } from '@/lib/i18n';
 
 export default function CookiePolicyPage() {
   const pathname = usePathname();
-  const locale = pathname?.startsWith('/ar') ? 'ar' : 'en';
+  const locale = normalizeLocale(pathname?.split('/').filter(Boolean)[0]);
+  const contentLocale = getContentLocale(locale);
   const isRTL = locale === 'ar';
 
-  const content = locale === 'ar' ? {
+  const content = contentLocale === 'ar' ? {
     title: '\u0633\u064a\u0627\u0633\u0629 \u0645\u0644\u0641\u0627\u062a \u062a\u0639\u0631\u064a\u0641 \u0627\u0644\u0627\u0631\u062a\u0628\u0627\u0637',
     lastUpdated: '\u0622\u062e\u0631 \u062a\u062d\u062f\u064a\u062b: 24 \u0645\u0627\u0631\u0633 2026',
     sections: [

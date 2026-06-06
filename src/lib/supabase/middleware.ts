@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { normalizeLocale } from "@/lib/i18n";
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
@@ -31,7 +32,7 @@ export async function updateSession(request: NextRequest) {
 
   // Extract locale from path
   const pathname = request.nextUrl.pathname;
-  const locale = pathname.startsWith("/ar") ? "ar" : "en";
+  const locale = normalizeLocale(pathname.split("/").filter(Boolean)[0]);
 
   // Protect dashboard routes
   if (!user && (pathname.includes("/dashboard") || pathname.includes("/warranties"))) {

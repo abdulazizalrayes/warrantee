@@ -2,9 +2,10 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { sendEmail, welcomeEmail } from "@/lib/email";
 import { upsertHubSpotContact } from "@/lib/hubspot";
+import { getContentLocale, normalizeLocale, type Locale } from "@/lib/i18n";
 
-function getLocaleFromPath(path: string | null) {
-  return path?.startsWith("/ar") ? "ar" : "en";
+function getLocaleFromPath(path: string | null): Locale {
+  return normalizeLocale(path?.split("/").filter(Boolean)[0]);
 }
 
 export async function GET(request: Request) {
@@ -52,7 +53,7 @@ export async function GET(request: Request) {
               const email = profile.email || user.email || "";
               const name =
                 profile.full_name || email.split("@")[0] || "User";
-              const { subject, html } = welcomeEmail(name, getLocaleFromPath(next));
+              const { subject, html } = welcomeEmail(name, getContentLocale(getLocaleFromPath(next)));
               await sendEmail({ to: email, subject, html });
             }
           }

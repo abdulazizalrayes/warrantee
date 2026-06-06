@@ -22,8 +22,14 @@ import {
   FileBarChart,
   Inbox,
 } from "lucide-react";
-import { getDictionary, DIRECTION } from "@/lib/i18n";
-import type { Locale } from "@/lib/i18n";
+import {
+  DIRECTION,
+  LOCALES,
+  LOCALE_LABELS,
+  LOCALE_PREFIX_PATTERN,
+  getDictionary,
+  normalizeLocale,
+} from "@/lib/i18n";
 import { useAuth } from "@/lib/auth-context";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 
@@ -43,12 +49,12 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const params = useParams() ?? {};
-  const locale = (params.locale as string) || "en";
+  const locale = normalizeLocale(String(params.locale || "en"));
   const pathname = usePathname();
   const router = useRouter();
   const dict = getDictionary(locale);
   const isRTL = locale === "ar";
-  const direction = DIRECTION[locale as Locale];
+  const direction = DIRECTION[locale];
   const supabase = createSupabaseBrowserClient();
 
   const { user, profile, signOut } = useAuth();
@@ -304,8 +310,16 @@ export default function DashboardLayout({
               </button>
               {langMenuOpen && (
                 <div className="absolute top-12 right-0 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden z-50">
-                  <Link href={`/en${pathname.replace(/^\/(en|ar)/, "")}`} onClick={() => setLangMenuOpen(false)} className="block px-4 py-2 hover:bg-gray-50 text-navy font-medium">{dict.common.english}</Link>
-                  <Link href={`/ar${pathname.replace(/^\/(en|ar)/, "")}`} onClick={() => setLangMenuOpen(false)} className="block px-4 py-2 hover:bg-gray-50 text-navy font-medium">{dict.common.arabic}</Link>
+                  {LOCALES.map((language) => (
+                    <Link
+                      key={language}
+                      href={`/${language}${(pathname ?? "").replace(new RegExp(`^/(${LOCALE_PREFIX_PATTERN})(?=/|$)`), "")}`}
+                      onClick={() => setLangMenuOpen(false)}
+                      className="block px-4 py-2 hover:bg-gray-50 text-navy font-medium"
+                    >
+                      {LOCALE_LABELS[language].native}
+                    </Link>
+                  ))}
                 </div>
               )}
             </div>

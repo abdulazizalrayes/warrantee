@@ -1,12 +1,28 @@
-export type Locale = "en" | "ar";
+import {
+  DEFAULT_LOCALE,
+  getContentLocale,
+  normalizeLocale,
+  type IndexedLocale,
+} from "@/lib/locales";
 
-export const LOCALES: Locale[] = ["en", "ar"];
-export const DEFAULT_LOCALE: Locale = "en";
-
-export const DIRECTION: Record<Locale, "ltr" | "rtl"> = {
-  en: "ltr",
-  ar: "rtl",
-};
+export {
+  BETA_LOCALES,
+  DEFAULT_LOCALE,
+  DIRECTION,
+  INDEXED_LOCALES,
+  LOCALES,
+  LOCALE_LABELS,
+  LOCALE_LANGUAGE_TAGS,
+  LOCALE_PREFIX_PATTERN,
+  getContentLocale,
+  getLocaleLanguageTag,
+  isIndexedLocale,
+  isValidLocale,
+  normalizeLocale,
+  type BetaLocale,
+  type IndexedLocale,
+  type Locale,
+} from "@/lib/locales";
 
 export interface Dictionary {
   nav: { home: string; features: string; pricing: string; login: string; signup: string; dashboard: string; warranties: string; contact: string; };
@@ -23,7 +39,7 @@ export interface Dictionary {
     billing: { title: string; current_plan: string; upgrade: string; manage: string; invoices: string; invoice_date: string; amount: string; status: string; download: string; free_plan: string; pro_plan: string; enterprise_plan: string; per_month: string; usage: string; warranties_used: string; };
 }
 
-const dictionaries: Record<Locale, Dictionary> = {
+const dictionaries: Record<IndexedLocale, Dictionary> = {
   en: {
     nav: { home: "Home", features: "Features", pricing: "Pricing", login: "Log In", signup: "Sign Up", dashboard: "Dashboard", warranties: "Warranties", contact: "Contact" },
     hero: {
@@ -54,7 +70,7 @@ const dictionaries: Record<Locale, Dictionary> = {
     },
     pricing: {
       title: "Simple, Transparent Pricing",
-      subtitle: "Start free. Upgrade when you need more workflow depth.",
+      subtitle: "Start with the Free plan. Upgrade when you need more workflow depth.",
       plans: [
         {
           id: "free",
@@ -74,7 +90,7 @@ const dictionaries: Record<Locale, Dictionary> = {
           id: "pro",
           name: "Professional",
           price: "$1",
-          description: "For growing businesses. First month free.",
+          description: "Launch offer for growing businesses. First month free.",
           features: [
             "Unlimited warranties",
             "Advanced dashboard & analytics",
@@ -144,7 +160,7 @@ const dictionaries: Record<Locale, Dictionary> = {
     },
     pricing: {
       title: "\u0623\u0633\u0639\u0627\u0631 \u0628\u0633\u064a\u0637\u0629 \u0648\u0634\u0641\u0627\u0641\u0629",
-      subtitle: "\u0627\u0628\u062f\u0623 \u0645\u062c\u0627\u0646\u0627\u064b. \u0631\u0642\u0651 \u0639\u0646\u062f\u0645\u0627 \u062a\u062d\u062a\u0627\u062c \u0625\u0644\u0649 \u0639\u0645\u0642 \u0623\u0643\u0628\u0631 \u0641\u064a \u0633\u064a\u0631 \u0627\u0644\u0639\u0645\u0644.",
+      subtitle: "\u0627\u0628\u062f\u0623 \u0628\u0627\u0644\u062e\u0637\u0629 \u0627\u0644\u0645\u062c\u0627\u0646\u064a\u0629. \u0631\u0642\u0651 \u0639\u0646\u062f\u0645\u0627 \u062a\u062d\u062a\u0627\u062c \u0625\u0644\u0649 \u0639\u0645\u0642 \u0623\u0643\u0628\u0631 \u0641\u064a \u0633\u064a\u0631 \u0627\u0644\u0639\u0645\u0644.",
       plans: [
         {
           id: "free",
@@ -164,7 +180,7 @@ const dictionaries: Record<Locale, Dictionary> = {
           id: "pro",
           name: "\u0627\u062d\u062a\u0631\u0627\u0641\u064a",
           price: "$1",
-          description: "\u0644\u0644\u0634\u0631\u0643\u0627\u062a \u0627\u0644\u0646\u0627\u0645\u064a\u0629. \u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u0623\u0648\u0644 \u0645\u062c\u0627\u0646\u064a.",
+          description: "\u0639\u0631\u0636 \u0625\u0637\u0644\u0627\u0642 \u0644\u0644\u0634\u0631\u0643\u0627\u062a \u0627\u0644\u0646\u0627\u0645\u064a\u0629. \u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u0623\u0648\u0644 \u0645\u062c\u0627\u0646\u064a.",
           features: [
             "\u0636\u0645\u0627\u0646\u0627\u062a \u063a\u064a\u0631 \u0645\u062d\u062f\u0648\u062f\u0629",
             "\u0644\u0648\u062d\u0629 \u0645\u0639\u0644\u0648\u0645\u0627\u062a \u0645\u062a\u0642\u062f\u0645\u0629 \u0648\u062a\u062d\u0644\u064a\u0644\u0627\u062a",
@@ -207,10 +223,7 @@ const dictionaries: Record<Locale, Dictionary> = {
 };
 
 export function getDictionary(locale: string): Dictionary {
-  const normalizedLocale = (locale.toLowerCase() as Locale) || DEFAULT_LOCALE;
-  return dictionaries[normalizedLocale] || dictionaries[DEFAULT_LOCALE];
-}
-
-export function isValidLocale(locale: string): locale is Locale {
-  return LOCALES.includes(locale as Locale);
+  const normalizedLocale = normalizeLocale(locale);
+  const contentLocale = getContentLocale(normalizedLocale);
+  return dictionaries[contentLocale] || dictionaries[DEFAULT_LOCALE];
 }

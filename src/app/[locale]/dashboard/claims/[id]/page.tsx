@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { usePathname, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
+import { normalizeLocale } from '@/lib/i18n';
 
 const supabase = createSupabaseBrowserClient();
 
@@ -51,7 +52,7 @@ const actionBtnCfg: Record<string,{bg:string;hover:string}> = {
 export default function ClaimDetailPage() {
   const pathname = usePathname();
   const params = useParams() ?? {};
-  const locale = pathname?.startsWith('/ar') ? 'ar' : 'en';
+  const locale = normalizeLocale(pathname?.split('/').filter(Boolean)[0]);
   const isRTL = locale === 'ar';
   const claimId = params.id as string;
 

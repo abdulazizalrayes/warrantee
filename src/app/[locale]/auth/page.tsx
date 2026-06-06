@@ -16,8 +16,7 @@ import {
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
-import { getDictionary, DIRECTION } from "@/lib/i18n";
-import type { Locale } from "@/lib/i18n";
+import { DIRECTION, getDictionary, normalizeLocale } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth-context";
 import { PageViewTracker } from "@/components/PageViewTracker";
 import { trackAuthIntent, trackSignup } from "@/lib/ga4-events";
@@ -28,10 +27,10 @@ export default function AuthPage() {
   const params = useParams() ?? {};
   const router = useRouter();
   const searchParams = useSearchParams();
-  const locale = (params.locale as string) || "en";
+  const locale = normalizeLocale(String(params.locale || "en"));
   const dict = getDictionary(locale);
   const isRTL = locale === "ar";
-  const direction = DIRECTION[locale as Locale];
+  const direction = DIRECTION[locale];
   const { user, signInWithGoogle, signInWithApple, signInWithMagicLink, signInWithPassword, signUp, signOut, loading: authLoading } = useAuth();
   const [activeTab, setActiveTab] = useState<AuthTab>("login");
   const [email, setEmail] = useState("");

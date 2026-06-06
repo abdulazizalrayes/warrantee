@@ -1,11 +1,11 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
-import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
 import { Globe } from 'lucide-react';
+import { LOCALES, LOCALE_LABELS, LOCALE_PREFIX_PATTERN, type Locale } from '@/lib/i18n';
 
 interface LanguageToggleProps {
-  currentLocale: 'en' | 'ar';
+  currentLocale: Locale;
   className?: string;
   variant?: 'text' | 'icon';
 }
@@ -16,32 +16,57 @@ export function LanguageToggle({
   variant = 'text',
 }: LanguageToggleProps) {
   const pathname = usePathname();
+  const router = useRouter();
 
-  const getToggleHref = () => {
-    const newLocale = currentLocale === 'en' ? 'ar' : 'en';
-    const pathWithoutLocale = (pathname ?? '').replace(`/${currentLocale}`, '');
-    return `/${newLocale}${pathWithoutLocale || ''}`;
+  const getLocalizedHref = (nextLocale: Locale) => {
+    const pathWithoutLocale = (pathname ?? '').replace(
+      new RegExp(`^/(${LOCALE_PREFIX_PATTERN})(?=/|$)`),
+      '',
+    );
+    return `/${nextLocale}${pathWithoutLocale || ''}`;
+  };
+
+  const onChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    router.push(getLocalizedHref(event.target.value as Locale));
   };
 
   if (variant === 'icon') {
     return (
-      <Link
-        href={getToggleHref()}
-        className={`inline-flex items-center justify-center transition-colors hover:text-[#0071e3] ${className}`}
-        aria-label="Toggle language"
-        title={currentLocale === 'en' ? 'العربية' : 'English'}
-      >
+      <label className={`inline-flex items-center gap-1 text-[#1d1d1f] ${className}`}>
         <Globe className="w-5 h-5" />
-      </Link>
+        <span className="sr-only">Language</span>
+        <select
+          aria-label="Language"
+          value={currentLocale}
+          onChange={onChange}
+          className="max-w-[4.5rem] bg-transparent text-xs font-semibold outline-none"
+        >
+          {LOCALES.map((locale) => (
+            <option key={locale} value={locale}>
+              {LOCALE_LABELS[locale].short}
+            </option>
+          ))}
+        </select>
+      </label>
     );
   }
 
   return (
-    <Link
-      href={getToggleHref()}
-      className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-[#f5f5f7] hover:text-[#0071e3] ${className}`}
-    >
-      {currentLocale === 'en' ? 'العربية' : 'English'}
-    </Link>
+    <label className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-[#f5f5f7] hover:text-[#0071e3] ${className}`}>
+      <Globe className="h-4 w-4" aria-hidden="true" />
+      <span className="sr-only">Language</span>
+      <select
+        aria-label="Language"
+        value={currentLocale}
+        onChange={onChange}
+        className="max-w-[10rem] bg-transparent outline-none"
+      >
+        {LOCALES.map((locale) => (
+          <option key={locale} value={locale}>
+            {LOCALE_LABELS[locale].native}
+          </option>
+        ))}
+      </select>
+    </label>
   );
 }

@@ -1,4 +1,9 @@
 import type { Metadata } from "next";
+import {
+  getContentLocale,
+  isIndexedLocale,
+  type IndexedLocale,
+} from "@/lib/locales";
 
 const BASE_URL = "https://warrantee.io";
 const OG_IMAGE = `${BASE_URL}/opengraph-image`;
@@ -41,20 +46,19 @@ const PAGE_PATHS: Record<PageKey, string> = {
 const PAGE_META: Record<
   PageKey,
   {
-    en: { title: string; description: string };
-    ar: { title: string; description: string };
+    [locale in IndexedLocale]: { title: string; description: string };
   }
 > = {
   home: {
     en: {
-      title: "Warrantee — Warranty Management Software & Platform",
+      title: "Warrantee.io — Warranty Management Software & Platform",
       description:
-        "Warranty management software to track, approve, extend, and claim warranties in one place. Bilingual Arabic and English. Free to start.",
+        "Warrantee.io is warranty management software to track, approve, extend, verify, and claim warranties in one place. Bilingual Arabic and English. Free plan available.",
     },
     ar: {
       title: "وارنتي — منصة إدارة الضمانات | ثق بالشروط™",
       description:
-        "منصة إدارة الضمانات لتتبّع الضمانات والموافقة عليها وتمديدها وتقديم المطالبات من مكان واحد. باللغتين العربية والإنجليزية. ابدأ مجانًا.",
+        "منصة إدارة الضمانات لتتبّع الضمانات والموافقة عليها وتمديدها وتقديم المطالبات من مكان واحد. باللغتين العربية والإنجليزية. خطة مجانية متاحة.",
     },
   },
   about: {
@@ -97,12 +101,12 @@ const PAGE_META: Record<
     en: {
       title: "Warrantee Pricing — Simple and Transparent Plans",
       description:
-        "Start free or upgrade to Professional for $1/month with the first month free. Enterprise warranty management pricing is custom.",
+        "Start with a Free plan, no credit card required, or upgrade to the Professional launch offer at $1/month with the first month free. Enterprise warranty management pricing is custom.",
     },
     ar: {
       title: "أسعار وارنتي — خطط بسيطة وواضحة",
       description:
-        "ابدأ مجانًا أو انتقل إلى الخطة الاحترافية مقابل دولار واحد شهريًا مع الشهر الأول مجانًا. أسعار المؤسسات مخصصة.",
+        "ابدأ بالخطة المجانية دون بطاقة ائتمانية، أو انتقل إلى عرض الإطلاق للخطة الاحترافية مقابل دولار واحد شهريًا مع الشهر الأول مجانًا. أسعار المؤسسات مخصصة.",
     },
   },
   contact: {
@@ -230,11 +234,13 @@ const PAGE_META: Record<
 const NOINDEX_PAGES = new Set<PageKey>(["auth"]);
 
 export function buildPageMetadata(page: PageKey, locale: string): Metadata {
-  const isAr = locale === "ar";
-  const lang = isAr ? "ar" : "en";
-  const meta = PAGE_META[page][lang];
+  const contentLocale = getContentLocale(locale);
+  const isAr = contentLocale === "ar";
+  const meta = PAGE_META[page][contentLocale];
   const pagePath = PAGE_PATHS[page];
-  const shouldNoindex = NOINDEX_PAGES.has(page);
+  const isIndexed = isIndexedLocale(locale);
+  const shouldNoindex = NOINDEX_PAGES.has(page) || !isIndexed;
+  const canonicalLocale = isIndexed ? locale : "en";
 
   return {
     title: meta.title,
@@ -251,18 +257,20 @@ export function buildPageMetadata(page: PageKey, locale: string): Metadata {
       : undefined,
     metadataBase: new URL(BASE_URL),
     alternates: {
-      canonical: `${BASE_URL}/${locale}${pagePath}`,
+      canonical: `${BASE_URL}/${canonicalLocale}${pagePath}`,
       languages: {
         en: `${BASE_URL}/en${pagePath}`,
+        "en-US": `${BASE_URL}/en${pagePath}`,
         ar: `${BASE_URL}/ar${pagePath}`,
+        "ar-SA": `${BASE_URL}/ar${pagePath}`,
         "x-default": `${BASE_URL}/en${pagePath}`,
       },
     },
     openGraph: {
       title: meta.title,
       description: meta.description,
-      url: `${BASE_URL}/${locale}${pagePath}`,
-      siteName: "Warrantee",
+      url: `${BASE_URL}/${canonicalLocale}${pagePath}`,
+      siteName: "Warrantee.io",
       type: "website",
       locale: isAr ? "ar_SA" : "en_US",
       images: [
@@ -270,7 +278,7 @@ export function buildPageMetadata(page: PageKey, locale: string): Metadata {
           url: OG_IMAGE,
           width: 1200,
           height: 630,
-          alt: "Warrantee - Warranty Management Platform",
+          alt: "Warrantee.io - Warranty Management Platform",
         },
       ],
     },

@@ -7,12 +7,15 @@ export function getOrganizationJsonLd() {
       {
         "@type": "Organization",
         "@id": `${BASE_URL}/#organization`,
-        name: "Warrantee",
+        name: "Warrantee.io",
+        alternateName: ["Warrantee", "Warrantee warranty management platform"],
         url: BASE_URL,
         email: "hello@warrantee.io",
         logo: `${BASE_URL}/icon`,
         image: `${BASE_URL}/opengraph-image`,
         slogan: "Trust the Terms",
+        description: "Warrantee.io is a bilingual warranty management software platform for businesses and sellers in Saudi Arabia and the GCC.",
+        disambiguatingDescription: "Warrantee.io is the warranty management SaaS at warrantee.io, distinct from the generic word warrantee and unrelated warrantee.com entities.",
         areaServed: ["Saudi Arabia", "GCC", "Middle East"],
         knowsAbout: [
           "Warranty management",
@@ -35,7 +38,7 @@ export function getOrganizationJsonLd() {
       {
         "@type": "WebSite",
         "@id": `${BASE_URL}/#website`,
-        name: "Warrantee",
+        name: "Warrantee.io",
         url: BASE_URL,
         inLanguage: ["en", "ar"],
         publisher: { "@id": `${BASE_URL}/#organization` },
@@ -43,13 +46,15 @@ export function getOrganizationJsonLd() {
       {
         "@type": "SoftwareApplication",
         "@id": `${BASE_URL}/#software`,
-        name: "Warrantee",
-        alternateName: "Warrantee \u2014 Trust the Terms\u2122",
-        description: "Warranty management software and platform for businesses and consumers. Track, approve, extend, and claim warranties with confidence.",
+        name: "Warrantee.io",
+        alternateName: ["Warrantee", "Warrantee warranty management platform"],
+        description: "Warranty management software and platform for businesses and sellers. Track, approve, extend, verify, and claim warranties with bilingual Arabic and English workflows.",
         url: BASE_URL,
         applicationCategory: "BusinessApplication",
+        applicationSubCategory: "Warranty management software",
         operatingSystem: "Web",
         inLanguage: ["en", "ar"],
+        areaServed: ["Saudi Arabia", "GCC", "Middle East"],
         author: { "@id": `${BASE_URL}/#organization` },
         publisher: { "@id": `${BASE_URL}/#organization` },
         offers: [
@@ -58,26 +63,64 @@ export function getOrganizationJsonLd() {
             name: "Free",
             price: "0",
             priceCurrency: "USD",
-            description: "Up to 10 warranties, basic dashboard, email support, single user.",
+            availability: "https://schema.org/InStock",
+            url: `${BASE_URL}/en/pricing`,
+            description: "Free plan available with no credit card required. Includes up to 10 warranties, a basic dashboard, email support, and one user.",
           },
           {
             "@type": "Offer",
             name: "Professional",
             price: "1",
             priceCurrency: "USD",
-            description: "Unlimited warranties, advanced analytics, priority support, up to 5 team members, custom workflows, bilingual certificates, and first month free.",
+            availability: "https://schema.org/InStock",
+            url: `${BASE_URL}/en/pricing`,
+            description: "Professional launch offer: $1/month with the first month free. Includes unlimited warranties, advanced analytics, priority support, up to 5 team members, custom workflows, and bilingual certificates.",
           },
           {
             "@type": "Offer",
             name: "Enterprise",
+            priceSpecification: {
+              "@type": "PriceSpecification",
+              priceCurrency: "USD",
+              description: "Custom enterprise pricing",
+            },
+            url: `${BASE_URL}/en/contact?intent=enterprise`,
             description: "Custom pricing for large organizations with unlimited team members, dedicated account management, custom integrations, and SLA support.",
+          },
+        ],
+      },
+      {
+        "@type": "Product",
+        "@id": `${BASE_URL}/#product`,
+        name: "Warrantee.io warranty management platform",
+        alternateName: "Warrantee",
+        brand: { "@id": `${BASE_URL}/#organization` },
+        category: "Warranty management software",
+        description: "Bilingual warranty management SaaS for businesses and sellers in Saudi Arabia and the GCC.",
+        url: `${BASE_URL}/en/pricing`,
+        offers: [
+          {
+            "@type": "Offer",
+            name: "Free",
+            price: "0",
+            priceCurrency: "USD",
+            url: `${BASE_URL}/en/pricing`,
+            description: "Free plan available with no credit card required.",
+          },
+          {
+            "@type": "Offer",
+            name: "Professional launch offer",
+            price: "1",
+            priceCurrency: "USD",
+            url: `${BASE_URL}/en/pricing`,
+            description: "$1/month launch offer with first month free.",
           },
         ],
       },
       {
         "@type": "Service",
         "@id": `${BASE_URL}/#warranty-management-service`,
-        name: "Warranty management services",
+        name: "Warrantee.io warranty management services",
         serviceType: "Warranty management platform",
         provider: { "@id": `${BASE_URL}/#organization` },
         url: BASE_URL,
@@ -104,8 +147,8 @@ export function getFAQJsonLd(locale: string = "en") {
         acceptedAnswer: {
           "@type": "Answer",
           text: isAr
-            ? "Warrantee \u0647\u0648 \u0645\u0646\u0635\u0629 \u0625\u062F\u0627\u0631\u0629 \u0627\u0644\u0636\u0645\u0627\u0646\u0627\u062A \u062B\u0646\u0627\u0626\u064A\u0629 \u0627\u0644\u0644\u063A\u0629 \u0645\u0635\u0645\u0645\u0629 \u0644\u0642\u0637\u0627\u0639 \u0627\u0644\u0628\u0646\u0627\u0621 \u0627\u0644\u0633\u0639\u0648\u062F\u064A. \u062A\u0633\u0627\u0639\u062F \u0627\u0644\u0645\u0642\u0627\u0648\u0644\u064A\u0646 \u0648\u0627\u0644\u0645\u0648\u0631\u062F\u064A\u0646 \u0648\u0645\u0644\u0627\u0643 \u0627\u0644\u0645\u0634\u0627\u0631\u064A\u0639 \u0639\u0644\u0649 \u062A\u062A\u0628\u0639 \u0648\u0625\u062F\u0627\u0631\u0629 \u0627\u0644\u062A\u0632\u0627\u0645\u0627\u062A \u0627\u0644\u0636\u0645\u0627\u0646 \u0631\u0642\u0645\u064A\u064B\u0627."
-            : "Warrantee is a bilingual warranty management platform designed for the Saudi construction sector. It helps contractors, suppliers, and project owners track, manage, and enforce warranty obligations digitally.",
+            ? "Warrantee.io \u0647\u0648 \u0645\u0646\u0635\u0629 \u0625\u062F\u0627\u0631\u0629 \u0627\u0644\u0636\u0645\u0627\u0646\u0627\u062A \u062B\u0646\u0627\u0626\u064A\u0629 \u0627\u0644\u0644\u063A\u0629 \u0644\u0644\u0634\u0631\u0643\u0627\u062A \u0648\u0627\u0644\u0628\u0627\u0626\u0639\u064A\u0646 \u0641\u064A \u0627\u0644\u0633\u0639\u0648\u062F\u064A\u0629 \u0648\u062F\u0648\u0644 \u0627\u0644\u062E\u0644\u064A\u062C. \u062A\u0633\u0627\u0639\u062F \u0639\u0644\u0649 \u062A\u062A\u0628\u0639 \u0648\u062A\u0645\u062F\u064A\u062F \u0648\u062A\u0648\u062B\u064A\u0642 \u0648\u0625\u062F\u0627\u0631\u0629 \u0645\u0637\u0627\u0644\u0628\u0627\u062A \u0627\u0644\u0636\u0645\u0627\u0646 \u0631\u0642\u0645\u064A\u064B\u0627."
+            : "Warrantee.io is a bilingual warranty management platform for businesses and sellers in Saudi Arabia and the GCC. It helps teams track, extend, verify, and manage warranty claims digitally.",
         },
       },
       {
@@ -114,8 +157,8 @@ export function getFAQJsonLd(locale: string = "en") {
         acceptedAnswer: {
           "@type": "Answer",
           text: isAr
-            ? "\u064A\u0642\u062F\u0645 Warrantee \u062E\u0637\u0629 \u0645\u062C\u0627\u0646\u064A\u0629 \u0644\u0644\u0623\u0641\u0631\u0627\u062F\u060C \u0648\u062E\u0637\u0629 \u0627\u062D\u062A\u0631\u0627\u0641\u064A\u0629 \u0628\u062F\u0648\u0644\u0627\u0631 \u0648\u0627\u062D\u062F \u0634\u0647\u0631\u064A\u064B\u0627 \u0644\u0644\u0634\u0631\u0643\u0627\u062A\u060C \u0648\u062E\u0637\u0629 \u0645\u0624\u0633\u0633\u064A\u0629 \u0628\u0623\u0633\u0639\u0627\u0631 \u0645\u062E\u0635\u0635\u0629."
-            : "Warrantee offers a Free plan for individuals, a Professional plan at $1/month for businesses, and an Enterprise plan with custom pricing. Visit our pricing page for full details.",
+            ? "\u064A\u0642\u062F\u0645 Warrantee.io \u062E\u0637\u0629 \u0645\u062C\u0627\u0646\u064A\u0629 \u0628\u062F\u0648\u0646 \u062D\u0627\u062C\u0629 \u0644\u0628\u0637\u0627\u0642\u0629 \u0627\u0626\u062A\u0645\u0627\u0646\u064A\u0629\u060C \u0648\u0639\u0631\u0636 \u0625\u0637\u0644\u0627\u0642 \u0644\u0644\u062E\u0637\u0629 \u0627\u0644\u0627\u062D\u062A\u0631\u0627\u0641\u064A\u0629 \u0628\u062F\u0648\u0644\u0627\u0631 \u0648\u0627\u062D\u062F \u0634\u0647\u0631\u064A\u064B\u0627 \u0645\u0639 \u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u0623\u0648\u0644 \u0645\u062C\u0627\u0646\u064B\u0627\u060C \u0648\u062E\u0637\u0629 \u0645\u0624\u0633\u0633\u064A\u0629 \u0628\u0623\u0633\u0639\u0627\u0631 \u0645\u062E\u0635\u0635\u0629."
+            : "Warrantee.io offers a Free plan with no credit card required, a Professional launch offer at $1/month with the first month free, and Enterprise plans with custom pricing.",
         },
       },
     ],
