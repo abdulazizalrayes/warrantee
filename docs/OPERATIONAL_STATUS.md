@@ -2,12 +2,12 @@
 
 Last updated: 2026-06-08
 
-## 2026-06-08 Search Console Indexing Retry
+## 2026-06-08 Search Console Indexing Completion
 
 - Rechecked the Warrantee Search Console property under `abdulaziz.alrayes@gmail.com`.
 - `https://warrantee.io/en/faq` is now on Google. URL Inspection reports `URL is on Google` and `Page is indexed`; Search Console also detected valid HTTPS, Breadcrumbs, and FAQ enhancements for the page.
-- `https://warrantee.io/en/api-docs` remains not yet on Google; URL Inspection still reports `Discovered - currently not indexed` with sitemap discovery and `https://warrantee.io/` as the referring page. Request Indexing succeeded and Google returned `Indexing requested`; the URL was added to a priority crawl queue.
-- No Warrantee code, sitemap, robots, canonical, `hreflang`, or structured-data fix is indicated by this retry. The remaining action is external monitoring: recheck `https://warrantee.io/en/api-docs` after Google processes the priority crawl queue.
+- `https://warrantee.io/en/api-docs` is now on Google. URL Inspection reports `URL is on Google` and `Page is indexed`; Search Console also detected valid HTTPS and Breadcrumbs enhancements for the page.
+- No Warrantee code, sitemap, robots, canonical, `hreflang`, structured-data, or Search Console Request Indexing action remains open for these two URLs.
 
 ## 2026-06-07 Search Console Indexing Retry
 
@@ -213,8 +213,7 @@ Current launch position:
   - additional social pages beyond LinkedIn
 - Meta paid acquisition is prepared at the playbook/agent-skill level, but no Meta ad account has been connected and no campaign has been launched.
 - Bing Webmaster Tools should still be used to inspect sampled submitted URLs after IndexNow processing; the May 23 public search sample shows the homepage indexed, but submission acceptance does not guarantee immediate indexing or ranking for deeper URLs.
-- Google Search Console Request Indexing no longer needs to be retried for `/en/faq`; it is indexed as of 2026-06-08.
-- Google Search Console accepted Request Indexing for `/en/api-docs` on 2026-06-08; recheck after Google processes the priority crawl queue.
+- Google Search Console Request Indexing no longer needs to be retried for `/en/faq` or `/en/api-docs`; both are indexed as of 2026-06-08.
 
 ## Current Definition Of Done
 

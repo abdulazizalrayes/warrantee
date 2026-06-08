@@ -216,7 +216,7 @@ Google Search Console continuity:
 - 2026-06-06 URL Inspection found `/en`, `/ar`, `/en/pricing`, `/en/features`, and `/en/verify` indexed; `/en/faq` is `Crawled - currently not indexed`; `/en/api-docs` is `Discovered - currently not indexed`.
 - Request Indexing for `/en/faq` and `/en/api-docs` was attempted but blocked by Google's daily `Quota Exceeded` response; retry after quota reset.
 - 2026-06-07 retry: Request Indexing for `/en/faq` and `/en/api-docs` still returned Google's daily `Quota Exceeded` response. `/en/faq` remains `Crawled - currently not indexed`; `/en/api-docs` remains `Discovered - currently not indexed`. Retry again after the next quota reset.
-- 2026-06-08 retry: `/en/faq` is now on Google and indexed. `/en/api-docs` remains `Discovered - currently not indexed`, but Request Indexing succeeded and Google added it to a priority crawl queue. Recheck `/en/api-docs` after Google processes the queue.
+- 2026-06-08 retry: `/en/faq` is now on Google and indexed. `/en/api-docs` was accepted into Google's priority crawl queue, then a same-day follow-up inspection found `/en/api-docs` on Google and indexed. No Search Console Request Indexing retry remains open for these URLs.
 - Google Rich Results Test passed for `/en`, `/ar`, and `/en/pricing`; live SEO crawl verified canonical URLs, reciprocal `hreflang`, and parseable JSON-LD on priority public URLs.
 
 Context:
