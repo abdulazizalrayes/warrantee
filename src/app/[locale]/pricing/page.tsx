@@ -210,6 +210,54 @@ export default function PricingPage() {
           })}
         </div>
 
+        <section className="mt-10 rounded-3xl bg-white p-6 shadow-sm ring-1 ring-[#d2d2d7]/40 sm:p-8">
+          <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
+            <div>
+              <p className="text-[13px] font-semibold uppercase tracking-[0.18em] text-[#0071e3]">
+                {isRTL ? "وضوح عرض الإطلاق" : "Launch offer clarity"}
+              </p>
+              <h2 className="mt-3 text-[28px] font-semibold tracking-tight text-[#1d1d1f]">
+                {isRTL ? "لماذا الخطة الاحترافية بدولار واحد؟" : "Why the $1 Professional launch offer?"}
+              </h2>
+              <p className="mt-4 text-[15px] leading-7 text-[#6e6e73]">
+                {isRTL
+                  ? "السعر الاحترافي هو عرض إطلاق للعملاء الأوائل. يقلل عائق الانضمام بينما نوسع التكاملات ومسارات الدعم. حدود الخطة المجانية والشهر الأول المجاني وعمولة التمديد ظاهرة بوضوح."
+                  : "The Professional price is an early customer launch offer. It lowers onboarding friction while Warrantee expands integrations and support workflows. Free-plan limits, the first free month, and extension commission are shown upfront."}
+              </p>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {[
+                {
+                  icon: Shield,
+                  title: isRTL ? "بدون بطاقة للخطة المجانية" : "No card for Free",
+                  desc: isRTL ? "ابدأ حتى 10 ضمانات بدون إدخال بطاقة." : "Start with up to 10 warranties without entering a card.",
+                },
+                {
+                  icon: Check,
+                  title: isRTL ? "شهر أول مجاني" : "First month free",
+                  desc: isRTL ? "عرض الاحترافي موضح قبل الدفع." : "Professional trial terms are stated before checkout.",
+                },
+                {
+                  icon: Building2,
+                  title: isRTL ? "جاهز للفرق" : "Team ready",
+                  desc: isRTL ? "مناسب للبائعين وسير الموافقات والشهادات." : "Built for sellers, approvals, and certificates.",
+                },
+                {
+                  icon: Zap,
+                  title: isRTL ? "جاهز للتكامل" : "Integration ready",
+                  desc: isRTL ? "وثائق API متاحة للمستخدمين التجاريين." : "API docs are available for business users.",
+                },
+              ].map((item) => (
+                <div key={item.title} className="rounded-2xl bg-[#f5f5f7] p-5">
+                  <item.icon className="h-5 w-5 text-[#0071e3]" aria-hidden="true" />
+                  <h3 className="mt-3 text-[15px] font-semibold text-[#1d1d1f]">{item.title}</h3>
+                  <p className="mt-1 text-[13px] leading-6 text-[#6e6e73]">{item.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
         {/* FAQ / Bottom CTA */}
         <div className="text-center mt-16">
           <p className="text-[15px] text-[#6e6e73]">

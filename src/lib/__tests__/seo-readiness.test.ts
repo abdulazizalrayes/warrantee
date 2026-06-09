@@ -12,6 +12,7 @@ type SchemaNode = {
   disambiguatingDescription?: string;
   contactPoint?: Array<Record<string, unknown>>;
   offers?: Array<{ name: string; description?: string }>;
+  sameAs?: string[];
 };
 
 describe("SEO and AI-search readiness metadata", () => {
@@ -31,6 +32,7 @@ describe("SEO and AI-search readiness metadata", () => {
     });
     expect(organization.disambiguatingDescription).toContain("warrantee.io");
     expect(organization.disambiguatingDescription).toContain("warrantee.com");
+    expect(organization.sameAs).toContain("https://www.linkedin.com/company/warrantee-io");
     expect(organization.contactPoint).toBeDefined();
     if (!organization.contactPoint) {
       throw new Error("Organization contactPoint schema is missing");
@@ -214,7 +216,12 @@ describe("SEO and AI-search readiness metadata", () => {
 
     expect(urls).toContain("https://warrantee.io/en/support");
     expect(urls).toContain("https://warrantee.io/ar/support");
+    expect(urls).toContain("https://warrantee.io/en/resources/warranty-management-software");
+    expect(urls).toContain("https://warrantee.io/ar/resources/warranty-management-software");
+    expect(urls).toContain("https://warrantee.io/en/compare/spreadsheets");
+    expect(urls).toContain("https://warrantee.io/en/compare/build-with-ai");
     expect(urls).not.toContain("https://warrantee.io/fr/pricing");
+    expect(urls).not.toContain("https://warrantee.io/fr/resources/warranty-management-software");
     expect(urls).not.toContain("https://warrantee.io/de/pricing");
     expect(urls).not.toContain("https://warrantee.io/en/dashboard");
     expect(entries.find((entry) => entry.url === "https://warrantee.io/en/pricing")?.alternates?.languages).toMatchObject({

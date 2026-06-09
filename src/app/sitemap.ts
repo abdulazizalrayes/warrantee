@@ -1,5 +1,10 @@
 import { MetadataRoute } from 'next'
 import { INDEXED_LOCALES } from '@/lib/i18n'
+import {
+  COMPARISON_PAGES,
+  RESOURCE_PAGES,
+  buildSeoPagePath,
+} from '@/lib/seo-content'
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = 'https://warrantee.io'
@@ -22,6 +27,19 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: '/cookies', changeFreq: 'yearly' as const, priority: 0.3 },
   ]
 
+  const seoContentPages = [
+    ...RESOURCE_PAGES.map((page) => ({
+      path: buildSeoPagePath(page.kind, page.slug),
+      changeFreq: 'monthly' as const,
+      priority: 0.75,
+    })),
+    ...COMPARISON_PAGES.map((page) => ({
+      path: buildSeoPagePath(page.kind, page.slug),
+      changeFreq: 'monthly' as const,
+      priority: 0.72,
+    })),
+  ]
+
   // Auth-protected pages excluded from sitemap:
   // /dashboard, /warranties, /warranties/new, /seller, /admin, /settings, etc.
   // These redirect unauthenticated users to /auth, causing "Page with redirect" in GSC
@@ -29,7 +47,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const entries: MetadataRoute.Sitemap = []
 
   for (const locale of INDEXED_LOCALES) {
-    for (const page of publicPages) {
+    for (const page of [...publicPages, ...seoContentPages]) {
       entries.push({
         url: `${baseUrl}/${locale}${page.path}`,
         changeFrequency: page.changeFreq,

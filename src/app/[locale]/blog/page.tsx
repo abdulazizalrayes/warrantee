@@ -2,6 +2,11 @@ import Link from 'next/link';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { DIRECTION, getContentLocale, getDictionary, normalizeLocale } from '@/lib/i18n';
+import {
+  COMPARISON_PAGES,
+  RESOURCE_PAGES,
+  buildSeoPagePath,
+} from '@/lib/seo-content';
 
 interface BlogPageProps {
   params: Promise<{ locale: string }>;
@@ -63,6 +68,16 @@ export default async function BlogPage({ params }: BlogPageProps) {
   const dictionary = getDictionary(locale);
   const isRTL = DIRECTION[locale] === 'rtl';
   const items = posts[contentLocale];
+  const resourcePages = RESOURCE_PAGES.map((page) => ({
+    title: page.title[contentLocale],
+    description: page.description[contentLocale],
+    href: buildSeoPagePath(page.kind, page.slug),
+  }));
+  const comparisonPages = COMPARISON_PAGES.map((page) => ({
+    title: page.title[contentLocale],
+    description: page.description[contentLocale],
+    href: buildSeoPagePath(page.kind, page.slug),
+  }));
 
   return (
     <div dir={isRTL ? 'rtl' : 'ltr'} className="min-h-screen bg-warm-white text-navy">
@@ -101,6 +116,55 @@ export default async function BlogPage({ params }: BlogPageProps) {
                 </Link>
               </article>
             ))}
+          </div>
+        </section>
+
+        <section className="px-4 pb-10 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-5xl">
+            <div className="max-w-3xl">
+              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[#0071e3]">
+                {isRTL ? 'أدلة متخصصة' : 'Authority guides'}
+              </p>
+              <h2 className="mt-4 text-3xl font-bold tracking-tight text-navy md:text-4xl">
+                {isRTL ? 'مواضيع يبحث عنها المشترون والفرق قبل اختيار منصة ضمان.' : 'Topics buyers and teams search before choosing a warranty platform.'}
+              </h2>
+            </div>
+            <div className="mt-8 grid gap-5 md:grid-cols-2">
+              {resourcePages.map((page) => (
+                <article key={page.href} className="rounded-3xl border border-navy/10 bg-white p-7 shadow-sm">
+                  <h3 className="text-xl font-bold text-navy">{page.title}</h3>
+                  <p className="mt-4 text-sm leading-7 text-navy/60">{page.description}</p>
+                  <Link
+                    href={`/${locale}${page.href}`}
+                    className="mt-6 inline-flex text-sm font-semibold text-[#0071e3] hover:text-[#0077ED]"
+                  >
+                    {isRTL ? 'اقرأ الدليل' : 'Read guide'}
+                  </Link>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="px-4 pb-24 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-5xl rounded-3xl bg-[#f5f5f7] p-6 sm:p-8">
+            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[#0071e3]">
+              {isRTL ? 'مقارنات القرار' : 'Decision comparisons'}
+            </p>
+            <div className="mt-6 grid gap-5 md:grid-cols-2">
+              {comparisonPages.map((page) => (
+                <article key={page.href} className="rounded-3xl bg-white p-7 shadow-sm">
+                  <h3 className="text-xl font-bold text-navy">{page.title}</h3>
+                  <p className="mt-4 text-sm leading-7 text-navy/60">{page.description}</p>
+                  <Link
+                    href={`/${locale}${page.href}`}
+                    className="mt-6 inline-flex text-sm font-semibold text-[#0071e3] hover:text-[#0077ED]"
+                  >
+                    {isRTL ? 'قارن الخيارات' : 'Compare options'}
+                  </Link>
+                </article>
+              ))}
+            </div>
           </div>
         </section>
       </main>

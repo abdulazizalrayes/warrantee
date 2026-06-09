@@ -25,6 +25,8 @@ Warrantee.io is a SaaS warranty management platform that helps businesses, selle
 - PDF warranty certificates
 - Public warranty verification/lookup
 - Data export (CSV/PDF)
+- Indexed authority guides for warranty management software, claims, certificates, ERP API integration, and Saudi/GCC operations
+- Decision guides comparing Warrantee with spreadsheets and custom AI-built warranty tools
 
 ## Public URLs
 
@@ -41,6 +43,13 @@ Warrantee.io is a SaaS warranty management platform that helps businesses, selle
 - Contact: https://warrantee.io/en/contact
 - Public warranty verification: https://warrantee.io/en/verify
 - API documentation: https://warrantee.io/en/api-docs
+- Warranty management software guide: https://warrantee.io/en/resources/warranty-management-software
+- Warranty claims management guide: https://warrantee.io/en/resources/warranty-claims-management
+- Digital warranty certificates guide: https://warrantee.io/en/resources/digital-warranty-certificates
+- ERP warranty API integration guide: https://warrantee.io/en/resources/erp-warranty-api-integration
+- Saudi/GCC warranty operations guide: https://warrantee.io/en/resources/saudi-gcc-warranty-operations
+- Warrantee vs spreadsheets: https://warrantee.io/en/compare/spreadsheets
+- Why not build warranty software with AI: https://warrantee.io/en/compare/build-with-ai
 - Privacy: https://warrantee.io/en/privacy
 - Terms: https://warrantee.io/en/terms
 

@@ -236,6 +236,62 @@ export default async function HomePage({ params }: HomePageProps) {
             </div>
           </div>
         </section>
+        {/* Trust Proof */}
+        <section className="py-20 px-4 sm:px-6 bg-[#f5f5f7]">
+          <div className="max-w-[980px] mx-auto">
+            <div className="max-w-[680px] mx-auto text-center mb-12">
+              <p className="text-[13px] font-semibold uppercase tracking-[0.18em] text-[#0071e3]">
+                {!isRTL ? 'Operational proof' : 'إثبات تشغيلي'}
+              </p>
+              <h2 className="mt-3 text-[32px] sm:text-[40px] font-semibold leading-tight tracking-tight text-[#1d1d1f]">
+                {!isRTL ? 'Built for proof, not just storage.' : 'مصمم للإثبات، وليس للتخزين فقط.'}
+              </h2>
+              <p className="mt-4 text-[17px] leading-relaxed text-[#86868b]">
+                {!isRTL
+                  ? 'Every warranty needs an owner, evidence, terms, and a verification path. Warrantee keeps those pieces connected from issue to claim.'
+                  : 'كل ضمان يحتاج إلى مالك وأدلة وشروط ومسار تحقق. يحافظ Warrantee على ترابط هذه العناصر من الإصدار إلى المطالبة.'}
+              </p>
+            </div>
+            <div className="grid gap-5 md:grid-cols-4">
+              {[
+                {
+                  icon: Shield,
+                  title: !isRTL ? 'Security boundaries' : 'حدود أمنية',
+                  desc: !isRTL
+                    ? 'Protected dashboards, authenticated APIs, and company-aware access.'
+                    : 'لوحات محمية وواجهات API مصادق عليها ووصول يراعي الشركة.',
+                },
+                {
+                  icon: FileCheck,
+                  title: !isRTL ? 'Audit-ready records' : 'سجلات قابلة للتدقيق',
+                  desc: !isRTL
+                    ? 'Approvals, claims, documents, and status changes stay tied to the warranty.'
+                    : 'تبقى الموافقات والمطالبات والمستندات وتغيرات الحالة مرتبطة بالضمان.',
+                },
+                {
+                  icon: QrCode,
+                  title: !isRTL ? 'Certificate proof' : 'إثبات الشهادة',
+                  desc: !isRTL
+                    ? 'Bilingual certificates and QR verification help buyers and service teams trust the record.'
+                    : 'الشهادات الثنائية والتحقق عبر QR تساعد المشترين وفرق الخدمة على الثقة بالسجل.',
+                },
+                {
+                  icon: KeyRound,
+                  title: !isRTL ? 'API controls' : 'ضوابط API',
+                  desc: !isRTL
+                    ? 'Scoped tokens, rate limits, and ownership checks protect integration access.'
+                    : 'رموز محددة وحدود طلبات وفحوص ملكية تحمي وصول التكامل.',
+                },
+              ].map((item) => (
+                <div key={item.title} className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/[0.04]">
+                  <item.icon className="h-5 w-5 text-[#0071e3]" aria-hidden="true" />
+                  <h3 className="mt-4 text-[16px] font-semibold text-[#1d1d1f]">{item.title}</h3>
+                  <p className="mt-2 text-[14px] leading-6 text-[#86868b]">{item.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
         {/* How It Works */}
         <section id="how-it-works" className="py-20 px-4 sm:px-6 bg-[#f5f5f7]">
           <div className="max-w-[980px] mx-auto">

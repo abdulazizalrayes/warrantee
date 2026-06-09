@@ -10,6 +10,7 @@ export function getOrganizationJsonLd() {
         name: "Warrantee.io",
         alternateName: ["Warrantee", "Warrantee warranty management platform"],
         url: BASE_URL,
+        sameAs: ["https://www.linkedin.com/company/warrantee-io"],
         email: "hello@warrantee.io",
         logo: `${BASE_URL}/icon`,
         image: `${BASE_URL}/opengraph-image`,
