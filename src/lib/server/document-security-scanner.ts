@@ -115,7 +115,7 @@ async function updateDocumentScanResult(input: {
   metadata: Record<string, unknown>;
 }) {
   const supabase = createSupabaseAdminClient();
-  const securityMetadata = {
+  const securityMetadata: Record<string, unknown> = {
     ...(input.document.security_metadata || {}),
     ...input.metadata,
     scanned_at: new Date().toISOString(),
