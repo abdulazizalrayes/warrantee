@@ -9,6 +9,28 @@ export type Json =
 export interface Database {
   public: {
     Tables: {
+      activity_log: {
+        Row: {
+          id: string
+          actor_id: string | null
+          entity_type: string
+          entity_id: string
+          action: string
+          metadata: Json | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          actor_id?: string | null
+          entity_type: string
+          entity_id: string
+          action: string
+          metadata?: Json | null
+          created_at?: string
+        }
+        Update: Record<string, never>
+        Relationships: []
+      }
       api_integration_tokens: {
         Row: {
           id: string

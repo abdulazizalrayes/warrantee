@@ -4,7 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { apiJson } from "@/lib/api-response";
 import { getClientIp, getRateLimitHeaders, rateLimit } from "@/lib/rate-limit";
-import type { Database, Json } from "@/types/database";
+import type { Json } from "@/types/database";
 
 export const API_V1_SCOPES = ["warranties:read", "warranties:write"] as const;
 export type ApiV1Scope = (typeof API_V1_SCOPES)[number];
