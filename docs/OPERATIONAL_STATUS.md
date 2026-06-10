@@ -1,6 +1,12 @@
 # Warrantee Operational Status
 
-Last updated: 2026-06-08
+Last updated: 2026-06-11
+
+## 2026-06-11 Search Console Recheck
+
+- Rechecked the Warrantee Search Console property under `abdulaziz.alrayes@gmail.com`.
+- `https://warrantee.io/en/api-docs` remains on Google. URL Inspection reports `URL is on Google` and `Page is indexed`.
+- No Search Console Request Indexing action is currently needed for `/en/api-docs`.
 
 ## 2026-06-08 Search Console Indexing Completion
 

@@ -52,13 +52,54 @@ const callbackSafetyChecks = [
   { path: "/en/auth/callback?code=invalid&next=//evil.example" },
 ];
 
+class SmokeCheckError extends Error {
+  constructor(message, details = {}) {
+    super(message);
+    this.name = "SmokeCheckError";
+    this.details = details;
+  }
+}
+
 async function fetchWithTimeout(url, options = {}) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 15_000);
   try {
     return await fetch(url, { ...options, signal: controller.signal });
+  } catch (error) {
+    if (error?.name === "AbortError") {
+      throw new SmokeCheckError(`Request timed out after 15000ms: ${url}`, {
+        url,
+        timeoutMs: 15000,
+      });
+    }
+    throw error;
   } finally {
     clearTimeout(timeout);
+  }
+}
+
+async function runCheck(kind, check, fn) {
+  const startedAt = Date.now();
+  try {
+    const result = await fn(check);
+    return {
+      kind,
+      durationMs: Date.now() - startedAt,
+      ...result,
+    };
+  } catch (error) {
+    const method = check.method || "GET";
+    const message = `${kind} ${method} ${check.path} failed after ${Date.now() - startedAt}ms: ${
+      error instanceof Error ? error.message : String(error)
+    }`;
+    throw new SmokeCheckError(message, {
+      kind,
+      path: check.path,
+      method,
+      durationMs: Date.now() - startedAt,
+      cause: error instanceof Error ? { name: error.name, message: error.message } : String(error),
+      ...(error instanceof SmokeCheckError ? error.details : {}),
+    });
   }
 }
 
@@ -139,22 +180,33 @@ async function checkCallbackSafety({ path }) {
 async function main() {
   const results = [];
   for (const check of publicChecks) {
-    results.push(await checkPublic(check));
+    results.push(await runCheck("public", check, checkPublic));
   }
   for (const check of redirectChecks) {
-    results.push(await checkRedirect(check));
+    results.push(await runCheck("redirect", check, checkRedirect));
   }
   for (const check of protectedApiChecks) {
-    results.push(await checkProtectedApi(check));
+    results.push(await runCheck("protected-api", check, checkProtectedApi));
   }
   for (const check of callbackSafetyChecks) {
-    results.push(await checkCallbackSafety(check));
+    results.push(await runCheck("callback-safety", check, checkCallbackSafety));
   }
 
   console.log(JSON.stringify({ status: "ok", baseUrl, checks: results }, null, 2));
 }
 
 main().catch((error) => {
-  console.error(JSON.stringify({ status: "failed", baseUrl, error: error.message }, null, 2));
+  console.error(
+    JSON.stringify(
+      {
+        status: "failed",
+        baseUrl,
+        error: error instanceof Error ? error.message : String(error),
+        details: error instanceof SmokeCheckError ? error.details : undefined,
+      },
+      null,
+      2
+    )
+  );
   process.exit(1);
 });

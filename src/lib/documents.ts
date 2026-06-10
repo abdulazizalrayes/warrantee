@@ -34,6 +34,19 @@ export function sanitizeWarrantyDocumentSourceContext(value: string | null) {
   return normalized.replace(/[^a-z0-9_.-]+/g, "_").slice(0, 80) || "manual_upload";
 }
 
+export function shouldRequireCleanWarrantyDocuments() {
+  return process.env.DOCUMENT_DOWNLOAD_REQUIRE_CLEAN === "1";
+}
+
+export function isWarrantyDocumentDownloadBlocked(status: string | null | undefined) {
+  if (!status) return false;
+  if (WARRANTY_DOCUMENT_BLOCKED_SECURITY_STATUSES.includes(status as WarrantyDocumentSecurityStatus)) {
+    return true;
+  }
+
+  return shouldRequireCleanWarrantyDocuments() && status !== "clean";
+}
+
 function stripLeadingSlash(value: string) {
   return value.replace(/^\/+/, "");
 }

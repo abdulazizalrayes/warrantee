@@ -102,6 +102,13 @@ vercel logs warrantee.io --since 30m
 
 ## Latest Production Evidence
 
+- June 11, 2026 continuation:
+  - `npm run smoke:prod` passed locally against `https://warrantee.io`.
+  - GitHub `CI` passed on `main` for type-check, lint, tests, build, and E2E smoke gate after the hardening batch.
+  - Manually triggered `Production Security Gates` passed loopback guard, production smoke, Supabase anonymous RLS probe, operational readiness, production operational E2E, and controlled load check.
+  - Document security status now has a provider-ready scanner endpoint at `/api/cron/scan-documents`, protected by `CRON_SECRET`.
+  - Set `DOCUMENT_SECURITY_SCANNER_URL` and `DOCUMENT_SECURITY_SCANNER_TOKEN` to activate external document scanning; set `DOCUMENT_DOWNLOAD_REQUIRE_CLEAN=1` after scanner verification to block downloads until files are marked clean.
+  - `npm run observability:sentry` passed for local and Vercel production release readiness. Direct `sentry-cli issues list` reached Sentry but returned `403`, so unresolved issue listing requires a Sentry token with issue-read permissions or UI review.
 - Production deployment `dpl_DzRpiCkJ9Kayx4ZBBLRn2moTh1ib` is live and aliased to `https://warrantee.io`.
 - `npm test` passed with 48/48 tests.
 - `npm run type-check` passed.

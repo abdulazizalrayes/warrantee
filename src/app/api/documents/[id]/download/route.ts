@@ -3,7 +3,7 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import {
   WARRANTY_DOCUMENTS_BUCKET,
-  WARRANTY_DOCUMENT_BLOCKED_SECURITY_STATUSES,
+  isWarrantyDocumentDownloadBlocked,
   normalizeWarrantyDocumentStoragePath,
 } from "@/lib/documents";
 import { canViewWarranty } from "@/lib/warranty-access";
@@ -47,12 +47,7 @@ export async function GET(
   }
 
   const securityStatus = (document as { security_status?: string | null }).security_status;
-  if (
-    securityStatus &&
-    WARRANTY_DOCUMENT_BLOCKED_SECURITY_STATUSES.includes(
-      securityStatus as (typeof WARRANTY_DOCUMENT_BLOCKED_SECURITY_STATUSES)[number]
-    )
-  ) {
+  if (isWarrantyDocumentDownloadBlocked(securityStatus)) {
     return NextResponse.json({ error: "Document is blocked by security review" }, { status: 423 });
   }
 

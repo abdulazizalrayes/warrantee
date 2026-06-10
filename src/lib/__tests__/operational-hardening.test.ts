@@ -90,6 +90,9 @@ describe("operational hardening", () => {
     const uploadRoute = readProjectFile("src/app/api/warranties/[id]/documents/route.ts");
     const uploadUrlRoute = readProjectFile("src/app/api/warranties/[id]/documents/upload-url/route.ts");
     const downloadRoute = readProjectFile("src/app/api/documents/[id]/download/route.ts");
+    const documentsHelper = readProjectFile("src/lib/documents.ts");
+    const scanner = readProjectFile("src/lib/server/document-security-scanner.ts");
+    const scanRoute = readProjectFile("src/app/api/cron/scan-documents/route.ts");
     const documentSecurityMigration = readProjectFile(
       "supabase/migrations/20260610194500_document_security_status.sql"
     );
@@ -103,8 +106,14 @@ describe("operational hardening", () => {
     expect(uploadUrlRoute).toContain("createSignedUploadUrl");
     expect(uploadUrlRoute).toContain("buildWarrantyAccessOrClause");
     expect(uploadUrlRoute).toContain("document-signed-upload");
-    expect(downloadRoute).toContain("WARRANTY_DOCUMENT_BLOCKED_SECURITY_STATUSES");
+    expect(downloadRoute).toContain("isWarrantyDocumentDownloadBlocked");
     expect(downloadRoute).toContain("Document is blocked by security review");
+    expect(documentsHelper).toContain("DOCUMENT_DOWNLOAD_REQUIRE_CLEAN");
+    expect(scanner).toContain("DOCUMENT_SECURITY_SCANNER_URL");
+    expect(scanner).toContain("security_status: input.verdict");
+    expect(scanner).toContain("document_security_scanned");
+    expect(scanRoute).toContain("requireInternalBearer");
+    expect(scanRoute).toContain("scanPendingWarrantyDocuments");
     expect(uploadRoute).toContain("File too large (max 20MB)");
     expect(uploadRoute).not.toContain("getPublicUrl(filePath)");
     expect(uploadComponent).toContain("max 20MB");
@@ -139,5 +148,14 @@ describe("operational hardening", () => {
     expect(tokenDelete).toContain("api_token_revoked");
     expect(tokenUsage).toContain(".eq(\"user_id\", user.id)");
     expect(tokenUsage).toContain("api_usage_events");
+  });
+
+  it("keeps production smoke failures diagnostic", () => {
+    const smoke = readProjectFile("scripts/production-smoke.mjs");
+
+    expect(smoke).toContain("class SmokeCheckError");
+    expect(smoke).toContain("runCheck(\"public\"");
+    expect(smoke).toContain("Request timed out after 15000ms");
+    expect(smoke).toContain("details:");
   });
 });
