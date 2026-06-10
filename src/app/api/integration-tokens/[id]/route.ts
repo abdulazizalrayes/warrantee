@@ -1,22 +1,54 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
+import { apiJson } from "@/lib/api-response";
 import { getClientIp, getRateLimitHeaders, rateLimit } from "@/lib/rate-limit";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { isValidUUID } from "@/lib/validation";
+import type { Json } from "@/types/database";
 
 const SECURITY_HEADERS = {
   "Cache-Control": "no-store",
   Vary: "Cookie, Authorization",
 };
 
-function json(body: unknown, init?: ResponseInit) {
-  return NextResponse.json(body, {
+function json(body: unknown, init: ResponseInit = {}) {
+  const headers = new Headers(init.headers);
+  for (const [key, value] of Object.entries(SECURITY_HEADERS)) {
+    headers.set(key, value);
+  }
+
+  return apiJson(body, {
     ...init,
-    headers: {
-      ...SECURITY_HEADERS,
-      ...init?.headers,
+    headers,
+  });
+}
+
+async function recordTokenManagementEvent(
+  supabase: ReturnType<typeof createSupabaseAdminClient>,
+  request: NextRequest,
+  input: {
+    userId: string;
+    tokenId?: string | null;
+    statusCode: number;
+    action: string;
+    metadata?: Record<string, Json | undefined>;
+  }
+) {
+  const { error } = await supabase.from("api_usage_events").insert({
+    user_id: input.userId,
+    token_id: input.tokenId || null,
+    credential_kind: "user",
+    method: request.method,
+    path: new URL(request.url).pathname,
+    status_code: input.statusCode,
+    metadata: {
+      action: input.action,
+      ...(input.metadata || {}),
     },
   });
+  if (error) {
+    console.warn("Integration token audit event failed:", error.message);
+  }
 }
 
 async function requireUser() {
@@ -69,8 +101,31 @@ export async function DELETE(
     .select("id")
     .maybeSingle();
 
-  if (error) return json({ error: "Could not revoke integration token" }, { status: 500 });
-  if (!data) return json({ error: "Integration token not found" }, { status: 404 });
+  if (error) {
+    await recordTokenManagementEvent(supabase, request, {
+      userId: user.id,
+      tokenId: id,
+      statusCode: 500,
+      action: "api_token_revoke_failed",
+    });
+    return json({ error: "Could not revoke integration token" }, { status: 500 });
+  }
+  if (!data) {
+    await recordTokenManagementEvent(supabase, request, {
+      userId: user.id,
+      tokenId: id,
+      statusCode: 404,
+      action: "api_token_revoke_not_found",
+    });
+    return json({ error: "Integration token not found" }, { status: 404 });
+  }
+
+  await recordTokenManagementEvent(supabase, request, {
+    userId: user.id,
+    tokenId: data.id,
+    statusCode: 200,
+    action: "api_token_revoked",
+  });
 
   return json({ success: true });
 }

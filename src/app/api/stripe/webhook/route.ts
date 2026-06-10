@@ -24,6 +24,16 @@ type SubscriptionLike = Stripe.Subscription & {
   trial_end?: number | null;
 };
 
+type ExtensionPaymentRecord = {
+  id: string;
+  warranty_id: string;
+  new_end_date: string;
+  is_purchased: boolean | null;
+  purchased_by: string | null;
+  price?: number | null;
+  currency?: string | null;
+};
+
 function objectId(value: string | { id?: string } | null | undefined) {
   if (!value) return null;
   return typeof value === "string" ? value : value.id || null;
@@ -39,6 +49,95 @@ function planLimits(planId: string) {
     warranty_limit: plan.warranty_limit,
     team_limit: plan.team_limit,
   };
+}
+
+function normalizeMinorUnits(amount: unknown) {
+  const parsed = typeof amount === "number" ? amount : Number(amount);
+  if (!Number.isFinite(parsed) || parsed <= 0) return null;
+  return Math.round(parsed * 100);
+}
+
+function currencyMatches(expected: string | null | undefined, actual: string | null | undefined) {
+  return String(expected || "SAR").toLowerCase() === String(actual || "").toLowerCase();
+}
+
+async function getExtensionPaymentRecord(
+  supabaseAdmin: SupabaseAdminClient,
+  extensionId: string
+): Promise<ExtensionPaymentRecord | null> {
+  const { data, error } = await supabaseAdmin
+    .from("warranty_extensions")
+    .select("id, warranty_id, new_end_date, is_purchased, purchased_by, price, currency")
+    .eq("id", extensionId)
+    .single();
+
+  if (error || !data) return null;
+  return data as unknown as ExtensionPaymentRecord;
+}
+
+async function fulfillVerifiedExtensionPayment(
+  supabaseAdmin: SupabaseAdminClient,
+  input: {
+    extensionId: string;
+    userId?: string | null;
+    amountPaidMinor: number | null;
+    currency?: string | null;
+    source: string;
+  }
+) {
+  const extension = await getExtensionPaymentRecord(supabaseAdmin, input.extensionId);
+  if (!extension) {
+    throw new Error("Extension offer not found");
+  }
+
+  if (extension.is_purchased && extension.purchased_by && input.userId && extension.purchased_by !== input.userId) {
+    throw new Error("Extension offer was already purchased by another user");
+  }
+
+  const expectedAmountMinor = normalizeMinorUnits(extension.price);
+  if (!expectedAmountMinor || input.amountPaidMinor !== expectedAmountMinor) {
+    throw new Error("Stripe payment amount did not match extension offer");
+  }
+
+  if (!currencyMatches(extension.currency, input.currency)) {
+    throw new Error("Stripe payment currency did not match extension offer");
+  }
+
+  const { error: extError } = await supabaseAdmin
+    .from("warranty_extensions")
+    .update({
+      is_purchased: true,
+      purchased_by: input.userId || extension.purchased_by || null,
+      purchased_at: new Date().toISOString(),
+    })
+    .eq("id", input.extensionId);
+
+  if (extError) throw extError;
+
+  const { error: warrantyError } = await supabaseAdmin
+    .from("warranties")
+    .update({
+      end_date: extension.new_end_date,
+      warranty_end_date: extension.new_end_date,
+      status: "renewed",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", extension.warranty_id);
+
+  if (warrantyError) throw warrantyError;
+
+  await supabaseAdmin.from("activity_log").insert({
+    actor_id: input.userId || null,
+    entity_type: "warranty_extension",
+    entity_id: input.extensionId,
+    action: "extension_payment_fulfilled",
+    metadata: {
+      warranty_id: extension.warranty_id,
+      amount_minor: input.amountPaidMinor,
+      currency: input.currency || null,
+      source: input.source,
+    },
+  });
 }
 
 async function upsertSubscriptionState(
@@ -187,37 +286,13 @@ export async function POST(request: Request) {
         // controlled by invitation and team-management flows, not Stripe metadata.
 
         if (extensionId) {
-          const { error: extError } = await supabaseAdmin
-            .from("warranty_extensions")
-            .update({
-              is_purchased: true,
-              purchased_by: userId || null,
-              purchased_at: new Date().toISOString(),
-            })
-            .eq("id", extensionId);
-
-          if (extError) {
-            throw extError;
-          }
-
-          const { data: extension } = await supabaseAdmin
-            .from("warranty_extensions")
-            .select("warranty_id, new_end_date")
-            .eq("id", extensionId)
-            .single();
-
-          if (extension) {
-            const { error: warrantyError } = await supabaseAdmin
-              .from("warranties")
-              .update({
-                end_date: extension.new_end_date,
-                status: "renewed",
-                updated_at: new Date().toISOString(),
-              })
-              .eq("id", extension.warranty_id);
-
-            if (warrantyError) throw warrantyError;
-          }
+          await fulfillVerifiedExtensionPayment(supabaseAdmin, {
+            extensionId,
+            userId,
+            amountPaidMinor: session.amount_total ?? null,
+            currency: session.currency,
+            source: "checkout.session.completed",
+          });
         }
 
         const subscriptionId = objectId(session.subscription);
@@ -243,36 +318,13 @@ export async function POST(request: Request) {
         const metadata = invoice.metadata;
 
         if (metadata?.extension_id) {
-          const { error: extError } = await supabaseAdmin
-            .from("warranty_extensions")
-            .update({
-              is_purchased: true,
-              purchased_at: new Date().toISOString(),
-            })
-            .eq("id", metadata.extension_id);
-
-          if (extError) {
-            throw extError;
-          }
-
-          const { data: extension } = await supabaseAdmin
-            .from("warranty_extensions")
-            .select("warranty_id, new_end_date")
-            .eq("id", metadata.extension_id)
-            .single();
-
-          if (extension) {
-            const { error: warrantyError } = await supabaseAdmin
-              .from("warranties")
-              .update({
-                end_date: extension.new_end_date,
-                status: "renewed",
-                updated_at: new Date().toISOString(),
-              })
-              .eq("id", extension.warranty_id);
-
-            if (warrantyError) throw warrantyError;
-          }
+          await fulfillVerifiedExtensionPayment(supabaseAdmin, {
+            extensionId: metadata.extension_id,
+            userId: metadata.user_id || null,
+            amountPaidMinor: invoice.amount_paid ?? null,
+            currency: invoice.currency,
+            source: "invoice.payment_succeeded",
+          });
         }
         break;
       }

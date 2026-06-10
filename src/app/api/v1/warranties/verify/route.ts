@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { getClientIp, getRateLimitHeaders, publicLookupRateLimit } from "@/lib/rate-limit";
+import { apiJson } from "@/lib/api-response";
 
 const VERIFICATION_SELECT =
   "id, reference_number, product_name, product_name_ar, serial_number, status, start_date, end_date, category, seller_name, certificate_url, created_at";
@@ -45,7 +46,7 @@ async function findPublicWarranty(supabase: SupabaseClient, safeQuery: string) {
 export async function GET(request: NextRequest) {
   const rateLimitResult = await publicLookupRateLimit(getClientIp(request));
   if (!rateLimitResult.success) {
-    return NextResponse.json(
+    return apiJson(
       { success: false, error: "Too many verification attempts" },
       { status: 429, headers: getRateLimitHeaders(rateLimitResult) }
     );
@@ -53,7 +54,7 @@ export async function GET(request: NextRequest) {
 
   // Require service role key for secure operations
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 });
+    return apiJson({ success: false, error: "Internal server error" }, { status: 500 });
   }
 
   const supabase = createClient(
@@ -65,24 +66,24 @@ export async function GET(request: NextRequest) {
   const query = searchParams?.get("q")?.trim();
 
   if (!query) {
-    return NextResponse.json({ success: false, error: "Query parameter 'q' is required" }, { status: 400 });
+    return apiJson({ success: false, error: "Query parameter 'q' is required" }, { status: 400 });
   }
 
   try {
     const safeQuery = normalizeVerificationQuery(query);
     if (!safeQuery) {
-      return NextResponse.json({ success: false, error: "Invalid verification query" }, { status: 400 });
+      return apiJson({ success: false, error: "Invalid verification query" }, { status: 400 });
     }
 
     // Public verification intentionally returns only proof-safe fields.
     const { data, error } = await findPublicWarranty(supabase, safeQuery);
 
     if (error || !data) {
-      return NextResponse.json({ success: false, error: "Warranty not found" }, { status: 404 });
+      return apiJson({ success: false, error: "Warranty not found" }, { status: 404 });
     }
 
-    return NextResponse.json({ success: true, data });
+    return apiJson({ success: true, data });
   } catch {
-    return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 });
+    return apiJson({ success: false, error: "Internal server error" }, { status: 500 });
   }
 }

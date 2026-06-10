@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
   let query = supabase
     .from("warranty_documents")
     .select(
-      "id, file_name, file_type, file_size, file_url, storage_path, version, created_at, warranty_id, warranties(product_name, product_name_ar, reference_number)"
+      "id, file_name, file_type, file_size, file_url, storage_path, version, security_status, security_checked_at, created_at, warranty_id, warranties(product_name, product_name_ar, reference_number)"
     )
     .in("warranty_id", warrantyIds)
     .order("created_at", { ascending: false })

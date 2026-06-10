@@ -68,4 +68,76 @@ describe("operational hardening", () => {
     expect(healthRoute).toContain('export const runtime = "edge"');
     expect(healthRoute).not.toContain("process.uptime");
   });
+
+  it("keeps production rate limiting distributed by default", () => {
+    const rateLimit = readProjectFile("src/lib/rate-limit.ts");
+
+    expect(rateLimit).toContain("process.env.NODE_ENV === \"production\"");
+    expect(rateLimit).toContain("RATE_LIMIT_ALLOW_MEMORY_FALLBACK");
+    expect(rateLimit).toContain("return { success: false, remaining: 0, resetIn: windowMs }");
+  });
+
+  it("keeps high-risk API responses on the shared no-store security helper", () => {
+    const helper = readProjectFile("src/lib/api-response.ts");
+    const publicVerify = readProjectFile("src/app/api/v1/warranties/verify/route.ts");
+
+    expect(helper).toContain("\"Cache-Control\": \"no-store\"");
+    expect(helper).toContain("\"X-Content-Type-Options\": \"nosniff\"");
+    expect(publicVerify).toContain("apiJson");
+  });
+
+  it("keeps document uploads bounded and routed through signed download paths", () => {
+    const uploadRoute = readProjectFile("src/app/api/warranties/[id]/documents/route.ts");
+    const uploadUrlRoute = readProjectFile("src/app/api/warranties/[id]/documents/upload-url/route.ts");
+    const downloadRoute = readProjectFile("src/app/api/documents/[id]/download/route.ts");
+    const documentSecurityMigration = readProjectFile(
+      "supabase/migrations/20260610194500_document_security_status.sql"
+    );
+    const uploadComponent = readProjectFile("src/components/DocumentUpload.tsx");
+
+    expect(documentSecurityMigration).toContain("security_status");
+    expect(documentSecurityMigration).toContain("pending_scan");
+    expect(documentSecurityMigration).toContain("blocked");
+    expect(uploadRoute).toContain("WARRANTY_DOCUMENT_MAX_SIZE");
+    expect(uploadRoute).toContain('security_status: "pending_scan"');
+    expect(uploadUrlRoute).toContain("createSignedUploadUrl");
+    expect(uploadUrlRoute).toContain("buildWarrantyAccessOrClause");
+    expect(uploadUrlRoute).toContain("document-signed-upload");
+    expect(downloadRoute).toContain("WARRANTY_DOCUMENT_BLOCKED_SECURITY_STATUSES");
+    expect(downloadRoute).toContain("Document is blocked by security review");
+    expect(uploadRoute).toContain("File too large (max 20MB)");
+    expect(uploadRoute).not.toContain("getPublicUrl(filePath)");
+    expect(uploadComponent).toContain("max 20MB");
+    expect(uploadComponent).toContain("uploadToSignedUrl");
+    expect(uploadComponent).toContain("computeSha256Hex");
+  });
+
+  it("keeps Stripe extension fulfillment verified against stored offer values", () => {
+    const webhook = readProjectFile("src/app/api/stripe/webhook/route.ts");
+
+    expect(webhook).toContain("fulfillVerifiedExtensionPayment");
+    expect(webhook).toContain("Stripe payment amount did not match extension offer");
+    expect(webhook).toContain("Stripe payment currency did not match extension offer");
+    expect(webhook).toContain("warranty_end_date");
+  });
+
+  it("keeps public API usage metered and token lifecycle audited", () => {
+    const migration = readProjectFile("supabase/migrations/20260610193000_api_usage_events.sql");
+    const apiCollection = readProjectFile("src/app/api/v1/warranties/route.ts");
+    const apiItem = readProjectFile("src/app/api/v1/warranties/[id]/route.ts");
+    const tokenCreate = readProjectFile("src/app/api/integration-tokens/route.ts");
+    const tokenDelete = readProjectFile("src/app/api/integration-tokens/[id]/route.ts");
+    const tokenUsage = readProjectFile("src/app/api/integration-tokens/usage/route.ts");
+
+    expect(migration).toContain("create table if not exists public.api_usage_events");
+    expect(migration).toContain("user_id = auth.uid()");
+    expect(apiCollection).toContain("authorizeApiV1Request");
+    expect(apiCollection).toContain("recordApiV1Usage");
+    expect(apiItem).toContain("recordApiV1Usage");
+    expect(apiItem).toContain(".or(buildWarrantyAccessOrClause(requester.userId))");
+    expect(tokenCreate).toContain("api_token_created");
+    expect(tokenDelete).toContain("api_token_revoked");
+    expect(tokenUsage).toContain(".eq(\"user_id\", user.id)");
+    expect(tokenUsage).toContain("api_usage_events");
+  });
 });

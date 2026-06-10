@@ -49,6 +49,38 @@ export interface Database {
         }
         Relationships: []
       }
+      api_usage_events: {
+        Row: {
+          id: string
+          user_id: string
+          token_id: string | null
+          credential_kind: string
+          method: string
+          path: string
+          status_code: number
+          scope: string | null
+          ip_hash: string | null
+          user_agent: string | null
+          metadata: Json
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          token_id?: string | null
+          credential_kind: string
+          method: string
+          path: string
+          status_code: number
+          scope?: string | null
+          ip_hash?: string | null
+          user_agent?: string | null
+          metadata?: Json
+          created_at?: string
+        }
+        Update: Record<string, never>
+        Relationships: []
+      }
       profiles: {
         Row: {
           id: string

@@ -1,87 +1,14 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { buildWarrantyAccessOrClause, buildWarrantyOwnershipInsert } from '@/lib/warranty-access';
-import { getClientIp, getRateLimitHeaders, rateLimit } from '@/lib/rate-limit';
 import { isOneOf, isValidDate, sanitizeString, VALID_WARRANTY_STATUSES } from '@/lib/validation';
 import {
-  type ApiRequester,
-  type ApiV1Scope,
+  apiV1Json,
+  authorizeApiV1Request,
   buildIdempotencyReference,
-  hasApiScope,
   parsePositiveInt,
-  resolveApiRequester,
+  recordApiV1Usage,
 } from '@/lib/api-v1';
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
-
-const API_V1_SECURITY_HEADERS = {
-  'Cache-Control': 'no-store',
-  Vary: 'Authorization, x-api-key',
-};
-
-const IP_RATE_LIMIT = 300;
-
-function json(body: unknown, init?: ResponseInit) {
-  return NextResponse.json(body, {
-    ...init,
-    headers: {
-      ...API_V1_SECURITY_HEADERS,
-      ...init?.headers,
-    },
-  });
-}
-
-function rateHeaders(result: { remaining: number; resetIn: number }, limit: number) {
-  return {
-    ...getRateLimitHeaders(result),
-    'X-RateLimit-Limit': String(limit),
-  };
-}
-
-async function enforceIpRateLimit(request: NextRequest) {
-  const result = await rateLimit(getClientIp(request), {
-    maxRequests: IP_RATE_LIMIT,
-    windowMs: 60_000,
-    identifier: 'api-v1-ip',
-  });
-  if (result.success) return null;
-
-  return json(
-    { error: 'Too many requests' },
-    { status: 429, headers: rateHeaders(result, IP_RATE_LIMIT) }
-  );
-}
-
-async function enforceRequesterRateLimit(requester: ApiRequester) {
-  const result = await rateLimit(requester.rateLimitSubject, {
-    maxRequests: requester.rateLimitPerMinute,
-    windowMs: 60_000,
-    identifier: 'api-v1-requester',
-  });
-  if (result.success) return null;
-
-  return json(
-    { error: 'Too many requests' },
-    { status: 429, headers: rateHeaders(result, requester.rateLimitPerMinute) }
-  );
-}
-
-async function authorizeApiRequest(request: NextRequest, scope: ApiV1Scope) {
-  const ipLimitResponse = await enforceIpRateLimit(request);
-  if (ipLimitResponse) return { response: ipLimitResponse };
-
-  const requester = await resolveApiRequester(request);
-  if (!requester.ok) {
-    return { response: json({ error: requester.error }, { status: requester.status }) };
-  }
-
-  if (!hasApiScope(requester, scope)) {
-    return { response: json({ error: `Missing required scope: ${scope}` }, { status: 403 }) };
-  }
-
-  const requesterLimitResponse = await enforceRequesterRateLimit(requester);
-  if (requesterLimitResponse) return { response: requesterLimitResponse };
-
-  return { requester };
-}
 
 function cleanOptionalString(value: unknown, maxLength: number) {
   return typeof value === 'string' && value.trim()
@@ -98,7 +25,7 @@ function parsePurchasePrice(value: unknown) {
 
 // GET /api/v1/warranties - List warranties
 export async function GET(request: NextRequest) {
-  const auth = await authorizeApiRequest(request, 'warranties:read');
+  const auth = await authorizeApiV1Request(request, 'warranties:read');
   if (auth.response) return auth.response;
   const { requester } = auth;
   const supabase = createSupabaseAdminClient();
@@ -111,7 +38,12 @@ export async function GET(request: NextRequest) {
   const offset = (page - 1) * limit;
 
   if (status && !isOneOf(status, VALID_WARRANTY_STATUSES)) {
-    return json(
+    await recordApiV1Usage(supabase, request, requester, {
+      statusCode: 400,
+      scope: 'warranties:read',
+      metadata: { reason: 'invalid_status' },
+    });
+    return apiV1Json(
       { error: `Invalid status. Must be one of: ${VALID_WARRANTY_STATUSES.join(', ')}` },
       { status: 400 }
     );
@@ -130,10 +62,20 @@ export async function GET(request: NextRequest) {
 
   const { data, count, error } = await query;
   if (error) {
-    return json({ error: error.message }, { status: 500 });
+    await recordApiV1Usage(supabase, request, requester, {
+      statusCode: 500,
+      scope: 'warranties:read',
+      metadata: { reason: 'query_error' },
+    });
+    return apiV1Json({ error: error.message }, { status: 500 });
   }
 
-  return json({
+  await recordApiV1Usage(supabase, request, requester, {
+    statusCode: 200,
+    scope: 'warranties:read',
+    metadata: { page, limit, returned: data?.length || 0 },
+  });
+  return apiV1Json({
     data,
     pagination: {
       page,
@@ -146,7 +88,7 @@ export async function GET(request: NextRequest) {
 
 // POST /api/v1/warranties - Create warranty
 export async function POST(request: NextRequest) {
-  const auth = await authorizeApiRequest(request, 'warranties:write');
+  const auth = await authorizeApiV1Request(request, 'warranties:write');
   if (auth.response) return auth.response;
   const { requester } = auth;
   const supabase = createSupabaseAdminClient();
@@ -156,31 +98,61 @@ export async function POST(request: NextRequest) {
     const required = ['product_name', 'start_date', 'end_date'];
     const missing = required.filter(f => !body[f]);
     if (missing.length > 0) {
-      return json({ error: `Missing required fields: ${missing.join(', ')}` }, { status: 400 });
+      await recordApiV1Usage(supabase, request, requester, {
+        statusCode: 400,
+        scope: 'warranties:write',
+        metadata: { reason: 'missing_fields', missing },
+      });
+      return apiV1Json({ error: `Missing required fields: ${missing.join(', ')}` }, { status: 400 });
     }
 
     if (!isValidDate(body.start_date) || !isValidDate(body.end_date)) {
-      return json({ error: 'start_date and end_date must be valid dates' }, { status: 400 });
+      await recordApiV1Usage(supabase, request, requester, {
+        statusCode: 400,
+        scope: 'warranties:write',
+        metadata: { reason: 'invalid_dates' },
+      });
+      return apiV1Json({ error: 'start_date and end_date must be valid dates' }, { status: 400 });
     }
 
     if (new Date(body.end_date).getTime() <= new Date(body.start_date).getTime()) {
-      return json({ error: 'end_date must be after start_date' }, { status: 400 });
+      await recordApiV1Usage(supabase, request, requester, {
+        statusCode: 400,
+        scope: 'warranties:write',
+        metadata: { reason: 'invalid_date_order' },
+      });
+      return apiV1Json({ error: 'end_date must be after start_date' }, { status: 400 });
     }
 
     if (body.status !== undefined && !isOneOf(body.status, VALID_WARRANTY_STATUSES)) {
-      return json(
+      await recordApiV1Usage(supabase, request, requester, {
+        statusCode: 400,
+        scope: 'warranties:write',
+        metadata: { reason: 'invalid_status' },
+      });
+      return apiV1Json(
         { error: `Invalid status. Must be one of: ${VALID_WARRANTY_STATUSES.join(', ')}` },
         { status: 400 }
       );
     }
 
     if (body.language !== undefined && body.language !== 'en' && body.language !== 'ar') {
-      return json({ error: 'language must be en or ar' }, { status: 400 });
+      await recordApiV1Usage(supabase, request, requester, {
+        statusCode: 400,
+        scope: 'warranties:write',
+        metadata: { reason: 'invalid_language' },
+      });
+      return apiV1Json({ error: 'language must be en or ar' }, { status: 400 });
     }
 
     const purchasePrice = parsePurchasePrice(body.purchase_price);
     if (purchasePrice === undefined) {
-      return json({ error: 'purchase_price must be a positive number' }, { status: 400 });
+      await recordApiV1Usage(supabase, request, requester, {
+        statusCode: 400,
+        scope: 'warranties:write',
+        metadata: { reason: 'invalid_purchase_price' },
+      });
+      return apiV1Json({ error: 'purchase_price must be a positive number' }, { status: 400 });
     }
 
     const idempotencyKey = request.headers.get('idempotency-key')?.trim();
@@ -197,7 +169,12 @@ export async function POST(request: NextRequest) {
         .maybeSingle();
 
       if (existingWarranty) {
-        return json({ data: existingWarranty, idempotent_replay: true }, { status: 200 });
+        await recordApiV1Usage(supabase, request, requester, {
+          statusCode: 200,
+          scope: 'warranties:write',
+          metadata: { idempotent_replay: true },
+        });
+        return apiV1Json({ data: existingWarranty, idempotent_replay: true }, { status: 200 });
       }
     }
 
@@ -221,11 +198,26 @@ export async function POST(request: NextRequest) {
 
     const { data, error } = await supabase.from('warranties').insert(warrantyData).select().single();
     if (error) {
-      return json({ error: error.message }, { status: 500 });
+      await recordApiV1Usage(supabase, request, requester, {
+        statusCode: 500,
+        scope: 'warranties:write',
+        metadata: { reason: 'insert_error' },
+      });
+      return apiV1Json({ error: error.message }, { status: 500 });
     }
 
-    return json({ data }, { status: 201 });
+    await recordApiV1Usage(supabase, request, requester, {
+      statusCode: 201,
+      scope: 'warranties:write',
+      metadata: { warranty_id: data.id },
+    });
+    return apiV1Json({ data }, { status: 201 });
   } catch {
-    return json({ error: 'Invalid request body' }, { status: 400 });
+    await recordApiV1Usage(supabase, request, requester, {
+      statusCode: 400,
+      scope: 'warranties:write',
+      metadata: { reason: 'invalid_body' },
+    });
+    return apiV1Json({ error: 'Invalid request body' }, { status: 400 });
   }
 }

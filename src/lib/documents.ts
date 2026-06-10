@@ -1,4 +1,38 @@
 export const WARRANTY_DOCUMENTS_BUCKET = "warranty-documents";
+export const WARRANTY_DOCUMENT_SECURITY_STATUSES = [
+  "pending_scan",
+  "clean",
+  "blocked",
+  "scan_failed",
+] as const;
+export type WarrantyDocumentSecurityStatus = (typeof WARRANTY_DOCUMENT_SECURITY_STATUSES)[number];
+export const WARRANTY_DOCUMENT_BLOCKED_SECURITY_STATUSES: WarrantyDocumentSecurityStatus[] = ["blocked"];
+export const WARRANTY_DOCUMENT_MAX_SIZE = 20 * 1024 * 1024;
+export const WARRANTY_DOCUMENT_ALLOWED_TYPES = [
+  "application/pdf",
+  "image/jpeg",
+  "image/png",
+  "image/jpg",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+];
+
+export function getWarrantyDocumentSafeExtension(fileName: string, mimeType: string) {
+  const extension = fileName.includes(".") ? fileName.split(".").pop()?.toLowerCase() : "";
+  if (extension && /^[a-z0-9]{1,10}$/.test(extension)) return extension;
+
+  if (mimeType === "application/pdf") return "pdf";
+  if (mimeType === "image/jpeg" || mimeType === "image/jpg") return "jpg";
+  if (mimeType === "image/png") return "png";
+  if (mimeType === "application/msword") return "doc";
+  if (mimeType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") return "docx";
+  return "bin";
+}
+
+export function sanitizeWarrantyDocumentSourceContext(value: string | null) {
+  const normalized = (value || "manual_upload").trim().toLowerCase();
+  return normalized.replace(/[^a-z0-9_.-]+/g, "_").slice(0, 80) || "manual_upload";
+}
 
 function stripLeadingSlash(value: string) {
   return value.replace(/^\/+/, "");

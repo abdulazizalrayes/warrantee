@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { WARRANTY_DOCUMENTS_BUCKET, normalizeWarrantyDocumentStoragePath } from "@/lib/documents";
+import {
+  WARRANTY_DOCUMENTS_BUCKET,
+  WARRANTY_DOCUMENT_BLOCKED_SECURITY_STATUSES,
+  normalizeWarrantyDocumentStoragePath,
+} from "@/lib/documents";
 import { canViewWarranty } from "@/lib/warranty-access";
 import { isSchemaColumnError } from "@/lib/warranty-document-provenance";
 
@@ -24,7 +28,7 @@ export async function GET(
 
   let { data: document, error: documentError } = await admin
     .from("warranty_documents")
-    .select("id, file_name, file_url, storage_path, warranty_id")
+    .select("id, file_name, file_url, storage_path, warranty_id, security_status")
     .eq("id", id)
     .single();
 
@@ -40,6 +44,16 @@ export async function GET(
 
   if (documentError || !document) {
     return NextResponse.json({ error: "Document not found" }, { status: 404 });
+  }
+
+  const securityStatus = (document as { security_status?: string | null }).security_status;
+  if (
+    securityStatus &&
+    WARRANTY_DOCUMENT_BLOCKED_SECURITY_STATUSES.includes(
+      securityStatus as (typeof WARRANTY_DOCUMENT_BLOCKED_SECURITY_STATUSES)[number]
+    )
+  ) {
+    return NextResponse.json({ error: "Document is blocked by security review" }, { status: 423 });
   }
 
   const { data: warranty, error: warrantyError } = await admin

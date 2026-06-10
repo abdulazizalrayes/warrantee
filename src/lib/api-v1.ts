@@ -2,12 +2,16 @@ import crypto from "crypto";
 import { NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { apiJson } from "@/lib/api-response";
+import { getClientIp, getRateLimitHeaders, rateLimit } from "@/lib/rate-limit";
+import type { Database, Json } from "@/types/database";
 
 export const API_V1_SCOPES = ["warranties:read", "warranties:write"] as const;
 export type ApiV1Scope = (typeof API_V1_SCOPES)[number];
 
 const DEFAULT_API_RATE_LIMIT_PER_MINUTE = 100;
 const MAX_API_RATE_LIMIT_PER_MINUTE = 300;
+const API_V1_IP_RATE_LIMIT = 300;
 const API_TOKEN_PATTERN = /^wrt_([A-Za-z0-9]{8,32})_[A-Za-z0-9_-]{32,}$/;
 
 type Credential =
@@ -16,7 +20,7 @@ type Credential =
 
 export type ApiRequester = {
   ok: true;
-  kind: "user" | "api_key" | "legacy_integration";
+  kind: "user" | "api_key";
   userId: string;
   scopes: ApiV1Scope[];
   rateLimitPerMinute: number;
@@ -80,6 +84,101 @@ export function hasApiScope(requester: ApiRequester, requiredScope: ApiV1Scope) 
   return requester.scopes.includes(requiredScope);
 }
 
+export function apiV1Json(body: unknown, init: ResponseInit = {}) {
+  const headers = new Headers(init.headers);
+  headers.set("Vary", "Authorization, x-api-key");
+  return apiJson(body, { ...init, headers });
+}
+
+function rateHeaders(result: { remaining: number; resetIn: number }, limit: number) {
+  return {
+    ...getRateLimitHeaders(result),
+    "X-RateLimit-Limit": String(limit),
+  };
+}
+
+async function enforceApiV1IpRateLimit(request: NextRequest) {
+  const result = await rateLimit(getClientIp(request), {
+    maxRequests: API_V1_IP_RATE_LIMIT,
+    windowMs: 60_000,
+    identifier: "api-v1-ip",
+  });
+  if (result.success) return null;
+
+  return apiV1Json(
+    { error: "Too many requests" },
+    { status: 429, headers: rateHeaders(result, API_V1_IP_RATE_LIMIT) }
+  );
+}
+
+async function enforceApiV1RequesterRateLimit(requester: ApiRequester) {
+  const result = await rateLimit(requester.rateLimitSubject, {
+    maxRequests: requester.rateLimitPerMinute,
+    windowMs: 60_000,
+    identifier: "api-v1-requester",
+  });
+  if (result.success) return null;
+
+  return apiV1Json(
+    { error: "Too many requests" },
+    { status: 429, headers: rateHeaders(result, requester.rateLimitPerMinute) }
+  );
+}
+
+export async function authorizeApiV1Request(request: NextRequest, scope: ApiV1Scope) {
+  const ipLimitResponse = await enforceApiV1IpRateLimit(request);
+  if (ipLimitResponse) return { response: ipLimitResponse };
+
+  const requester = await resolveApiRequester(request);
+  if (!requester.ok) {
+    return { response: apiV1Json({ error: requester.error }, { status: requester.status }) };
+  }
+
+  if (!hasApiScope(requester, scope)) {
+    return {
+      response: apiV1Json({ error: `Missing required scope: ${scope}` }, { status: 403 }),
+    };
+  }
+
+  const requesterLimitResponse = await enforceApiV1RequesterRateLimit(requester);
+  if (requesterLimitResponse) return { response: requesterLimitResponse };
+
+  return { requester };
+}
+
+export async function recordApiV1Usage(
+  supabase: ReturnType<typeof createSupabaseAdminClient>,
+  request: NextRequest,
+  requester: ApiRequester,
+  input: {
+    statusCode: number;
+    scope?: ApiV1Scope | null;
+    metadata?: Json;
+  }
+) {
+  const url = new URL(request.url);
+  const ip = getClientIp(request);
+  const ipHash = ip === "unknown" ? null : crypto.createHash("sha256").update(ip).digest("hex");
+  const userAgent = request.headers.get("user-agent")?.slice(0, 500) || null;
+
+  const { error } = await supabase.from("api_usage_events").insert({
+    user_id: requester.userId,
+    token_id: requester.tokenId || null,
+    credential_kind: requester.kind,
+    method: request.method,
+    path: url.pathname,
+    status_code: input.statusCode,
+    scope: input.scope || null,
+    ip_hash: ipHash,
+    user_agent: userAgent,
+    metadata: input.metadata || {},
+  });
+
+  if (error) {
+    console.warn("API v1 usage metering failed:", error.message);
+  }
+}
+
 export function normalizeApiRateLimit(value: unknown) {
   const parsed = typeof value === "number" ? value : Number(value);
   if (!Number.isFinite(parsed)) return DEFAULT_API_RATE_LIMIT_PER_MINUTE;
@@ -139,36 +238,9 @@ export async function resolveApiRequester(request: NextRequest): Promise<
     };
   }
 
-  const integrationToken = process.env.WARRANTEE_API_INTEGRATION_TOKEN;
   if (credential.kind === "api_key") {
     const storedRequester = await resolveStoredApiKey(credential.token);
     if (storedRequester) return storedRequester;
-  }
-
-  if (
-    credential.kind === "api_key" &&
-    integrationToken &&
-    timingSafeStringEqual(credential.token, integrationToken)
-  ) {
-    const integrationOwnerId =
-      process.env.WARRANTEE_API_INTEGRATION_OWNER_ID || process.env.WARRANTEE_API_OWNER_ID;
-
-    if (!integrationOwnerId) {
-      return {
-        ok: false as const,
-        status: 503,
-        error: "Integration token is configured without a bound owner account.",
-      };
-    }
-
-    return {
-      ok: true as const,
-      kind: "legacy_integration" as const,
-      userId: integrationOwnerId,
-      scopes: [...API_V1_SCOPES],
-      rateLimitPerMinute: DEFAULT_API_RATE_LIMIT_PER_MINUTE,
-      rateLimitSubject: `legacy-integration:${integrationOwnerId}`,
-    };
   }
 
   if (credential.kind !== "bearer") {

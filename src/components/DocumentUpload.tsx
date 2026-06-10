@@ -2,11 +2,14 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Upload, File, Trash2, AlertCircle } from "lucide-react";
-import { buildDocumentDownloadHref } from "@/lib/documents";
+import {
+  WARRANTY_DOCUMENT_MAX_SIZE,
+  buildDocumentDownloadHref,
+} from "@/lib/documents";
 
 const t = {
-  en: { title: "Documents", dropzone: "Drag & drop files here", browse: "or click to browse", types: "PDF, JPEG, PNG, DOC, DOCX (max 250MB)", uploading: "Uploading...", noFiles: "No documents uploaded yet", delete: "Delete", download: "Download", error: "Upload failed" },
-  ar: { title: "\u0627\u0644\u0645\u0633\u062a\u0646\u062f\u0627\u062a", dropzone: "\u0627\u0633\u062d\u0628 \u0627\u0644\u0645\u0644\u0641\u0627\u062a \u0647\u0646\u0627", browse: "\u0623\u0648 \u0627\u0646\u0642\u0631 \u0644\u0644\u0627\u062e\u062a\u064a\u0627\u0631", types: "PDF, JPEG, PNG, DOC, DOCX (\u0623\u0642\u0635\u0649 250MB)", uploading: "\u062c\u0627\u0631\u064a \u0627\u0644\u0631\u0641\u0639...", noFiles: "\u0644\u0627 \u062a\u0648\u062c\u062f \u0645\u0633\u062a\u0646\u062f\u0627\u062a", delete: "\u062d\u0630\u0641", download: "\u062a\u062d\u0645\u064a\u0644", error: "\u0641\u0634\u0644 \u0627\u0644\u0631\u0641\u0639" },
+  en: { title: "Documents", dropzone: "Drag & drop files here", browse: "or click to browse", types: "PDF, JPEG, PNG, DOC, DOCX (max 20MB)", uploading: "Uploading...", noFiles: "No documents uploaded yet", delete: "Delete", download: "Download", error: "Upload failed" },
+  ar: { title: "\u0627\u0644\u0645\u0633\u062a\u0646\u062f\u0627\u062a", dropzone: "\u0627\u0633\u062d\u0628 \u0627\u0644\u0645\u0644\u0641\u0627\u062a \u0647\u0646\u0627", browse: "\u0623\u0648 \u0627\u0646\u0642\u0631 \u0644\u0644\u0627\u062e\u062a\u064a\u0627\u0631", types: "PDF, JPEG, PNG, DOC, DOCX (\u0623\u0642\u0635\u0649 20MB)", uploading: "\u062c\u0627\u0631\u064a \u0627\u0644\u0631\u0641\u0639...", noFiles: "\u0644\u0627 \u062a\u0648\u062c\u062f \u0645\u0633\u062a\u0646\u062f\u0627\u062a", delete: "\u062d\u0630\u0641", download: "\u062a\u062d\u0645\u064a\u0644", error: "\u0641\u0634\u0644 \u0627\u0644\u0631\u0641\u0639" },
 };
 
 const ALLOWED = ["application/pdf", "image/jpeg", "image/png", "image/jpg", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"];
@@ -18,6 +21,13 @@ type WarrantyDocument = {
   file_name: string | null;
   file_size: number | null;
 };
+
+async function computeSha256Hex(file: globalThis.File) {
+  const hashBuffer = await crypto.subtle.digest("SHA-256", await file.arrayBuffer());
+  return Array.from(new Uint8Array(hashBuffer))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+}
 
 export default function DocumentUpload({ warrantyId, locale = "en" }: Props) {
   const l = t[locale as keyof typeof t] || t.en;
@@ -37,21 +47,52 @@ export default function DocumentUpload({ warrantyId, locale = "en" }: Props) {
 
   async function handleUpload(file: globalThis.File) {
     if (!ALLOWED.includes(file.type)) { setError("Invalid file type"); return; }
-    if (file.size > 250 * 1024 * 1024) { setError("File too large"); return; }
+    if (file.size > WARRANTY_DOCUMENT_MAX_SIZE) { setError("File too large"); return; }
     setUploading(true); setError("");
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("documentKind", "reference");
-      formData.append("sourceContext", "document_library");
-
-      const response = await fetch(`/api/warranties/${warrantyId}/documents`, {
+      const prepareResponse = await fetch(`/api/warranties/${warrantyId}/documents/upload-url`, {
         method: "POST",
-        body: formData,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fileName: file.name,
+          fileType: file.type,
+          fileSize: file.size,
+        }),
       });
 
-      if (!response.ok) {
-        const payload = await response.json().catch(() => ({ error: l.error }));
+      if (!prepareResponse.ok) {
+        const payload = await prepareResponse.json().catch(() => ({ error: l.error }));
+        throw new Error(payload.error || l.error);
+      }
+
+      const prepared = await prepareResponse.json();
+      const { error: uploadError } = await supabase.storage
+        .from(prepared.bucket)
+        .uploadToSignedUrl(prepared.path, prepared.token, file, {
+          contentType: file.type,
+        });
+
+      if (uploadError) {
+        throw new Error(uploadError.message || l.error);
+      }
+
+      const fileHash = await computeSha256Hex(file);
+      const finalizeResponse = await fetch(`/api/warranties/${warrantyId}/documents`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          storagePath: prepared.path,
+          fileName: file.name,
+          fileType: file.type,
+          fileSize: file.size,
+          fileHash,
+          documentKind: "reference",
+          sourceContext: "document_library",
+        }),
+      });
+
+      if (!finalizeResponse.ok) {
+        const payload = await finalizeResponse.json().catch(() => ({ error: l.error }));
         throw new Error(payload.error || l.error);
       }
 

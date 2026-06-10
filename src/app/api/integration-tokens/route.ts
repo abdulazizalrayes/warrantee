@@ -1,9 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { createApiIntegrationToken, normalizeApiRateLimit, normalizeApiScopes } from "@/lib/api-v1";
+import { apiJson } from "@/lib/api-response";
 import { getClientIp, getRateLimitHeaders, rateLimit } from "@/lib/rate-limit";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { isStringInRange, sanitizeString } from "@/lib/validation";
+import type { Json } from "@/types/database";
 
 const TOKEN_SELECT =
   "id, name, token_prefix, scopes, rate_limit_per_minute, last_used_at, expires_at, revoked_at, created_at, updated_at";
@@ -15,14 +17,44 @@ const SECURITY_HEADERS = {
   Vary: "Cookie, Authorization",
 };
 
-function json(body: unknown, init?: ResponseInit) {
-  return NextResponse.json(body, {
+function json(body: unknown, init: ResponseInit = {}) {
+  const headers = new Headers(init.headers);
+  for (const [key, value] of Object.entries(SECURITY_HEADERS)) {
+    headers.set(key, value);
+  }
+
+  return apiJson(body, {
     ...init,
-    headers: {
-      ...SECURITY_HEADERS,
-      ...init?.headers,
+    headers,
+  });
+}
+
+async function recordTokenManagementEvent(
+  supabase: ReturnType<typeof createSupabaseAdminClient>,
+  request: NextRequest,
+  input: {
+    userId: string;
+    tokenId?: string | null;
+    statusCode: number;
+    action: string;
+    metadata?: Record<string, Json | undefined>;
+  }
+) {
+  const { error } = await supabase.from("api_usage_events").insert({
+    user_id: input.userId,
+    token_id: input.tokenId || null,
+    credential_kind: "user",
+    method: request.method,
+    path: new URL(request.url).pathname,
+    status_code: input.statusCode,
+    metadata: {
+      action: input.action,
+      ...(input.metadata || {}),
     },
   });
+  if (error) {
+    console.warn("Integration token audit event failed:", error.message);
+  }
 }
 
 async function requireUser() {
@@ -135,7 +167,26 @@ export async function POST(request: NextRequest) {
     .select(TOKEN_SELECT)
     .single();
 
-  if (error || !data) return json({ error: "Could not create integration token" }, { status: 500 });
+  if (error || !data) {
+    await recordTokenManagementEvent(supabase, request, {
+      userId: user.id,
+      statusCode: 500,
+      action: "api_token_create_failed",
+    });
+    return json({ error: "Could not create integration token" }, { status: 500 });
+  }
+
+  await recordTokenManagementEvent(supabase, request, {
+    userId: user.id,
+    tokenId: data.id,
+    statusCode: 201,
+    action: "api_token_created",
+    metadata: {
+      scopes,
+      rate_limit_per_minute: rateLimitPerMinute,
+      expires_at: expiresAt,
+    },
+  });
 
   return json(
     {

@@ -7,6 +7,8 @@ import {
   normalizeApiScopes,
   timingSafeStringEqual,
 } from "../api-v1";
+import fs from "node:fs";
+import path from "node:path";
 
 describe("api v1 helpers", () => {
   it("compares integration tokens with a constant-length hash", () => {
@@ -43,5 +45,21 @@ describe("api v1 helpers", () => {
     expect(normalizeApiRateLimit(0)).toBe(1);
     expect(normalizeApiRateLimit(999)).toBe(300);
     expect(normalizeApiRateLimit("not-a-number")).toBe(100);
+  });
+
+  it("does not allow the retired static integration token path", () => {
+    const source = fs.readFileSync(path.join(process.cwd(), "src/lib/api-v1.ts"), "utf8");
+
+    expect(source).not.toContain("WARRANTEE_API_INTEGRATION_TOKEN");
+    expect(source).not.toContain("legacy_integration");
+  });
+
+  it("centralizes API v1 authorization and usage metering helpers", () => {
+    const source = fs.readFileSync(path.join(process.cwd(), "src/lib/api-v1.ts"), "utf8");
+
+    expect(source).toContain("authorizeApiV1Request");
+    expect(source).toContain("recordApiV1Usage");
+    expect(source).toContain("api_usage_events");
+    expect(source).toContain("X-RateLimit-Limit");
   });
 });

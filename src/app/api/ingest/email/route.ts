@@ -24,6 +24,11 @@ import { createBuyerConfirmationToken } from '@/lib/provisional-warranties';
 import { sanitizeInboundAttachmentFilename } from '@/lib/ingestion/attachments';
 import { escapeHtml } from '@/lib/html-escape';
 import { getClientIp, getRateLimitHeaders, rateLimit, webhookRateLimit } from '@/lib/rate-limit';
+import {
+  extractEmailAddress,
+  getInboundEmailAuthentication,
+  type InboundEmailAuthentication,
+} from '@/lib/ingestion/email-authentication';
 
 function getSupabaseAdmin() {
   return createClient<Database>(
@@ -59,7 +64,8 @@ export async function POST(request: NextRequest) {
     const payload: ResendInboundPayload = JSON.parse(body);
 
     // 2. Rate limiting
-    const fromEmail = payload.from.toLowerCase().trim();
+    const fromEmail = extractEmailAddress(payload.from).toLowerCase().trim();
+    const emailAuth = getInboundEmailAuthentication(payload.headers || {}, fromEmail);
     const isAllowed = await checkRateLimit(fromEmail, clientIp);
     if (!isAllowed) {
       console.warn(`[Ingest] Rate limited: ${fromEmail}`);
@@ -99,6 +105,7 @@ export async function POST(request: NextRequest) {
       from: fromEmail,
       subject: payload.subject,
       attachment_count: payload.attachments?.length || 0,
+      email_authentication: emailAuth,
     });
 
     // 4. Match sender to registered user
@@ -115,6 +122,7 @@ export async function POST(request: NextRequest) {
       trust_level: senderMatch.trust_level,
       trust_score: senderMatch.trust_score,
       match_method: senderMatch.match_method,
+      email_authentication: emailAuth,
     });
 
     // 5. Process attachments
@@ -131,7 +139,7 @@ export async function POST(request: NextRequest) {
     // Process each attachment
     const attachmentResults = [];
     for (const attachment of payload.attachments) {
-      const result = await processAttachment(job.id, attachment, senderMatch, fromEmail, supabaseAdmin);
+      const result = await processAttachment(job.id, attachment, senderMatch, fromEmail, emailAuth, supabaseAdmin);
       attachmentResults.push(result);
     }
 
@@ -145,7 +153,7 @@ export async function POST(request: NextRequest) {
     let finalStatus: IngestionJobStatus = 'ocr_complete';
     if (hasFraud) {
       finalStatus = 'pending_review';
-    } else if (hasHighConfidence && senderMatch.trust_score >= 0.9) {
+    } else if (hasHighConfidence && senderMatch.trust_score >= 0.9 && emailAuth.aligned) {
       finalStatus = 'auto_confirmed';
     } else if (hasMediumConfidence || hasHighConfidence) {
       finalStatus = senderMatch.buyer_id
@@ -221,6 +229,7 @@ async function processAttachment(
   attachment: InboundAttachment,
   senderMatch: Awaited<ReturnType<typeof matchSender>>,
   fromEmail: string,
+  emailAuth: InboundEmailAuthentication,
   supabaseAdmin: SupabaseAdminClient
 ): Promise<{ confidence: number; hasFraud: boolean; provisional?: any | null }> {
   const safeFilename = sanitizeInboundAttachmentFilename(attachment.filename);
@@ -352,12 +361,14 @@ async function processAttachment(
     if (
       ocrResult.aggregate_confidence >= CONFIDENCE_THRESHOLDS.HIGH &&
       senderMatch.trust_score >= 0.9 &&
+      emailAuth.aligned &&
       !hasFraud
     ) {
       await autoConfirmWarranty(jobId, attachmentRecord.id, senderMatch.user_id!, ocrResult, supabaseAdmin);
       await logAudit(jobId, 'auto_confirmed', 'system', {
         confidence: ocrResult.aggregate_confidence,
         trust_score: senderMatch.trust_score,
+        email_authentication: emailAuth,
       }, attachmentRecord.id);
     }
 
@@ -436,6 +447,8 @@ async function autoConfirmWarranty(
   const { data: warranty } = await supabaseAdmin
     .from('warranties')
     .insert({
+      user_id: userId,
+      created_by: userId,
       recipient_user_id: userId,
       product_name: fields.product_name?.value || 'Unknown Product',
       sku: fields.model_number?.value || null,

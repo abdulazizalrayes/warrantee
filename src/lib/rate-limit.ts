@@ -30,7 +30,10 @@ if (typeof setInterval !== "undefined") {
 const REDIS_URL = process.env.UPSTASH_REDIS_REST_URL;
 const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
 const useRedis = Boolean(REDIS_URL && REDIS_TOKEN);
-const requireRedis = process.env.RATE_LIMIT_REQUIRE_REDIS === "1";
+const allowMemoryFallbackInProduction = process.env.RATE_LIMIT_ALLOW_MEMORY_FALLBACK === "1";
+const requireRedis =
+  process.env.RATE_LIMIT_REQUIRE_REDIS === "1" ||
+  (process.env.NODE_ENV === "production" && !allowMemoryFallbackInProduction);
 
 async function redisRateLimit(
   key: string,
@@ -75,7 +78,10 @@ async function redisRateLimit(
       resetIn,
     };
   } catch {
-    // If Redis fails, fall through to in-memory
+    if (requireRedis) {
+      return { success: false, remaining: 0, resetIn: windowMs };
+    }
+    // If Redis fails outside strict production mode, fall through to in-memory.
     return memoryRateLimit(key, maxRequests, windowMs);
   }
 }
