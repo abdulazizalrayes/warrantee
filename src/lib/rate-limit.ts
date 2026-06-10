@@ -166,7 +166,7 @@ export function getRateLimitHeaders(result: {
 
 // Pre-configured rate limiters
 export const apiRateLimit = (ip: string) =>
-  rateLimit(ip, { maxRequests: 60, windowMs: 60000, identifier: "api" });
+  rateLimit(ip, { maxRequests: 300, windowMs: 60000, identifier: "api" });
 export const authRateLimit = (ip: string) =>
   rateLimit(ip, { maxRequests: 10, windowMs: 60000, identifier: "auth" });
 export const webhookRateLimit = (ip: string) =>
