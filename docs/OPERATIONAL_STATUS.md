@@ -11,6 +11,17 @@ Last updated: 2026-06-11
 - Document scanning is active through Warrantee's protected baseline scanner, and strict clean-before-download gating is enabled.
 - Mistral OCR is the active production OCR provider. Google Vision/CNTXT remains optional legacy/provider expansion work, not a current launch blocker.
 - No current Search Console action is needed for `/en/faq` or `/en/api-docs`; both are indexed.
+- Entity profile creation/claiming, such as LinkedIn or Crunchbase, remains intentionally postponed.
+
+## 2026-06-11 Remaining External Items Closure
+
+- Public Google search now returns both `https://warrantee.io/en/api-docs` and `https://warrantee.io/en/faq`, matching the prior Search Console result that both URLs are indexed.
+- Latest GitHub `CI` on `main` passed for commit `af6ca28`.
+- Latest manually triggered `Production Security Gates` on `main` passed for commit `af6ca28`.
+- `npm run smoke:prod` passed locally against `https://warrantee.io`, including protected API rejection checks for email, cron, document scanner, notifications, integration tokens, and public API routes.
+- `npm run observability:sentry` passed for both local and Vercel production readiness, with runtime DSNs and release-upload configuration present.
+- `npm run guard:loopback` passed with no disallowed local development or loopback references.
+- Local `OPERATIONAL_BASE_URL=https://warrantee.io npm run readiness:operational` cannot complete authenticated Supabase/OCR/Stripe probes unless `E2E_USER_EMAIL` and `E2E_USER_PASSWORD` are restored to the local environment. The same readiness and production operational E2E checks pass in GitHub `Production Security Gates`, where the required secrets are configured.
 
 ## 2026-06-11 Document Scanner Activation Status
 

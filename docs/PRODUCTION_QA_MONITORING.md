@@ -1,6 +1,6 @@
 # Production QA And Monitoring Gate
 
-Last updated: 2026-06-01
+Last updated: 2026-06-11
 
 ## Purpose
 
@@ -102,6 +102,15 @@ vercel logs warrantee.io --since 30m
 
 ## Latest Production Evidence
 
+- June 11, 2026 remaining-item closure:
+  - Public Google search returns both `https://warrantee.io/en/api-docs` and `https://warrantee.io/en/faq`; no additional Search Console indexing request is currently needed for those priority URLs.
+  - GitHub `CI` passed on latest `main` commit `af6ca28`.
+  - Manually triggered `Production Security Gates` passed on latest `main` commit `af6ca28`, including production smoke, Supabase anonymous RLS probe, operational readiness, production operational E2E, and controlled load.
+  - `npm run smoke:prod` passed locally against `https://warrantee.io` after the external-item check.
+  - `npm run observability:sentry` passed for local and Vercel production release readiness.
+  - `npm run guard:loopback` passed with no disallowed local development or loopback references.
+  - Local authenticated readiness requires `E2E_USER_EMAIL` and `E2E_USER_PASSWORD`; those secrets are not present in the local env file, but the authenticated readiness and E2E gates pass in GitHub where the production QA secrets are configured.
+  - Entity profile creation/claiming remains intentionally postponed.
 - June 11, 2026 continuation:
   - Production deployment `dpl_Hsyy7Z62sFxQegjQ9E8icY5eHWwn` is ready and aliased to `https://warrantee.io`.
   - `npm run smoke:prod` passed locally against `https://warrantee.io`, including protected checks for `/api/email/send`, `/api/cron/scan-documents`, and `/api/internal/document-security-scan`.
