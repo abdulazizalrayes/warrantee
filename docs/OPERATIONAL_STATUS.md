@@ -6,7 +6,7 @@ Last updated: 2026-06-11
 
 - Latest production deployment is ready and aliased to `https://warrantee.io`.
 - Latest GitHub `CI` passed type-check, lint, tests, build, and E2E smoke.
-- Latest manually triggered `Production Security Gates` passed on commit `5ed1dfa` in run `27358595969`, including production smoke, Supabase anonymous RLS probe, operational readiness, production operational E2E, and controlled load.
+- Latest manually triggered `Production Security Gates` passed on commit `98b29db` in run `27365307861`, including production smoke, Supabase anonymous RLS probe, operational readiness, production operational E2E, and controlled load.
 - Email sending is active and guarded by `EMAIL_SEND_API_SECRET`; readiness proves the endpoint is authenticated without sending mail.
 - Document scanning is active through Warrantee's protected baseline scanner, and strict clean-before-download gating is enabled.
 - Mistral OCR is the active production OCR provider. Google Vision/CNTXT remains optional legacy/provider expansion work, not a current launch blocker.
@@ -26,6 +26,14 @@ Last updated: 2026-06-11
 - Manually triggered `Production Security Gates` against `main` after the API-auth, reset-password, and Arabic typography changes.
 - Run: `27358595969`.
 - Commit: `5ed1dfa1370177e9ea511bf82237964609bc9f3b`.
+- Result: passed.
+- Passed checks included loopback guard, production smoke, Supabase anonymous RLS probe, operational readiness, production operational E2E, and controlled production load.
+
+## 2026-06-11 Crunchbase Schema Production Gate Recheck
+
+- Manually triggered `Production Security Gates` against `main` after adding the verified Crunchbase entity profile to Warrantee schema `sameAs`.
+- Run: `27365307861`.
+- Commit: `98b29db72f9a8001513e5c6723655b05957e13dc`.
 - Result: passed.
 - Passed checks included loopback guard, production smoke, Supabase anonymous RLS probe, operational readiness, production operational E2E, and controlled production load.
 
