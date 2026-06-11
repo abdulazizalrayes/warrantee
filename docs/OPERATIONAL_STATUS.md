@@ -6,12 +6,37 @@ Last updated: 2026-06-11
 
 - Latest production deployment is ready and aliased to `https://warrantee.io`.
 - Latest GitHub `CI` passed type-check, lint, tests, build, and E2E smoke.
-- Latest manually triggered `Production Security Gates` passed production smoke, Supabase anonymous RLS probe, operational readiness, production operational E2E, and controlled load.
+- Latest manually triggered `Production Security Gates` passed on commit `5ed1dfa` in run `27358595969`, including production smoke, Supabase anonymous RLS probe, operational readiness, production operational E2E, and controlled load.
 - Email sending is active and guarded by `EMAIL_SEND_API_SECRET`; readiness proves the endpoint is authenticated without sending mail.
 - Document scanning is active through Warrantee's protected baseline scanner, and strict clean-before-download gating is enabled.
 - Mistral OCR is the active production OCR provider. Google Vision/CNTXT remains optional legacy/provider expansion work, not a current launch blocker.
 - No current Search Console action is needed for `/en/faq` or `/en/api-docs`; both are indexed.
-- Entity profile creation/claiming, such as LinkedIn or Crunchbase, remains intentionally postponed.
+- LinkedIn is active. Crunchbase setup was reopened on 2026-06-11; automated submission is currently blocked by Crunchbase session verification, so the ready-to-submit profile fields are recorded in `docs/SOCIAL_CHANNELS.md`.
+
+## 2026-06-11 Crunchbase Setup Attempt
+
+- Attempted to create/check the Warrantee Crunchbase profile at `https://www.crunchbase.com/add-new`.
+- Crunchbase blocked the automated browser with `We must verify your session before you can proceed`.
+- Crunchbase Ray ID shown during the attempt: `a0a1b34c393a1ed5`.
+- Per Crunchbase support guidance, creating a profile requires a registered and socially authenticated Crunchbase user account.
+- No `sameAs` link has been added to Warrantee structured data yet because there is no verified Crunchbase profile URL to reference.
+- Ready-to-submit profile details are recorded in `docs/SOCIAL_CHANNELS.md`.
+
+## 2026-06-11 Latest Production Gate Recheck
+
+- Manually triggered `Production Security Gates` against `main` after the API-auth, reset-password, and Arabic typography changes.
+- Run: `27358595969`.
+- Commit: `5ed1dfa1370177e9ea511bf82237964609bc9f3b`.
+- Result: passed.
+- Passed checks included loopback guard, production smoke, Supabase anonymous RLS probe, operational readiness, production operational E2E, and controlled production load.
+
+## 2026-06-11 Search Console / Public Index Recheck
+
+- Public Google results return `https://warrantee.io/en/api-docs`.
+- Public Google results return `https://warrantee.io/en/faq`.
+- The `/en/api-docs` search result includes the current no-shared-password API integration guidance, confirming the updated production page is visible to Google.
+- Direct Search Console access in the in-app browser remains blocked because that browser is not authenticated to the `abdulaziz.alrayes@gmail.com` Warrantee property. The page returned `Oops, you don't have access to this property`.
+- No new indexing request is needed for `/en/api-docs` or `/en/faq` based on public index visibility and the prior authenticated Search Console result that both pages are indexed.
 
 ## 2026-06-11 Remaining External Items Closure
 
