@@ -5,9 +5,16 @@ Last updated: 2026-06-11
 ## 2026-06-11 Document Scanner Activation Status
 
 - Warrantee now has a protected document scanning endpoint at `/api/cron/scan-documents`, guarded by `CRON_SECRET`.
-- Production Vercel env contains `CRON_SECRET`, but does not yet contain `DOCUMENT_SECURITY_SCANNER_URL`, `DOCUMENT_SECURITY_SCANNER_TOKEN`, or `DOCUMENT_DOWNLOAD_REQUIRE_CLEAN`.
-- `npm run readiness:operational` now reports the scanner as `pending_provider` instead of silently passing over this activation gap.
-- Strict document download gating should remain off until a real scanner provider is configured, tested, and verified against uploads.
+- Production Vercel env now contains `CRON_SECRET`, `DOCUMENT_SECURITY_SCANNER_URL`, `DOCUMENT_SECURITY_SCANNER_TOKEN`, and `DOCUMENT_DOWNLOAD_REQUIRE_CLEAN`.
+- The initial scanner provider is Warrantee's protected internal baseline endpoint at `/api/internal/document-security-scan`.
+- The baseline scanner blocks unsupported types, executable extensions, file-size/hash mismatches, content magic mismatches, and risky PDF actions such as JavaScript, launch actions, embedded files, and rich media.
+- Strict document download gating is enabled with `DOCUMENT_DOWNLOAD_REQUIRE_CLEAN=1`, so documents must be marked clean before download.
+
+## 2026-06-11 Email Send Activation
+
+- Resend domain `warrantee.io` is verified.
+- `EMAIL_SEND_API_SECRET` is configured in Vercel Production and GitHub Actions.
+- `npm run readiness:operational` now probes `/api/email/send` with an unauthenticated request expecting `401`, then an authenticated invalid-template request expecting `404` so the endpoint is proven active without sending an email.
 
 ## 2026-06-11 Search Console Recheck
 

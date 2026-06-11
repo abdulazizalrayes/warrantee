@@ -74,6 +74,21 @@ async function callScanner(input: {
 
     const payload = (await response.json().catch(() => ({}))) as ScannerResponse;
     if (!response.ok) {
+      const normalizedVerdict = normalizeVerdict(payload);
+      if (normalizedVerdict === "blocked") {
+        return {
+          verdict: "blocked" as ScanVerdict,
+          metadata: {
+            scanner: "external",
+            scanner_status: response.status,
+            engine: payload.engine || null,
+            signature: payload.signature || null,
+            reason: payload.reason || "scanner_blocked",
+            details: payload.details || null,
+          },
+        };
+      }
+
       return {
         verdict: "scan_failed" as ScanVerdict,
         metadata: {

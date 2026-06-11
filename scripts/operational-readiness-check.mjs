@@ -174,6 +174,41 @@ async function checkResend() {
   return { name: "resend", status: "ok" };
 }
 
+async function checkEmailSendEndpoint() {
+  requireEnv(["EMAIL_SEND_API_SECRET"]);
+
+  const unauthorized = await fetchWithTimeout(`${baseUrl}/api/email/send`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({}),
+  });
+  if (unauthorized.status !== 401) {
+    throw new Error(`Unauthenticated email send probe returned ${unauthorized.status}, expected 401`);
+  }
+
+  const authorized = await fetchWithTimeout(`${baseUrl}/api/email/send`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${process.env.EMAIL_SEND_API_SECRET}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      to: "hello@warrantee.io",
+      templateKey: "__readiness_probe__",
+      data: {},
+      locale: "en",
+    }),
+  });
+  if (authorized.status === 503) {
+    throw new Error("Email send endpoint is inactive; set EMAIL_SEND_API_SECRET in Vercel Production.");
+  }
+  if (authorized.status !== 404) {
+    throw new Error(`Authenticated email send probe returned ${authorized.status}, expected 404 for invalid template`);
+  }
+
+  return { name: "email-send-endpoint", status: "ok", mode: "authenticated-no-send-probe" };
+}
+
 async function checkHubSpot() {
   requireEnv(["HUBSPOT_ACCESS_TOKEN"]);
   const response = await fetchWithTimeout("https://api.hubapi.com/crm/v3/objects/contacts?limit=1&archived=false", {
@@ -566,6 +601,7 @@ async function main() {
     { name: "security-headers", run: checkSecurityHeaders },
     { name: "supabase", run: checkSupabase },
     { name: "resend", run: checkResend },
+    { name: "email-send-endpoint", run: checkEmailSendEndpoint },
     { name: "hubspot", run: checkHubSpot },
     { name: "ocr-provider", run: checkOCRProvider },
     { name: "document-security-scanner", run: checkDocumentSecurityScanner },

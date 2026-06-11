@@ -92,7 +92,9 @@ describe("operational hardening", () => {
     const downloadRoute = readProjectFile("src/app/api/documents/[id]/download/route.ts");
     const documentsHelper = readProjectFile("src/lib/documents.ts");
     const scanner = readProjectFile("src/lib/server/document-security-scanner.ts");
+    const baselineScanner = readProjectFile("src/lib/server/document-security-baseline.ts");
     const scanRoute = readProjectFile("src/app/api/cron/scan-documents/route.ts");
+    const internalScanRoute = readProjectFile("src/app/api/internal/document-security-scan/route.ts");
     const documentSecurityMigration = readProjectFile(
       "supabase/migrations/20260610194500_document_security_status.sql"
     );
@@ -112,6 +114,11 @@ describe("operational hardening", () => {
     expect(scanner).toContain("DOCUMENT_SECURITY_SCANNER_URL");
     expect(scanner).toContain("security_status: input.verdict");
     expect(scanner).toContain("document_security_scanned");
+    expect(scanner).toContain('normalizedVerdict === "blocked"');
+    expect(baselineScanner).toContain("warrantee_baseline_document_scanner");
+    expect(baselineScanner).toContain("PDF_RISK_PATTERNS");
+    expect(internalScanRoute).toContain("DOCUMENT_SECURITY_SCANNER_TOKEN");
+    expect(internalScanRoute).toContain("scanDocumentBaseline");
     expect(readProjectFile("scripts/operational-readiness-check.mjs")).toContain(
       "checkDocumentSecurityScanner"
     );
@@ -163,5 +170,20 @@ describe("operational hardening", () => {
     expect(smoke).toContain("runCheck(\"public\"");
     expect(smoke).toContain("Request timed out after 15000ms");
     expect(smoke).toContain("details:");
+    expect(smoke).toContain("/api/email/send");
+    expect(smoke).toContain("/api/internal/document-security-scan");
+    expect(smoke).toContain("/api/cron/scan-documents");
+  });
+
+  it("keeps internal email sending active and authenticated in readiness", () => {
+    const readiness = readProjectFile("scripts/operational-readiness-check.mjs");
+    const productionSecurity = readProjectFile(".github/workflows/production-security.yml");
+    const emailSendRoute = readProjectFile("src/app/api/email/send/route.ts");
+
+    expect(emailSendRoute).toContain("EMAIL_SEND_API_SECRET");
+    expect(readiness).toContain("checkEmailSendEndpoint");
+    expect(readiness).toContain("EMAIL_SEND_API_SECRET");
+    expect(readiness).toContain("authenticated-no-send-probe");
+    expect(productionSecurity).toContain("EMAIL_SEND_API_SECRET");
   });
 });
