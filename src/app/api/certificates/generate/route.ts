@@ -28,7 +28,7 @@ function generateCertificateHTML(warranty: any, company: any, locale: string = "
   const dir = isAr ? "rtl" : "ltr";
   const lang = isAr ? "ar" : "en";
   const fontFamily = isAr
-    ? "'Geeza Pro', 'SF Arabic', 'Noto Sans Arabic', Tahoma, system-ui"
+    ? "'IBM Plex Sans Arabic', 'Noto Sans Arabic', Tahoma, system-ui"
     : "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Segoe UI', system-ui";
   const startDate = new Date(warranty.start_date).toLocaleDateString(isAr ? "ar-SA" : "en-US", { year: "numeric", month: "long", day: "numeric" });
   const endDate = new Date(warranty.end_date).toLocaleDateString(isAr ? "ar-SA" : "en-US", { year: "numeric", month: "long", day: "numeric" });

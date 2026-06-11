@@ -1,9 +1,17 @@
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { IBM_Plex_Sans_Arabic } from "next/font/google";
 import { LOCALES } from "@/lib/i18n";
 
 const shouldRenderVercelInsights =
   process.env.VERCEL === "1" && Boolean(process.env.VERCEL_URL);
+
+const arabicBrandFont = IBM_Plex_Sans_Arabic({
+  subsets: ["arabic"],
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-arabic-brand",
+  display: "swap",
+});
 
 const webMcpScript = `
 (() => {
@@ -101,7 +109,7 @@ export function DocumentShell({
   lang?: string;
 }) {
   return (
-    <html lang={lang} dir={dir}>
+    <html lang={lang} dir={dir} className={arabicBrandFont.variable}>
       <body>
         <script dangerouslySetInnerHTML={{ __html: webMcpScript }} />
         {children}

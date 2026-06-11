@@ -146,7 +146,7 @@ export default function AdminLoginPage() {
       alignItems: 'center',
       justifyContent: 'center',
       background: 'linear-gradient(135deg, #1A1A2E 0%, #16213E 50%, #0F3460 100%)',
-      fontFamily: isRTL ? "'Noto Sans Arabic', sans-serif" : "'Inter', sans-serif",
+      fontFamily: isRTL ? "var(--font-arabic-fallback)" : "'Inter', sans-serif",
       padding: '20px',
     }}>
       <div style={{

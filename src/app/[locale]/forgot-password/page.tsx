@@ -31,7 +31,7 @@ export default function ForgotPasswordPage({ params }: { params: Promise<{ local
       }
 
       const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
-        redirectTo: `${window.location.origin}/${locale}/reset-password`,
+        redirectTo: `${window.location.origin}/${locale}/auth/callback?next=${encodeURIComponent(`/${locale}/reset-password`)}`,
       });
       if (error) throw error;
       rememberAuthEmailSend(normalizedEmail, "reset-password");
@@ -49,6 +49,7 @@ export default function ForgotPasswordPage({ params }: { params: Promise<{ local
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-gray-900">{isAr ? tr("نسيت كلمة المرور؟") : "Forgot your password?"}</h1>
           <p className="text-gray-600 mt-2">{isAr ? tr("أدخل بريدك الإلكتروني وسنرسل لك رابط إعادة التعيين") : "Enter your email and we'll send you a reset link"}</p>
+          <p className="mt-2 text-sm text-gray-500">{isAr ? tr("اسم المستخدم هو بريدك الإلكتروني المسجل.") : "Your username is your registered email address."}</p>
         </div>
         {sent ? (
           <div className="bg-green-50 border border-green-200 rounded-2xl p-6 text-center">

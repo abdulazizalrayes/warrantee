@@ -275,6 +275,9 @@ async function buildHtml(
   const startDate = escapeHtml(warranty.start_date);
   const endDate = escapeHtml(warranty.end_date);
   const safeVerifyUrl = escapeHtml(verifyUrl);
+  const fontFamily = isAr
+    ? "'IBM Plex Sans Arabic', 'Noto Sans Arabic', Tahoma, sans-serif"
+    : "Arial, sans-serif";
   const qrDataUrl = await QRCode.toDataURL(verifyUrl, {
     width: 160,
     margin: 2,
@@ -286,7 +289,7 @@ async function buildHtml(
 <html dir="${isAr ? "rtl" : "ltr"}" lang="${locale}">
 <head><meta charset="UTF-8"><title>${isAr ? "شهادة ضمان" : "Warranty Certificate"}</title>
 <style>
-  body { font-family: Arial, sans-serif; margin: 0; padding: 40px; background: #fff; color: #1A1A2E; }
+  body { font-family: ${fontFamily}; margin: 0; padding: 40px; background: #fff; color: #1A1A2E; }
   .cert { max-width: 800px; margin: 0 auto; border: 3px solid #4169E1; border-radius: 16px; padding: 40px; }
   .header { text-align: center; border-bottom: 2px solid #e5e7eb; padding-bottom: 24px; margin-bottom: 24px; }
   .logo { font-size: 28px; font-weight: bold; color: #4169E1; }

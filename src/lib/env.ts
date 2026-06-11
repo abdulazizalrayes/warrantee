@@ -42,6 +42,15 @@ const clientSchema = z.object({
   NEXT_PUBLIC_META_PIXEL_ID: z.string().optional(),
 });
 
+function formatEnvValidationErrors(errors: Record<string, unknown>) {
+  return Object.entries(errors)
+    .map(([key, msgs]) => {
+      const messages = Array.isArray(msgs) ? msgs.join(", ") : String(msgs || "Invalid value");
+      return `  ${key}: ${messages}`;
+    })
+    .join("\n");
+}
+
 /**
  * Validate and return typed server environment variables.
  * Only call this on the server side (API routes, server components, etc).
@@ -49,10 +58,7 @@ const clientSchema = z.object({
 export function getServerEnv() {
   const parsed = serverSchema.safeParse(process.env);
   if (!parsed.success) {
-    const errors = parsed.error.flatten().fieldErrors;
-    const message = Object.entries(errors)
-      .map(([key, msgs]) => `  ${key}: ${msgs?.join(", ")}`)
-      .join("\n");
+    const message = formatEnvValidationErrors(parsed.error.flatten().fieldErrors);
     throw new Error(`Missing or invalid server environment variables:\n${message}`);
   }
   return parsed.data;
@@ -75,10 +81,7 @@ export function getClientEnv() {
     NEXT_PUBLIC_META_PIXEL_ID: process.env.NEXT_PUBLIC_META_PIXEL_ID,
   });
   if (!parsed.success) {
-    const errors = parsed.error.flatten().fieldErrors;
-    const message = Object.entries(errors)
-      .map(([key, msgs]) => `  ${key}: ${msgs?.join(", ")}`)
-      .join("\n");
+    const message = formatEnvValidationErrors(parsed.error.flatten().fieldErrors);
     throw new Error(`Missing or invalid client environment variables:\n${message}`);
   }
   return parsed.data;

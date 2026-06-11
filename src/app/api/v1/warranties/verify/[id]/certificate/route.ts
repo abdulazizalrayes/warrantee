@@ -120,6 +120,9 @@ export async function GET(
   const sellerName = escapeHtml(data.seller_name || "-");
   const statusText = isActive ? (isAr ? "نشط" : "Active") : (isAr ? "منتهي" : "Expired");
   const safeVerifyUrl = escapeHtml(verifyUrl);
+  const fontFamily = isAr
+    ? "'IBM Plex Sans Arabic', 'Noto Sans Arabic', Tahoma, sans-serif"
+    : "Arial, Helvetica, sans-serif";
 
   const html = `<!DOCTYPE html>
 <html dir="${isAr ? "rtl" : "ltr"}" lang="${locale}">
@@ -129,7 +132,7 @@ export async function GET(
   <title>${isAr ? "شهادة ضمان موثقة" : "Verified Warranty Certificate"}</title>
   <style>
     * { box-sizing: border-box; }
-    body { margin: 0; padding: 32px; background: #fbfbfd; color: #1d1d1f; font-family: Arial, Helvetica, sans-serif; }
+    body { margin: 0; padding: 32px; background: #fbfbfd; color: #1d1d1f; font-family: ${fontFamily}; }
     .certificate { max-width: 840px; margin: 0 auto; background: #fff; border: 1px solid rgba(0,0,0,.08); border-radius: 18px; padding: 40px; box-shadow: 0 18px 60px rgba(0,0,0,.08); }
     .brand { color: #0071e3; font-weight: 700; letter-spacing: -.01em; }
     h1 { margin: 10px 0 8px; font-size: 38px; line-height: 1.08; letter-spacing: -.03em; }

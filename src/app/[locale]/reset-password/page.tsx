@@ -64,7 +64,7 @@ export default function ResetPasswordPage() {
       setLoading(false);
     } else {
       setMessage(t.success);
-      setTimeout(() => router.push("/" + locale + "/login"), 2000);
+      setTimeout(() => router.push("/" + locale + "/auth"), 2000);
     }
   };
 

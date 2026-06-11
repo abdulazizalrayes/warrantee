@@ -163,6 +163,46 @@ describe("operational hardening", () => {
     expect(tokenUsage).toContain("api_usage_events");
   });
 
+  it("documents API integrations without password sharing", () => {
+    const apiDocs = readProjectFile("src/app/[locale]/api-docs/page.tsx");
+
+    expect(apiDocs).toContain("do not store a Warrantee username or password");
+    expect(apiDocs).toContain("No shared usernames or passwords");
+    expect(apiDocs).toContain("x-api-key: YOUR_SERVER_INTEGRATION_TOKEN");
+    expect(apiDocs).toContain("Recommended for server integrations");
+  });
+
+  it("keeps password recovery routed through the auth callback", () => {
+    const forgotPassword = readProjectFile("src/app/[locale]/forgot-password/page.tsx");
+    const resetPassword = readProjectFile("src/app/[locale]/reset-password/page.tsx");
+
+    expect(forgotPassword).toContain("resetPasswordForEmail");
+    expect(forgotPassword).toContain("/auth/callback?next=");
+    expect(forgotPassword).toContain("Your username is your registered email address.");
+    expect(resetPassword).toContain("updateUser({ password })");
+    expect(resetPassword).toContain('router.push("/" + locale + "/auth")');
+    expect(resetPassword).not.toContain('router.push("/" + locale + "/login")');
+  });
+
+  it("keeps Arabic typography on the Warrantee brand font stack", () => {
+    const documentShell = readProjectFile("src/components/DocumentShell.tsx");
+    const globals = readProjectFile("src/app/globals.css");
+    const certificate = readProjectFile("src/app/api/certificates/generate/route.ts");
+    const signedCertificate = readProjectFile("src/app/api/warranties/[id]/certificate/route.ts");
+    const publicCertificate = readProjectFile("src/app/api/v1/warranties/verify/[id]/certificate/route.ts");
+    const adminLogin = readProjectFile("src/app/[locale]/admin/login/page.tsx");
+
+    expect(documentShell).toContain("IBM_Plex_Sans_Arabic");
+    expect(documentShell).toContain("--font-arabic-brand");
+    expect(globals).toContain("--font-arabic-fallback");
+    expect(globals).toContain("IBM Plex Sans Arabic");
+    expect(globals).toContain("letter-spacing: 0");
+    expect(certificate).toContain("IBM Plex Sans Arabic");
+    expect(signedCertificate).toContain("IBM Plex Sans Arabic");
+    expect(publicCertificate).toContain("IBM Plex Sans Arabic");
+    expect(adminLogin).toContain("var(--font-arabic-fallback)");
+  });
+
   it("keeps production smoke failures diagnostic", () => {
     const smoke = readProjectFile("scripts/production-smoke.mjs");
 
