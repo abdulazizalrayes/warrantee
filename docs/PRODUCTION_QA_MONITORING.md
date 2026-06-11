@@ -103,31 +103,32 @@ vercel logs warrantee.io --since 30m
 ## Latest Production Evidence
 
 - June 11, 2026 continuation:
-  - `npm run smoke:prod` passed locally against `https://warrantee.io`.
-  - GitHub `CI` passed on `main` for type-check, lint, tests, build, and E2E smoke gate after the hardening batch.
+  - Production deployment `dpl_Hsyy7Z62sFxQegjQ9E8icY5eHWwn` is ready and aliased to `https://warrantee.io`.
+  - `npm run smoke:prod` passed locally against `https://warrantee.io`, including protected checks for `/api/email/send`, `/api/cron/scan-documents`, and `/api/internal/document-security-scan`.
+  - GitHub `CI` passed on `main` for type-check, lint, tests, build, and E2E smoke gate after the email/scanner activation batch.
   - Manually triggered `Production Security Gates` passed loopback guard, production smoke, Supabase anonymous RLS probe, operational readiness, production operational E2E, and controlled load check.
   - Document security status now has a provider-ready scanner endpoint at `/api/cron/scan-documents`, protected by `CRON_SECRET`.
   - Production Vercel env now has `EMAIL_SEND_API_SECRET`, `DOCUMENT_SECURITY_SCANNER_URL`, `DOCUMENT_SECURITY_SCANNER_TOKEN`, and `DOCUMENT_DOWNLOAD_REQUIRE_CLEAN`.
   - `npm run readiness:operational` includes a no-send authenticated probe for `/api/email/send`, preventing the endpoint from silently becoming inactive.
   - Document scanning is activated through Warrantee's protected baseline scanner endpoint, and `DOCUMENT_DOWNLOAD_REQUIRE_CLEAN=1` blocks downloads until documents are marked clean.
   - `npm run observability:sentry` passed for local and Vercel production release readiness. Direct `sentry-cli issues list` reached Sentry but returned `403`, so unresolved issue listing requires a Sentry token with issue-read permissions or UI review.
-- Production deployment `dpl_DzRpiCkJ9Kayx4ZBBLRn2moTh1ib` is live and aliased to `https://warrantee.io`.
-- `npm test` passed with 48/48 tests.
+- Historical June 2026 deployment `dpl_DzRpiCkJ9Kayx4ZBBLRn2moTh1ib` was superseded by the current production deployment above.
+- `npm test` passed in CI.
 - `npm run type-check` passed.
-- `npm run build` passed and generated 151 app routes.
+- `npm run build` passed in CI.
 - `npm run guard:loopback` passed and CI now blocks disallowed local loopback links.
 - `npm run smoke:prod` passed after deployment.
 - `npm run observability:sentry` passed for Vercel production.
 - Production Sentry source maps were uploaded for org `abdulazizalrayes`, project `warrantee`.
 - Production business workflow E2E passed against `https://warrantee.io`.
-- Production operational workflow E2E passed bulk import, approval, rejection, document upload/list/download, text OCR, PDF OCR, and team guardrails before stopping at the Google Vision image OCR blocker.
-- Production readiness currently fails on Google Vision billing/API access because Saudi billing is redirected to CNTXT reseller onboarding.
+- Production operational workflow E2E passed bulk import, approval, rejection, document upload, strict scan-before-download document flow, text/PDF OCR, Stripe Checkout, and team guardrails.
+- Google Vision/CNTXT reseller onboarding is no longer a production readiness blocker because Mistral is the active verified OCR provider.
 - Stripe production checkout is verified with a targeted authenticated payment probe returning a Stripe Checkout URL and session ID.
 - Production load check passed with 2,824 requests, 0 failures, p95 355.6 ms, p99 572 ms.
 - Fresh browser verification of `https://warrantee.io/en` returned 200 with no page or console errors after adding the narrow React Flight `Connection closed.` Sentry filter.
 - Supabase RLS probe completed without exposing anonymous warranty rows.
 - IndexNow submission succeeded for 28 public URLs at both IndexNow and Bing endpoints.
-- May 23 production readiness passed app URL, public route, SEO file, health, Supabase, Resend, and HubSpot checks; Google Vision is the remaining readiness failure.
+- May 23 Google Vision readiness failures are historical. Current production readiness passes with Mistral OCR as the active provider.
 
 ## Agent Review Assignment
 
@@ -150,5 +151,5 @@ vercel logs warrantee.io --since 30m
   - failed OCR
   - failed email ingestion
   - failed payment or webhook processing
-- Complete CNTXT / Google Cloud reseller billing onboarding for the configured Google Cloud project, then rerun `npm run readiness:operational` and `OPERATIONAL_E2E=1 npm run test:e2e:operational`.
-- Add a Stripe webhook signing-secret verification probe once real payment lifecycle QA is approved; checkout session creation is already verified in production.
+- CNTXT / Google Cloud reseller billing onboarding is optional and can remain postponed unless Google Vision is reintroduced as a preferred OCR provider.
+- Stripe webhook signature verification is already covered by operational readiness and production gates.

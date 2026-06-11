@@ -2,6 +2,16 @@
 
 Last updated: 2026-06-11
 
+## 2026-06-11 Current Launch Status
+
+- Latest production deployment is ready and aliased to `https://warrantee.io`.
+- Latest GitHub `CI` passed type-check, lint, tests, build, and E2E smoke.
+- Latest manually triggered `Production Security Gates` passed production smoke, Supabase anonymous RLS probe, operational readiness, production operational E2E, and controlled load.
+- Email sending is active and guarded by `EMAIL_SEND_API_SECRET`; readiness proves the endpoint is authenticated without sending mail.
+- Document scanning is active through Warrantee's protected baseline scanner, and strict clean-before-download gating is enabled.
+- Mistral OCR is the active production OCR provider. Google Vision/CNTXT remains optional legacy/provider expansion work, not a current launch blocker.
+- No current Search Console action is needed for `/en/faq` or `/en/api-docs`; both are indexed.
+
 ## 2026-06-11 Document Scanner Activation Status
 
 - Warrantee now has a protected document scanning endpoint at `/api/cron/scan-documents`, guarded by `CRON_SECRET`.
@@ -221,10 +231,9 @@ Current launch position:
 
 ## Open Monitoring And External Items
 
-- Google Cloud Vision image OCR is still blocked by the configured Google Cloud project requiring billing to be enabled, but this is no longer a launch blocker because production OCR passed through the deployed provider/fallback path.
-- Google Cloud self-serve billing is blocked for the Saudi Arabia billing address. Google redirects the project to CNTXT reseller onboarding for Google Cloud in KSA; the next step requires an explicit CNTXT Google sign-in and likely reseller billing setup if Google Vision remains part of the provider plan.
-- Full operational E2E is complete in production for the May 24 deployment:
-  - passed: bulk import, approval, rejection, document upload/list/download/delete, OCR, Stripe Checkout, and team guardrails
+- Google Cloud Vision is not required for launch because Mistral OCR is active and verified in production. CNTXT/Google reseller billing can remain postponed unless we explicitly decide to add Google Vision back as an OCR provider.
+- Full operational E2E is complete in production for the latest June 11 deployment:
+  - passed: bulk import, approval, rejection, document upload, strict scan-before-download document flow, OCR, Stripe Checkout, and team guardrails
 - Brand-new teammate onboarding is still intentionally conservative:
   - teammates must already have a Warrantee account before being added to a company workspace
 - CRM is intentionally postponed until the core operational surface is fully signed off.
