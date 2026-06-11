@@ -33,6 +33,7 @@ describe("SEO and AI-search readiness metadata", () => {
     expect(organization.disambiguatingDescription).toContain("warrantee.io");
     expect(organization.disambiguatingDescription).toContain("warrantee.com");
     expect(organization.sameAs).toContain("https://www.linkedin.com/company/warrantee-io");
+    expect(organization.sameAs).toContain("https://www.crunchbase.com/organization/warrantee-io");
     expect(organization.contactPoint).toBeDefined();
     if (!organization.contactPoint) {
       throw new Error("Organization contactPoint schema is missing");

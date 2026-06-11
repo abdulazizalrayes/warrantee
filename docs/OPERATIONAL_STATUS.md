@@ -11,16 +11,15 @@ Last updated: 2026-06-11
 - Document scanning is active through Warrantee's protected baseline scanner, and strict clean-before-download gating is enabled.
 - Mistral OCR is the active production OCR provider. Google Vision/CNTXT remains optional legacy/provider expansion work, not a current launch blocker.
 - No current Search Console action is needed for `/en/faq` or `/en/api-docs`; both are indexed.
-- LinkedIn is active. Crunchbase setup was reopened on 2026-06-11; automated submission is currently blocked by Crunchbase session verification, so the ready-to-submit profile fields are recorded in `docs/SOCIAL_CHANNELS.md`.
+- LinkedIn and Crunchbase are active official Warrantee entity profiles.
 
 ## 2026-06-11 Crunchbase Setup Attempt
 
-- Attempted to create/check the Warrantee Crunchbase profile at `https://www.crunchbase.com/add-new`.
-- Crunchbase blocked the automated browser with `We must verify your session before you can proceed`.
-- Crunchbase Ray ID shown during the attempt: `a0a1b34c393a1ed5`.
-- Per Crunchbase support guidance, creating a profile requires a registered and socially authenticated Crunchbase user account.
-- No `sameAs` link has been added to Warrantee structured data yet because there is no verified Crunchbase profile URL to reference.
-- Ready-to-submit profile details are recorded in `docs/SOCIAL_CHANNELS.md`.
+- Created and verified the official Warrantee.io Crunchbase company profile from the `abdulaziz.alrayes@gmail.com` Crunchbase session.
+- Public profile: `https://www.crunchbase.com/organization/warrantee-io`.
+- A pre-existing `Warrantee` profile exists on Crunchbase for a different Japan-based insurance/InsurTech company, so the official Warrantee entity is intentionally named `Warrantee.io`.
+- Profile fields submitted: name, also-known-as, short description, website, LinkedIn, support email, full description, Riyadh headquarters, and industries.
+- The verified Crunchbase profile URL was added to Warrantee structured data `sameAs`.
 
 ## 2026-06-11 Latest Production Gate Recheck
 
