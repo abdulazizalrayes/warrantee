@@ -21,7 +21,8 @@ Last updated: 2026-06-11
 - `npm run smoke:prod` passed locally against `https://warrantee.io`, including protected API rejection checks for email, cron, document scanner, notifications, integration tokens, and public API routes.
 - `npm run observability:sentry` passed for both local and Vercel production readiness, with runtime DSNs and release-upload configuration present.
 - `npm run guard:loopback` passed with no disallowed local development or loopback references.
-- Local `OPERATIONAL_BASE_URL=https://warrantee.io npm run readiness:operational` cannot complete authenticated Supabase/OCR/Stripe probes unless `E2E_USER_EMAIL` and `E2E_USER_PASSWORD` are restored to the local environment. The same readiness and production operational E2E checks pass in GitHub `Production Security Gates`, where the required secrets are configured.
+- The local QA login was rotated and restored in `.env.local`, and GitHub Actions `E2E_USER_EMAIL` / `E2E_USER_PASSWORD` secrets were updated.
+- Local `OPERATIONAL_BASE_URL=https://warrantee.io npm run readiness:operational` now passes authenticated Supabase, Mistral OCR, document scanner, Stripe, Stripe webhook, Resend, HubSpot, security header, and production URL checks.
 
 ## 2026-06-11 Document Scanner Activation Status
 

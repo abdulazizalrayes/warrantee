@@ -109,7 +109,8 @@ vercel logs warrantee.io --since 30m
   - `npm run smoke:prod` passed locally against `https://warrantee.io` after the external-item check.
   - `npm run observability:sentry` passed for local and Vercel production release readiness.
   - `npm run guard:loopback` passed with no disallowed local development or loopback references.
-  - Local authenticated readiness requires `E2E_USER_EMAIL` and `E2E_USER_PASSWORD`; those secrets are not present in the local env file, but the authenticated readiness and E2E gates pass in GitHub where the production QA secrets are configured.
+  - Local QA credentials were rotated for `qa-user@warrantee.io`, restored in `.env.local`, and synced to GitHub Actions secrets.
+  - Local `OPERATIONAL_BASE_URL=https://warrantee.io npm run readiness:operational` now passes authenticated Supabase, Mistral OCR, document scanner, Stripe, Stripe webhook, Resend, HubSpot, security header, and production URL checks.
   - Entity profile creation/claiming remains intentionally postponed.
 - June 11, 2026 continuation:
   - Production deployment `dpl_Hsyy7Z62sFxQegjQ9E8icY5eHWwn` is ready and aliased to `https://warrantee.io`.
