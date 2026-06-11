@@ -112,6 +112,12 @@ describe("operational hardening", () => {
     expect(scanner).toContain("DOCUMENT_SECURITY_SCANNER_URL");
     expect(scanner).toContain("security_status: input.verdict");
     expect(scanner).toContain("document_security_scanned");
+    expect(readProjectFile("scripts/operational-readiness-check.mjs")).toContain(
+      "checkDocumentSecurityScanner"
+    );
+    expect(readProjectFile("scripts/operational-readiness-check.mjs")).toContain(
+      "pending_provider"
+    );
     expect(scanRoute).toContain("requireInternalBearer");
     expect(scanRoute).toContain("scanPendingWarrantyDocuments");
     expect(uploadRoute).toContain("File too large (max 20MB)");

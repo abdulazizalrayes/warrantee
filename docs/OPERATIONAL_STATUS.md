@@ -2,6 +2,13 @@
 
 Last updated: 2026-06-11
 
+## 2026-06-11 Document Scanner Activation Status
+
+- Warrantee now has a protected document scanning endpoint at `/api/cron/scan-documents`, guarded by `CRON_SECRET`.
+- Production Vercel env contains `CRON_SECRET`, but does not yet contain `DOCUMENT_SECURITY_SCANNER_URL`, `DOCUMENT_SECURITY_SCANNER_TOKEN`, or `DOCUMENT_DOWNLOAD_REQUIRE_CLEAN`.
+- `npm run readiness:operational` now reports the scanner as `pending_provider` instead of silently passing over this activation gap.
+- Strict document download gating should remain off until a real scanner provider is configured, tested, and verified against uploads.
+
 ## 2026-06-11 Search Console Recheck
 
 - Rechecked the Warrantee Search Console property under `abdulaziz.alrayes@gmail.com`.

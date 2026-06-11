@@ -504,6 +504,40 @@ async function checkOCRProvider() {
   return checkRemoteOCRProvider();
 }
 
+async function checkDocumentSecurityScanner() {
+  const scannerUrl = process.env.DOCUMENT_SECURITY_SCANNER_URL?.trim() || "";
+  const strictDownloads = process.env.DOCUMENT_DOWNLOAD_REQUIRE_CLEAN === "1";
+
+  if (!scannerUrl) {
+    return {
+      name: "document-security-scanner",
+      status: "pending_provider",
+      mode: "not-configured",
+      strictDownloads,
+      nextAction: "Set DOCUMENT_SECURITY_SCANNER_URL before enabling DOCUMENT_DOWNLOAD_REQUIRE_CLEAN=1.",
+    };
+  }
+
+  let parsedUrl;
+  try {
+    parsedUrl = new URL(scannerUrl);
+  } catch {
+    throw new Error("DOCUMENT_SECURITY_SCANNER_URL must be a valid URL");
+  }
+
+  if (parsedUrl.protocol !== "https:") {
+    throw new Error("DOCUMENT_SECURITY_SCANNER_URL must use HTTPS");
+  }
+
+  return {
+    name: "document-security-scanner",
+    status: "ok",
+    mode: "external-provider",
+    strictDownloads,
+    host: parsedUrl.host,
+  };
+}
+
 function getErrorMessage(error) {
   if (error instanceof Error) return error.message;
   return String(error);
@@ -534,6 +568,7 @@ async function main() {
     { name: "resend", run: checkResend },
     { name: "hubspot", run: checkHubSpot },
     { name: "ocr-provider", run: checkOCRProvider },
+    { name: "document-security-scanner", run: checkDocumentSecurityScanner },
     { name: "stripe", run: checkStripe },
     { name: "stripe-webhook", run: checkStripeWebhook },
   ];
