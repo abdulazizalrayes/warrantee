@@ -42,4 +42,6 @@ The verified Crunchbase URL is included in Warrantee schema `sameAs`.
 
 On 2026-06-12, Crunchbase showed the Warrantee.io profile image field as employee-locked with the message `This field is only editable by verified employees.` Verification was started for the Warrantee.io company profile using `hello@warrantee.io`, and Crunchbase confirmed: `Verification e-mail is on the way!`
 
-After that verification email is confirmed, upload the Warrantee brand icon from `public/icons/icon.svg` to the official profile.
+After the first reported confirmation, the Warrantee.io edit page still showed the logo field as employee-locked. Verification was retried using `hello@warrantee.io`, and Crunchbase sent a fresh verification email.
+
+After the latest verification email is confirmed, upload the Warrantee brand icon from `public/icons/icon.svg` to the official profile.
