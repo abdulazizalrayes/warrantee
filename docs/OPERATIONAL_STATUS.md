@@ -1,6 +1,6 @@
 # Warrantee Operational Status
 
-Last updated: 2026-06-11
+Last updated: 2026-06-12
 
 ## 2026-06-11 Current Launch Status
 
@@ -12,6 +12,16 @@ Last updated: 2026-06-11
 - Mistral OCR is the active production OCR provider. Google Vision/CNTXT remains optional legacy/provider expansion work, not a current launch blocker.
 - No current Search Console action is needed for `/en/faq` or `/en/api-docs`; both are indexed.
 - LinkedIn and Crunchbase are active official Warrantee entity profiles.
+
+## 2026-06-12 Crunchbase Logo Update
+
+- Crunchbase profile/account session used for Warrantee.io: `abdulaziz.alrayes@gmail.com`.
+- Official Warrantee company verification email: `hello@warrantee.io`.
+- Attempted to upload the Warrantee logo from `public/icons/icon.svg`.
+- Crunchbase blocked direct logo upload because the profile image field is employee-locked: `This field is only editable by verified employees.`
+- Started Crunchbase employee verification for the Warrantee.io profile using `hello@warrantee.io`.
+- Crunchbase confirmed: `Verification e-mail is on the way!`
+- Remaining action: confirm the Crunchbase verification email, then upload `public/icons/icon.svg` as the Warrantee.io Crunchbase logo.
 
 ## 2026-06-11 Crunchbase Setup Attempt
 

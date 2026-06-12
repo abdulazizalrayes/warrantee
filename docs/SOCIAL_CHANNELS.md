@@ -1,6 +1,6 @@
 # Warrantee Official Social Channels
 
-Last updated: 2026-06-11
+Last updated: 2026-06-12
 
 ## Active Channels
 
@@ -26,12 +26,20 @@ Submitted and verified on 2026-06-11:
 | Short description | Bilingual warranty management platform for businesses and sellers in Saudi Arabia and the GCC. |
 | Long description | Warrantee.io helps businesses, sellers, and consumers manage product warranties digitally. The platform supports Arabic and English workflows, warranty registration, expiry tracking, claims management, seller onboarding, bilingual warranty certificates, public warranty verification, email-to-warranty intake, OCR-assisted document processing, and ERP/API integrations. Warrantee.io positions warranty reminders as the acquisition workflow and asset lifecycle intelligence as the long-term platform layer. |
 | Public profile | https://www.crunchbase.com/organization/warrantee-io |
+| Crunchbase login/account used | abdulaziz.alrayes@gmail.com |
+| Warrantee verification email | hello@warrantee.io |
 | Headquarters | Riyadh, Ar Riyad, Saudi Arabia |
 | Regions served | Saudi Arabia, GCC, Middle East |
 | Industries | SaaS, Enterprise Software, Asset Management, InsurTech |
 | Product category | Business software / Asset lifecycle intelligence |
 | Slogan | Trust the Terms |
 | LinkedIn | https://www.linkedin.com/company/warrantee-io |
-| Logo source | Crunchbase generated/attached the Warrantee.io profile logo during profile creation. |
+| Logo source | Pending Crunchbase employee verification. Use `public/icons/icon.svg` after the `hello@warrantee.io` verification email is confirmed. |
 
 The verified Crunchbase URL is included in Warrantee schema `sameAs`.
+
+## Crunchbase Logo Status
+
+On 2026-06-12, Crunchbase showed the Warrantee.io profile image field as employee-locked with the message `This field is only editable by verified employees.` Verification was started for the Warrantee.io company profile using `hello@warrantee.io`, and Crunchbase confirmed: `Verification e-mail is on the way!`
+
+After that verification email is confirmed, upload the Warrantee brand icon from `public/icons/icon.svg` to the official profile.
