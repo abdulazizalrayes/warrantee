@@ -23,7 +23,9 @@ Last updated: 2026-06-12
 - Crunchbase confirmed: `Verification e-mail is on the way!`
 - After the first reported confirmation, the edit page still showed the profile image field as employee-locked.
 - Verification was retried on 2026-06-12 using `hello@warrantee.io`; Crunchbase again confirmed: `Verification e-mail is on the way!`
-- Remaining action: confirm the latest Crunchbase verification email for `hello@warrantee.io`, then upload `public/icons/icon.svg` as the Warrantee.io Crunchbase logo.
+- The latest verification email was opened in the same Chrome/Crunchbase session, and Crunchbase confirmed: `You're now verified as a Warrantee.io employee.`
+- Despite successful employee verification, the Warrantee.io edit page still keeps the profile image field locked with `This field is only editable by verified employees`, exposes no file input, and does not open a file chooser when the image placeholder is clicked.
+- Remaining action: contact Crunchbase support or wait for Crunchbase permission propagation so the verified `abdulaziz.alrayes@gmail.com` account can edit the profile image, then upload `public/icons/icon.svg` as the Warrantee.io Crunchbase logo.
 
 ## 2026-06-11 Crunchbase Setup Attempt
 

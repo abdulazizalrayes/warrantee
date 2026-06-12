@@ -34,7 +34,7 @@ Submitted and verified on 2026-06-11:
 | Product category | Business software / Asset lifecycle intelligence |
 | Slogan | Trust the Terms |
 | LinkedIn | https://www.linkedin.com/company/warrantee-io |
-| Logo source | Pending Crunchbase employee verification. Use `public/icons/icon.svg` after the `hello@warrantee.io` verification email is confirmed. |
+| Logo source | Pending Crunchbase image-field permission. Use `public/icons/icon.svg` once Crunchbase allows the verified account to edit the profile image. |
 
 The verified Crunchbase URL is included in Warrantee schema `sameAs`.
 
@@ -44,4 +44,6 @@ On 2026-06-12, Crunchbase showed the Warrantee.io profile image field as employe
 
 After the first reported confirmation, the Warrantee.io edit page still showed the logo field as employee-locked. Verification was retried using `hello@warrantee.io`, and Crunchbase sent a fresh verification email.
 
-After the latest verification email is confirmed, upload the Warrantee brand icon from `public/icons/icon.svg` to the official profile.
+The latest verification email was opened in the same Chrome/Crunchbase session. Crunchbase confirmed: `You're now verified as a Warrantee.io employee.` The profile image field still remained locked, exposed no file input, and did not open a file chooser when clicked.
+
+Next action: contact Crunchbase support or wait for Crunchbase permission propagation. Once the image field is editable, upload the Warrantee brand icon from `public/icons/icon.svg` to the official profile.
