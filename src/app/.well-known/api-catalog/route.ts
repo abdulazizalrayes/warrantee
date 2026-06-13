@@ -31,7 +31,7 @@ export function GET() {
             {
               href: `${BASE_URL}/en/api-docs`,
               type: "text/html",
-              title: "API documentation",
+              title: "API / CLI / MCP guide",
             },
           ],
           status: [
@@ -51,6 +51,11 @@ export function GET() {
               href: `${BASE_URL}/.well-known/agent-card.json`,
               type: "application/json",
               title: "Agent card",
+            },
+            {
+              href: `${BASE_URL}/.well-known/mcp.json`,
+              type: "application/json",
+              title: "MCP discovery card",
             },
           ],
         },

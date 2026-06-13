@@ -24,7 +24,7 @@ export function Footer({ locale, dictionary }: FooterProps) {
         { label: isArabic ? 'المدونة والأدلة' : 'Blog & Guides', href: `/${locale}/blog` },
         { label: isArabic ? 'برنامج إدارة الضمانات' : 'Warranty Management Software', href: `/${locale}/resources/warranty-management-software` },
         { label: isArabic ? 'Warrantee مقابل الجداول' : 'Warrantee vs Spreadsheets', href: `/${locale}/compare/spreadsheets` },
-        { label: isArabic ? 'تكاملات API وERP' : 'API & ERP Integrations', href: `/${locale}/api-docs` },
+        { label: isArabic ? 'API / CLI / MCP' : 'API / CLI / MCP', href: `/${locale}/api-docs` },
       ],
     },
     {

@@ -6,7 +6,7 @@ export function GET() {
   return NextResponse.json({
     name: "Warrantee Agent",
     description:
-      "Public discovery card for Warrantee's warranty verification, claims, extension, seller onboarding, and document-ingestion workflows.",
+      "Public discovery card for Warrantee's warranty verification, API / CLI / MCP integrations, claims, extension, seller onboarding, and document-ingestion workflows.",
     version: "1.0.0",
     url: `${BASE_URL}/en`,
     provider: {
@@ -19,11 +19,18 @@ export function GET() {
       pushNotifications: false,
     },
     authentication: {
-      schemes: ["Bearer", "OAuth2"],
+      schemes: ["x-api-key", "Bearer", "OAuth2"],
+      instructions:
+        "For private account workflows, the user must sign in to Warrantee and generate a scoped integration token from Settings > API / CLI / MCP. Do not request or store Warrantee usernames or passwords.",
     },
     defaultInputModes: ["text/plain", "application/json"],
     defaultOutputModes: ["text/plain", "application/json", "text/markdown"],
     skills: [
+      {
+        id: "api-cli-mcp-integration",
+        name: "API / CLI / MCP Integration",
+        description: "Guide agents and systems to use scoped x-api-key integration tokens, CLI-ready examples, MCP discovery, rate limits, and owner-isolated warranty APIs.",
+      },
       {
         id: "warranty-verification",
         name: "Warranty Verification",

@@ -110,7 +110,7 @@ ${skill.examples.map((example) => `- ${example}`).join("\n")}
 ## Endpoint Hints
 
 - Public site: ${BASE_URL}/en
-- API docs: ${BASE_URL}/en/api-docs
+- API / CLI / MCP guide: ${BASE_URL}/en/api-docs
 - Verification flow: ${BASE_URL}/verify
 - Paid-growth guardrail: campaign analysis and drafts are allowed, but live ad account linking, audience uploads, campaign edits, and spend changes require founder approval.
 `;

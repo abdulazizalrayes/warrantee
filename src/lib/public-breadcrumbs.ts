@@ -26,7 +26,7 @@ const HOME_LABELS: Record<IndexedLocale, string> = {
 
 const PUBLIC_PAGE_LABELS: Record<string, Record<IndexedLocale, string>> = {
   "/about": { en: "About", ar: "عن Warrantee" },
-  "/api-docs": { en: "API docs", ar: "وثائق API" },
+  "/api-docs": { en: "API / CLI / MCP", ar: "API / CLI / MCP" },
   "/blog": { en: "Blog", ar: "المدونة" },
   "/contact": { en: "Contact", ar: "اتصل بنا" },
   "/cookies": { en: "Cookie policy", ar: "سياسة ملفات تعريف الارتباط" },

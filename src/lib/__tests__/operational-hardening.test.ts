@@ -170,6 +170,8 @@ describe("operational hardening", () => {
     expect(apiDocs).toContain("No shared usernames or passwords");
     expect(apiDocs).toContain("x-api-key: YOUR_SERVER_INTEGRATION_TOKEN");
     expect(apiDocs).toContain("Recommended for server integrations");
+    expect(apiDocs).toContain("Settings > API / CLI / MCP");
+    expect(apiDocs).toContain("never ask users for passwords");
   });
 
   it("keeps password recovery routed through the auth callback", () => {

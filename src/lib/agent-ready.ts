@@ -69,7 +69,7 @@ const PAGE_CONTENT: Record<AgentPageKey, AgentPageContent> = {
       ar: "نظرة عامة على وارنتي",
     },
     summary: {
-      en: "Warrantee is a bilingual warranty management platform for businesses and consumers. It supports warranty registration, approvals, claims, extensions, seller onboarding, verification, certificates, and API-based integrations.",
+      en: "Warrantee is a bilingual warranty management platform for businesses and consumers. It supports warranty registration, approvals, claims, extensions, seller onboarding, verification, certificates, and API / CLI / MCP integrations.",
       ar: "وارنتي منصة ثنائية اللغة لإدارة الضمانات للشركات والأفراد. تدعم تسجيل الضمانات والموافقات والمطالبات والتمديدات وإعداد البائعين والتحقق والشهادات والتكاملات البرمجية.",
     },
     bullets: {
@@ -87,7 +87,7 @@ const PAGE_CONTENT: Record<AgentPageKey, AgentPageContent> = {
     nextActions: {
       en: [
         `Visit ${BASE_URL}/en/features for capabilities.`,
-        `Visit ${BASE_URL}/en/api-docs for integration guidance.`,
+        `Visit ${BASE_URL}/en/api-docs for API / CLI / MCP integration guidance.`,
         `Visit ${BASE_URL}/en/verify to validate public warranties.`,
       ],
       ar: [
@@ -154,20 +154,24 @@ const PAGE_CONTENT: Record<AgentPageKey, AgentPageContent> = {
     },
   },
   "api-docs": {
-    title: { en: "Warrantee API Documentation", ar: "توثيق API لوارنتي" },
+    title: { en: "Warrantee API / CLI / MCP Guide", ar: "دليل API / CLI / MCP لوارنتي" },
     summary: {
-      en: "Warrantee exposes REST APIs for warranty listing, creation, retrieval, updating, verification, coverage, certificates, extensions, and related workflows. Authenticated warranty-management requests use Supabase-backed Bearer tokens or scoped per-user integration tokens.",
-      ar: "توفر وارنتي واجهات REST لعرض الضمانات وإنشائها واسترجاعها وتحديثها والتحقق منها والتغطية والشهادات والتمديدات وسير العمل المرتبط بها. تعتمد طلبات إدارة الضمانات الموثقة على رموز Bearer أو رموز تكامل محددة الصلاحيات لكل مستخدم.",
+      en: "Warrantee exposes REST APIs, CLI-ready examples, and MCP discovery for warranty listing, creation, retrieval, updating, verification, coverage, certificates, extensions, and related workflows. Authenticated warranty-management requests use Supabase-backed Bearer tokens or scoped per-user integration tokens generated from a signed-in account.",
+      ar: "توفر وارنتي واجهات REST وأمثلة CLI واكتشاف MCP لعرض الضمانات وإنشائها واسترجاعها وتحديثها والتحقق منها والتغطية والشهادات والتمديدات وسير العمل المرتبط بها. تعتمد طلبات إدارة الضمانات الموثقة على رموز Bearer أو رموز تكامل محددة الصلاحيات من حساب مسجل.",
     },
     bullets: {
       en: [
         "Base API URL: https://warrantee.io/api/v1",
         "Authentication: Bearer token or scoped x-api-key integration token",
+        "Generate keys from Settings > API / CLI / MCP after signing in; never store a Warrantee username or password in an integration",
+        "MCP discovery card: https://warrantee.io/.well-known/mcp.json",
         "Rate limiting is applied per user/token and at the IP edge; accounts can hold up to 20 active integration tokens",
       ],
       ar: [
         "الرابط الأساسي للواجهة: https://warrantee.io/api/v1",
         "المصادقة: Bearer token أو رمز تكامل x-api-key محدد الصلاحيات",
+        "أنشئ المفاتيح من الإعدادات > API / CLI / MCP بعد تسجيل الدخول؛ لا تحفظ اسم مستخدم أو كلمة مرور Warrantee في التكامل",
+        "بطاقة اكتشاف MCP: https://warrantee.io/.well-known/mcp.json",
         "يتم تطبيق حدود للطلبات لكل مستخدم/رمز وعلى مستوى IP، ويمكن للحساب الاحتفاظ بما يصل إلى 20 رمز تكامل نشط",
       ],
     },
@@ -175,8 +179,8 @@ const PAGE_CONTENT: Record<AgentPageKey, AgentPageContent> = {
   support: {
     title: { en: "Warrantee Support", ar: "دعم وارنتي" },
     summary: {
-      en: "Support resources cover Warrantee accounts, warranties, claims, seller onboarding, API integrations, and contact options for help.",
-      ar: "تغطي موارد الدعم حسابات وارنتي والضمانات والمطالبات وانضمام البائعين وتكاملات API وخيارات التواصل للحصول على المساعدة.",
+      en: "Support resources cover Warrantee accounts, warranties, claims, seller onboarding, API / CLI / MCP integrations, and contact options for help.",
+      ar: "تغطي موارد الدعم حسابات وارنتي والضمانات والمطالبات وانضمام البائعين وتكاملات API / CLI / MCP وخيارات التواصل للحصول على المساعدة.",
     },
   },
   terms: {

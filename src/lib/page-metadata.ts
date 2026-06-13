@@ -159,26 +159,26 @@ const PAGE_META: Record<
   },
   apiDocs: {
     en: {
-      title: "Warrantee API Documentation — ERP & System Integrations",
+      title: "Warrantee API / CLI / MCP Guide — ERP & System Integrations",
       description:
-        "Integrate Warrantee with ERP, ecommerce, and internal systems using warranty management APIs and server-to-server integration tokens.",
+        "Integrate Warrantee with ERP, ecommerce, scripts, agents, and internal systems using warranty APIs, CLI-ready examples, MCP discovery, and server-to-server integration tokens.",
     },
     ar: {
-      title: "وثائق API وارنتي — تكاملات ERP والأنظمة",
+      title: "دليل API / CLI / MCP وارنتي — تكاملات ERP والأنظمة",
       description:
-        "ادمج وارنتي مع أنظمة ERP والمتاجر والأنظمة الداخلية باستخدام واجهات إدارة الضمانات ورموز التكامل الخادمية.",
+        "ادمج وارنتي مع ERP والمتاجر والسكريبتات والوكلاء والأنظمة الداخلية باستخدام واجهات الضمان وMCP ورموز التكامل الخادمية.",
     },
   },
   support: {
     en: {
       title: "Warrantee Support — Help and Contact Options",
       description:
-        "Get support for Warrantee accounts, warranties, claims, seller onboarding, and API integrations.",
+        "Get support for Warrantee accounts, warranties, claims, seller onboarding, and API / CLI / MCP integrations.",
     },
     ar: {
       title: "دعم وارنتي — المساعدة وخيارات التواصل",
       description:
-        "احصل على دعم لحسابات وارنتي والضمانات والمطالبات وانضمام البائعين وتكاملات API.",
+        "احصل على دعم لحسابات وارنتي والضمانات والمطالبات وانضمام البائعين وتكاملات API / CLI / MCP.",
     },
   },
   auth: {

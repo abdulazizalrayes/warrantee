@@ -11,11 +11,11 @@ export function GET() {
       protocolVersion: "2025-06-18",
       serverInfo: {
         name: "warrantee-public-discovery",
-        title: "Warrantee Public Discovery",
+        title: "Warrantee API / CLI / MCP Discovery",
         version: "1.0.0",
       },
       description:
-        "Public discovery metadata for Warrantee warranty verification, claims, seller onboarding, and certificate workflows.",
+        "Public discovery metadata for Warrantee warranty verification, account integrations, CLI-ready API usage, seller onboarding, claims, and certificate workflows.",
       documentationUrl: `${BASE_URL}/en/api-docs`,
       transport: {
         type: "streamable-http",
@@ -35,10 +35,10 @@ export function GET() {
       },
       authentication: {
         required: true,
-        schemes: ["bearer", "oauth2"],
+        schemes: ["x-api-key", "bearer", "oauth2"],
       },
       instructions:
-        "Use the public discovery metadata to understand Warrantee's warranty APIs. Interactive browser-side actions are available through WebMCP when supported by the user agent.",
+        "Use /llms.txt, the API catalog, and this MCP card to understand Warrantee. Public warranty verification can be discovered without private account data. Private warranty, claim, seller, or account actions require the user to sign in to Warrantee, open Settings > API / CLI / MCP, generate a scoped integration token, and provide it as x-api-key. Never request or store a Warrantee username or password for integrations. Respect scopes, rate limits, owner isolation, and revocation.",
       resources: [],
       tools: [
         {
@@ -63,6 +63,8 @@ export function GET() {
       _meta: {
         publicApiCatalog: `${BASE_URL}/.well-known/api-catalog`,
         agentSkills: `${BASE_URL}/.well-known/agent-skills/index.json`,
+        apiCliMcpGuide: `${BASE_URL}/en/api-docs`,
+        keyManagement: `${BASE_URL}/en/settings?section=integrations`,
       },
     },
     {

@@ -81,12 +81,12 @@ export const RESOURCE_PAGES: SeoContentPage[] = [
           en: [
             "No reliable public verification page for buyers or service teams.",
             "No consistent audit trail when a warranty changes status.",
-            "No controlled API path for ERP, ecommerce, or support systems.",
+            "No controlled API / CLI / MCP path for ERP, ecommerce, support systems, scripts, or agents.",
           ],
           ar: [
             "لا توجد صفحة تحقق عامة موثوقة للمشترين أو فرق الخدمة.",
             "لا يوجد مسار تدقيق ثابت عند تغيّر حالة الضمان.",
-            "لا يوجد مسار API مضبوط لأنظمة ERP أو التجارة الإلكترونية أو الدعم.",
+            "لا يوجد مسار مضبوط عبر API / CLI / MCP لأنظمة ERP أو التجارة الإلكترونية أو الدعم أو السكريبتات أو الوكلاء.",
           ],
         },
       },
@@ -95,12 +95,12 @@ export const RESOURCE_PAGES: SeoContentPage[] = [
       en: [
         "Bilingual Arabic and English workflows.",
         "Public warranty verification and certificate paths.",
-        "API-ready architecture for registered business users.",
+        "API / CLI / MCP-ready architecture for registered business users.",
       ],
       ar: [
         "سير عمل ثنائي اللغة بالعربية والإنجليزية.",
         "مسارات تحقق عام وشهادات ضمان.",
-        "بنية جاهزة للتكامل عبر API للمستخدمين التجاريين المسجلين.",
+        "بنية جاهزة للتكامل عبر API / CLI / MCP للمستخدمين التجاريين المسجلين.",
       ],
     },
     faq: [
@@ -128,7 +128,7 @@ export const RESOURCE_PAGES: SeoContentPage[] = [
     cta: {
       en: {
         title: "Start with a controlled warranty workflow",
-        body: "Create a free account or speak with the Warrantee team about seller and API workflows.",
+        body: "Create a free account or speak with the Warrantee team about seller and API / CLI / MCP workflows.",
         primary: "Start free",
       },
       ar: {
@@ -266,14 +266,14 @@ export const RESOURCE_PAGES: SeoContentPage[] = [
     slug: "erp-warranty-api-integration",
     kind: "resource",
     title: {
-      en: "ERP Warranty API Integration",
-      ar: "تكامل API للضمانات مع ERP",
+      en: "ERP Warranty API / CLI / MCP Integration",
+      ar: "تكامل API / CLI / MCP للضمانات مع ERP",
     },
     description: {
-      en: "How ERP and ecommerce systems can connect to warranty workflows using scoped API tokens, verified users, and controlled rate limits.",
-      ar: "كيف يمكن لأنظمة ERP والتجارة الإلكترونية الاتصال بسير الضمانات عبر رموز API محددة ومستخدمين موثقين وحدود طلبات مضبوطة.",
+      en: "How ERP, ecommerce, scripts, and agents can connect to warranty workflows using scoped integration tokens, verified users, and controlled rate limits.",
+      ar: "كيف يمكن لأنظمة ERP والتجارة الإلكترونية والسكريبتات والوكلاء الاتصال بسير الضمانات عبر رموز تكامل محددة ومستخدمين موثقين وحدود طلبات مضبوطة.",
     },
-    eyebrow: { en: "API and systems integration", ar: "تكامل API والأنظمة" },
+    eyebrow: { en: "API / CLI / MCP and systems integration", ar: "تكامل API / CLI / MCP والأنظمة" },
     intro: {
       en: "Warranty data often starts in ERP, ecommerce, POS, or service systems. An integration-ready platform lets registered business users create and verify warranties without opening broad public access.",
       ar: "غالبًا تبدأ بيانات الضمان في أنظمة ERP أو التجارة الإلكترونية أو نقاط البيع أو الخدمة. تتيح المنصة الجاهزة للتكامل للمستخدمين التجاريين المسجلين إنشاء الضمانات والتحقق منها دون فتح وصول عام واسع.",
@@ -286,7 +286,7 @@ export const RESOURCE_PAGES: SeoContentPage[] = [
       {
         title: { en: "Access should be scoped", ar: "يجب أن يكون الوصول محدد النطاق" },
         body: {
-          en: "Business APIs should require registered users, scoped tokens, ownership checks, and rate limits. That protects customer records and prevents integrations from seeing another company's data.",
+          en: "Business API / CLI / MCP access should require registered users, scoped tokens, ownership checks, and rate limits. That protects customer records and prevents integrations from seeing another company's data.",
           ar: "يجب أن تتطلب واجهات الأعمال مستخدمين مسجلين ورموزًا محددة النطاق وفحص ملكية وحدود طلبات. هذا يحمي سجلات العملاء ويمنع التكاملات من رؤية بيانات شركة أخرى.",
         },
         bullets: {
@@ -307,21 +307,21 @@ export const RESOURCE_PAGES: SeoContentPage[] = [
       },
     ],
     proof: {
-      en: ["Public API documentation is indexed.", "API routes require authentication.", "Integration tokens are part of production smoke checks."],
-      ar: ["وثائق API العامة مفهرسة.", "مسارات API تتطلب المصادقة.", "رموز التكامل ضمن فحوص الإنتاج."],
+      en: ["Public API / CLI / MCP documentation is indexed.", "API routes require authentication.", "Integration tokens are part of production smoke checks."],
+      ar: ["وثائق API / CLI / MCP العامة مفهرسة.", "مسارات API تتطلب المصادقة.", "رموز التكامل ضمن فحوص الإنتاج."],
     },
     faq: [
       {
-        question: { en: "Can customers use the Warrantee API directly?", ar: "هل يمكن للعملاء استخدام API Warrantee مباشرة؟" },
+        question: { en: "Can customers use Warrantee API / CLI / MCP directly?", ar: "هل يمكن للعملاء استخدام API / CLI / MCP في Warrantee مباشرة؟" },
         answer: {
-          en: "API access should be limited to registered business users and integration tokens with company-level authorization.",
+          en: "API / CLI / MCP access should be limited to registered business users and integration tokens with company-level authorization.",
           ar: "يجب أن يقتصر الوصول إلى API على المستخدمين التجاريين المسجلين ورموز التكامل ذات التفويض على مستوى الشركة.",
         },
       },
     ],
     cta: {
-      en: { title: "Connect warranty workflows to your systems", body: "Review the API documentation or contact Warrantee for integration planning.", primary: "View API docs" },
-      ar: { title: "اربط سير الضمان بأنظمتك", body: "راجع وثائق API أو تواصل مع Warrantee لتخطيط التكامل.", primary: "عرض وثائق API" },
+      en: { title: "Connect warranty workflows to your systems", body: "Review the API / CLI / MCP guide or contact Warrantee for integration planning.", primary: "View API / CLI / MCP guide" },
+      ar: { title: "اربط سير الضمان بأنظمتك", body: "راجع دليل API / CLI / MCP أو تواصل مع Warrantee لتخطيط التكامل.", primary: "عرض دليل API / CLI / MCP" },
     },
   },
   {
@@ -397,7 +397,7 @@ export const COMPARISON_PAGES: SeoContentPage[] = [
       ar: "Warrantee مقابل الجداول",
     },
     description: {
-      en: "Compare Warrantee with spreadsheet-based warranty tracking for proof, permissions, reminders, claims, certificates, and API integration.",
+      en: "Compare Warrantee with spreadsheet-based warranty tracking for proof, permissions, reminders, claims, certificates, and API / CLI / MCP integration.",
       ar: "قارن Warrantee بتتبع الضمانات عبر الجداول من حيث الإثبات والصلاحيات والتنبيهات والمطالبات والشهادات والتكامل.",
     },
     eyebrow: { en: "Comparison", ar: "مقارنة" },
@@ -428,8 +428,8 @@ export const COMPARISON_PAGES: SeoContentPage[] = [
           ar: "يحوّل Warrantee صف الضمان إلى دورة حياة مدارة: إصدار، موافقة، تحقق، مطالبة، تمديد، وتقرير.",
         },
         bullets: {
-          en: ["Structured records", "Role-aware workflows", "Bilingual certificates", "API-ready integrations"],
-          ar: ["سجلات منظمة", "سير عمل يراعي الأدوار", "شهادات ثنائية اللغة", "تكاملات جاهزة عبر API"],
+          en: ["Structured records", "Role-aware workflows", "Bilingual certificates", "API / CLI / MCP-ready integrations"],
+          ar: ["سجلات منظمة", "سير عمل يراعي الأدوار", "شهادات ثنائية اللغة", "تكاملات جاهزة عبر API / CLI / MCP"],
         },
       },
     ],
@@ -464,8 +464,8 @@ export const COMPARISON_PAGES: SeoContentPage[] = [
     },
     eyebrow: { en: "Build vs buy", ar: "البناء أم الشراء" },
     intro: {
-      en: "AI can help create a prototype quickly. The hard part is not drawing forms. The hard part is production warranty operations: authentication, company isolation, audit trails, claims, certificates, API tokens, rate limits, payments, monitoring, and support.",
-      ar: "يمكن للذكاء الاصطناعي أن يساعد في إنشاء نموذج أولي بسرعة. الصعب ليس رسم النماذج. الصعب هو تشغيل الضمان في الإنتاج: المصادقة، عزل الشركات، سجلات التدقيق، المطالبات، الشهادات، رموز API، حدود الطلبات، المدفوعات، المراقبة، والدعم.",
+      en: "AI can help create a prototype quickly. The hard part is not drawing forms. The hard part is production warranty operations: authentication, company isolation, audit trails, claims, certificates, integration tokens, rate limits, payments, monitoring, and support.",
+      ar: "يمكن للذكاء الاصطناعي أن يساعد في إنشاء نموذج أولي بسرعة. الصعب ليس رسم النماذج. الصعب هو تشغيل الضمان في الإنتاج: المصادقة، عزل الشركات، سجلات التدقيق، المطالبات، الشهادات، رموز التكامل، حدود الطلبات، المدفوعات، المراقبة، والدعم.",
     },
     audience: {
       en: "For founders, operators, and technical buyers considering whether to build their own warranty tracker with AI tools.",
@@ -479,8 +479,8 @@ export const COMPARISON_PAGES: SeoContentPage[] = [
           ar: "التطبيق المولد لا يزال يحتاج إلى من يملك الأمن وتسرب البيانات وقيود قاعدة البيانات وRLS والفوترة والدعم وSEO والمراقبة والترحيلات والنسخ الاحتياطي والاستجابة للحوادث.",
         },
         bullets: {
-          en: ["Authentication and company isolation", "Claims and certificate integrity", "Webhook, payment, and API security", "Production monitoring and QA"],
-          ar: ["المصادقة وعزل الشركات", "سلامة المطالبات والشهادات", "أمان الويب هوك والمدفوعات وAPI", "مراقبة الإنتاج وQA"],
+          en: ["Authentication and company isolation", "Claims and certificate integrity", "Webhook, payment, and API / CLI / MCP security", "Production monitoring and QA"],
+          ar: ["المصادقة وعزل الشركات", "سلامة المطالبات والشهادات", "أمان الويب هوك والمدفوعات وAPI / CLI / MCP", "مراقبة الإنتاج وQA"],
         },
       },
       {
@@ -507,8 +507,8 @@ export const COMPARISON_PAGES: SeoContentPage[] = [
       },
     ],
     proof: {
-      en: ["Production checks cover auth boundaries and protected APIs.", "Stripe, OCR, and webhook readiness are monitored.", "Public API documentation and verification flows already exist."],
-      ar: ["فحوص الإنتاج تغطي حدود المصادقة وواجهات API المحمية.", "تتم مراقبة جاهزية Stripe وOCR والويب هوك.", "وثائق API العامة ومسارات التحقق موجودة بالفعل."],
+      en: ["Production checks cover auth boundaries and protected APIs.", "Stripe, OCR, and webhook readiness are monitored.", "Public API / CLI / MCP documentation and verification flows already exist."],
+      ar: ["فحوص الإنتاج تغطي حدود المصادقة وواجهات API المحمية.", "تتم مراقبة جاهزية Stripe وOCR والويب هوك.", "وثائق API / CLI / MCP العامة ومسارات التحقق موجودة بالفعل."],
     },
     faq: [
       {

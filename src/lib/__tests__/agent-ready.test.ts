@@ -33,8 +33,9 @@ describe("agent-ready helpers", () => {
 
   it("builds markdown for public pages", () => {
     const markdown = buildAgentMarkdown("/en/api-docs");
-    expect(markdown).toContain("# Warrantee API Documentation");
+    expect(markdown).toContain("# Warrantee API / CLI / MCP Guide");
     expect(markdown).toContain("https://warrantee.io/.well-known/api-catalog");
+    expect(markdown).toContain("Settings > API / CLI / MCP");
   });
 
   it("builds discovery link headers", () => {

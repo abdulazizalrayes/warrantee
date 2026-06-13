@@ -15,6 +15,7 @@ import { useAuth } from "@/lib/auth-context";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { DashboardPageShell } from "@/components/dashboard/DashboardPageShell";
 import { PageViewTracker } from "@/components/PageViewTracker";
+import { IntegrationTokensPanel } from "@/components/settings/IntegrationTokensPanel";
 import {
   User,
   Mail,
@@ -25,12 +26,14 @@ import {
   Shield,
   CreditCard,
   Users,
+  Key,
 } from "lucide-react";
 
 const SETTING_SECTION_IDS = [
   "profile",
   "notifications",
   "team",
+  "integrations",
   "language",
   "subscription",
   "security",
@@ -119,6 +122,7 @@ export default function SettingsPage() {
     { id: "profile", label: isRTL ? "\u0627\u0644\u0645\u0644\u0641 \u0627\u0644\u0634\u062e\u0635\u064a" : "Profile", icon: User },
     { id: "notifications", label: isRTL ? "\u0627\u0644\u0625\u0634\u0639\u0627\u0631\u0627\u062a" : "Notifications", icon: Bell },
     { id: "team", label: isRTL ? "\u0641\u0631\u064a\u0642 \u0627\u0644\u0634\u0631\u0643\u0629" : "Company Team", icon: Users },
+    { id: "integrations", label: "API / CLI / MCP", icon: Key },
     { id: "language", label: isRTL ? "\u0627\u0644\u0644\u063a\u0629 \u0648\u0627\u0644\u0645\u0646\u0637\u0642\u0629" : "Language & Region", icon: Globe },
     { id: "subscription", label: isRTL ? "\u0627\u0644\u0627\u0634\u062a\u0631\u0627\u0643" : "Subscription", icon: CreditCard },
     { id: "security", label: isRTL ? "\u0627\u0644\u0623\u0645\u0627\u0646" : "Security", icon: Shield },
@@ -323,6 +327,10 @@ export default function SettingsPage() {
                 </Link>
               </div>
             </div>
+          )}
+
+          {activeSection === "integrations" && (
+            <IntegrationTokensPanel locale={locale} />
           )}
 
           {/* Notifications Section */}

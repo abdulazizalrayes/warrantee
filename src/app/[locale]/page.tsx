@@ -169,7 +169,7 @@ export default async function HomePage({ params }: HomePageProps) {
                     href={`/${locale}/api-docs`}
                     className="inline-flex items-center justify-center rounded-full border border-[#d2d2d7] px-6 py-3 text-[15px] font-medium text-[#1d1d1f] transition-colors hover:bg-[#f5f5f7]"
                   >
-                    {!isRTL ? 'View API options' : 'عرض خيارات API'}
+                    {!isRTL ? 'View API / CLI / MCP' : 'عرض API / CLI / MCP'}
                   </a>
                 </div>
               </div>
@@ -192,10 +192,10 @@ export default async function HomePage({ params }: HomePageProps) {
                   },
                   {
                     icon: KeyRound,
-                    title: !isRTL ? 'API-ready for operations' : 'جاهز للتكامل التشغيلي',
+                    title: !isRTL ? 'API / CLI / MCP-ready for operations' : 'جاهز للتكامل عبر API / CLI / MCP',
                     desc: !isRTL
-                      ? 'Registered users can connect ERP, ecommerce, and support workflows through scoped, rate-limited API tokens.'
-                      : 'يمكن للمستخدمين المسجلين ربط ERP والمتاجر والدعم عبر رموز API محددة الصلاحيات ومحدودة الطلبات.',
+                      ? 'Registered users can connect ERP, ecommerce, support workflows, scripts, and agents through scoped, rate-limited integration tokens.'
+                      : 'يمكن للمستخدمين المسجلين ربط ERP والمتاجر والدعم والسكريبتات والوكلاء عبر رموز تكامل محددة الصلاحيات ومحدودة الطلبات.',
                   },
                 ].map((item) => (
                   <div key={item.title} className="rounded-2xl border border-black/[0.06] bg-white p-5 shadow-sm">
@@ -258,8 +258,8 @@ export default async function HomePage({ params }: HomePageProps) {
                   icon: Shield,
                   title: !isRTL ? 'Security boundaries' : 'حدود أمنية',
                   desc: !isRTL
-                    ? 'Protected dashboards, authenticated APIs, and company-aware access.'
-                    : 'لوحات محمية وواجهات API مصادق عليها ووصول يراعي الشركة.',
+                    ? 'Protected dashboards, authenticated API / CLI / MCP access, and company-aware permissions.'
+                    : 'لوحات محمية ووصول مصادق عبر API / CLI / MCP وصلاحيات تراعي الشركة.',
                 },
                 {
                   icon: FileCheck,
@@ -277,7 +277,7 @@ export default async function HomePage({ params }: HomePageProps) {
                 },
                 {
                   icon: KeyRound,
-                  title: !isRTL ? 'API controls' : 'ضوابط API',
+                  title: !isRTL ? 'API / CLI / MCP controls' : 'ضوابط API / CLI / MCP',
                   desc: !isRTL
                     ? 'Scoped tokens, rate limits, and ownership checks protect integration access.'
                     : 'رموز محددة وحدود طلبات وفحوص ملكية تحمي وصول التكامل.',

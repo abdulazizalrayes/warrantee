@@ -245,7 +245,7 @@ export default function PricingPage() {
                 {
                   icon: Zap,
                   title: isRTL ? "جاهز للتكامل" : "Integration ready",
-                  desc: isRTL ? "وثائق API متاحة للمستخدمين التجاريين." : "API docs are available for business users.",
+                  desc: isRTL ? "دليل API / CLI / MCP متاح للمستخدمين التجاريين." : "API / CLI / MCP guide is available for business users.",
                 },
               ].map((item) => (
                 <div key={item.title} className="rounded-2xl bg-[#f5f5f7] p-5">

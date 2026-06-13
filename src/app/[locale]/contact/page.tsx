@@ -42,7 +42,7 @@ export default function ContactPage() {
           support: 'دعم فني',
           partnership: 'استفسار شراكة',
           enterprise: 'الشركات / طلب عرض توضيحي',
-          api: 'العلامة البيضاء / API',
+          api: 'العلامة البيضاء / API / CLI / MCP',
           press: 'الصحافة / الإعلام',
         },
       }
@@ -73,7 +73,7 @@ export default function ContactPage() {
           support: 'Technical Support',
           partnership: 'Partnership Inquiry',
           enterprise: 'Enterprise / Demo Request',
-          api: 'White Label / API',
+          api: 'White Label / API / CLI / MCP',
           press: 'Press / Media',
         },
       };

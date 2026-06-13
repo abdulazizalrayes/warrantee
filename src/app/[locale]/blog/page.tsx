@@ -25,7 +25,7 @@ const posts = {
       title: 'What to look for in warranty management software',
       eyebrow: 'Buyer guide',
       description:
-        'The core capabilities sellers and buyers need: OCR capture, approval workflows, claim tracking, bilingual certificates, reminders, and ERP-ready APIs.',
+        'The core capabilities sellers and buyers need: OCR capture, approval workflows, claim tracking, bilingual certificates, reminders, and API / CLI / MCP-ready integrations.',
       href: '/features',
     },
     {
@@ -48,7 +48,7 @@ const posts = {
       title: 'ما الذي يجب البحث عنه في برنامج إدارة الضمانات',
       eyebrow: 'دليل الشراء',
       description:
-        'القدرات الأساسية للبائعين والمشترين: قراءة المستندات، سير الموافقات، تتبع المطالبات، شهادات ثنائية اللغة، تذكيرات، وواجهات API جاهزة للأنظمة.',
+        'القدرات الأساسية للبائعين والمشترين: قراءة المستندات، سير الموافقات، تتبع المطالبات، شهادات ثنائية اللغة، تذكيرات، وتكاملات جاهزة عبر API / CLI / MCP.',
       href: '/features',
     },
     {
@@ -95,8 +95,8 @@ export default async function BlogPage({ params }: BlogPageProps) {
             </h1>
             <p className="mt-6 max-w-3xl text-lg leading-8 text-navy/60">
               {isRTL
-                ? 'استخدم هذا المركز لفهم تتبع الضمانات وسير المطالبات وأدلة المستندات وانضمام البائعين وتشغيل الضمانات عبر API.'
-                : 'Use this hub to understand warranty tracking, claim workflows, document evidence, seller onboarding, and API-ready warranty operations.'}
+                ? 'استخدم هذا المركز لفهم تتبع الضمانات وسير المطالبات وأدلة المستندات وانضمام البائعين وتشغيل الضمانات عبر API / CLI / MCP.'
+                : 'Use this hub to understand warranty tracking, claim workflows, document evidence, seller onboarding, and API / CLI / MCP-ready warranty operations.'}
             </p>
           </div>
         </section>
