@@ -22,6 +22,23 @@ export function GET() {
         command: "npm",
         args: ["run", "warrantee:mcp", "--"],
       },
+      transports: [
+        {
+          type: "http-json-rpc",
+          url: `${BASE_URL}/api/mcp`,
+          method: "POST",
+          headers: ["Content-Type", "x-api-key"],
+        },
+        {
+          type: "stdio",
+          command: "npm",
+          args: ["run", "warrantee:mcp", "--"],
+        },
+        {
+          type: "stdio",
+          command: "warrantee-mcp",
+        },
+      ],
       capabilities: {
         tools: {
           listChanged: false,
@@ -65,6 +82,7 @@ export function GET() {
         publicApiCatalog: `${BASE_URL}/.well-known/api-catalog`,
         agentSkills: `${BASE_URL}/.well-known/agent-skills/index.json`,
         apiCliMcpGuide: `${BASE_URL}/en/api-docs`,
+        hostedMcpEndpoint: `${BASE_URL}/api/mcp`,
         keyManagement: `${BASE_URL}/en/settings?section=integrations`,
         stdioCommand: {
           command: "npm",

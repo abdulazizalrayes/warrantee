@@ -47,9 +47,9 @@ const translations = {
     cli: 'CLI and scripts',
     cliDesc: 'Use the official Warrantee CLI in shell scripts, ERP jobs, ecommerce syncs, and CI tasks. In this repo it runs through npm scripts; after package installation or npm link it can also run as warrantee. The token belongs to the signed-in Warrantee user and never requires storing a username or password.',
     mcp: 'MCP and agent use',
-    mcpDesc: 'Run the Warrantee MCP server over stdio so agents can list, get, create, update, delete, and verify warranties through the same scoped API key. In this repo use npm run warrantee:mcp; after package installation or npm link use warrantee-mcp. Agents must respect scopes, rate limits, ownership boundaries, and never ask users for passwords.',
+    mcpDesc: 'Run the Warrantee MCP server over stdio or call the hosted HTTP MCP endpoint at /api/mcp so agents can list, get, create, update, delete, and verify warranties through the same scoped API key. In this repo use npm run warrantee:mcp; after package installation or npm link use warrantee-mcp. Agents must respect scopes, rate limits, ownership boundaries, and never ask users for passwords.',
     agentRules: 'Agent rules',
-    agentRulesDesc: 'Use /llms.txt, /.well-known/agent-card.json, /.well-known/mcp.json, and /.well-known/api-catalog for discovery. Use the public verify page for public checks. Use x-api-key only for authenticated account data.',
+    agentRulesDesc: 'Use /llms.txt, /.well-known/agent-card.json, /.well-known/mcp.json, /.well-known/api-catalog, and /api/mcp for hosted MCP discovery. Use the public verify page for public checks. Use x-api-key only for authenticated account data.',
     tokenEnv: 'Recommended environment variable',
     revokeToken: 'Revoke token',
     scopes: 'Scopes',
@@ -94,9 +94,9 @@ const translations = {
     cli: 'CLI والسكريبتات',
     cliDesc: 'استخدم CLI الرسمي لوارنتي في السكريبتات ووظائف ERP ومزامنة المتاجر ومهام CI. داخل هذا المستودع يعمل عبر npm scripts، وبعد تثبيت الحزمة أو npm link يمكن تشغيله كأمر warrantee. الرمز يتبع المستخدم المسجل ولا يتطلب حفظ اسم مستخدم أو كلمة مرور.',
     mcp: 'MCP واستخدام الوكلاء',
-    mcpDesc: 'شغّل خادم MCP لوارنتي عبر stdio حتى يستطيع الوكلاء عرض الضمانات وإنشاءها وتحديثها وحذفها والتحقق منها عبر نفس مفتاح API المحدد الصلاحيات. داخل هذا المستودع استخدم npm run warrantee:mcp، وبعد تثبيت الحزمة أو npm link استخدم warrantee-mcp. يجب احترام الصلاحيات وحدود الطلبات وحدود الملكية وعدم طلب كلمات المرور.',
+    mcpDesc: 'شغّل خادم MCP لوارنتي عبر stdio أو استخدم نقطة MCP المستضافة على /api/mcp حتى يستطيع الوكلاء عرض الضمانات وإنشاءها وتحديثها وحذفها والتحقق منها عبر نفس مفتاح API المحدد الصلاحيات. داخل هذا المستودع استخدم npm run warrantee:mcp، وبعد تثبيت الحزمة أو npm link استخدم warrantee-mcp. يجب احترام الصلاحيات وحدود الطلبات وحدود الملكية وعدم طلب كلمات المرور.',
     agentRules: 'قواعد الوكلاء',
-    agentRulesDesc: 'استخدم /llms.txt و /.well-known/agent-card.json و /.well-known/mcp.json و /.well-known/api-catalog للاكتشاف. استخدم صفحة التحقق العامة للفحوص العامة. استخدم x-api-key فقط لبيانات الحساب المصادق عليها.',
+    agentRulesDesc: 'استخدم /llms.txt و /.well-known/agent-card.json و /.well-known/mcp.json و /.well-known/api-catalog و /api/mcp لاكتشاف MCP المستضاف. استخدم صفحة التحقق العامة للفحوص العامة. استخدم x-api-key فقط لبيانات الحساب المصادق عليها.',
     tokenEnv: 'متغير البيئة الموصى به',
     revokeToken: '\u0625\u0644\u063A\u0627\u0621 \u0631\u0645\u0632',
     scopes: '\u0627\u0644\u0635\u0644\u0627\u062D\u064A\u0627\u062A',
@@ -162,6 +162,10 @@ export default function ApiDocsPage() {
     null,
     2
   );
+  const hostedMcpExample = `curl -X POST "https://warrantee.io/api/mcp" \\
+  -H "Content-Type: application/json" \\
+  -H "x-api-key: YOUR_SERVER_INTEGRATION_TOKEN" \\
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'`;
 
   const copyText = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
@@ -323,6 +327,9 @@ export default function ApiDocsPage() {
             <p className="text-gray-600 text-sm mb-4">{t.mcpDesc}</p>
             <div className="bg-gray-900 rounded-lg p-3">
               <pre className="text-sm text-gray-300 overflow-x-auto" dir="ltr">{mcpConfig}</pre>
+            </div>
+            <div className="mt-3 bg-gray-900 rounded-lg p-3">
+              <pre className="text-sm text-gray-300 overflow-x-auto" dir="ltr">{hostedMcpExample}</pre>
             </div>
             <p className="mt-4 text-sm font-semibold text-gray-900">{t.agentRules}</p>
             <p className="mt-1 text-sm text-gray-600">{t.agentRulesDesc}</p>

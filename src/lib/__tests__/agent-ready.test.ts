@@ -35,6 +35,7 @@ describe("agent-ready helpers", () => {
     const markdown = buildAgentMarkdown("/en/api-docs");
     expect(markdown).toContain("# Warrantee API / CLI / MCP Guide");
     expect(markdown).toContain("https://warrantee.io/.well-known/api-catalog");
+    expect(markdown).toContain("https://warrantee.io/api/mcp");
     expect(markdown).toContain("Settings > API / CLI / MCP");
   });
 
@@ -44,5 +45,6 @@ describe("agent-ready helpers", () => {
     expect(header).toContain("/llms.txt");
     expect(header).toContain('rel="agent-card"');
     expect(header).toContain('rel="mcp-server-card"');
+    expect(header).toContain("</api/mcp>");
   });
 });

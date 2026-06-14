@@ -61,6 +61,7 @@ Warrantee.io is a SaaS warranty management platform that helps businesses, selle
 - Agent card: https://warrantee.io/.well-known/agent-card.json
 - Agent skills: https://warrantee.io/.well-known/agent-skills
 - MCP card: https://warrantee.io/.well-known/mcp.json
+- Hosted MCP endpoint: https://warrantee.io/api/mcp
 
 ## Access Boundaries
 

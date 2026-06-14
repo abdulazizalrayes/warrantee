@@ -19,6 +19,11 @@ export function GET() {
               type: "application/json",
               title: "Warrantee claims API",
             },
+            {
+              href: `${BASE_URL}/api/mcp`,
+              type: "application/json",
+              title: "Warrantee hosted MCP JSON-RPC endpoint",
+            },
           ],
           "service-desc": [
             {

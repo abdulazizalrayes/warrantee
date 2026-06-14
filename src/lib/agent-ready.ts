@@ -165,6 +165,7 @@ const PAGE_CONTENT: Record<AgentPageKey, AgentPageContent> = {
         "Authentication: Bearer token or scoped x-api-key integration token",
         "Generate keys from Settings > API / CLI / MCP after signing in; never store a Warrantee username or password in an integration",
         "MCP discovery card: https://warrantee.io/.well-known/mcp.json",
+        "Hosted MCP endpoint: https://warrantee.io/api/mcp",
         "Rate limiting is applied per user/token and at the IP edge; accounts can hold up to 20 active integration tokens",
       ],
       ar: [
@@ -172,6 +173,7 @@ const PAGE_CONTENT: Record<AgentPageKey, AgentPageContent> = {
         "المصادقة: Bearer token أو رمز تكامل x-api-key محدد الصلاحيات",
         "أنشئ المفاتيح من الإعدادات > API / CLI / MCP بعد تسجيل الدخول؛ لا تحفظ اسم مستخدم أو كلمة مرور Warrantee في التكامل",
         "بطاقة اكتشاف MCP: https://warrantee.io/.well-known/mcp.json",
+        "نقطة MCP المستضافة: https://warrantee.io/api/mcp",
         "يتم تطبيق حدود للطلبات لكل مستخدم/رمز وعلى مستوى IP، ويمكن للحساب الاحتفاظ بما يصل إلى 20 رمز تكامل نشط",
       ],
     },
@@ -288,6 +290,7 @@ export function buildAgentMarkdown(pathname: string): string | null {
     "",
     `- llms.txt: ${BASE_URL}/llms.txt`,
     `- API catalog: ${BASE_URL}/.well-known/api-catalog`,
+    `- Hosted MCP endpoint: ${BASE_URL}/api/mcp`,
     `- Agent skills index: ${BASE_URL}/.well-known/agent-skills`,
     `- OAuth authorization server: ${BASE_URL}/.well-known/oauth-authorization-server`,
     `- OAuth protected resource: ${BASE_URL}/.well-known/oauth-protected-resource`,
@@ -302,6 +305,7 @@ export function buildDiscoveryLinkHeader(): string {
     `</en/api-docs>; rel="service-doc"`,
     `</.well-known/agent-card.json>; rel="agent-card"`,
     `</.well-known/mcp.json>; rel="mcp-server-card"`,
+    `</api/mcp>; rel="mcp-server"; type="application/json"`,
     `</llms.txt>; rel="describedby"; type="text/plain"`,
     `</.well-known/agent-skills>; rel="describedby"; type="application/json"`,
   ].join(", ");
