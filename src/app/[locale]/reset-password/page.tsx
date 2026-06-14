@@ -1,8 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
+import { Footer } from "@/components/Footer";
+import { Navbar } from "@/components/Navbar";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { DIRECTION, getDictionary, normalizeLocale } from "@/lib/i18n";
 
 const dict = {
   en: {
@@ -15,6 +19,7 @@ const dict = {
     mismatch: "Passwords do not match",
     tooShort: "Password must be at least 8 characters",
     error: "Failed to update password. Please try again.",
+    back: "Back to Sign In",
   },
   ar: {
     title: "إعادة تعيين كلمة المرور",
@@ -26,6 +31,7 @@ const dict = {
     mismatch: "كلمات المرور غير متطابقة",
     tooShort: "يجب أن تكون كلمة المرور 8 أحرف على الأقل",
     error: "فشل تحديث كلمة المرور. حاول مرة أخرى.",
+    back: "العودة لتسجيل الدخول",
   },
 };
 
@@ -34,7 +40,9 @@ const supabase = createSupabaseBrowserClient();
 export default function ResetPasswordPage() {
   const params = useParams() ?? {};
   const router = useRouter();
-  const locale = (params?.locale as string) || "en";
+  const locale = normalizeLocale(String(params?.locale || "en"));
+  const dictionary = getDictionary(locale);
+  const direction = DIRECTION[locale];
   const t = dict[locale as keyof typeof dict] || dict.en;
 
   const [password, setPassword] = useState("");
@@ -69,54 +77,75 @@ export default function ResetPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#1A1A2E] to-[#16213E] px-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8">
-        <h1 className="text-2xl font-bold text-[#1A1A2E] mb-2 text-center">{t.title}</h1>
-        <p className="text-gray-500 text-center mb-6">{t.subtitle}</p>
+    <div className="min-h-screen bg-[#fbfbfd] text-[#1d1d1f]" dir={direction}>
+      <Navbar locale={locale} dictionary={dictionary} />
+      <main className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-7xl items-center justify-center px-4 py-16 sm:px-6 lg:px-8">
+        <div className="w-full max-w-md">
+          <div className="mb-8 text-center">
+            <p className="mb-3 text-sm font-semibold uppercase tracking-wide text-[#0071e3]">
+              {locale === "ar" ? "استعادة الحساب" : "Account recovery"}
+            </p>
+            <h1 className="text-3xl font-semibold tracking-normal text-[#1d1d1f]">{t.title}</h1>
+            <p className="mt-3 text-base leading-7 text-[#6e6e73]">{t.subtitle}</p>
+          </div>
 
-        {message && (
-          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-4">
-            {message}
-          </div>
-        )}
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
-            {error}
-          </div>
-        )}
+          <div className="rounded-2xl border border-black/[0.06] bg-white p-6 shadow-sm ring-1 ring-black/[0.02]">
+            {message && (
+              <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                {message}
+              </div>
+            )}
+            {error && (
+              <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {error}
+              </div>
+            )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t.newPassword}</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#E94560] focus:border-transparent"
-              required
-              minLength={8}
-            />
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div>
+                <label className="mb-2 block text-sm font-medium text-[#1d1d1f]">
+                  {t.newPassword}
+                </label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  className="w-full rounded-xl border border-[#d2d2d7] px-4 py-3 text-[#1d1d1f] outline-none transition focus:border-[#0071e3] focus:ring-4 focus:ring-[#0071e3]/10"
+                  required
+                  minLength={8}
+                />
+              </div>
+              <div>
+                <label className="mb-2 block text-sm font-medium text-[#1d1d1f]">
+                  {t.confirmPassword}
+                </label>
+                <input
+                  type="password"
+                  value={confirmPwd}
+                  onChange={(event) => setConfirmPwd(event.target.value)}
+                  className="w-full rounded-xl border border-[#d2d2d7] px-4 py-3 text-[#1d1d1f] outline-none transition focus:border-[#0071e3] focus:ring-4 focus:ring-[#0071e3]/10"
+                  required
+                  minLength={8}
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full rounded-full bg-[#0071e3] px-5 py-3 font-semibold text-white transition hover:bg-[#0077ED] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {loading ? "..." : t.submit}
+              </button>
+              <Link
+                href={`/${locale}/auth`}
+                className="block text-center text-sm font-medium text-[#0071e3] transition hover:text-[#0077ED]"
+              >
+                {t.back}
+              </Link>
+            </form>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t.confirmPassword}</label>
-            <input
-              type="password"
-              value={confirmPwd}
-              onChange={(e) => setConfirmPwd(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#E94560] focus:border-transparent"
-              required
-              minLength={8}
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 px-4 bg-[#E94560] text-white rounded-lg font-semibold hover:bg-[#d63d56] transition-colors disabled:opacity-50"
-          >
-            {loading ? "..." : t.submit}
-          </button>
-        </form>
-      </div>
+        </div>
+      </main>
+      <Footer locale={locale} dictionary={dictionary} />
     </div>
   );
 }

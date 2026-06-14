@@ -36,6 +36,16 @@ Scope: Warrantee only (`warrantee.io` and this repository). This audit covered m
    - Fix: Added `min-w-0`, `overflow-x-auto`, wrapping, and mobile-first endpoint row stacking in `src/app/[locale]/api-docs/page.tsx`.
    - Verification: targeted mobile EN/AR checks show no overflow, no console errors, status 200, correct `dir`/`lang`; lint/type/test/build passed.
 
+2. Password recovery pages were visually inconsistent with the current Warrantee system.
+   - Problem: `/[locale]/forgot-password` and `/[locale]/reset-password` used older standalone styling, mixed accent colors, and no shared navbar/footer shell.
+   - Fix: Restyled both pages with the current Warrantee shell, blue accent, neutral background, localized direction handling, navbar, footer, and accessible form focus/error states while preserving the Supabase reset flow.
+   - Verification: covered by operational hardening tests and targeted browser/mobile checks in the follow-up QA run.
+
+3. Admin ingestion management depended on user-scoped Supabase reads after role checks.
+   - Problem: admin role authorization was correct, but ingestion list/stat reads could still depend on RLS policy shape for the signed-in user.
+   - Fix: kept Supabase Auth + profile role verification, then switched ingestion management reads to the service-role admin client; also added bounded pagination and stricter resolve-action validation.
+   - Verification: covered by operational hardening tests and route-level build/type checks in the follow-up QA run.
+
 ### Operationally Healthy
 
 1. Public pages, SEO/agent readiness, and protected-route redirects are healthy.
@@ -48,39 +58,31 @@ Scope: Warrantee only (`warrantee.io` and this repository). This audit covered m
 
 ### Remaining Risks / Recommendations
 
-1. Password reset pages are functional but visually inconsistent with the current Warrantee system.
-   - Risk: trust and conversion drop on an important recovery flow.
-   - Recommendation: restyle `/[locale]/forgot-password` and `/[locale]/reset-password` to match the current Warrantee theme, Arabic font behavior, navbar/footer pattern, and accessibility states.
-
-2. Local authenticated E2E cannot be run unless `E2E_USER_EMAIL` and `E2E_USER_PASSWORD` are available in the local shell.
+1. Local authenticated E2E cannot be run unless `E2E_USER_EMAIL` and `E2E_USER_PASSWORD` are available in the local shell.
    - Risk: local workstation cannot reproduce the same signed-in journey as GitHub Production Security Gates.
    - Recommendation: restore local QA credentials in a secure, ignored env file or continue relying on GitHub secrets for authenticated production E2E.
 
-3. Admin ingestion APIs use authenticated Supabase client queries after role checks.
-   - Risk: if RLS policies do not grant admin reads for ingestion tables, admin UI may fail even after successful role authorization.
-   - Recommendation: keep or add explicit admin-service-role reads after role verification for ingestion management, with tests that prove admin can list/resolve ingestion jobs.
-
-4. API v1 currently covers warranties only.
+2. API v1 currently covers warranties only.
    - Risk: CLI/MCP/API is useful but not yet a complete external operating surface for claims, documents, recalls, assets, or lifecycle intelligence.
    - Recommendation: add versioned endpoints for claims, documents metadata, verification certificates, and future asset lifecycle events before selling larger enterprise integrations.
 
-5. Rate limiting is production-strict only when Redis is configured.
+3. Rate limiting is production-strict only when Redis is configured.
    - Risk: if Redis env vars are removed, production can fail closed or degrade depending on configuration.
    - Recommendation: keep `RATE_LIMIT_REQUIRE_REDIS=1` in production and monitor readiness checks for Redis/rate-limit backend.
 
-6. Full OCR torture testing remains limited by sample corpus.
+4. Full OCR torture testing remains limited by sample corpus.
    - Risk: hard scans, multi-invoice PDFs, handwriting, and multilingual receipts may still route to review or parse incorrectly.
    - Recommendation: maintain a private OCR regression corpus for Arabic/English receipts, PDFs, bad scans, duplicates, and fraud attempts.
 
-7. Public verification intentionally exposes proof-safe warranty fields.
+5. Public verification intentionally exposes proof-safe warranty fields.
    - Risk: reference/serial lookup can still be enumerated if abused.
    - Recommendation: keep public lookup rate limiting strict; consider CAPTCHA or proof-token mode if abuse appears.
 
-8. Team management is domain-based for company bootstrapping.
+6. Team management is domain-based for company bootstrapping.
    - Risk: enterprise/government customers will need stronger workspace boundaries than email domain matching alone.
    - Recommendation: add explicit organization/workspace ownership tables and invite acceptance before enterprise rollout.
 
-9. Product readiness is stronger than GTM readiness.
+7. Product readiness is stronger than GTM readiness.
    - Risk: technical platform can operate, but content depth, onboarding copy, demo flows, and sales proof still decide conversion.
    - Recommendation: continue building reference-grade EN/AR and additional-language content, plus demo/account onboarding flows tied to clear ICPs.
 

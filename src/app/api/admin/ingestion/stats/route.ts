@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
-async function getAdminClient() {
+async function authorizeAdmin() {
   const cookieStore = await cookies();
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -13,7 +14,7 @@ async function getAdminClient() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { supabase, authorized: false };
+  if (!user) return { authorized: false };
 
   const { data: profile } = await supabase
     .from("profiles")
@@ -22,32 +23,32 @@ async function getAdminClient() {
     .single();
 
   return {
-    supabase,
     authorized: Boolean(profile && ["admin", "super_admin"].includes(profile.role)),
   };
 }
 
 export async function GET() {
-  const { supabase, authorized } = await getAdminClient();
+  const { authorized } = await authorizeAdmin();
   if (!authorized) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  const supabaseAdmin = createSupabaseAdminClient();
   const sinceToday = new Date();
   sinceToday.setHours(0, 0, 0, 0);
 
   const [{ data: jobs }, { data: attachments }, { data: fraud }] = await Promise.all([
-    supabase
+    supabaseAdmin
       .from("ingestion_jobs")
       .select("id, status, created_at")
       .order("created_at", { ascending: false })
       .limit(1000),
-    supabase
+    supabaseAdmin
       .from("ingestion_attachments")
       .select("aggregate_confidence")
       .not("aggregate_confidence", "is", null)
       .limit(1000),
-    supabase
+    supabaseAdmin
       .from("fraud_signals")
       .select("id, resolved")
       .eq("resolved", false)

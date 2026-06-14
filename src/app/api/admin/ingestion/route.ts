@@ -4,6 +4,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
+import { createSupabaseAdminClient } from '@/lib/supabase/admin';
+
+function boundedPositiveInteger(value: string | null, fallback: number, max: number) {
+  const parsed = Number.parseInt(value || "", 10);
+  if (!Number.isFinite(parsed) || parsed < 1) {
+    return fallback;
+  }
+  return Math.min(parsed, max);
+}
 
 export async function GET(request: NextRequest) {
   const cookieStore = await cookies();
@@ -31,11 +40,12 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const status = searchParams?.get('status');
   const search = searchParams?.get('search');
-  const page = parseInt(searchParams?.get('page') || '1', 10);
-  const limit = Math.min(parseInt(searchParams?.get('limit') || '25', 10), 100);
+  const page = boundedPositiveInteger(searchParams?.get('page'), 1, 10000);
+  const limit = boundedPositiveInteger(searchParams?.get('limit'), 25, 100);
   const offset = (page - 1) * limit;
+  const supabaseAdmin = createSupabaseAdminClient();
 
-  let query = supabase
+  let query = supabaseAdmin
     .from('ingestion_jobs')
     .select(`
       *,

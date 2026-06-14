@@ -181,9 +181,32 @@ describe("operational hardening", () => {
     expect(forgotPassword).toContain("resetPasswordForEmail");
     expect(forgotPassword).toContain("/auth/callback?next=");
     expect(forgotPassword).toContain("Your username is your registered email address.");
+    expect(forgotPassword).toContain("<Navbar locale={locale} dictionary={dictionary} />");
+    expect(forgotPassword).toContain("<Footer locale={locale} dictionary={dictionary} />");
+    expect(forgotPassword).toContain("bg-[#fbfbfd]");
     expect(resetPassword).toContain("updateUser({ password })");
     expect(resetPassword).toContain('router.push("/" + locale + "/auth")');
+    expect(resetPassword).toContain("<Navbar locale={locale} dictionary={dictionary} />");
+    expect(resetPassword).toContain("<Footer locale={locale} dictionary={dictionary} />");
+    expect(resetPassword).toContain("bg-[#fbfbfd]");
     expect(resetPassword).not.toContain('router.push("/" + locale + "/login")');
+  });
+
+  it("keeps admin ingestion management on service-role reads after admin authorization", () => {
+    const ingestionList = readProjectFile("src/app/api/admin/ingestion/route.ts");
+    const ingestionStats = readProjectFile("src/app/api/admin/ingestion/stats/route.ts");
+    const ingestionResolve = readProjectFile("src/app/api/admin/ingestion/[id]/resolve/route.ts");
+
+    expect(ingestionList).toContain("createSupabaseAdminClient");
+    expect(ingestionList).toContain("let query = supabaseAdmin");
+    expect(ingestionList).toContain("boundedPositiveInteger");
+    expect(ingestionStats).toContain("authorizeAdmin");
+    expect(ingestionStats).toContain("const supabaseAdmin = createSupabaseAdminClient()");
+    expect(ingestionStats).toContain("supabaseAdmin");
+    expect(ingestionResolve).toContain("createSupabaseAdminClient");
+    expect(ingestionResolve).toContain("RESOLVE_ACTIONS");
+    expect(ingestionResolve).toContain("Invalid action");
+    expect(ingestionResolve).toContain("fraud_signal_ids is required");
   });
 
   it("keeps Arabic typography on the Warrantee brand font stack", () => {
