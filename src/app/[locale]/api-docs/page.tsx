@@ -176,7 +176,7 @@ export default function ApiDocsPage() {
   return (
     <div className="min-h-screen bg-[#fbfbfd] text-[#1d1d1f]" dir={direction}>
       <Navbar locale={locale} dictionary={dictionary} />
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <main className="mx-auto max-w-4xl overflow-hidden px-4 py-12 sm:px-6 lg:px-8">
         <div className="mb-8">
           <Link href={`/${locale}`} className="text-[#0071e3] hover:underline flex items-center gap-2 mb-2 text-sm">
             <ArrowLeft className="w-4 h-4" /> {t.back}
@@ -223,8 +223,8 @@ export default function ApiDocsPage() {
             <Globe className="w-5 h-5 text-[#4169E1]" />
             <h3 className="font-semibold text-gray-900">{t.baseUrl}</h3>
           </div>
-          <div className="flex items-center gap-2 bg-gray-900 rounded-lg p-3">
-            <code className="text-green-400 flex-1 text-sm" dir="ltr">https://warrantee.io/api/v1</code>
+          <div className="flex min-w-0 items-center gap-2 bg-gray-900 rounded-lg p-3">
+            <code className="min-w-0 flex-1 overflow-x-auto text-sm text-green-400" dir="ltr">https://warrantee.io/api/v1</code>
             <button onClick={() => copyText('https://warrantee.io/api/v1', 'baseUrl')}>
               {copied === 'baseUrl' ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4 text-gray-400 hover:text-white" />}
             </button>
@@ -243,13 +243,13 @@ export default function ApiDocsPage() {
             <p className="mt-1 text-sm text-gray-600">{t.passwordPolicyDesc}</p>
           </div>
           <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">{t.integrationTokenLabel}</p>
-          <div className="bg-gray-900 rounded-lg p-3">
+          <div className="min-w-0 overflow-x-auto bg-gray-900 rounded-lg p-3">
             <code className="text-sm text-gray-300" dir="ltr">
               x-api-key: YOUR_SERVER_INTEGRATION_TOKEN
             </code>
           </div>
           <p className="mb-2 mt-4 text-xs font-semibold uppercase tracking-wide text-gray-500">{t.bearerTokenLabel}</p>
-          <div className="bg-gray-900 rounded-lg p-3 mt-3">
+          <div className="mt-3 min-w-0 overflow-x-auto bg-gray-900 rounded-lg p-3">
             <code className="text-sm text-gray-300" dir="ltr">
               Authorization: Bearer YOUR_SUPABASE_ACCESS_TOKEN
             </code>
@@ -276,14 +276,14 @@ export default function ApiDocsPage() {
           <div className="grid gap-3 md:grid-cols-2">
             <div className="rounded-lg border border-gray-100 bg-gray-50 p-3">
               <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">{t.createToken}</p>
-              <code className="text-sm text-gray-800" dir="ltr">POST /api/integration-tokens</code>
+              <code className="block overflow-x-auto text-sm text-gray-800" dir="ltr">POST /api/integration-tokens</code>
             </div>
             <div className="rounded-lg border border-gray-100 bg-gray-50 p-3">
               <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">{t.revokeToken}</p>
-              <code className="text-sm text-gray-800" dir="ltr">DELETE /api/integration-tokens/:id</code>
+              <code className="block overflow-x-auto text-sm text-gray-800" dir="ltr">DELETE /api/integration-tokens/:id</code>
             </div>
           </div>
-          <div className="mt-4 rounded-lg bg-gray-900 p-3">
+          <div className="mt-4 min-w-0 overflow-x-auto rounded-lg bg-gray-900 p-3">
             <code className="text-sm text-gray-300" dir="ltr">
               {`{ "name": "ERP production", "scopes": ["warranties:read", "warranties:write"], "rate_limit_per_minute": 100 }`}
             </code>
@@ -294,7 +294,7 @@ export default function ApiDocsPage() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
           <h3 className="font-semibold text-gray-900 mb-2">{t.integrationNotes}</h3>
           <p className="text-gray-600 text-sm mb-3">{t.integrationDesc}</p>
-          <div className="bg-gray-900 rounded-lg p-3">
+          <div className="min-w-0 overflow-x-auto bg-gray-900 rounded-lg p-3">
             <code className="text-sm text-gray-300" dir="ltr">
               Idempotency-Key: 8f5d07d0-erp-order-102044
             </code>
@@ -309,12 +309,12 @@ export default function ApiDocsPage() {
             </div>
             <p className="text-gray-600 text-sm mb-4">{t.cliDesc}</p>
             <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">{t.tokenEnv}</p>
-            <div className="bg-gray-900 rounded-lg p-3">
+            <div className="min-w-0 overflow-x-auto bg-gray-900 rounded-lg p-3">
               <code className="text-sm text-gray-300" dir="ltr">
                 export WARRANTEE_API_KEY=&quot;wrt_...&quot;
               </code>
             </div>
-            <div className="mt-3 bg-gray-900 rounded-lg p-3">
+            <div className="mt-3 min-w-0 bg-gray-900 rounded-lg p-3">
               <pre className="text-sm text-gray-300 overflow-x-auto" dir="ltr">{cliExample}</pre>
             </div>
           </div>
@@ -325,10 +325,10 @@ export default function ApiDocsPage() {
               <h3 className="font-semibold text-gray-900">{t.mcp}</h3>
             </div>
             <p className="text-gray-600 text-sm mb-4">{t.mcpDesc}</p>
-            <div className="bg-gray-900 rounded-lg p-3">
+            <div className="min-w-0 bg-gray-900 rounded-lg p-3">
               <pre className="text-sm text-gray-300 overflow-x-auto" dir="ltr">{mcpConfig}</pre>
             </div>
-            <div className="mt-3 bg-gray-900 rounded-lg p-3">
+            <div className="mt-3 min-w-0 bg-gray-900 rounded-lg p-3">
               <pre className="text-sm text-gray-300 overflow-x-auto" dir="ltr">{hostedMcpExample}</pre>
             </div>
             <p className="mt-4 text-sm font-semibold text-gray-900">{t.agentRules}</p>
@@ -344,14 +344,14 @@ export default function ApiDocsPage() {
           </div>
           <div className="space-y-4">
             {endpoints.map((ep, i) => (
-              <div key={i} className="border border-gray-200 rounded-lg overflow-hidden">
-                <div className="flex items-center gap-3 p-4 bg-gray-50">
+              <div key={i} className="min-w-0 overflow-hidden rounded-lg border border-gray-200">
+                <div className="flex min-w-0 flex-col gap-3 bg-gray-50 p-4 sm:flex-row sm:items-center">
                   <span className={`px-2 py-1 rounded text-xs font-bold ${methodColors[ep.method]}`}>{ep.method}</span>
-                  <code className="text-sm font-mono text-gray-800" dir="ltr">{ep.path}</code>
-                  <span className="text-sm text-gray-500 ml-auto">{t[ep.desc as keyof typeof t]}</span>
+                  <code className="max-w-full overflow-x-auto text-sm font-mono text-gray-800" dir="ltr">{ep.path}</code>
+                  <span className="text-sm text-gray-500 sm:ml-auto">{t[ep.desc as keyof typeof t]}</span>
                 </div>
                 <div className="p-4 text-sm text-gray-600">
-                  <span className="font-medium">{t.parameters}:</span> <code dir="ltr">{ep.params}</code>
+                  <span className="font-medium">{t.parameters}:</span> <code className="break-words" dir="ltr">{ep.params}</code>
                 </div>
               </div>
             ))}
@@ -360,9 +360,9 @@ export default function ApiDocsPage() {
           {/* Example */}
           <div className="mt-8">
             <h4 className="font-medium text-gray-900 mb-3">Example Request</h4>
-            <div className="bg-gray-900 rounded-lg p-4 relative">
+            <div className="relative min-w-0 overflow-hidden rounded-lg bg-gray-900 p-4">
               <button onClick={() => copyText(`curl -X GET "https://warrantee.io/api/v1/warranties?page=1&limit=10" -H "x-api-key: YOUR_SERVER_INTEGRATION_TOKEN"`, 'example')}
-                className="absolute top-3 right-3">
+                className="absolute right-3 top-3">
                 {copied === 'example' ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4 text-gray-400 hover:text-white" />}
               </button>
               <pre className="text-sm text-gray-300 overflow-x-auto" dir="ltr">{`curl -X GET "https://warrantee.io/api/v1/warranties?page=1&limit=10" \\
