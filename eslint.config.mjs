@@ -9,6 +9,7 @@ const config = [
   {
     ignores: [
       ".next/**",
+      ".next.broken-*/**",
       ".codex-quarantine/**",
       ".vercel/**",
       "node_modules/**",

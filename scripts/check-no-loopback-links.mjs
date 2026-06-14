@@ -68,7 +68,7 @@ async function* walk(directory) {
     const relativePath = toPosix(path.relative(root, absolutePath));
 
     if (entry.isDirectory()) {
-      if (!ignoredDirectories.has(entry.name)) {
+      if (!ignoredDirectories.has(entry.name) && !entry.name.startsWith(".next.broken-")) {
         yield* walk(absolutePath);
       }
       continue;

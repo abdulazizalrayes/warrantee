@@ -1,5 +1,6 @@
 .vercel
 .next
+.next.broken-*
 node_modules
 playwright-report/
 test-results/

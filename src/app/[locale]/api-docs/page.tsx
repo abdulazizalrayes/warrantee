@@ -16,7 +16,7 @@ const translations = {
     auth: 'Authentication',
     authDesc: 'API access is limited to registered Warrantee users. For ERP, ecommerce, or server-to-server integrations, do not store a Warrantee username or password in the external system. Sign in once to Warrantee, create a dedicated integration token, then send that token as x-api-key.',
     passwordPolicyTitle: 'No shared usernames or passwords',
-    passwordPolicyDesc: 'The person setting up the integration signs into Warrantee only to create, view, revoke, or rotate integration tokens. The connected system should store only the generated server integration token, which can be scoped, rate-limited, expired, and revoked.',
+    passwordPolicyDesc: 'The person setting up the integration signs into Warrantee only to create, view, revoke, or rotate integration tokens. Do not use your login email or password in API, CLI, or MCP integrations. The connected system should store only the generated server integration token, which can be scoped, rate-limited, expired, and revoked.',
     bearerTokenLabel: 'Signed-in app sessions',
     integrationTokenLabel: 'Recommended for server integrations',
     baseUrl: 'Base URL',
@@ -45,9 +45,9 @@ const translations = {
     quickStartDesc: 'Every production integration starts from a logged-in Warrantee account. Generate a scoped token in Settings, store it as a secret, then use it from REST API calls, CLI scripts, or MCP-aware agents.',
     quickStartSteps: ['Sign in or create a Warrantee account.', 'Open Settings > API / CLI / MCP.', 'Generate a scoped integration token and copy it once.', 'Store it in a secret manager or environment variable.', 'Use the token as x-api-key for API, CLI, or agent requests.', 'Monitor usage, rotate keys, and revoke unused tokens.'],
     cli: 'CLI and scripts',
-    cliDesc: 'Use the same generated token in shell scripts, ERP jobs, ecommerce syncs, and CI tasks. The token belongs to the signed-in Warrantee user and never requires storing a username or password.',
+    cliDesc: 'Use the official Warrantee CLI in shell scripts, ERP jobs, ecommerce syncs, and CI tasks. The token belongs to the signed-in Warrantee user and never requires storing a username or password.',
     mcp: 'MCP and agent use',
-    mcpDesc: 'Agents should read the Warrantee MCP card and API catalog, then use generated integration tokens for private actions. Agents must respect scopes, rate limits, ownership boundaries, and never ask users for passwords.',
+    mcpDesc: 'Run the Warrantee MCP server over stdio so agents can list, get, create, update, delete, and verify warranties through the same scoped API key. Agents must respect scopes, rate limits, ownership boundaries, and never ask users for passwords.',
     agentRules: 'Agent rules',
     agentRulesDesc: 'Use /llms.txt, /.well-known/agent-card.json, /.well-known/mcp.json, and /.well-known/api-catalog for discovery. Use the public verify page for public checks. Use x-api-key only for authenticated account data.',
     tokenEnv: 'Recommended environment variable',
@@ -63,7 +63,7 @@ const translations = {
     auth: '\u0627\u0644\u0645\u0635\u0627\u062f\u0642\u0629',
     authDesc: '\u0627\u0644\u0648\u0635\u0648\u0644 \u0644\u0644\u0648\u0627\u062C\u0647\u0629 \u0645\u062D\u0635\u0648\u0631 \u0628\u0645\u0633\u062A\u062E\u062F\u0645\u064A Warrantee \u0627\u0644\u0645\u0633\u062C\u0644\u064A\u0646. \u0644\u062A\u0643\u0627\u0645\u0644\u0627\u062A ERP \u0623\u0648 \u0627\u0644\u0645\u062A\u0627\u062C\u0631 \u0623\u0648 \u0627\u0644\u062E\u0648\u0627\u062F\u0645\u060C \u0644\u0627 \u062A\u062D\u0641\u0638 \u0627\u0633\u0645 \u0645\u0633\u062A\u062E\u062F\u0645 Warrantee \u0623\u0648 \u0643\u0644\u0645\u0629 \u0645\u0631\u0648\u0631\u0647 \u0641\u064A \u0627\u0644\u0646\u0638\u0627\u0645 \u0627\u0644\u062E\u0627\u0631\u062C\u064A. \u0633\u062C\u0644 \u0627\u0644\u062F\u062E\u0648\u0644 \u0645\u0631\u0629 \u0648\u0627\u062D\u062F\u0629 \u0641\u064A Warrantee\u060C \u0623\u0646\u0634\u0626 \u0631\u0645\u0632 \u062A\u0643\u0627\u0645\u0644 \u0645\u062E\u0635\u0635\u060C \u062B\u0645 \u0623\u0631\u0633\u0644 \u0647\u0630\u0627 \u0627\u0644\u0631\u0645\u0632 \u0643\u0640 x-api-key.',
     passwordPolicyTitle: '\u0644\u0627 \u0645\u0634\u0627\u0631\u0643\u0629 \u0644\u0623\u0633\u0645\u0627\u0621 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645\u064A\u0646 \u0623\u0648 \u0643\u0644\u0645\u0627\u062A \u0627\u0644\u0645\u0631\u0648\u0631',
-    passwordPolicyDesc: '\u064A\u0633\u062C\u0644 \u0645\u0633\u0624\u0648\u0644 \u0627\u0644\u062A\u0643\u0627\u0645\u0644 \u0627\u0644\u062F\u062E\u0648\u0644 \u0625\u0644\u0649 Warrantee \u0641\u0642\u0637 \u0644\u0625\u0646\u0634\u0627\u0621 \u0631\u0645\u0648\u0632 \u0627\u0644\u062A\u0643\u0627\u0645\u0644 \u0623\u0648 \u0639\u0631\u0636\u0647\u0627 \u0623\u0648 \u0625\u0644\u063A\u0627\u0626\u0647\u0627 \u0623\u0648 \u062A\u062F\u0648\u064A\u0631\u0647\u0627. \u064A\u062C\u0628 \u0623\u0646 \u064A\u062D\u0641\u0638 \u0627\u0644\u0646\u0638\u0627\u0645 \u0627\u0644\u0645\u062A\u0635\u0644 \u0631\u0645\u0632 \u0627\u0644\u062A\u0643\u0627\u0645\u0644 \u0641\u0642\u0637\u060C \u0648\u064A\u0645\u0643\u0646 \u062A\u062D\u062F\u064A\u062F \u0635\u0644\u0627\u062D\u064A\u0627\u062A\u0647 \u0648\u062D\u062F\u0648\u062F \u0637\u0644\u0628\u0627\u062A\u0647 \u0648\u062A\u0627\u0631\u064A\u062E \u0627\u0646\u062A\u0647\u0627\u0626\u0647 \u0648\u0625\u0644\u063A\u0627\u0626\u0647.',
+    passwordPolicyDesc: '\u064A\u0633\u062C\u0644 \u0645\u0633\u0624\u0648\u0644 \u0627\u0644\u062A\u0643\u0627\u0645\u0644 \u0627\u0644\u062F\u062E\u0648\u0644 \u0625\u0644\u0649 Warrantee \u0641\u0642\u0637 \u0644\u0625\u0646\u0634\u0627\u0621 \u0631\u0645\u0648\u0632 \u0627\u0644\u062A\u0643\u0627\u0645\u0644 \u0623\u0648 \u0639\u0631\u0636\u0647\u0627 \u0623\u0648 \u0625\u0644\u063A\u0627\u0626\u0647\u0627 \u0623\u0648 \u062A\u062F\u0648\u064A\u0631\u0647\u0627. \u0644\u0627 \u062A\u0633\u062A\u062E\u062F\u0645 \u0628\u0631\u064A\u062F \u0627\u0644\u062F\u062E\u0648\u0644 \u0623\u0648 \u0643\u0644\u0645\u0629 \u0645\u0631\u0648\u0631\u0643 \u0641\u064A \u062A\u0643\u0627\u0645\u0644\u0627\u062A API \u0623\u0648 CLI \u0623\u0648 MCP. \u064A\u062C\u0628 \u0623\u0646 \u064A\u062D\u0641\u0638 \u0627\u0644\u0646\u0638\u0627\u0645 \u0627\u0644\u0645\u062A\u0635\u0644 \u0631\u0645\u0632 \u0627\u0644\u062A\u0643\u0627\u0645\u0644 \u0641\u0642\u0637\u060C \u0648\u064A\u0645\u0643\u0646 \u062A\u062D\u062F\u064A\u062F \u0635\u0644\u0627\u062D\u064A\u0627\u062A\u0647 \u0648\u062D\u062F\u0648\u062F \u0637\u0644\u0628\u0627\u062A\u0647 \u0648\u062A\u0627\u0631\u064A\u062E \u0627\u0646\u062A\u0647\u0627\u0626\u0647 \u0648\u0625\u0644\u063A\u0627\u0626\u0647.',
     bearerTokenLabel: '\u062C\u0644\u0633\u0627\u062A \u0627\u0644\u062A\u0637\u0628\u064A\u0642 \u0627\u0644\u0645\u0633\u062C\u0644\u0629',
     integrationTokenLabel: '\u0627\u0644\u0645\u0648\u0635\u0649 \u0628\u0647 \u0644\u062A\u0643\u0627\u0645\u0644\u0627\u062A \u0627\u0644\u062E\u0648\u0627\u062F\u0645',
     baseUrl: '\u0627\u0644\u0631\u0627\u0628\u0637 \u0627\u0644\u0623\u0633\u0627\u0633\u064a',
@@ -92,9 +92,9 @@ const translations = {
     quickStartDesc: 'كل تكامل إنتاجي يبدأ من حساب Warrantee مسجل. أنشئ رمزاً محدود الصلاحيات من الإعدادات، احفظه كسِر، ثم استخدمه مع REST API أو السكريبتات أو الوكلاء المتوافقين مع MCP.',
     quickStartSteps: ['سجل الدخول أو أنشئ حساب Warrantee.', 'افتح الإعدادات ثم API / CLI / MCP.', 'أنشئ رمز تكامل محدد الصلاحيات وانسخه مرة واحدة.', 'احفظه في مدير أسرار أو متغير بيئة.', 'استخدم الرمز كـ x-api-key لطلبات API أو CLI أو الوكلاء.', 'راقب الاستخدام ودوّر المفاتيح وألغ الرموز غير المستخدمة.'],
     cli: 'CLI والسكريبتات',
-    cliDesc: 'استخدم نفس الرمز المولد في السكريبتات ووظائف ERP ومزامنة المتاجر ومهام CI. الرمز يتبع المستخدم المسجل ولا يتطلب حفظ اسم مستخدم أو كلمة مرور.',
+    cliDesc: 'استخدم CLI الرسمي لوارنتي في السكريبتات ووظائف ERP ومزامنة المتاجر ومهام CI. الرمز يتبع المستخدم المسجل ولا يتطلب حفظ اسم مستخدم أو كلمة مرور.',
     mcp: 'MCP واستخدام الوكلاء',
-    mcpDesc: 'يجب أن يقرأ الوكلاء بطاقة MCP وكتالوج API ثم يستخدموا رموز التكامل المولدة للعمليات الخاصة. يجب احترام الصلاحيات وحدود الطلبات وحدود الملكية وعدم طلب كلمات المرور.',
+    mcpDesc: 'شغّل خادم MCP لوارنتي عبر stdio حتى يستطيع الوكلاء عرض الضمانات وإنشاءها وتحديثها وحذفها والتحقق منها عبر نفس مفتاح API المحدد الصلاحيات. يجب احترام الصلاحيات وحدود الطلبات وحدود الملكية وعدم طلب كلمات المرور.',
     agentRules: 'قواعد الوكلاء',
     agentRulesDesc: 'استخدم /llms.txt و /.well-known/agent-card.json و /.well-known/mcp.json و /.well-known/api-catalog للاكتشاف. استخدم صفحة التحقق العامة للفحوص العامة. استخدم x-api-key فقط لبيانات الحساب المصادق عليها.',
     tokenEnv: 'متغير البيئة الموصى به',
@@ -129,6 +129,31 @@ export default function ApiDocsPage() {
   const direction = DIRECTION[locale];
   const t = translations[contentLocale] || translations.en;
   const [copied, setCopied] = useState('');
+  const cliExample = [
+    'npm run warrantee:cli -- auth status',
+    'npm run warrantee:cli -- warranties list --status active --pretty',
+    'npm run warrantee:cli -- warranties create \\',
+    '  --product-name "Laptop" \\',
+    '  --start-date 2026-01-01 \\',
+    '  --end-date 2027-01-01 \\',
+    '  --idempotency-key erp-order-102044',
+    'npm run warrantee:cli -- verify WR-12345',
+  ].join('\n');
+  const mcpConfig = JSON.stringify(
+    {
+      mcpServers: {
+        warrantee: {
+          command: 'npm',
+          args: ['run', 'warrantee:mcp', '--'],
+          env: {
+            WARRANTEE_API_KEY: 'wrt_...',
+          },
+        },
+      },
+    },
+    null,
+    2
+  );
 
   const copyText = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
@@ -278,8 +303,7 @@ export default function ApiDocsPage() {
               </code>
             </div>
             <div className="mt-3 bg-gray-900 rounded-lg p-3">
-              <pre className="text-sm text-gray-300 overflow-x-auto" dir="ltr">{`curl "https://warrantee.io/api/v1/warranties" \\
-  -H "x-api-key: $WARRANTEE_API_KEY"`}</pre>
+              <pre className="text-sm text-gray-300 overflow-x-auto" dir="ltr">{cliExample}</pre>
             </div>
           </div>
 
@@ -290,9 +314,7 @@ export default function ApiDocsPage() {
             </div>
             <p className="text-gray-600 text-sm mb-4">{t.mcpDesc}</p>
             <div className="bg-gray-900 rounded-lg p-3">
-              <code className="text-sm text-gray-300" dir="ltr">
-                https://warrantee.io/.well-known/mcp.json
-              </code>
+              <pre className="text-sm text-gray-300 overflow-x-auto" dir="ltr">{mcpConfig}</pre>
             </div>
             <p className="mt-4 text-sm font-semibold text-gray-900">{t.agentRules}</p>
             <p className="mt-1 text-sm text-gray-600">{t.agentRulesDesc}</p>

@@ -17,6 +17,8 @@
     "test:e2e:business": "playwright test tests/e2e/business-workflows.spec.ts",
     "test:e2e:operational": "OPERATIONAL_E2E=1 playwright test tests/e2e/operational-workflows.spec.ts --project=chromium",
     "test:e2e:ui": "playwright test --ui",
+    "warrantee:cli": "node tools/warrantee/cli.mjs",
+    "warrantee:mcp": "node tools/warrantee/mcp-server.mjs",
     "smoke:prod": "node scripts/production-smoke.mjs",
     "load:prod": "node scripts/production-load-check.mjs",
     "readiness:operational": "node scripts/operational-readiness-check.mjs",

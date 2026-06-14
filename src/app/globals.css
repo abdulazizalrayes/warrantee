@@ -1,4 +1,8 @@
-@import "tailwindcss";
+@import "tailwindcss" source(none);
+@source "./";
+@source "../components";
+@source "../hooks";
+@source "../lib";
 
 @theme {
   --color-navy: #1d1d1f;

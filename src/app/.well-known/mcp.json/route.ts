@@ -18,8 +18,9 @@ export function GET() {
         "Public discovery metadata for Warrantee warranty verification, account integrations, CLI-ready API usage, seller onboarding, claims, and certificate workflows.",
       documentationUrl: `${BASE_URL}/en/api-docs`,
       transport: {
-        type: "streamable-http",
-        endpoint: "/api",
+        type: "stdio",
+        command: "npm",
+        args: ["run", "warrantee:mcp", "--"],
       },
       capabilities: {
         tools: {
@@ -65,6 +66,11 @@ export function GET() {
         agentSkills: `${BASE_URL}/.well-known/agent-skills/index.json`,
         apiCliMcpGuide: `${BASE_URL}/en/api-docs`,
         keyManagement: `${BASE_URL}/en/settings?section=integrations`,
+        stdioCommand: {
+          command: "npm",
+          args: ["run", "warrantee:mcp", "--"],
+          env: ["WARRANTEE_API_KEY", "WARRANTEE_BASE_URL"],
+        },
       },
     },
     {

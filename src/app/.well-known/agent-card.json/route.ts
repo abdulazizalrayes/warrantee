@@ -29,7 +29,7 @@ export function GET() {
       {
         id: "api-cli-mcp-integration",
         name: "API / CLI / MCP Integration",
-        description: "Guide agents and systems to use scoped x-api-key integration tokens, CLI-ready examples, MCP discovery, rate limits, and owner-isolated warranty APIs.",
+        description: "Use scoped x-api-key integration tokens with the REST API, Warrantee CLI commands, and the Warrantee stdio MCP server while respecting rate limits and owner-isolated warranty APIs.",
       },
       {
         id: "warranty-verification",
