@@ -21,7 +21,7 @@ export function GET() {
     authentication: {
       schemes: ["x-api-key", "Bearer", "OAuth2"],
       instructions:
-        "For private account workflows, the user must sign in to Warrantee and generate a scoped integration token from Settings > API / CLI / MCP. Do not request or store Warrantee usernames or passwords.",
+        "For private account workflows, the user must sign in to Warrantee and generate a scoped integration token from Settings > API / CLI / MCP. Never ask users for passwords. Do not request or store Warrantee usernames or passwords.",
     },
     defaultInputModes: ["text/plain", "application/json"],
     defaultOutputModes: ["text/plain", "application/json", "text/markdown"],
@@ -29,7 +29,7 @@ export function GET() {
       {
         id: "api-cli-mcp-integration",
         name: "API / CLI / MCP Integration",
-        description: "Use scoped x-api-key integration tokens with the REST API, Warrantee CLI commands, and the Warrantee stdio MCP server while respecting rate limits and owner-isolated warranty APIs.",
+        description: "Use scoped x-api-key integration tokens with the REST API, Warrantee CLI commands, and the Warrantee stdio MCP server while respecting rate limits, owner-isolated warranty APIs, and the no-password integration rule.",
       },
       {
         id: "warranty-verification",

@@ -39,7 +39,7 @@ export function GET() {
         schemes: ["x-api-key", "bearer", "oauth2"],
       },
       instructions:
-        "Use /llms.txt, the API catalog, and this MCP card to understand Warrantee. Public warranty verification can be discovered without private account data. Private warranty, claim, seller, or account actions require the user to sign in to Warrantee, open Settings > API / CLI / MCP, generate a scoped integration token, and provide it as x-api-key. Never request or store a Warrantee username or password for integrations. Respect scopes, rate limits, owner isolation, and revocation.",
+        "Use /llms.txt, the API catalog, and this MCP card to understand Warrantee. Public warranty verification can be discovered without private account data. Private warranty, claim, seller, or account actions require the user to sign in to Warrantee, open Settings > API / CLI / MCP, generate a scoped integration token, and provide it as x-api-key. Never ask users for passwords, and never request or store a Warrantee username or password for integrations. Respect scopes, rate limits, owner isolation, and revocation.",
       resources: [],
       tools: [
         {
