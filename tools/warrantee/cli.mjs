@@ -6,7 +6,11 @@ import { fileURLToPath } from "node:url";
 import {
   createWarranty,
   deleteWarranty,
+  getClaim,
+  getDocument,
   getWarranty,
+  listClaims,
+  listDocuments,
   listWarranties,
   resolveApiKey,
   updateWarranty,
@@ -24,6 +28,10 @@ Usage:
   warrantee warranties create --product-name NAME --start-date YYYY-MM-DD --end-date YYYY-MM-DD [options]
   warrantee warranties update <id> [options]
   warrantee warranties delete <id> --confirm
+  warrantee claims list [--page N] [--limit N] [--status STATUS] [--warranty-id ID]
+  warrantee claims get <id>
+  warrantee documents list [--page N] [--limit N] [--warranty-id ID] [--query TEXT]
+  warrantee documents get <id>
   warrantee verify <reference-or-serial-or-id>
   warrantee-mcp
 
@@ -34,6 +42,10 @@ Repo usage:
   npm run warrantee:cli -- warranties create --product-name NAME --start-date YYYY-MM-DD --end-date YYYY-MM-DD [options]
   npm run warrantee:cli -- warranties update <id> [options]
   npm run warrantee:cli -- warranties delete <id> --confirm
+  npm run warrantee:cli -- claims list [--page N] [--limit N] [--status STATUS] [--warranty-id ID]
+  npm run warrantee:cli -- claims get <id>
+  npm run warrantee:cli -- documents list [--page N] [--limit N] [--warranty-id ID] [--query TEXT]
+  npm run warrantee:cli -- documents get <id>
   npm run warrantee:cli -- verify <reference-or-serial-or-id>
   npm run warrantee:mcp --
 
@@ -192,6 +204,58 @@ export async function runCli(argv = process.argv.slice(2), io = {}) {
       assertNoUnknownOptions(args);
       writeJson(await verifyWarranty(query, clientOptions), { pretty: context.pretty, stdout });
       return 0;
+    }
+
+    if (command === "claims") {
+      const subcommand = args.shift();
+      if (subcommand === "list") {
+        const page = parseNumber(takeOption(args, "--page"), "--page");
+        const limit = parseNumber(takeOption(args, "--limit"), "--limit");
+        const status = takeOption(args, "--status");
+        const warrantyId = takeOption(args, "--warranty-id");
+        assertNoUnknownOptions(args);
+        writeJson(await listClaims({ ...clientOptions, page, limit, status, warrantyId }), {
+          pretty: context.pretty,
+          stdout,
+        });
+        return 0;
+      }
+
+      if (subcommand === "get") {
+        const id = args.shift();
+        if (!id) throw new WarranteeApiError("Expected: warrantee claims get <id>");
+        assertNoUnknownOptions(args);
+        writeJson(await getClaim(id, clientOptions), { pretty: context.pretty, stdout });
+        return 0;
+      }
+
+      throw new WarranteeApiError(`Unknown claims command: ${subcommand}`);
+    }
+
+    if (command === "documents") {
+      const subcommand = args.shift();
+      if (subcommand === "list") {
+        const page = parseNumber(takeOption(args, "--page"), "--page");
+        const limit = parseNumber(takeOption(args, "--limit"), "--limit");
+        const warrantyId = takeOption(args, "--warranty-id");
+        const query = takeOption(args, "--query");
+        assertNoUnknownOptions(args);
+        writeJson(await listDocuments({ ...clientOptions, page, limit, warrantyId, query }), {
+          pretty: context.pretty,
+          stdout,
+        });
+        return 0;
+      }
+
+      if (subcommand === "get") {
+        const id = args.shift();
+        if (!id) throw new WarranteeApiError("Expected: warrantee documents get <id>");
+        assertNoUnknownOptions(args);
+        writeJson(await getDocument(id, clientOptions), { pretty: context.pretty, stdout });
+        return 0;
+      }
+
+      throw new WarranteeApiError(`Unknown documents command: ${subcommand}`);
     }
 
     if (command !== "warranties") {

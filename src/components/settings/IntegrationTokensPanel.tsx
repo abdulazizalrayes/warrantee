@@ -36,6 +36,8 @@ export function IntegrationTokensPanel({ locale }: Props) {
   const [name, setName] = useState("Production integration");
   const [readScope, setReadScope] = useState(true);
   const [writeScope, setWriteScope] = useState(true);
+  const [claimsReadScope, setClaimsReadScope] = useState(true);
+  const [documentsReadScope, setDocumentsReadScope] = useState(true);
   const [rateLimit, setRateLimit] = useState(100);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -80,6 +82,8 @@ export function IntegrationTokensPanel({ locale }: Props) {
     const scopes = [
       ...(readScope ? ["warranties:read"] : []),
       ...(writeScope ? ["warranties:write"] : []),
+      ...(claimsReadScope ? ["claims:read"] : []),
+      ...(documentsReadScope ? ["documents:read"] : []),
     ];
 
     if (!name.trim() || scopes.length === 0) {
@@ -212,6 +216,18 @@ export function IntegrationTokensPanel({ locale }: Props) {
               setChecked: setWriteScope,
               label: "warranties:write",
               desc: isRTL ? "إنشاء وتحديث وإلغاء الضمانات" : "Create, update, and delete warranties",
+            },
+            {
+              checked: claimsReadScope,
+              setChecked: setClaimsReadScope,
+              label: "claims:read",
+              desc: isRTL ? "قراءة مطالبات الضمان المرتبطة" : "Read linked warranty claims",
+            },
+            {
+              checked: documentsReadScope,
+              setChecked: setDocumentsReadScope,
+              label: "documents:read",
+              desc: isRTL ? "قراءة بيانات المستندات بدون روابط الملفات الخاصة" : "Read document metadata without private file links",
             },
           ].map((scope) => (
             <button

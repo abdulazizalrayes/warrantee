@@ -151,6 +151,42 @@ export async function middleware(request: NextRequest) {
 
   applySecurityHeaders(response, Boolean(agentRouteInfo));
 
+  if (
+    !localeMatch &&
+    !isDiscoveryPath &&
+    !pathname.startsWith("/api/") &&
+    !pathname.startsWith("/auth/callback") &&
+    pathname !== "/"
+  ) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/en" + pathname;
+    return NextResponse.redirect(url, 301);
+  }
+
+  if (
+    pathname === "/auth/callback" ||
+    pathname.match(new RegExp(`^/(${LOCALE_PREFIX_PATTERN})/auth/callback`))
+  ) {
+    applyNoIndexHeader(response);
+    return response;
+  }
+
+  const hasSupabaseClientConfig =
+    Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL) &&
+    Boolean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+
+  if (!hasSupabaseClientConfig) {
+    if (isProtectedAppArea || isAdminArea || isApprovalArea) {
+      return NextResponse.redirect(buildAuthRedirectUrl(request, locale));
+    }
+
+    if (shouldNoIndexPath) {
+      applyNoIndexHeader(response);
+    }
+
+    return response;
+  }
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -180,26 +216,6 @@ export async function middleware(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
-  if (
-    !localeMatch &&
-    !isDiscoveryPath &&
-    !pathname.startsWith("/api/") &&
-    !pathname.startsWith("/auth/callback") &&
-    pathname !== "/"
-  ) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/en" + pathname;
-    return NextResponse.redirect(url, 301);
-  }
-
-  if (
-    pathname === "/auth/callback" ||
-    pathname.match(new RegExp(`^/(${LOCALE_PREFIX_PATTERN})/auth/callback`))
-  ) {
-    applyNoIndexHeader(response);
-    return response;
-  }
 
   if (isAdminArea || isApprovalArea) {
     if (!user) {

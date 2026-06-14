@@ -153,6 +153,50 @@ export function deleteWarranty(id, options = {}) {
   });
 }
 
+export function listClaims(options = {}) {
+  return apiRequest({
+    ...options,
+    path: "/api/v1/claims",
+    method: "GET",
+    query: {
+      page: options.page,
+      limit: options.limit,
+      status: options.status,
+      warranty_id: options.warrantyId,
+    },
+  });
+}
+
+export function getClaim(id, options = {}) {
+  return apiRequest({
+    ...options,
+    path: `/api/v1/claims/${encodeURIComponent(id)}`,
+    method: "GET",
+  });
+}
+
+export function listDocuments(options = {}) {
+  return apiRequest({
+    ...options,
+    path: "/api/v1/documents",
+    method: "GET",
+    query: {
+      page: options.page,
+      limit: options.limit,
+      warranty_id: options.warrantyId,
+      q: options.query,
+    },
+  });
+}
+
+export function getDocument(id, options = {}) {
+  return apiRequest({
+    ...options,
+    path: `/api/v1/documents/${encodeURIComponent(id)}`,
+    method: "GET",
+  });
+}
+
 export function verifyWarranty(query, options = {}) {
   return apiRequest({
     ...options,
@@ -170,5 +214,9 @@ export const warranteeApi = {
   createWarranty,
   updateWarranty,
   deleteWarranty,
+  listClaims,
+  getClaim,
+  listDocuments,
+  getDocument,
   verifyWarranty,
 };

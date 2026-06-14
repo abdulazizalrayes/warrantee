@@ -26,6 +26,10 @@ const translations = {
     getWarranty: 'Get Warranty',
     updateWarranty: 'Update Warranty',
     deleteWarranty: 'Delete Warranty',
+    listClaims: 'List Claims',
+    getClaim: 'Get Claim',
+    listDocuments: 'List Document Metadata',
+    getDocument: 'Get Document Metadata',
     parameters: 'Parameters',
     response: 'Response',
     required: 'Required',
@@ -47,13 +51,13 @@ const translations = {
     cli: 'CLI and scripts',
     cliDesc: 'Use the official Warrantee CLI in shell scripts, ERP jobs, ecommerce syncs, and CI tasks. In this repo it runs through npm scripts; after package installation or npm link it can also run as warrantee. The token belongs to the signed-in Warrantee user and never requires storing a username or password.',
     mcp: 'MCP and agent use',
-    mcpDesc: 'Run the Warrantee MCP server over stdio or call the hosted HTTP MCP endpoint at /api/mcp so agents can list, get, create, update, delete, and verify warranties through the same scoped API key. In this repo use npm run warrantee:mcp; after package installation or npm link use warrantee-mcp. Agents must respect scopes, rate limits, ownership boundaries, and never ask users for passwords.',
+    mcpDesc: 'Run the Warrantee MCP server over stdio or call the hosted HTTP MCP endpoint at /api/mcp so agents can list, get, create, update, delete, and verify warranties; list claims; and read document metadata through the same scoped API key. In this repo use npm run warrantee:mcp; after package installation or npm link use warrantee-mcp. Agents must respect scopes, rate limits, ownership boundaries, and never ask users for passwords.',
     agentRules: 'Agent rules',
     agentRulesDesc: 'Use /llms.txt, /.well-known/agent-card.json, /.well-known/mcp.json, /.well-known/api-catalog, and /api/mcp for hosted MCP discovery. Use the public verify page for public checks. Use x-api-key only for authenticated account data.',
     tokenEnv: 'Recommended environment variable',
     revokeToken: 'Revoke token',
     scopes: 'Scopes',
-    scopesDesc: 'warranties:read for list/detail access and warranties:write for create/update/delete access.',
+    scopesDesc: 'warranties:read for warranty list/detail access, warranties:write for create/update/delete, claims:read for claim records, and documents:read for document metadata without private file URLs.',
     responseHeaders: 'Responses include X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset, Cache-Control: no-store, and Vary: Authorization, x-api-key.',
   },
   ar: {
@@ -73,6 +77,10 @@ const translations = {
     getWarranty: '\u0639\u0631\u0636 \u0636\u0645\u0627\u0646',
     updateWarranty: '\u062a\u062d\u062f\u064a\u062b \u0636\u0645\u0627\u0646',
     deleteWarranty: '\u062d\u0630\u0641 \u0636\u0645\u0627\u0646',
+    listClaims: 'عرض المطالبات',
+    getClaim: 'عرض مطالبة',
+    listDocuments: 'عرض بيانات المستندات',
+    getDocument: 'عرض بيانات مستند',
     parameters: '\u0627\u0644\u0645\u0639\u0644\u0645\u0627\u062a',
     response: '\u0627\u0644\u0627\u0633\u062a\u062c\u0627\u0628\u0629',
     required: '\u0645\u0637\u0644\u0648\u0628',
@@ -94,13 +102,13 @@ const translations = {
     cli: 'CLI والسكريبتات',
     cliDesc: 'استخدم CLI الرسمي لوارنتي في السكريبتات ووظائف ERP ومزامنة المتاجر ومهام CI. داخل هذا المستودع يعمل عبر npm scripts، وبعد تثبيت الحزمة أو npm link يمكن تشغيله كأمر warrantee. الرمز يتبع المستخدم المسجل ولا يتطلب حفظ اسم مستخدم أو كلمة مرور.',
     mcp: 'MCP واستخدام الوكلاء',
-    mcpDesc: 'شغّل خادم MCP لوارنتي عبر stdio أو استخدم نقطة MCP المستضافة على /api/mcp حتى يستطيع الوكلاء عرض الضمانات وإنشاءها وتحديثها وحذفها والتحقق منها عبر نفس مفتاح API المحدد الصلاحيات. داخل هذا المستودع استخدم npm run warrantee:mcp، وبعد تثبيت الحزمة أو npm link استخدم warrantee-mcp. يجب احترام الصلاحيات وحدود الطلبات وحدود الملكية وعدم طلب كلمات المرور.',
+    mcpDesc: 'شغّل خادم MCP لوارنتي عبر stdio أو استخدم نقطة MCP المستضافة على /api/mcp حتى يستطيع الوكلاء عرض الضمانات وإنشاءها وتحديثها وحذفها والتحقق منها، وعرض المطالبات، وقراءة بيانات المستندات عبر نفس مفتاح API المحدد الصلاحيات. داخل هذا المستودع استخدم npm run warrantee:mcp، وبعد تثبيت الحزمة أو npm link استخدم warrantee-mcp. يجب احترام الصلاحيات وحدود الطلبات وحدود الملكية وعدم طلب كلمات المرور.',
     agentRules: 'قواعد الوكلاء',
     agentRulesDesc: 'استخدم /llms.txt و /.well-known/agent-card.json و /.well-known/mcp.json و /.well-known/api-catalog و /api/mcp لاكتشاف MCP المستضاف. استخدم صفحة التحقق العامة للفحوص العامة. استخدم x-api-key فقط لبيانات الحساب المصادق عليها.',
     tokenEnv: 'متغير البيئة الموصى به',
     revokeToken: '\u0625\u0644\u063A\u0627\u0621 \u0631\u0645\u0632',
     scopes: '\u0627\u0644\u0635\u0644\u0627\u062D\u064A\u0627\u062A',
-    scopesDesc: 'warranties:read \u0644\u0644\u0642\u0631\u0627\u0621\u0629 \u0648 warranties:write \u0644\u0644\u0625\u0646\u0634\u0627\u0621 \u0648\u0627\u0644\u062A\u062D\u062F\u064A\u062B \u0648\u0627\u0644\u062D\u0630\u0641.',
+    scopesDesc: 'warranties:read لقراءة الضمانات، و warranties:write للإنشاء والتحديث والحذف، و claims:read لقراءة المطالبات، و documents:read لقراءة بيانات المستندات بدون روابط الملفات الخاصة.',
     responseHeaders: '\u062A\u062A\u0636\u0645\u0646 \u0627\u0644\u0627\u0633\u062A\u062C\u0627\u0628\u0627\u062A X-RateLimit-Limit \u0648 X-RateLimit-Remaining \u0648 X-RateLimit-Reset \u0648 Cache-Control: no-store \u0648 Vary: Authorization, x-api-key.',
   }
 };
@@ -111,6 +119,10 @@ const endpoints = [
   { method: 'GET', path: '/api/v1/warranties/:id', desc: 'getWarranty', params: 'id (path)' },
   { method: 'PUT', path: '/api/v1/warranties/:id', desc: 'updateWarranty', params: 'product_name, start_date, end_date, status, category, supplier' },
   { method: 'DELETE', path: '/api/v1/warranties/:id', desc: 'deleteWarranty', params: 'id (path)' },
+  { method: 'GET', path: '/api/v1/claims', desc: 'listClaims', params: 'page, limit, status, warranty_id' },
+  { method: 'GET', path: '/api/v1/claims/:id', desc: 'getClaim', params: 'id (path)' },
+  { method: 'GET', path: '/api/v1/documents', desc: 'listDocuments', params: 'page, limit, warranty_id, q' },
+  { method: 'GET', path: '/api/v1/documents/:id', desc: 'getDocument', params: 'id (path)' },
 ];
 
 const methodColors: Record<string, string> = {
@@ -134,6 +146,8 @@ export default function ApiDocsPage() {
     './tools/warrantee/cli.mjs auth status',
     'warrantee auth status',
     'npm run warrantee:cli -- warranties list --status active --pretty',
+    'npm run warrantee:cli -- claims list --status pending --pretty',
+    'npm run warrantee:cli -- documents list --query receipt --pretty',
     'npm run warrantee:cli -- warranties create \\',
     '  --product-name "Laptop" \\',
     '  --start-date 2026-01-01 \\',
@@ -285,7 +299,7 @@ export default function ApiDocsPage() {
           </div>
           <div className="mt-4 min-w-0 overflow-x-auto rounded-lg bg-gray-900 p-3">
             <code className="text-sm text-gray-300" dir="ltr">
-              {`{ "name": "ERP production", "scopes": ["warranties:read", "warranties:write"], "rate_limit_per_minute": 100 }`}
+              {`{ "name": "ERP production", "scopes": ["warranties:read", "warranties:write", "claims:read", "documents:read"], "rate_limit_per_minute": 100 }`}
             </code>
           </div>
           <p className="mt-3 text-sm text-gray-600"><span className="font-medium">{t.scopes}:</span> {t.scopesDesc}</p>

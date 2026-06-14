@@ -6,7 +6,12 @@ import { apiJson } from "@/lib/api-response";
 import { getClientIp, getRateLimitHeaders, rateLimit } from "@/lib/rate-limit";
 import type { Json } from "@/types/database";
 
-export const API_V1_SCOPES = ["warranties:read", "warranties:write"] as const;
+export const API_V1_SCOPES = [
+  "warranties:read",
+  "warranties:write",
+  "claims:read",
+  "documents:read",
+] as const;
 export type ApiV1Scope = (typeof API_V1_SCOPES)[number];
 
 const DEFAULT_API_RATE_LIMIT_PER_MINUTE = 100;

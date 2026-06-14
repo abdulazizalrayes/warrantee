@@ -6,7 +6,11 @@ import { fileURLToPath } from "node:url";
 import {
   createWarranty,
   deleteWarranty,
+  getClaim,
+  getDocument,
   getWarranty,
+  listClaims,
+  listDocuments,
   listWarranties,
   updateWarranty,
   verifyWarranty,
@@ -194,6 +198,66 @@ export const tools = [
       required: ["query"],
     },
   },
+  {
+    name: "list_claims",
+    title: "List claims",
+    description:
+      "List warranty claims visible to the authenticated Warrantee integration token. Requires claims:read.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        ...authProperties,
+        page: { type: "number", minimum: 1, default: 1 },
+        limit: { type: "number", minimum: 1, maximum: 100, default: 20 },
+        status: { type: "string" },
+        warranty_id: { type: "string" },
+      },
+    },
+  },
+  {
+    name: "get_claim",
+    title: "Get claim",
+    description:
+      "Fetch one warranty claim by ID when the related warranty is visible to the authenticated integration token.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        ...authProperties,
+        id: { type: "string" },
+      },
+      required: ["id"],
+    },
+  },
+  {
+    name: "list_documents",
+    title: "List document metadata",
+    description:
+      "List warranty document metadata visible to the authenticated integration token. Does not expose private file URLs or storage paths. Requires documents:read.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        ...authProperties,
+        page: { type: "number", minimum: 1, default: 1 },
+        limit: { type: "number", minimum: 1, maximum: 100, default: 20 },
+        warranty_id: { type: "string" },
+        query: { type: "string" },
+      },
+    },
+  },
+  {
+    name: "get_document",
+    title: "Get document metadata",
+    description:
+      "Fetch one warranty document metadata record when the related warranty is visible to the authenticated integration token. Private file URLs are not returned.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        ...authProperties,
+        id: { type: "string" },
+      },
+      required: ["id"],
+    },
+  },
 ];
 
 export async function callTool(name, args = {}, context = {}) {
@@ -224,6 +288,26 @@ export async function callTool(name, args = {}, context = {}) {
       return deleteWarranty(requireString(args, "id"), options);
     case "verify_warranty":
       return verifyWarranty(requireString(args, "query"), options);
+    case "list_claims":
+      return listClaims({
+        ...options,
+        page: optionalNumber(args, "page"),
+        limit: optionalNumber(args, "limit"),
+        status: optionalString(args, "status"),
+        warrantyId: optionalString(args, "warranty_id"),
+      });
+    case "get_claim":
+      return getClaim(requireString(args, "id"), options);
+    case "list_documents":
+      return listDocuments({
+        ...options,
+        page: optionalNumber(args, "page"),
+        limit: optionalNumber(args, "limit"),
+        warrantyId: optionalString(args, "warranty_id"),
+        query: optionalString(args, "query"),
+      });
+    case "get_document":
+      return getDocument(requireString(args, "id"), options);
     default:
       throw new WarranteeApiError(`Unknown tool: ${name}`);
   }

@@ -88,6 +88,64 @@ describe("Warrantee CLI and MCP", () => {
     expect(calls[0]?.init.headers).toMatchObject({ "x-api-key": "wrt_cli_secret" });
   });
 
+  it("runs CLI claims and document metadata commands against scoped API routes", async () => {
+    const claimCalls: FetchCall[] = [];
+    const documentCalls: FetchCall[] = [];
+    const stdout: string[] = [];
+    const stderr: string[] = [];
+    const { runCli } = await import(toolModule("cli.mjs"));
+
+    const claimsCode = await runCli(
+      ["--api-key", "wrt_cli_secret", "claims", "list", "--status", "pending"],
+      {
+        fetchImpl: mockFetch({ data: [{ id: "c1", status: "pending" }] }, claimCalls),
+        stdout: { write: (value: string) => stdout.push(value) },
+        stderr: { write: (value: string) => stderr.push(value) },
+        env: {},
+      }
+    );
+    const documentsCode = await runCli(
+      ["--api-key", "wrt_cli_secret", "documents", "list", "--query", "receipt"],
+      {
+        fetchImpl: mockFetch({ data: [{ id: "d1", file_name: "receipt.pdf" }] }, documentCalls),
+        stdout: { write: (value: string) => stdout.push(value) },
+        stderr: { write: (value: string) => stderr.push(value) },
+        env: {},
+      }
+    );
+
+    expect(claimsCode).toBe(0);
+    expect(documentsCode).toBe(0);
+    expect(stderr.join("")).toBe("");
+    expect(claimCalls[0]?.url).toBe("https://warrantee.io/api/v1/claims?status=pending");
+    expect(documentCalls[0]?.url).toBe("https://warrantee.io/api/v1/documents?q=receipt");
+    expect(claimCalls[0]?.init.headers).toMatchObject({ "x-api-key": "wrt_cli_secret" });
+    expect(documentCalls[0]?.init.headers).toMatchObject({ "x-api-key": "wrt_cli_secret" });
+  });
+
+  it("targets claims and document metadata from the API client without exposing passwords", async () => {
+    const calls: FetchCall[] = [];
+    const { listClaims, listDocuments } = await import(toolModule("api-client.mjs"));
+
+    await listClaims({
+      baseUrl: "https://warrantee.io",
+      apiKey: "wrt_test_secret",
+      status: "pending",
+      fetchImpl: mockFetch({ data: [] }, calls),
+    });
+    await listDocuments({
+      baseUrl: "https://warrantee.io",
+      apiKey: "wrt_test_secret",
+      query: "receipt",
+      fetchImpl: mockFetch({ data: [] }, calls),
+    });
+
+    expect(calls[0]?.url).toBe("https://warrantee.io/api/v1/claims?status=pending");
+    expect(calls[1]?.url).toBe("https://warrantee.io/api/v1/documents?q=receipt");
+    expect(JSON.stringify(calls.map((call) => call.init.headers))).not.toContain("password");
+    expect(JSON.stringify(calls.map((call) => call.init.headers))).not.toContain("username");
+  });
+
   it("exposes MCP tools and calls private tools through the API key", async () => {
     const calls: FetchCall[] = [];
     const { handleMcpRequest } = await import(toolModule("mcp-server.mjs"));
@@ -99,6 +157,12 @@ describe("Warrantee CLI and MCP", () => {
     })) as JsonRpcResponse;
     expect(listResponse.result.tools.map((tool: { name: string }) => tool.name)).toContain(
       "list_warranties"
+    );
+    expect(listResponse.result.tools.map((tool: { name: string }) => tool.name)).toContain(
+      "list_claims"
+    );
+    expect(listResponse.result.tools.map((tool: { name: string }) => tool.name)).toContain(
+      "list_documents"
     );
 
     const callResponse = (await handleMcpRequest(
@@ -118,6 +182,41 @@ describe("Warrantee CLI and MCP", () => {
     expect(callResponse.result.content[0].text).toContain("\"id\": \"abc\"");
     expect(calls[0]?.url).toBe("https://warrantee.io/api/v1/warranties/abc");
     expect(calls[0]?.init.headers).toMatchObject({ "x-api-key": "wrt_mcp_secret" });
+  });
+
+  it("calls MCP claim and document metadata tools through scoped API routes", async () => {
+    const calls: FetchCall[] = [];
+    const { handleMcpRequest } = await import(toolModule("mcp-server.mjs"));
+
+    await handleMcpRequest(
+      {
+        jsonrpc: "2.0",
+        id: 4,
+        method: "tools/call",
+        params: { name: "list_claims", arguments: { status: "pending" } },
+      },
+      {
+        env: { WARRANTEE_API_KEY: "wrt_mcp_secret" },
+        fetchImpl: mockFetch({ data: [] }, calls),
+      }
+    );
+    await handleMcpRequest(
+      {
+        jsonrpc: "2.0",
+        id: 5,
+        method: "tools/call",
+        params: { name: "list_documents", arguments: { query: "receipt" } },
+      },
+      {
+        env: { WARRANTEE_API_KEY: "wrt_mcp_secret" },
+        fetchImpl: mockFetch({ data: [] }, calls),
+      }
+    );
+
+    expect(calls[0]?.url).toBe("https://warrantee.io/api/v1/claims?status=pending");
+    expect(calls[1]?.url).toBe("https://warrantee.io/api/v1/documents?q=receipt");
+    expect(calls[0]?.init.headers).toMatchObject({ "x-api-key": "wrt_mcp_secret" });
+    expect(calls[1]?.init.headers).toMatchObject({ "x-api-key": "wrt_mcp_secret" });
   });
 
   it("requires explicit confirmation before MCP delete_warranty", async () => {

@@ -20,6 +20,8 @@
     "warrantee:cli": "node tools/warrantee/cli.mjs",
     "warrantee:mcp": "node tools/warrantee/mcp-server.mjs",
     "pack:cli": "npm pack ./packages/warrantee-cli --dry-run",
+    "qa:e2e-env": "node scripts/check-local-e2e-env.mjs",
+    "qa:ocr-corpus": "node scripts/check-ocr-corpus.mjs",
     "publish:cli": "npm publish ./packages/warrantee-cli --access public",
     "smoke:prod": "node scripts/production-smoke.mjs",
     "load:prod": "node scripts/production-load-check.mjs",

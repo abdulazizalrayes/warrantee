@@ -32,12 +32,32 @@ describe("api v1 helpers", () => {
     expect(generated.hash).not.toContain(generated.token);
   });
 
-  it("normalizes API scopes to allowed warranty scopes only", () => {
-    expect(normalizeApiScopes(["warranties:read", "admin:all", "warranties:read"])).toEqual([
+  it("normalizes API scopes to allowed integration scopes only", () => {
+    expect(
+      normalizeApiScopes([
+        "warranties:read",
+        "claims:read",
+        "documents:read",
+        "admin:all",
+        "warranties:read",
+      ])
+    ).toEqual([
       "warranties:read",
+      "claims:read",
+      "documents:read",
     ]);
-    expect(normalizeApiScopes([])).toEqual(["warranties:read", "warranties:write"]);
-    expect(normalizeApiScopes("warranties:read")).toEqual(["warranties:read", "warranties:write"]);
+    expect(normalizeApiScopes([])).toEqual([
+      "warranties:read",
+      "warranties:write",
+      "claims:read",
+      "documents:read",
+    ]);
+    expect(normalizeApiScopes("warranties:read")).toEqual([
+      "warranties:read",
+      "warranties:write",
+      "claims:read",
+      "documents:read",
+    ]);
   });
 
   it("bounds per-token API rate limits", () => {
@@ -61,5 +81,40 @@ describe("api v1 helpers", () => {
     expect(source).toContain("recordApiV1Usage");
     expect(source).toContain("api_usage_events");
     expect(source).toContain("X-RateLimit-Limit");
+  });
+
+  it("keeps claims and document metadata API routes scoped and access-controlled", () => {
+    const claimsList = fs.readFileSync(
+      path.join(process.cwd(), "src/app/api/v1/claims/route.ts"),
+      "utf8"
+    );
+    const claimsItem = fs.readFileSync(
+      path.join(process.cwd(), "src/app/api/v1/claims/[id]/route.ts"),
+      "utf8"
+    );
+    const documentsList = fs.readFileSync(
+      path.join(process.cwd(), "src/app/api/v1/documents/route.ts"),
+      "utf8"
+    );
+    const documentsItem = fs.readFileSync(
+      path.join(process.cwd(), "src/app/api/v1/documents/[id]/route.ts"),
+      "utf8"
+    );
+
+    expect(claimsList).toContain('authorizeApiV1Request(request, "claims:read")');
+    expect(claimsList).toContain("buildWarrantyAccessOrClause(requester.userId)");
+    expect(claimsItem).toContain('authorizeApiV1Request(request, "claims:read")');
+    expect(claimsItem).toContain("buildWarrantyAccessOrClause(requester.userId)");
+
+    expect(documentsList).toContain('authorizeApiV1Request(request, "documents:read")');
+    expect(documentsList).toContain("buildWarrantyAccessOrClause(requester.userId)");
+    expect(documentsItem).toContain('authorizeApiV1Request(request, "documents:read")');
+    expect(documentsItem).toContain("buildWarrantyAccessOrClause(requester.userId)");
+
+    for (const source of [documentsList, documentsItem]) {
+      expect(source).not.toContain("file_url");
+      expect(source).not.toContain("storage_path");
+      expect(source).toContain("security_status");
+    }
   });
 });

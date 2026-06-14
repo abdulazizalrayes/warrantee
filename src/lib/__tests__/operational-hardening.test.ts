@@ -29,12 +29,15 @@ describe("operational hardening", () => {
   it("enforces CSP and keeps the readiness gate aligned with production headers", () => {
     const nextConfig = readProjectFile("next.config.ts");
     const readiness = readProjectFile("scripts/operational-readiness-check.mjs");
+    const middleware = readProjectFile("src/middleware.ts");
 
     expect(nextConfig).toContain('key: "Content-Security-Policy"');
     expect(nextConfig).not.toContain("Content-Security-Policy-Report-Only");
     expect(nextConfig).toContain("https://static.cloudflareinsights.com");
     expect(readiness).toContain('"content-security-policy"');
     expect(readiness).toContain('csp: "enforced"');
+    expect(middleware).toContain("hasSupabaseClientConfig");
+    expect(middleware).toContain("return NextResponse.redirect(buildAuthRedirectUrl(request, locale));");
   });
 
   it("keeps dashboard browser counts aligned with production schema", () => {
@@ -165,6 +168,7 @@ describe("operational hardening", () => {
 
   it("documents API integrations without password sharing", () => {
     const apiDocs = readProjectFile("src/app/[locale]/api-docs/page.tsx");
+    const nextConfig = readProjectFile("next.config.ts");
 
     expect(apiDocs).toContain("do not store a Warrantee username or password");
     expect(apiDocs).toContain("No shared usernames or passwords");
@@ -172,6 +176,11 @@ describe("operational hardening", () => {
     expect(apiDocs).toContain("Recommended for server integrations");
     expect(apiDocs).toContain("Settings > API / CLI / MCP");
     expect(apiDocs).toContain("never ask users for passwords");
+    expect(apiDocs).toContain("claims:read");
+    expect(apiDocs).toContain("documents:read");
+    expect(apiDocs).toContain("without private file URLs");
+    expect(nextConfig).toContain("x-api-key");
+    expect(nextConfig).toContain("Idempotency-Key");
   });
 
   it("keeps password recovery routed through the auth callback", () => {

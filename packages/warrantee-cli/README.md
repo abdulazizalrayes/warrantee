@@ -35,8 +35,14 @@ warrantee warranties create \
   --start-date 2026-01-01 \
   --end-date 2027-01-01 \
   --idempotency-key erp-order-102044
+warrantee claims list --status pending --pretty
+warrantee claims get CLAIM_ID
+warrantee documents list --query receipt --pretty
+warrantee documents get DOCUMENT_ID
 warrantee verify WR-12345
 ```
+
+Document commands return metadata only. They do not expose private file URLs or storage paths.
 
 ## MCP
 
