@@ -45,9 +45,9 @@ const translations = {
     quickStartDesc: 'Every production integration starts from a logged-in Warrantee account. Generate a scoped token in Settings, store it as a secret, then use it from REST API calls, CLI scripts, or MCP-aware agents.',
     quickStartSteps: ['Sign in or create a Warrantee account.', 'Open Settings > API / CLI / MCP.', 'Generate a scoped integration token and copy it once.', 'Store it in a secret manager or environment variable.', 'Use the token as x-api-key for API, CLI, or agent requests.', 'Monitor usage, rotate keys, and revoke unused tokens.'],
     cli: 'CLI and scripts',
-    cliDesc: 'Use the official Warrantee CLI in shell scripts, ERP jobs, ecommerce syncs, and CI tasks. The token belongs to the signed-in Warrantee user and never requires storing a username or password.',
+    cliDesc: 'Use the official Warrantee CLI in shell scripts, ERP jobs, ecommerce syncs, and CI tasks. In this repo it runs through npm scripts; after package installation or npm link it can also run as warrantee. The token belongs to the signed-in Warrantee user and never requires storing a username or password.',
     mcp: 'MCP and agent use',
-    mcpDesc: 'Run the Warrantee MCP server over stdio so agents can list, get, create, update, delete, and verify warranties through the same scoped API key. Agents must respect scopes, rate limits, ownership boundaries, and never ask users for passwords.',
+    mcpDesc: 'Run the Warrantee MCP server over stdio so agents can list, get, create, update, delete, and verify warranties through the same scoped API key. In this repo use npm run warrantee:mcp; after package installation or npm link use warrantee-mcp. Agents must respect scopes, rate limits, ownership boundaries, and never ask users for passwords.',
     agentRules: 'Agent rules',
     agentRulesDesc: 'Use /llms.txt, /.well-known/agent-card.json, /.well-known/mcp.json, and /.well-known/api-catalog for discovery. Use the public verify page for public checks. Use x-api-key only for authenticated account data.',
     tokenEnv: 'Recommended environment variable',
@@ -92,9 +92,9 @@ const translations = {
     quickStartDesc: 'كل تكامل إنتاجي يبدأ من حساب Warrantee مسجل. أنشئ رمزاً محدود الصلاحيات من الإعدادات، احفظه كسِر، ثم استخدمه مع REST API أو السكريبتات أو الوكلاء المتوافقين مع MCP.',
     quickStartSteps: ['سجل الدخول أو أنشئ حساب Warrantee.', 'افتح الإعدادات ثم API / CLI / MCP.', 'أنشئ رمز تكامل محدد الصلاحيات وانسخه مرة واحدة.', 'احفظه في مدير أسرار أو متغير بيئة.', 'استخدم الرمز كـ x-api-key لطلبات API أو CLI أو الوكلاء.', 'راقب الاستخدام ودوّر المفاتيح وألغ الرموز غير المستخدمة.'],
     cli: 'CLI والسكريبتات',
-    cliDesc: 'استخدم CLI الرسمي لوارنتي في السكريبتات ووظائف ERP ومزامنة المتاجر ومهام CI. الرمز يتبع المستخدم المسجل ولا يتطلب حفظ اسم مستخدم أو كلمة مرور.',
+    cliDesc: 'استخدم CLI الرسمي لوارنتي في السكريبتات ووظائف ERP ومزامنة المتاجر ومهام CI. داخل هذا المستودع يعمل عبر npm scripts، وبعد تثبيت الحزمة أو npm link يمكن تشغيله كأمر warrantee. الرمز يتبع المستخدم المسجل ولا يتطلب حفظ اسم مستخدم أو كلمة مرور.',
     mcp: 'MCP واستخدام الوكلاء',
-    mcpDesc: 'شغّل خادم MCP لوارنتي عبر stdio حتى يستطيع الوكلاء عرض الضمانات وإنشاءها وتحديثها وحذفها والتحقق منها عبر نفس مفتاح API المحدد الصلاحيات. يجب احترام الصلاحيات وحدود الطلبات وحدود الملكية وعدم طلب كلمات المرور.',
+    mcpDesc: 'شغّل خادم MCP لوارنتي عبر stdio حتى يستطيع الوكلاء عرض الضمانات وإنشاءها وتحديثها وحذفها والتحقق منها عبر نفس مفتاح API المحدد الصلاحيات. داخل هذا المستودع استخدم npm run warrantee:mcp، وبعد تثبيت الحزمة أو npm link استخدم warrantee-mcp. يجب احترام الصلاحيات وحدود الطلبات وحدود الملكية وعدم طلب كلمات المرور.',
     agentRules: 'قواعد الوكلاء',
     agentRulesDesc: 'استخدم /llms.txt و /.well-known/agent-card.json و /.well-known/mcp.json و /.well-known/api-catalog للاكتشاف. استخدم صفحة التحقق العامة للفحوص العامة. استخدم x-api-key فقط لبيانات الحساب المصادق عليها.',
     tokenEnv: 'متغير البيئة الموصى به',
@@ -131,6 +131,8 @@ export default function ApiDocsPage() {
   const [copied, setCopied] = useState('');
   const cliExample = [
     'npm run warrantee:cli -- auth status',
+    './tools/warrantee/cli.mjs auth status',
+    'warrantee auth status',
     'npm run warrantee:cli -- warranties list --status active --pretty',
     'npm run warrantee:cli -- warranties create \\',
     '  --product-name "Laptop" \\',
@@ -145,6 +147,12 @@ export default function ApiDocsPage() {
         warrantee: {
           command: 'npm',
           args: ['run', 'warrantee:mcp', '--'],
+          env: {
+            WARRANTEE_API_KEY: 'wrt_...',
+          },
+        },
+        'warrantee-installed': {
+          command: 'warrantee-mcp',
           env: {
             WARRANTEE_API_KEY: 'wrt_...',
           },

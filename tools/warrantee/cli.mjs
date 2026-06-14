@@ -18,6 +18,16 @@ import { runMcpServer } from "./mcp-server.mjs";
 const HELP = `Warrantee CLI
 
 Usage:
+  warrantee auth status [--api-key KEY] [--base-url URL]
+  warrantee warranties list [--page N] [--limit N] [--status STATUS] [--category CATEGORY]
+  warrantee warranties get <id>
+  warrantee warranties create --product-name NAME --start-date YYYY-MM-DD --end-date YYYY-MM-DD [options]
+  warrantee warranties update <id> [options]
+  warrantee warranties delete <id> --confirm
+  warrantee verify <reference-or-serial-or-id>
+  warrantee-mcp
+
+Repo usage:
   npm run warrantee:cli -- auth status [--api-key KEY] [--base-url URL]
   npm run warrantee:cli -- warranties list [--page N] [--limit N] [--status STATUS] [--category CATEGORY]
   npm run warrantee:cli -- warranties get <id>

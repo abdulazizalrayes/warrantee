@@ -2,6 +2,13 @@
   "name": "warrantee",
   "version": "0.1.0",
   "private": true,
+  "bin": {
+    "warrantee": "tools/warrantee/cli.mjs",
+    "warrantee-mcp": "tools/warrantee/mcp-server.mjs"
+  },
+  "files": [
+    "tools/warrantee"
+  ],
   "engines": {
     "node": ">=20 <25"
   },
