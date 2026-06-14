@@ -1,0 +1,40 @@
+{
+  "name": "warrantee",
+  "version": "0.1.0",
+  "description": "Official Warrantee CLI and MCP server for API / CLI / MCP integrations.",
+  "type": "module",
+  "license": "UNLICENSED",
+  "homepage": "https://warrantee.io/en/api-docs",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/abdulazizalrayes/warrantee.git",
+    "directory": "packages/warrantee-cli"
+  },
+  "bugs": {
+    "url": "https://github.com/abdulazizalrayes/warrantee/issues"
+  },
+  "keywords": [
+    "warrantee",
+    "warranty",
+    "warranty-management",
+    "cli",
+    "mcp",
+    "model-context-protocol"
+  ],
+  "bin": {
+    "warrantee": "cli.mjs",
+    "warrantee-mcp": "mcp-server.mjs"
+  },
+  "files": [
+    "api-client.mjs",
+    "cli.mjs",
+    "mcp-server.mjs",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=20 <25"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

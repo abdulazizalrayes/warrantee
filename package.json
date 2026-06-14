@@ -2,13 +2,6 @@
   "name": "warrantee",
   "version": "0.1.0",
   "private": true,
-  "bin": {
-    "warrantee": "tools/warrantee/cli.mjs",
-    "warrantee-mcp": "tools/warrantee/mcp-server.mjs"
-  },
-  "files": [
-    "tools/warrantee"
-  ],
   "engines": {
     "node": ">=20 <25"
   },
@@ -26,6 +19,8 @@
     "test:e2e:ui": "playwright test --ui",
     "warrantee:cli": "node tools/warrantee/cli.mjs",
     "warrantee:mcp": "node tools/warrantee/mcp-server.mjs",
+    "pack:cli": "npm pack ./packages/warrantee-cli --dry-run",
+    "publish:cli": "npm publish ./packages/warrantee-cli --access public",
     "smoke:prod": "node scripts/production-smoke.mjs",
     "load:prod": "node scripts/production-load-check.mjs",
     "readiness:operational": "node scripts/operational-readiness-check.mjs",
