@@ -148,6 +148,9 @@ describe("operational hardening", () => {
 
   it("keeps public API usage metered and token lifecycle audited", () => {
     const migration = readProjectFile("supabase/migrations/20260610193000_api_usage_events.sql");
+    const tokenScopeMigration = readProjectFile(
+      "supabase/migrations/20260616120000_expand_api_integration_token_scopes.sql"
+    );
     const apiCollection = readProjectFile("src/app/api/v1/warranties/route.ts");
     const apiItem = readProjectFile("src/app/api/v1/warranties/[id]/route.ts");
     const tokenCreate = readProjectFile("src/app/api/integration-tokens/route.ts");
@@ -160,6 +163,8 @@ describe("operational hardening", () => {
     expect(apiCollection).toContain("recordApiV1Usage");
     expect(apiItem).toContain("recordApiV1Usage");
     expect(apiItem).toContain(".or(buildWarrantyAccessOrClause(requester.userId))");
+    expect(tokenScopeMigration).toContain("'claims:read'");
+    expect(tokenScopeMigration).toContain("'documents:read'");
     expect(tokenCreate).toContain("api_token_created");
     expect(tokenDelete).toContain("api_token_revoked");
     expect(tokenUsage).toContain(".eq(\"user_id\", user.id)");

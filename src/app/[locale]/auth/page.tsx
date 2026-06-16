@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import {
   Apple,
   ArrowUpRight,
@@ -26,7 +26,6 @@ type AuthTab = "login" | "signup";
 export default function AuthPage() {
   const params = useParams() ?? {};
   const router = useRouter();
-  const searchParams = useSearchParams();
   const locale = normalizeLocale(String(params.locale || "en"));
   const dict = getDictionary(locale);
   const isRTL = locale === "ar";
@@ -43,9 +42,14 @@ export default function AuthPage() {
   const [message, setMessage] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [authMode, setAuthMode] = useState<"magic" | "password">("magic");
-  const errorFromUrl = searchParams?.get("error");
-  const requestedTab = searchParams?.get("tab");
-  const requestedRedirect = searchParams?.get("redirect");
+  const [urlState, setUrlState] = useState<{
+    error: string | null;
+    tab: string | null;
+    redirect: string | null;
+  }>({ error: null, tab: null, redirect: null });
+  const errorFromUrl = urlState.error;
+  const requestedTab = urlState.tab;
+  const requestedRedirect = urlState.redirect;
   const nextPath =
     requestedRedirect && requestedRedirect.startsWith("/") && !requestedRedirect.startsWith("//")
       ? requestedRedirect
@@ -54,6 +58,15 @@ export default function AuthPage() {
   useEffect(() => {
     setActiveTab(requestedTab === "signup" ? "signup" : "login");
   }, [requestedTab]);
+
+  useEffect(() => {
+    const currentSearchParams = new URLSearchParams(window.location.search);
+    setUrlState({
+      error: currentSearchParams.get("error"),
+      tab: currentSearchParams.get("tab"),
+      redirect: currentSearchParams.get("redirect"),
+    });
+  }, []);
 
   const handleMagicLink = async (e: React.FormEvent) => {
     e.preventDefault(); setLoading(true); setMessage(""); setErrorMsg("");
