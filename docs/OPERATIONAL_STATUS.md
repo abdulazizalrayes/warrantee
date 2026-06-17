@@ -11,6 +11,9 @@ Last updated: 2026-06-17
 - A protected operational data-retention endpoint was added at `/api/cron/data-retention`, guarded by `CRON_SECRET`.
 - Data-retention controls now redact old raw email ingestion payloads, old OCR raw text, and old API usage events in bounded batches. Default retention windows are 90 days for sensitive ingestion/OCR text and 400 days for API usage events.
 - Production smoke/readiness checks now verify that the data-retention endpoint rejects unauthenticated access and that Redis-backed rate limiting is configured for production.
+- GitHub Actions repository secrets now include normalized `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`, matching the already-configured Vercel production Redis settings without quoted values.
+- CI passed on commit `d2ed7ec`, including loopback guard, type-check, lint, tests, build, and E2E smoke.
+- Manually triggered Production Security Gates passed on run `27674828911`, including production smoke, anonymous RLS probe, operational readiness, production operational E2E, and controlled load.
 - External items that cannot be completed from code alone remain explicit: local authenticated E2E requires local ignored QA credentials, the private OCR regression corpus requires private fixture files, and formal third-party penetration testing requires an external engagement.
 
 ## 2026-06-11 Current Launch Status
