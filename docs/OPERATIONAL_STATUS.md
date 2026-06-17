@@ -12,7 +12,7 @@ Last updated: 2026-06-17
 - Public verification lookup throttling was tightened from 60/minute to 30/minute per subject to reduce enumeration risk while preserving normal customer verification use.
 - A protected operational data-retention endpoint was added at `/api/cron/data-retention`, guarded by `CRON_SECRET`.
 - Data-retention controls now redact old raw email ingestion payloads, old OCR raw text, and old API usage events in bounded batches. Default retention windows are 90 days for sensitive ingestion/OCR text and 400 days for API usage events.
-- Vercel cron scheduling now includes daily expiry checks, hourly document-security scanning, and daily operational data retention.
+- Vercel cron scheduling now includes daily expiry checks, daily document-security scanning, and daily operational data retention. The document scan cron is daily because the current Vercel Hobby account blocks more-than-daily cron schedules.
 - Production smoke/readiness checks now verify that the data-retention endpoint rejects unauthenticated access and that Redis-backed rate limiting is configured for production.
 - GitHub Actions repository secrets now include normalized `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`, matching the already-configured Vercel production Redis settings without quoted values.
 - CI passed on commit `d2ed7ec`, including loopback guard, type-check, lint, tests, build, and E2E smoke.
