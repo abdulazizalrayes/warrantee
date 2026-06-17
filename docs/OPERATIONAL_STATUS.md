@@ -15,8 +15,10 @@ Last updated: 2026-06-17
 - Vercel cron scheduling now includes daily expiry checks, daily document-security scanning, and daily operational data retention. The document scan cron is daily because the current Vercel Hobby account blocks more-than-daily cron schedules.
 - Production smoke/readiness checks now verify that the data-retention endpoint rejects unauthenticated access and that Redis-backed rate limiting is configured for production.
 - GitHub Actions repository secrets now include normalized `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`, matching the already-configured Vercel production Redis settings without quoted values.
-- CI passed on commit `d2ed7ec`, including loopback guard, type-check, lint, tests, build, and E2E smoke.
-- Manually triggered Production Security Gates passed on run `27674828911`, including production smoke, anonymous RLS probe, operational readiness, production operational E2E, and controlled load.
+- Final production deployment for this hardening batch is `dpl_Ei2Nn1D2JvmHiZnDXsFzv3QhSZ8N`, ready and aliased to `https://warrantee.io`, `https://api.warrantee.io`, and `https://warrantee.vercel.app`.
+- Latest GitHub `CI` passed on commit `32fe4b3`, including loopback guard, type-check, lint, tests, build, and E2E smoke.
+- Manually triggered Production Security Gates passed on run `27678426397`, including production smoke, anonymous RLS probe, operational readiness, production operational E2E, and controlled load.
+- Local production verification after the final deployment passed `npm run smoke:prod` and `npm run readiness:operational` against `https://warrantee.io`.
 - External items that cannot be completed from code alone remain explicit: local authenticated E2E requires local ignored QA credentials, the private OCR regression corpus requires private fixture files, and formal third-party penetration testing requires an external engagement.
 
 ## 2026-06-11 Current Launch Status
