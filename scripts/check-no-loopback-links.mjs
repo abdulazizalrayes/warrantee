@@ -1,19 +1,10 @@
-import { readdir, readFile } from "node:fs/promises";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
+import { readFile } from "node:fs/promises";
 import path from "node:path";
 
 const root = process.cwd();
-const ignoredDirectories = new Set([
-  ".git",
-  ".codex-quarantine",
-  ".next",
-  ".vercel",
-  ".temp",
-  "e2e 2",
-  "migrations 2",
-  "node_modules",
-  "playwright-report",
-  "test-results",
-]);
+const execFileAsync = promisify(execFile);
 
 const ignoredFiles = new Set(["package-lock.json", "tsconfig.tsbuildinfo"]);
 const ignoredExtensions = new Set([
@@ -22,6 +13,7 @@ const ignoredExtensions = new Set([
   ".jpeg",
   ".pdf",
   ".png",
+  ".traineddata",
   ".webp",
   ".zip",
 ]);
@@ -61,25 +53,24 @@ function isAllowed(relativePath, patternName) {
   );
 }
 
-async function* walk(directory) {
-  const entries = await readdir(directory, { withFileTypes: true });
-  for (const entry of entries) {
-    const absolutePath = path.join(directory, entry.name);
-    const relativePath = toPosix(path.relative(root, absolutePath));
+async function listCandidateFiles() {
+  const { stdout } = await execFileAsync("git", [
+    "ls-files",
+    "-z",
+    "--cached",
+    "--others",
+    "--exclude-standard",
+  ]);
 
-    if (entry.isDirectory()) {
-      if (!ignoredDirectories.has(entry.name) && !entry.name.startsWith(".next.broken-")) {
-        yield* walk(absolutePath);
-      }
-      continue;
-    }
-
-    if (!entry.isFile()) continue;
-    if (ignoredFiles.has(entry.name)) continue;
-    if (ignoredExtensions.has(path.extname(entry.name).toLowerCase())) continue;
-
-    yield { absolutePath, relativePath };
-  }
+  return stdout
+    .split("\0")
+    .filter(Boolean)
+    .filter((relativePath) => !ignoredFiles.has(path.basename(relativePath)))
+    .filter((relativePath) => !ignoredExtensions.has(path.extname(relativePath).toLowerCase()))
+    .map((relativePath) => ({
+      absolutePath: path.join(root, relativePath),
+      relativePath: toPosix(relativePath),
+    }));
 }
 
 function findMatches(relativePath, text) {
@@ -105,7 +96,7 @@ function findMatches(relativePath, text) {
 
 const failures = [];
 
-for await (const file of walk(root)) {
+for (const file of await listCandidateFiles()) {
   let text;
   try {
     text = await readFile(file.absolutePath, "utf8");

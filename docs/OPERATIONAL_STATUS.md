@@ -1,6 +1,17 @@
 # Warrantee Operational Status
 
-Last updated: 2026-06-12
+Last updated: 2026-06-17
+
+## 2026-06-17 Handover Hardening Closure
+
+- Dependency audit was remediated with updated production dependencies; `npm audit --omit=dev --audit-level=moderate` reports no known moderate-or-higher production vulnerabilities.
+- API v1 claims and document metadata list routes no longer prefetch visible warranties with a `1000` row cap. They now use inner warranty joins plus referenced-table access filters so large accounts are not silently truncated.
+- Production rate-limit readiness now requires the distributed Upstash Redis backend through `RATE_LIMIT_REQUIRE_REDIS=1` in Production Security Gates.
+- Public verification lookup throttling was tightened from 60/minute to 30/minute per subject to reduce enumeration risk while preserving normal customer verification use.
+- A protected operational data-retention endpoint was added at `/api/cron/data-retention`, guarded by `CRON_SECRET`.
+- Data-retention controls now redact old raw email ingestion payloads, old OCR raw text, and old API usage events in bounded batches. Default retention windows are 90 days for sensitive ingestion/OCR text and 400 days for API usage events.
+- Production smoke/readiness checks now verify that the data-retention endpoint rejects unauthenticated access and that Redis-backed rate limiting is configured for production.
+- External items that cannot be completed from code alone remain explicit: local authenticated E2E requires local ignored QA credentials, the private OCR regression corpus requires private fixture files, and formal third-party penetration testing requires an external engagement.
 
 ## 2026-06-11 Current Launch Status
 

@@ -182,4 +182,4 @@ export const paymentRateLimit = (subject: string) =>
 export const certificateRateLimit = (subject: string) =>
   rateLimit(subject, { maxRequests: 12, windowMs: 10 * 60000, identifier: "certificate" });
 export const publicLookupRateLimit = (subject: string) =>
-  rateLimit(subject, { maxRequests: 60, windowMs: 60000, identifier: "public-lookup" });
+  rateLimit(subject, { maxRequests: 30, windowMs: 60000, identifier: "public-lookup" });

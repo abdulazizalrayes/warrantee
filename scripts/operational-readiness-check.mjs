@@ -144,6 +144,42 @@ async function checkSecurityHeaders() {
   return { name: "security-headers", status: "ok", csp: "enforced" };
 }
 
+async function checkRateLimitBackend() {
+  requireEnv(["UPSTASH_REDIS_REST_URL", "UPSTASH_REDIS_REST_TOKEN"]);
+  if (process.env.RATE_LIMIT_REQUIRE_REDIS !== "1") {
+    throw new Error("RATE_LIMIT_REQUIRE_REDIS must be set to 1 in production readiness.");
+  }
+
+  const response = await fetchWithTimeout(process.env.UPSTASH_REDIS_REST_URL, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${process.env.UPSTASH_REDIS_REST_TOKEN}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(["PING"]),
+  });
+  if (response.status !== 200) {
+    throw new Error(`Upstash Redis rate-limit backend returned ${response.status}`);
+  }
+
+  return { name: "rate-limit-backend", status: "ok", mode: "redis-required" };
+}
+
+async function checkDataRetentionEndpoint() {
+  requireEnv(["CRON_SECRET"]);
+
+  const response = await fetchWithTimeout(`${baseUrl}/api/cron/data-retention`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: "{}",
+  });
+  if (response.status !== 401) {
+    throw new Error(`Unauthenticated data retention probe returned ${response.status}, expected 401`);
+  }
+
+  return { name: "data-retention-endpoint", status: "ok", mode: "rejects-unauthenticated" };
+}
+
 async function checkSupabase() {
   const admin = createSupabaseAdminClient();
   const user = await findQaUser(admin);
@@ -599,12 +635,14 @@ async function main() {
     { name: "indexnow-key", run: () => checkUrl("indexnow-key", `/${indexNowKey}.txt`, 200, indexNowKey) },
     { name: "health", run: () => checkUrl("health", "/api/health") },
     { name: "security-headers", run: checkSecurityHeaders },
+    { name: "rate-limit-backend", run: checkRateLimitBackend },
     { name: "supabase", run: checkSupabase },
     { name: "resend", run: checkResend },
     { name: "email-send-endpoint", run: checkEmailSendEndpoint },
     { name: "hubspot", run: checkHubSpot },
     { name: "ocr-provider", run: checkOCRProvider },
     { name: "document-security-scanner", run: checkDocumentSecurityScanner },
+    { name: "data-retention-endpoint", run: checkDataRetentionEndpoint },
     { name: "stripe", run: checkStripe },
     { name: "stripe-webhook", run: checkStripeWebhook },
   ];

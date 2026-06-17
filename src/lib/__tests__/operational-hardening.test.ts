@@ -74,10 +74,20 @@ describe("operational hardening", () => {
 
   it("keeps production rate limiting distributed by default", () => {
     const rateLimit = readProjectFile("src/lib/rate-limit.ts");
+    const readiness = readProjectFile("scripts/operational-readiness-check.mjs");
+    const productionSecurity = readProjectFile(".github/workflows/production-security.yml");
 
     expect(rateLimit).toContain("process.env.NODE_ENV === \"production\"");
     expect(rateLimit).toContain("RATE_LIMIT_ALLOW_MEMORY_FALLBACK");
+    expect(rateLimit).toContain("RATE_LIMIT_REQUIRE_REDIS");
+    expect(rateLimit).toContain("identifier: \"public-lookup\"");
+    expect(rateLimit).toContain("maxRequests: 30");
     expect(rateLimit).toContain("return { success: false, remaining: 0, resetIn: windowMs }");
+    expect(readiness).toContain("checkRateLimitBackend");
+    expect(readiness).toContain("UPSTASH_REDIS_REST_URL");
+    expect(readiness).toContain("RATE_LIMIT_REQUIRE_REDIS must be set to 1");
+    expect(productionSecurity).toContain("UPSTASH_REDIS_REST_URL");
+    expect(productionSecurity).toContain("RATE_LIMIT_REQUIRE_REDIS: \"1\"");
   });
 
   it("keeps high-risk API responses on the shared no-store security helper", () => {
@@ -252,6 +262,7 @@ describe("operational hardening", () => {
     expect(smoke).toContain("/api/email/send");
     expect(smoke).toContain("/api/internal/document-security-scan");
     expect(smoke).toContain("/api/cron/scan-documents");
+    expect(smoke).toContain("/api/cron/data-retention");
   });
 
   it("keeps internal email sending active and authenticated in readiness", () => {
@@ -264,5 +275,35 @@ describe("operational hardening", () => {
     expect(readiness).toContain("EMAIL_SEND_API_SECRET");
     expect(readiness).toContain("authenticated-no-send-probe");
     expect(productionSecurity).toContain("EMAIL_SEND_API_SECRET");
+  });
+
+  it("keeps operational data retention protected and batch-bounded", () => {
+    const migration = readProjectFile(
+      "supabase/migrations/20260617071602_operational_data_retention_controls.sql"
+    );
+    const retention = readProjectFile("src/lib/server/data-retention.ts");
+    const route = readProjectFile("src/app/api/cron/data-retention/route.ts");
+    const readiness = readProjectFile("scripts/operational-readiness-check.mjs");
+    const envExample = readProjectFile(".env.local.example");
+
+    expect(migration).toContain("sensitive_payload_redacted_at");
+    expect(migration).toContain("sensitive_ocr_redacted_at");
+    expect(migration).toContain("api_usage_events_retention_created_idx");
+    expect(route).toContain("requireInternalBearer");
+    expect(route).toContain("process.env.CRON_SECRET");
+    expect(route).toContain("runOperationalDataRetention");
+    expect(retention).toContain("DATA_RETENTION_INGESTION_PAYLOAD_DAYS");
+    expect(retention).toContain("DATA_RETENTION_OCR_TEXT_DAYS");
+    expect(retention).toContain("DATA_RETENTION_API_USAGE_DAYS");
+    expect(retention).toContain("DATA_RETENTION_BATCH_LIMIT");
+    expect(retention).toContain("raw_payload: null");
+    expect(retention).toContain("text_body: null");
+    expect(retention).toContain("html_body: null");
+    expect(retention).toContain("ocr_raw_text: null");
+    expect(retention).toContain(".limit(config.limit)");
+    expect(readiness).toContain("checkDataRetentionEndpoint");
+    expect(readiness).toContain("/api/cron/data-retention");
+    expect(envExample).toContain("DATA_RETENTION_INGESTION_PAYLOAD_DAYS=90");
+    expect(envExample).toContain("DATA_RETENTION_API_USAGE_DAYS=400");
   });
 });

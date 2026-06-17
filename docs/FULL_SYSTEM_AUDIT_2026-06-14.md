@@ -58,31 +58,49 @@ Scope: Warrantee only (`warrantee.io` and this repository). This audit covered m
 
 ### Remaining Risks / Recommendations
 
+### 2026-06-17 Hardening Update
+
+The remaining code-addressable handover risks were closed after this audit:
+
+1. Production dependency advisories were remediated and the production dependency audit now passes.
+2. API v1 claims and document metadata list endpoints were changed to use relation-scoped access filters instead of a `1000` visible-warranty prefetch cap.
+3. Operational data retention was added for sensitive raw ingestion payloads, OCR raw text, and API usage events.
+4. Production readiness now verifies distributed Redis rate limiting and protected data-retention endpoint behavior.
+5. Public verification lookup rate limiting was tightened to reduce enumeration risk.
+
+External inputs remain required for the following items:
+
 1. Local authenticated E2E cannot be run unless `E2E_USER_EMAIL` and `E2E_USER_PASSWORD` are available in the local shell.
    - Risk: local workstation cannot reproduce the same signed-in journey as GitHub Production Security Gates.
    - Recommendation: restore local QA credentials in a secure, ignored env file or continue relying on GitHub secrets for authenticated production E2E.
 
-2. API v1 currently covers warranties only.
-   - Risk: CLI/MCP/API is useful but not yet a complete external operating surface for claims, documents, recalls, assets, or lifecycle intelligence.
-   - Recommendation: add versioned endpoints for claims, documents metadata, verification certificates, and future asset lifecycle events before selling larger enterprise integrations.
-
-3. Rate limiting is production-strict only when Redis is configured.
-   - Risk: if Redis env vars are removed, production can fail closed or degrade depending on configuration.
-   - Recommendation: keep `RATE_LIMIT_REQUIRE_REDIS=1` in production and monitor readiness checks for Redis/rate-limit backend.
-
-4. Full OCR torture testing remains limited by sample corpus.
+2. Full OCR torture testing remains limited by sample corpus.
    - Risk: hard scans, multi-invoice PDFs, handwriting, and multilingual receipts may still route to review or parse incorrectly.
    - Recommendation: maintain a private OCR regression corpus for Arabic/English receipts, PDFs, bad scans, duplicates, and fraud attempts.
 
-5. Public verification intentionally exposes proof-safe warranty fields.
-   - Risk: reference/serial lookup can still be enumerated if abused.
-   - Recommendation: keep public lookup rate limiting strict; consider CAPTCHA or proof-token mode if abuse appears.
+3. Formal third-party penetration testing is not yet complete.
+   - Risk: internal automated review cannot replace a signed external security assessment for enterprise/government buyers.
+   - Recommendation: schedule an external OWASP/API/multi-tenant penetration test before larger enterprise procurement.
 
-6. Team management is domain-based for company bootstrapping.
+### Longer-Term Product / Architecture Recommendations
+
+1. API v1 currently covers warranties, claims, and document metadata; future enterprise integrations will need recall, asset lifecycle, underwriting, and reliability-intelligence endpoints.
+   - Risk: CLI/MCP/API is useful but not yet a complete external operating surface for recalls, assets, underwriting, marketplace, or lifecycle intelligence.
+   - Recommendation: add versioned endpoints for verification certificates, recall events, asset lifecycle events, and reliability intelligence before selling larger enterprise integrations.
+
+2. Rate limiting is production-strict only when Redis is configured.
+   - Risk: if Redis env vars are removed, production fails closed by design.
+   - Recommendation: keep `RATE_LIMIT_REQUIRE_REDIS=1` in production and monitor readiness checks for Redis/rate-limit backend.
+
+3. Public verification intentionally exposes proof-safe warranty fields.
+   - Risk: reference/serial lookup can still be enumerated if abused.
+   - Recommendation: keep public lookup rate limiting strict; consider CAPTCHA, proof-token mode, or seller-issued verification links if abuse appears.
+
+4. Team management is domain-based for company bootstrapping.
    - Risk: enterprise/government customers will need stronger workspace boundaries than email domain matching alone.
    - Recommendation: add explicit organization/workspace ownership tables and invite acceptance before enterprise rollout.
 
-7. Product readiness is stronger than GTM readiness.
+5. Product readiness is stronger than GTM readiness.
    - Risk: technical platform can operate, but content depth, onboarding copy, demo flows, and sales proof still decide conversion.
    - Recommendation: continue building reference-grade EN/AR and additional-language content, plus demo/account onboarding flows tied to clear ICPs.
 

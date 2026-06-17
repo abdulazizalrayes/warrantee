@@ -27,6 +27,8 @@ const DOCUMENT_SELECT = `
   )
 `;
 
+const DOCUMENT_SELECT_WITH_VISIBLE_WARRANTY = DOCUMENT_SELECT.replace("warranties (", "warranties!inner (");
+
 function cleanOptionalString(value: string | null, maxLength: number) {
   return value && value.trim() ? sanitizeString(value, maxLength) : null;
 }
@@ -44,39 +46,15 @@ export async function GET(request: NextRequest) {
   const queryText = cleanOptionalString(searchParams.get("q"), 120);
   const offset = (page - 1) * limit;
 
-  const { data: visibleWarranties, error: warrantyError } = await supabase
-    .from("warranties")
-    .select("id")
-    .is("deleted_at", null)
-    .or(buildWarrantyAccessOrClause(requester.userId))
-    .limit(1000);
-
-  if (warrantyError) {
-    await recordApiV1Usage(supabase, request, requester, {
-      statusCode: 500,
-      scope: "documents:read",
-      metadata: { reason: "warranty_scope_error" },
-    });
-    return apiV1Json({ error: "Failed to resolve visible warranties" }, { status: 500 });
-  }
-
-  const warrantyIds = (visibleWarranties || []).map((warranty) => warranty.id).filter(Boolean);
-  if (warrantyIds.length === 0 || (warrantyId && !warrantyIds.includes(warrantyId))) {
-    await recordApiV1Usage(supabase, request, requester, {
-      statusCode: 200,
-      scope: "documents:read",
-      metadata: { page, limit, returned: 0 },
-    });
-    return apiV1Json({
-      data: [],
-      pagination: { page, limit, total: 0, totalPages: 0 },
-    });
-  }
-
   let query = supabase
     .from("warranty_documents")
-    .select(DOCUMENT_SELECT, { count: "exact" })
-    .in("warranty_id", warrantyId ? [warrantyId] : warrantyIds);
+    .select(DOCUMENT_SELECT_WITH_VISIBLE_WARRANTY, { count: "exact" })
+    .or(buildWarrantyAccessOrClause(requester.userId), { referencedTable: "warranties" })
+    .is("warranties.deleted_at", null);
+
+  if (warrantyId) {
+    query = query.eq("warranty_id", warrantyId);
+  }
 
   if (queryText) {
     query = query.ilike("file_name", `%${queryText}%`);

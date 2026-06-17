@@ -44,6 +44,7 @@ const protectedApiChecks = [
   { path: "/api/v1/warranties", method: "GET", expect: 401 },
   { path: "/api/cron/check-expiry", method: "GET", expect: [401, 503] },
   { path: "/api/cron/scan-documents", method: "GET", expect: [401, 503] },
+  { path: "/api/cron/data-retention", method: "POST", expect: [401, 503], body: {} },
   { path: "/api/internal/document-security-scan", method: "POST", expect: [401, 503], body: {} },
   { path: "/api/email/send", method: "POST", expect: [401, 503], body: {} },
   { path: "/api/push/send", method: "POST", expect: 401, body: {} },

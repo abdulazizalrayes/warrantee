@@ -321,6 +321,7 @@ export interface Database {
           trust_score: number | null
           error_message: string | null
           processed_at: string | null
+          sensitive_payload_redacted_at: string | null
           created_at: string
           updated_at: string
         }
@@ -342,14 +343,20 @@ export interface Database {
           trust_score?: number | null
           error_message?: string | null
           processed_at?: string | null
+          sensitive_payload_redacted_at?: string | null
         }
         Update: {
+          raw_payload?: Json | null
+          text_body?: string | null
+          html_body?: string | null
           matched_user_id?: string | null
           trust_level?: string | null
           trust_score?: number | null
           status?: string
           error_message?: string | null
           processed_at?: string | null
+          sensitive_payload_redacted_at?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -371,6 +378,7 @@ export interface Database {
           sim_hash: string | null
           warranty_id: string | null
           processed_at: string | null
+          sensitive_ocr_redacted_at: string | null
         }
         Insert: {
           ingestion_job_id: string
@@ -391,6 +399,7 @@ export interface Database {
           sim_hash?: string | null
           warranty_id?: string | null
           processed_at?: string | null
+          sensitive_ocr_redacted_at?: string | null
         }
         Relationships: []
       }
