@@ -30,6 +30,21 @@ tests/fixtures/ocr-corpus/private/manifest.json
 
 Private files must never be committed. The directory is ignored by Git.
 
+The private intake checklist is tracked at:
+
+```text
+docs/OCR_PRIVATE_CORPUS_COLLECTION_CHECKLIST_2026-06-17.md
+```
+
+The ignored private folder includes local helper templates:
+
+```text
+tests/fixtures/ocr-corpus/private/README.md
+tests/fixtures/ocr-corpus/private/manifest.template.json
+```
+
+These helper files are intentionally local-only because the whole private fixture folder is ignored. They prepare the workflow but do not count as real private OCR coverage.
+
 ## Manifest Contract
 
 Each entry must include:

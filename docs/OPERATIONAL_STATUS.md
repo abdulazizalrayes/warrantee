@@ -20,7 +20,8 @@ Last updated: 2026-06-17
 - Manually triggered Production Security Gates passed on run `27678426397`, including production smoke, anonymous RLS probe, operational readiness, production operational E2E, and controlled load.
 - Local production verification after the final deployment passed `npm run smoke:prod` and `npm run readiness:operational` against `https://warrantee.io`.
 - OCR regression coverage now has a committed synthetic corpus, a manifest validator, and parser regression tests for English, Arabic, mixed-language, poor OCR text, and duplicate-invoice cases. The private real-document gate remains intentionally fail-fast until approved private fixture files are placed in `tests/fixtures/ocr-corpus/private`.
-- External penetration-test readiness is packaged in `docs/EXTERNAL_PENTEST_SCOPE_2026-06-17.md`, including scope, rules of engagement, priority abuse cases, and required vendor deliverables. The actual signed third-party test remains an external engagement.
+- Private OCR collection is now operationalized in `docs/OCR_PRIVATE_CORPUS_COLLECTION_CHECKLIST_2026-06-17.md`. The ignored local folder includes a README and manifest template, but real private coverage still requires approved redacted documents and a passing `npm run qa:ocr-corpus:private` run.
+- External penetration-test readiness is packaged in `docs/EXTERNAL_PENTEST_SCOPE_2026-06-17.md`, including scope, rules of engagement, priority abuse cases, and required vendor deliverables. Vendor selection/RFP guidance is packaged in `docs/PENTEST_VENDOR_SELECTION_2026-06-17.md`. The actual signed third-party test remains an external engagement.
 - External items that cannot be completed from code alone remain explicit: local authenticated E2E requires local ignored QA credentials, private OCR torture coverage requires real private fixture files, and formal third-party penetration testing requires an external vendor engagement.
 
 ## 2026-06-11 Current Launch Status

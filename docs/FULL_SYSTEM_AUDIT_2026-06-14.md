@@ -76,11 +76,13 @@ External inputs remain required for the following items:
 
 2. Full OCR torture testing now has a committed synthetic regression gate, but real private samples are still required.
    - Closed: `tests/fixtures/ocr-corpus/synthetic/manifest.json`, `npm run qa:ocr-corpus`, and `src/lib/ocr/__tests__/warranty-field-parser.test.ts` cover English, Arabic, mixed-language, poor OCR text, and duplicate-invoice parser regressions.
-   - Remaining external/private input: hard scans, multi-invoice PDFs, handwriting, real Arabic/English receipts, and fraud attempts require private fixture files under `tests/fixtures/ocr-corpus/private`.
+   - Closed on 2026-06-17: the private collection checklist is documented in `docs/OCR_PRIVATE_CORPUS_COLLECTION_CHECKLIST_2026-06-17.md`, and the ignored local private corpus folder has a README plus manifest template.
+   - Remaining external/private input: hard scans, multi-invoice PDFs, handwriting, real Arabic/English receipts, and fraud attempts require approved private fixture files under `tests/fixtures/ocr-corpus/private`.
    - Recommendation: run `npm run qa:ocr-corpus:private` in secure QA once approved private documents are available.
 
 3. Formal third-party penetration testing is not yet complete.
    - Closed: the vendor-ready scope and rules of engagement are documented in `docs/EXTERNAL_PENTEST_SCOPE_2026-06-17.md`.
+   - Closed on 2026-06-17: vendor shortlisting, RFP questions, decision criteria, and outreach text are documented in `docs/PENTEST_VENDOR_SELECTION_2026-06-17.md`.
    - Remaining external input: an independent security vendor must execute and sign the assessment.
    - Recommendation: schedule the external OWASP/API/multi-tenant penetration test before larger enterprise/government procurement.
 
