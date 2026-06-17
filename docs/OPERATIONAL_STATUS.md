@@ -6,10 +6,13 @@ Last updated: 2026-06-17
 
 - Dependency audit was remediated with updated production dependencies; `npm audit --omit=dev --audit-level=moderate` reports no known moderate-or-higher production vulnerabilities.
 - API v1 claims and document metadata list routes no longer prefetch visible warranties with a `1000` row cap. They now use inner warranty joins plus referenced-table access filters so large accounts are not silently truncated.
+- Supabase production schema now has the June operational migrations recorded as applied, including API integration tokens, subscription billing state, API usage events, document security status, expanded API token scopes, and operational data-retention controls.
+- Production API integration token validation now allows `claims:read` and `documents:read` scopes, matching the API / CLI / MCP docs and routes.
 - Production rate-limit readiness now requires the distributed Upstash Redis backend through `RATE_LIMIT_REQUIRE_REDIS=1` in Production Security Gates.
 - Public verification lookup throttling was tightened from 60/minute to 30/minute per subject to reduce enumeration risk while preserving normal customer verification use.
 - A protected operational data-retention endpoint was added at `/api/cron/data-retention`, guarded by `CRON_SECRET`.
 - Data-retention controls now redact old raw email ingestion payloads, old OCR raw text, and old API usage events in bounded batches. Default retention windows are 90 days for sensitive ingestion/OCR text and 400 days for API usage events.
+- Vercel cron scheduling now includes daily expiry checks, hourly document-security scanning, and daily operational data retention.
 - Production smoke/readiness checks now verify that the data-retention endpoint rejects unauthenticated access and that Redis-backed rate limiting is configured for production.
 - GitHub Actions repository secrets now include normalized `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`, matching the already-configured Vercel production Redis settings without quoted values.
 - CI passed on commit `d2ed7ec`, including loopback guard, type-check, lint, tests, build, and E2E smoke.

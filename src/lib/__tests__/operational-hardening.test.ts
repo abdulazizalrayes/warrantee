@@ -254,6 +254,7 @@ describe("operational hardening", () => {
 
   it("keeps production smoke failures diagnostic", () => {
     const smoke = readProjectFile("scripts/production-smoke.mjs");
+    const vercel = readProjectFile("vercel.json");
 
     expect(smoke).toContain("class SmokeCheckError");
     expect(smoke).toContain("runCheck(\"public\"");
@@ -263,6 +264,9 @@ describe("operational hardening", () => {
     expect(smoke).toContain("/api/internal/document-security-scan");
     expect(smoke).toContain("/api/cron/scan-documents");
     expect(smoke).toContain("/api/cron/data-retention");
+    expect(vercel).toContain("/api/cron/check-expiry");
+    expect(vercel).toContain("/api/cron/scan-documents");
+    expect(vercel).toContain("/api/cron/data-retention");
   });
 
   it("keeps internal email sending active and authenticated in readiness", () => {
