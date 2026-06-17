@@ -22,6 +22,7 @@
     "pack:cli": "npm pack ./packages/warrantee-cli --dry-run",
     "qa:e2e-env": "node scripts/check-local-e2e-env.mjs",
     "qa:ocr-corpus": "node scripts/check-ocr-corpus.mjs",
+    "qa:ocr-corpus:private": "OCR_CORPUS_DIR=tests/fixtures/ocr-corpus/private OCR_CORPUS_REQUIRED=1 node scripts/check-ocr-corpus.mjs",
     "publish:cli": "npm publish ./packages/warrantee-cli --access public",
     "smoke:prod": "node scripts/production-smoke.mjs",
     "load:prod": "node scripts/production-load-check.mjs",

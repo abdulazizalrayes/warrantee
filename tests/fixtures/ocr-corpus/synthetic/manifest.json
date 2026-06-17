@@ -1,0 +1,92 @@
+{
+  "description": "Synthetic, non-customer OCR regression fixtures safe for Git. Real customer or vendor documents belong only in tests/fixtures/ocr-corpus/private.",
+  "requirements": {
+    "minEntries": 4,
+    "locales": ["en-SA", "ar-SA", "mixed"],
+    "kinds": ["receipt", "invoice", "poor_scan_text", "duplicate_invoice"]
+  },
+  "entries": [
+    {
+      "id": "synthetic-en-receipt-clean-001",
+      "locale": "en-SA",
+      "kind": "receipt",
+      "sensitivity": "synthetic",
+      "text": "Invoice No: INV-2026-001\nSeller: Riyadh Electronics\nProduct: Laptop Pro 14\nSerial Number: LAP-2026-0001\nPurchase Date: 2026-06-01\nWarranty: 24 months\nTotal: SAR 4299",
+      "minConfidence": 0.65,
+      "expectedFields": {
+        "product_name": "Laptop Pro 14",
+        "serial_number": "LAP-2026-0001",
+        "start_date": "2026-06-01",
+        "warranty_duration": "24 months",
+        "supplier": "Riyadh Electronics",
+        "purchase_price": "4299",
+        "category": "electronics",
+        "invoice_reference": "INV-2026-001"
+      }
+    },
+    {
+      "id": "synthetic-ar-receipt-clean-001",
+      "locale": "ar-SA",
+      "kind": "receipt",
+      "sensitivity": "synthetic",
+      "text": "رقم الفاتورة: ARINV-55\nالبائع: متجر الرياض\nالمنتج: غسالة ذكية\nالرقم التسلسلي: AR-123456\nتاريخ الشراء: 2026-05-10\nالضمان: 24 شهر\nالإجمالي: SAR 1999",
+      "minConfidence": 0.65,
+      "expectedFields": {
+        "product_name": "غسالة ذكية",
+        "serial_number": "AR-123456",
+        "start_date": "2026-05-10",
+        "warranty_duration": "24 شهر",
+        "supplier": "متجر الرياض",
+        "purchase_price": "1999",
+        "category": "appliances",
+        "invoice_reference": "ARINV-55"
+      }
+    },
+    {
+      "id": "synthetic-mixed-invoice-001",
+      "locale": "mixed",
+      "kind": "invoice",
+      "sensitivity": "synthetic",
+      "text": "فاتورة / Invoice No: MIX-7788\nStore: Gulf Warranty Store\nProduct: مكيف Smart AC 2 Ton\nSN: AC-7788-KSA\nDate: 10/05/2026\nCoverage: 2 years\nAmount: SAR 2500",
+      "minConfidence": 0.55,
+      "expectedFields": {
+        "product_name": "مكيف Smart AC 2 Ton",
+        "serial_number": "AC-7788-KSA",
+        "start_date": "10/05/2026",
+        "warranty_duration": "2 years",
+        "supplier": "Gulf Warranty Store",
+        "purchase_price": "2500",
+        "category": "appliances",
+        "invoice_reference": "MIX-7788"
+      }
+    },
+    {
+      "id": "synthetic-en-poor-scan-text-001",
+      "locale": "en-SA",
+      "kind": "poor_scan_text",
+      "sensitivity": "synthetic",
+      "text": "INVOICE NO: BLUR-4421\nS0LD BY: Riyadh App1iance5\nPR0DUCT: Samsung Washer 9kg\nS/N: WS-4421-KSA\nWarranty period: 24 month\nTotal SAR 1899",
+      "minConfidence": 0.45,
+      "expectedFields": {
+        "serial_number": "WS-4421-KSA",
+        "warranty_duration": "24 month",
+        "purchase_price": "1899",
+        "category": "appliances"
+      }
+    },
+    {
+      "id": "synthetic-duplicate-invoice-001",
+      "locale": "en-SA",
+      "kind": "duplicate_invoice",
+      "sensitivity": "synthetic",
+      "text": "Invoice No: DUP-2026-900\nSeller: Demo Store\nProduct: Tablet Air\nSerial Number: TAB-DUP-900\nPurchase Date: 2026-06-03\nWarranty: 12 months\nTotal: SAR 1199\n--- forwarded copy ---\nInvoice No: DUP-2026-900\nSeller: Demo Store\nProduct: Tablet Air\nSerial Number: TAB-DUP-900",
+      "minConfidence": 0.65,
+      "expectedFields": {
+        "product_name": "Tablet Air",
+        "serial_number": "TAB-DUP-900",
+        "invoice_reference": "DUP-2026-900",
+        "category": "electronics"
+      }
+    }
+  ]
+}

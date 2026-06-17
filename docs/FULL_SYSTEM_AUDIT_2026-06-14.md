@@ -74,13 +74,15 @@ External inputs remain required for the following items:
    - Risk: local workstation cannot reproduce the same signed-in journey as GitHub Production Security Gates.
    - Recommendation: restore local QA credentials in a secure, ignored env file or continue relying on GitHub secrets for authenticated production E2E.
 
-2. Full OCR torture testing remains limited by sample corpus.
-   - Risk: hard scans, multi-invoice PDFs, handwriting, and multilingual receipts may still route to review or parse incorrectly.
-   - Recommendation: maintain a private OCR regression corpus for Arabic/English receipts, PDFs, bad scans, duplicates, and fraud attempts.
+2. Full OCR torture testing now has a committed synthetic regression gate, but real private samples are still required.
+   - Closed: `tests/fixtures/ocr-corpus/synthetic/manifest.json`, `npm run qa:ocr-corpus`, and `src/lib/ocr/__tests__/warranty-field-parser.test.ts` cover English, Arabic, mixed-language, poor OCR text, and duplicate-invoice parser regressions.
+   - Remaining external/private input: hard scans, multi-invoice PDFs, handwriting, real Arabic/English receipts, and fraud attempts require private fixture files under `tests/fixtures/ocr-corpus/private`.
+   - Recommendation: run `npm run qa:ocr-corpus:private` in secure QA once approved private documents are available.
 
 3. Formal third-party penetration testing is not yet complete.
-   - Risk: internal automated review cannot replace a signed external security assessment for enterprise/government buyers.
-   - Recommendation: schedule an external OWASP/API/multi-tenant penetration test before larger enterprise procurement.
+   - Closed: the vendor-ready scope and rules of engagement are documented in `docs/EXTERNAL_PENTEST_SCOPE_2026-06-17.md`.
+   - Remaining external input: an independent security vendor must execute and sign the assessment.
+   - Recommendation: schedule the external OWASP/API/multi-tenant penetration test before larger enterprise/government procurement.
 
 ### Longer-Term Product / Architecture Recommendations
 
