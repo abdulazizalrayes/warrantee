@@ -10,6 +10,7 @@ const supabase = createSupabaseBrowserClient();
 
 // ─── TYPES ──────────────────────────────────────────────
 type TabId = 'overview' | 'users' | 'warranties' | 'companies' | 'claims' | 'support' | 'fraud' | 'ingestion' | 'billing' | 'config' | 'team' | 'audit';
+type GrowthLens = 'real' | 'all';
 
 interface Stats {
   totalUsers: number; totalWarranties: number; totalCompanies: number; totalClaims: number;
@@ -23,6 +24,10 @@ interface Stats {
   warrantiesByCategory: { category: string; count: number }[];
   claimsByStatus: { status: string; count: number }[];
   revenueByMonth: { month: string; amount: number }[];
+  completedOnboarding: number;
+  newUsers30d: number;
+  newWarranties30d: number;
+  warrantyCreators: number;
 }
 
 type CreatedAtRow = { created_at?: string | null };
@@ -33,9 +38,145 @@ type WarrantyAdminRow = StatusRow & {
 };
 type UserAdminRow = CreatedAtRow & {
   account_type?: string | null;
+  email?: string | null;
+  role?: string | null;
+  onboarding_completed?: boolean | null;
 };
 type RevenueAdminRow = CreatedAtRow & {
   amount?: number | null;
+};
+
+const emptyStats: Stats = {
+  totalUsers: 0, totalWarranties: 0, totalCompanies: 0, totalClaims: 0,
+  activeWarranties: 0, expiredWarranties: 0, pendingClaims: 0,
+  consumerUsers: 0, businessUsers: 0,
+  openTickets: 0, fraudSignals: 0,
+  totalRevenue: 0, activeSubscriptions: 0,
+  ingestionSuccess: 0, ingestionTotal: 0,
+  recentActivity: [], usersByMonth: [], warrantiesByCategory: [], claimsByStatus: [],
+  revenueByMonth: [],
+  completedOnboarding: 0, newUsers30d: 0, newWarranties30d: 0, warrantyCreators: 0,
+};
+
+const qaSourcePrefixes = ['qa_', 'test_', 'seed_'];
+const qaEmailFragments = ['test', 'qa', 'demo', 'example.com', 'abdulaziz'];
+
+const isLikelyQaEmail = (email?: string | null) => {
+  const normalized = String(email || '').toLowerCase();
+  if (!normalized) return false;
+  return normalized.endsWith('@warrantee.io') || qaEmailFragments.some((fragment) => normalized.includes(fragment));
+};
+
+const isLikelyInternalUser = (user: UserAdminRow & { id?: string | null }) => {
+  const role = String(user.role || '').toLowerCase();
+  return isLikelyQaEmail(user.email) || role === 'admin' || role === 'super_admin' || role === 'support';
+};
+
+const getWarrantyActorIds = (warranty: any) => [
+  warranty.user_id,
+  warranty.buyer_id,
+  warranty.recipient_user_id,
+  warranty.created_by,
+  warranty.issuer_user_id,
+  warranty.seller_id,
+].filter(Boolean);
+
+const isLikelyQaWarranty = (warranty: any, excludedUserIds: Set<string>) => {
+  const source = String(warranty.source || '').toLowerCase();
+  return qaSourcePrefixes.some((prefix) => source.startsWith(prefix))
+    || source.includes('_diag')
+    || getWarrantyActorIds(warranty).some((id) => excludedUserIds.has(String(id)));
+};
+
+const getRecentCutoffIso = (days: number) => {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - days);
+  return cutoff.toISOString();
+};
+
+const buildAdminStats = ({
+  users,
+  warranties,
+  companies,
+  claims,
+  tickets,
+  fraudSignals,
+  ingestions,
+  revenueEvents,
+  subscriptions,
+  recentActivity,
+  now,
+}: {
+  users: any[];
+  warranties: any[];
+  companies: any[];
+  claims: any[];
+  tickets: any[];
+  fraudSignals: any[];
+  ingestions: any[];
+  revenueEvents: any[];
+  subscriptions: any[];
+  recentActivity: any[];
+  now: string;
+}): Stats => {
+  const monthMap: Record<string, number> = {};
+  users.forEach((profile: CreatedAtRow) => {
+    const month = profile.created_at?.substring(0, 7);
+    if (month) monthMap[month] = (monthMap[month] || 0) + 1;
+  });
+  const usersByMonth = Object.entries(monthMap).sort().map(([month, count]) => ({ month: month.substring(5), count }));
+
+  const catMap: Record<string, number> = {};
+  warranties.forEach((warranty: WarrantyAdminRow) => {
+    const category = warranty.category || 'Other';
+    catMap[category] = (catMap[category] || 0) + 1;
+  });
+  const warrantiesByCategory = Object.entries(catMap).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([category, count]) => ({ category, count }));
+
+  const claimStatusMap: Record<string, number> = {};
+  claims.forEach((claim: StatusRow) => {
+    const status = claim.status || 'unknown';
+    claimStatusMap[status] = (claimStatusMap[status] || 0) + 1;
+  });
+  const claimsByStatus = Object.entries(claimStatusMap).map(([status, count]) => ({ status, count }));
+
+  const revMap: Record<string, number> = {};
+  revenueEvents.forEach((event: RevenueAdminRow) => {
+    const month = event.created_at?.substring(0, 7);
+    if (month) revMap[month] = (revMap[month] || 0) + (event.amount || 0);
+  });
+  const revenueByMonth = Object.entries(revMap).sort().map(([month, amount]) => ({ month: month.substring(5), amount }));
+
+  const cutoff30d = getRecentCutoffIso(30);
+  const creatorIds = new Set<string>();
+  warranties.forEach((warranty: any) => getWarrantyActorIds(warranty).forEach((id) => creatorIds.add(String(id))));
+
+  return {
+    totalUsers: users.length,
+    totalWarranties: warranties.length,
+    totalCompanies: companies.length,
+    totalClaims: claims.length,
+    activeWarranties: warranties.filter((x: WarrantyAdminRow) => (x.end_date || '') > now.substring(0, 10) && x.status === 'active').length,
+    expiredWarranties: warranties.filter((x: WarrantyAdminRow) => (x.end_date || '') <= now.substring(0, 10) || x.status === 'expired').length,
+    pendingClaims: claims.filter((x: StatusRow) => x.status === 'pending' || x.status === 'filed').length,
+    consumerUsers: users.filter((x: UserAdminRow) => x.account_type === 'personal' || x.account_type === 'consumer').length,
+    businessUsers: users.filter((x: UserAdminRow) => x.account_type === 'business').length,
+    openTickets: tickets.filter((x: StatusRow) => x.status === 'open' || x.status === 'in_progress').length,
+    fraudSignals: fraudSignals.filter((x: StatusRow) => x.status === 'open' || x.status === 'investigating').length,
+    totalRevenue: revenueEvents.reduce((sum: number, event: RevenueAdminRow) => sum + (event.amount || 0), 0),
+    activeSubscriptions: subscriptions.filter((x: StatusRow) => x.status === 'active' || x.status === 'trialing').length,
+    ingestionSuccess: ingestions.filter((x: StatusRow) => ['auto_confirmed', 'confirmed', 'ocr_complete'].includes(x.status || '')).length,
+    ingestionTotal: ingestions.length,
+    recentActivity,
+    usersByMonth,
+    warrantiesByCategory,
+    claimsByStatus,
+    revenueByMonth,
+    completedOnboarding: users.filter((x: UserAdminRow) => Boolean(x.onboarding_completed)).length,
+    newUsers30d: users.filter((x: CreatedAtRow) => Boolean(x.created_at && x.created_at >= cutoff30d)).length,
+    newWarranties30d: warranties.filter((x: CreatedAtRow) => Boolean(x.created_at && x.created_at >= cutoff30d)).length,
+    warrantyCreators: creatorIds.size,
+  };
 };
 
 // ─── TRANSLATIONS ──────────────────────────────────────
@@ -61,6 +202,9 @@ const rawTranslations = {
     revenueOverview: 'Revenue Overview', platformHealth: 'Platform Health',
     ingestionRate: 'Ingestion Success', ocrConfidence: 'OCR Confidence',
     systemMetrics: 'System Metrics', quickActions: 'Quick Actions',
+    growthLens: 'Growth Lens', realCustomersOnly: 'Real customers', allActivity: 'All activity',
+    qaExcluded: 'QA/internal excluded', completedOnboarding: 'Onboarding completed',
+    warrantyCreators: 'Warranty creators', newUsers30d: 'New users (30d)', newWarranties30d: 'New warranties (30d)',
     exportData: 'Export CSV', refresh: 'Refresh', search: 'Search...',
     // Team
     teamTitle: 'Team Management', addAdmin: 'Add Team Member', emailPlaceholder: 'Enter email address',
@@ -119,6 +263,9 @@ const rawTranslations = {
     revenueOverview: 'نظرة على الإيرادات', platformHealth: 'صحة المنصة',
     ingestionRate: 'نجاح الاستيراد', ocrConfidence: 'دقة OCR',
     systemMetrics: 'مقاييس النظام', quickActions: 'إجراءات سريعة',
+    growthLens: 'منظور النمو', realCustomersOnly: 'عملاء حقيقيون', allActivity: 'كل النشاط',
+    qaExcluded: 'تم استبعاد الاختبارات والفريق', completedOnboarding: 'اكتمل التسجيل',
+    warrantyCreators: 'منشئو الضمانات', newUsers30d: 'مستخدمون جدد (30 يوم)', newWarranties30d: 'ضمانات جديدة (30 يوم)',
     exportData: 'تصدير CSV', refresh: 'تحديث', search: 'بحث...',
     teamTitle: 'إدارة الفريق', addAdmin: 'إضافة عضو', emailPlaceholder: 'أدخل البريد الإلكتروني',
     invite: 'إضافة', removeAccess: 'إزالة', confirmRemove: 'تأكيد الإزالة',
@@ -243,16 +390,9 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<TabId>('overview');
   const [signingOut, setSigningOut] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [stats, setStats] = useState<Stats>({
-    totalUsers: 0, totalWarranties: 0, totalCompanies: 0, totalClaims: 0,
-    activeWarranties: 0, expiredWarranties: 0, pendingClaims: 0,
-    consumerUsers: 0, businessUsers: 0,
-    openTickets: 0, fraudSignals: 0,
-    totalRevenue: 0, activeSubscriptions: 0,
-    ingestionSuccess: 0, ingestionTotal: 0,
-    recentActivity: [], usersByMonth: [], warrantiesByCategory: [], claimsByStatus: [],
-    revenueByMonth: [],
-  });
+  const [growthLens, setGrowthLens] = useState<GrowthLens>('real');
+  const [stats, setStats] = useState<Stats>(emptyStats);
+  const [realStats, setRealStats] = useState<Stats>(emptyStats);
 
   // Data states
   const [users, setUsers] = useState<any[]>([]);
@@ -345,46 +485,41 @@ export default function AdminPage() {
     setUsers(u); setWarranties(w); setCompanies(co); setClaims(cl);
     setTickets(tk); setFraudSignals(fr); setIngestions(ig); setRevenueEvents(rv); setSubscriptions(sb);
 
-    // Compute monthly registrations
-    const monthMap: Record<string, number> = {};
-    u.forEach((p: CreatedAtRow) => {
-      const m = p.created_at?.substring(0, 7); if (m) monthMap[m] = (monthMap[m] || 0) + 1;
+    const allStats = buildAdminStats({
+      users: u, warranties: w, companies: co, claims: cl, tickets: tk, fraudSignals: fr,
+      ingestions: ig, revenueEvents: rv, subscriptions: sb, recentActivity: actR.data || [], now,
     });
-    const usersByMonth = Object.entries(monthMap).sort().map(([month, count]) => ({ month: month.substring(5), count }));
 
-    // Category breakdown
-    const catMap: Record<string, number> = {};
-    w.forEach((wr: WarrantyAdminRow) => { const c = wr.category || 'Other'; catMap[c] = (catMap[c] || 0) + 1; });
-    const warrantiesByCategory = Object.entries(catMap).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([category, count]) => ({ category, count }));
-
-    // Claims by status
-    const claimStatusMap: Record<string, number> = {};
-    cl.forEach((c: StatusRow) => { const s = c.status || 'unknown'; claimStatusMap[s] = (claimStatusMap[s] || 0) + 1; });
-    const claimsByStatus = Object.entries(claimStatusMap).map(([status, count]) => ({ status, count }));
-
-    // Revenue by month
-    const revMap: Record<string, number> = {};
-    rv.forEach((r: RevenueAdminRow) => {
-      const m = r.created_at?.substring(0, 7); if (m) revMap[m] = (revMap[m] || 0) + (r.amount || 0);
+    const excludedUsers = new Set<string>(
+      u.filter((user: UserAdminRow & { id?: string | null }) => isLikelyInternalUser(user))
+        .map((user: { id?: string | null }) => String(user.id))
+        .filter(Boolean)
+    );
+    const realUsers = u.filter((user: UserAdminRow & { id?: string | null }) => !excludedUsers.has(String(user.id)));
+    const realWarranties = w.filter((warranty: any) => !isLikelyQaWarranty(warranty, excludedUsers));
+    const realWarrantyIds = new Set(realWarranties.map((warranty: any) => String(warranty.id)));
+    const realClaims = cl.filter((claim: any) => {
+      if (claim.warranty_id) return realWarrantyIds.has(String(claim.warranty_id));
+      return ![claim.user_id, claim.created_by, claim.claimant_id, claim.filed_by].some((id) => id && excludedUsers.has(String(id)));
     });
-    const revenueByMonth = Object.entries(revMap).sort().map(([month, amount]) => ({ month: month.substring(5), amount }));
+    const realIngestions = ig.filter((job: any) => !isLikelyQaEmail(job.from_email) && ![job.matched_user_id, job.buyer_id, job.user_id].some((id) => id && excludedUsers.has(String(id))));
+    const realRevenueEvents = rv.filter((event: any) => ![event.user_id, event.customer_id, event.profile_id].some((id) => id && excludedUsers.has(String(id))));
+    const realSubscriptions = sb.filter((subscription: any) => ![subscription.user_id, subscription.customer_id, subscription.profile_id].some((id) => id && excludedUsers.has(String(id))));
 
-    setStats({
-      totalUsers: u.length, totalWarranties: w.length, totalCompanies: co.length, totalClaims: cl.length,
-      activeWarranties: w.filter((x: WarrantyAdminRow) => (x.end_date || '') > now.substring(0, 10) && x.status === 'active').length,
-      expiredWarranties: w.filter((x: WarrantyAdminRow) => (x.end_date || '') <= now.substring(0, 10) || x.status === 'expired').length,
-      pendingClaims: cl.filter((x: StatusRow) => x.status === 'pending' || x.status === 'filed').length,
-      consumerUsers: u.filter((x: UserAdminRow) => x.account_type === 'personal' || x.account_type === 'consumer').length,
-      businessUsers: u.filter((x: UserAdminRow) => x.account_type === 'business').length,
-      openTickets: tk.filter((x: StatusRow) => x.status === 'open' || x.status === 'in_progress').length,
-      fraudSignals: fr.filter((x: StatusRow) => x.status === 'open' || x.status === 'investigating').length,
-      totalRevenue: rv.reduce((s: number, r: RevenueAdminRow) => s + (r.amount || 0), 0),
-      activeSubscriptions: sb.filter((x: StatusRow) => x.status === 'active' || x.status === 'trialing').length,
-      ingestionSuccess: ig.filter((x: StatusRow) => ['auto_confirmed', 'confirmed', 'ocr_complete'].includes(x.status || '')).length,
-      ingestionTotal: ig.length,
+    setStats(allStats);
+    setRealStats(buildAdminStats({
+      users: realUsers,
+      warranties: realWarranties,
+      companies: co,
+      claims: realClaims,
+      tickets: tk,
+      fraudSignals: fr,
+      ingestions: realIngestions,
+      revenueEvents: realRevenueEvents,
+      subscriptions: realSubscriptions,
       recentActivity: actR.data || [],
-      usersByMonth, warrantiesByCategory, claimsByStatus, revenueByMonth,
-    });
+      now,
+    }));
   };
 
   // ─── TEAM MANAGEMENT ──────────────────────────────────
@@ -644,6 +779,12 @@ export default function AdminPage() {
     team: locale === 'ar' ? 'التحكم في صلاحيات الفريق والادوار التشغيلية.' : 'Control admin team access and operating roles.',
     audit: locale === 'ar' ? 'فحص سجل التدقيق والعمليات عالية المخاطر.' : 'Inspect the audit trail and high-risk operations.',
   } as Record<TabId, string>)[activeTab];
+  const activeStats = growthLens === 'real' ? realStats : stats;
+  const excludedCounts = {
+    users: Math.max(stats.totalUsers - realStats.totalUsers, 0),
+    warranties: Math.max(stats.totalWarranties - realStats.totalWarranties, 0),
+    claims: Math.max(stats.totalClaims - realStats.totalClaims, 0),
+  };
 
   // ─── LOADING / UNAUTHORIZED ───────────────────────────
   if (loading) return (
@@ -790,29 +931,60 @@ export default function AdminPage() {
           {/* ═══ OVERVIEW TAB ═══ */}
           {activeTab === 'overview' && (
             <div className="space-y-6">
+              <section className="rounded-xl border border-[#1a1a3a] bg-[#0e0e20] p-5">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-200">{text.growthLens}</h3>
+                    <p className="mt-1 text-xs text-gray-500">
+                      {growthLens === 'real'
+                        ? `${text.qaExcluded}: ${excludedCounts.users} ${text.usersTab}, ${excludedCounts.warranties} ${text.warrantiesTab}, ${excludedCounts.claims} ${text.claimsTab}.`
+                        : locale === 'ar' ? 'يعرض كل النشاط التشغيلي بما في ذلك الاختبار والفريق.' : 'Shows all operational activity, including QA and internal team records.'}
+                    </p>
+                  </div>
+                  <div className="inline-flex w-fit rounded-full border border-[#2a2a4a] bg-[#12122a] p-1">
+                    {(['real', 'all'] as GrowthLens[]).map((lens) => (
+                      <button
+                        key={lens}
+                        type="button"
+                        onClick={() => setGrowthLens(lens)}
+                        className={`rounded-full px-4 py-1.5 text-xs font-semibold transition ${growthLens === lens ? 'bg-[#0071e3] text-white' : 'text-gray-400 hover:text-white'}`}
+                      >
+                        {lens === 'real' ? text.realCustomersOnly : text.allActivity}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+                  <SparkNumber label={text.completedOnboarding} value={activeStats.completedOnboarding} icon="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" color="#10B981" />
+                  <SparkNumber label={text.warrantyCreators} value={activeStats.warrantyCreators} icon="M17 20h5v-2a4 4 0 00-4-4h-1M9 20H4v-2a4 4 0 014-4h1m0-4a4 4 0 118 0 4 4 0 01-8 0z" color="#3B82F6" />
+                  <SparkNumber label={text.newUsers30d} value={activeStats.newUsers30d} icon="M12 4v16m8-8H4" color="#8B5CF6" />
+                  <SparkNumber label={text.newWarranties30d} value={activeStats.newWarranties30d} icon="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" color="#0071e3" />
+                </div>
+              </section>
+
               {/* KPI Cards */}
               <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-3">
-                <SparkNumber label={text.totalUsers} value={stats.totalUsers} sub={`${stats.consumerUsers}C / ${stats.businessUsers}B`} icon="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" color="#3B82F6" />
-                <SparkNumber label={text.totalWarranties} value={stats.totalWarranties} sub={`${stats.activeWarranties} ${text.active}`} icon="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" color="#0071e3" />
-                <SparkNumber label={text.totalCompanies} value={stats.totalCompanies} icon="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" color="#8B5CF6" />
-                <SparkNumber label={text.totalClaims} value={stats.totalClaims} sub={`${stats.pendingClaims} ${text.pending}`} icon="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" color="#F59E0B" />
-                <SparkNumber label={text.openTickets} value={stats.openTickets} icon="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" color="#F97316" />
-                <SparkNumber label={text.fraudAlerts} value={stats.fraudSignals} icon="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" color="#EF4444" />
+                <SparkNumber label={text.totalUsers} value={activeStats.totalUsers} sub={`${activeStats.consumerUsers}C / ${activeStats.businessUsers}B`} icon="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" color="#3B82F6" />
+                <SparkNumber label={text.totalWarranties} value={activeStats.totalWarranties} sub={`${activeStats.activeWarranties} ${text.active}`} icon="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" color="#0071e3" />
+                <SparkNumber label={text.totalCompanies} value={activeStats.totalCompanies} icon="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" color="#8B5CF6" />
+                <SparkNumber label={text.totalClaims} value={activeStats.totalClaims} sub={`${activeStats.pendingClaims} ${text.pending}`} icon="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" color="#F59E0B" />
+                <SparkNumber label={text.openTickets} value={activeStats.openTickets} icon="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" color="#F97316" />
+                <SparkNumber label={text.fraudAlerts} value={activeStats.fraudSignals} icon="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" color="#EF4444" />
               </div>
 
               {/* Charts Row */}
               <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
                 <div className="bg-[#0e0e20] rounded-xl border border-[#1a1a3a] p-5">
                   <h3 className="text-sm font-semibold text-gray-200 mb-4">{text.registrationTrend}</h3>
-                  <BarChart data={stats.usersByMonth} labelKey="month" valueKey="count" color="#3B82F6" />
+                  <BarChart data={activeStats.usersByMonth} labelKey="month" valueKey="count" color="#3B82F6" />
                 </div>
                 <div className="bg-[#0e0e20] rounded-xl border border-[#1a1a3a] p-5">
                   <h3 className="text-sm font-semibold text-gray-200 mb-4">{text.claimsBreakdown}</h3>
-                  <DonutChart data={stats.claimsByStatus} colors={['#F59E0B', '#10B981', '#EF4444', '#3B82F6', '#8B5CF6', '#6B7280']} />
+                  <DonutChart data={activeStats.claimsByStatus} colors={['#F59E0B', '#10B981', '#EF4444', '#3B82F6', '#8B5CF6', '#6B7280']} />
                 </div>
                 <div className="bg-[#0e0e20] rounded-xl border border-[#1a1a3a] p-5">
                   <h3 className="text-sm font-semibold text-gray-200 mb-4">{text.revenueOverview}</h3>
-                  <BarChart data={stats.revenueByMonth} labelKey="month" valueKey="amount" color="#10B981" />
+                  <BarChart data={activeStats.revenueByMonth} labelKey="month" valueKey="amount" color="#10B981" />
                 </div>
               </div>
 
@@ -820,26 +992,26 @@ export default function AdminPage() {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 <div className="bg-[#0e0e20] rounded-xl border border-[#1a1a3a] p-5">
                   <h3 className="text-sm font-semibold text-gray-200 mb-4">{text.warrantiesByCategory}</h3>
-                  <BarChart data={stats.warrantiesByCategory} labelKey="category" valueKey="count" color="#0071e3" />
+                  <BarChart data={activeStats.warrantiesByCategory} labelKey="category" valueKey="count" color="#0071e3" />
                 </div>
                 <div className="bg-[#0e0e20] rounded-xl border border-[#1a1a3a] p-5">
                   <h3 className="text-sm font-semibold text-gray-200 mb-4">{text.platformHealth}</h3>
                   <div className="space-y-4">
                     <div>
-                      <div className="flex justify-between text-xs mb-1"><span className="text-gray-400">{text.ingestionRate}</span><span className="text-emerald-400">{stats.ingestionTotal > 0 ? Math.round((stats.ingestionSuccess / stats.ingestionTotal) * 100) : 0}%</span></div>
-                      <div className="h-2 bg-[#1a1a3a] rounded-full overflow-hidden"><div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${stats.ingestionTotal > 0 ? (stats.ingestionSuccess / stats.ingestionTotal) * 100 : 0}%` }} /></div>
+                      <div className="flex justify-between text-xs mb-1"><span className="text-gray-400">{text.ingestionRate}</span><span className="text-emerald-400">{activeStats.ingestionTotal > 0 ? Math.round((activeStats.ingestionSuccess / activeStats.ingestionTotal) * 100) : 0}%</span></div>
+                      <div className="h-2 bg-[#1a1a3a] rounded-full overflow-hidden"><div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${activeStats.ingestionTotal > 0 ? (activeStats.ingestionSuccess / activeStats.ingestionTotal) * 100 : 0}%` }} /></div>
                     </div>
                     <div>
-                      <div className="flex justify-between text-xs mb-1"><span className="text-gray-400">{text.subscriptions}</span><span className="text-blue-400">{stats.activeSubscriptions}</span></div>
-                      <div className="h-2 bg-[#1a1a3a] rounded-full overflow-hidden"><div className="h-full bg-blue-500 rounded-full" style={{ width: `${Math.min(stats.activeSubscriptions * 10, 100)}%` }} /></div>
+                      <div className="flex justify-between text-xs mb-1"><span className="text-gray-400">{text.subscriptions}</span><span className="text-blue-400">{activeStats.activeSubscriptions}</span></div>
+                      <div className="h-2 bg-[#1a1a3a] rounded-full overflow-hidden"><div className="h-full bg-blue-500 rounded-full" style={{ width: `${Math.min(activeStats.activeSubscriptions * 10, 100)}%` }} /></div>
                     </div>
                     <div className="grid grid-cols-2 gap-3 mt-4">
                       <div className="bg-[#12122a] rounded-lg p-3 text-center">
-                        <p className="text-lg font-bold text-[#0071e3]">{fmtMoney(stats.totalRevenue)}</p>
+                        <p className="text-lg font-bold text-[#0071e3]">{fmtMoney(activeStats.totalRevenue)}</p>
                         <p className="text-[10px] text-gray-500">{text.revenue}</p>
                       </div>
                       <div className="bg-[#12122a] rounded-lg p-3 text-center">
-                        <p className="text-lg font-bold text-emerald-400">{stats.activeWarranties}</p>
+                        <p className="text-lg font-bold text-emerald-400">{activeStats.activeWarranties}</p>
                         <p className="text-[10px] text-gray-500">{text.active} {text.warrantiesTab}</p>
                       </div>
                     </div>
@@ -851,7 +1023,7 @@ export default function AdminPage() {
                     <button onClick={loadAllData} className="text-[10px] text-[#0071e3] hover:underline">{text.refresh}</button>
                   </div>
                   <div className="space-y-2 max-h-[280px] overflow-y-auto pr-1">
-                    {stats.recentActivity.length === 0 ? <p className="text-xs text-gray-600">{text.noData}</p> : stats.recentActivity.slice(0, 15).map((a, i) => (
+                    {activeStats.recentActivity.length === 0 ? <p className="text-xs text-gray-600">{text.noData}</p> : activeStats.recentActivity.slice(0, 15).map((a, i) => (
                       <div key={i} className="flex items-start gap-2.5 p-2 rounded-lg hover:bg-[#12122a] transition">
                         <div className="w-1.5 h-1.5 rounded-full bg-[#0071e3] mt-1.5 flex-shrink-0" />
                         <div className="min-w-0 flex-1">
