@@ -73,6 +73,10 @@ export async function middleware(request: NextRequest) {
     isPlatformAssetPath ||
     pathname.startsWith("/.well-known/") ||
     pathname === "/llms.txt" ||
+    pathname === "/llms-full.txt" ||
+    pathname === "/openapi.json" ||
+    pathname === "/auth.md" ||
+    pathname.startsWith("/data/") ||
     pathname === "/robots.txt" ||
     pathname === "/sitemap.xml" ||
     pathname === "/manifest.json" ||

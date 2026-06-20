@@ -164,6 +164,9 @@ describe("Warrantee CLI and MCP", () => {
     expect(listResponse.result.tools.map((tool: { name: string }) => tool.name)).toContain(
       "list_documents"
     );
+    expect(listResponse.result.tools.map((tool: { name: string }) => tool.name)).toContain(
+      "prepare_project_inquiry"
+    );
 
     const callResponse = (await handleMcpRequest(
       {
@@ -231,5 +234,23 @@ describe("Warrantee CLI and MCP", () => {
 
     expect(response.result.isError).toBe(true);
     expect(response.result.content[0].text).toContain("confirm=true");
+  });
+
+  it("classifies public MCP inquiries without requiring an integration token", async () => {
+    const { handleMcpRequest } = await import(toolModule("mcp-server.mjs"));
+
+    const response = (await handleMcpRequest({
+      jsonrpc: "2.0",
+      id: 6,
+      method: "tools/call",
+      params: {
+        name: "match_project_scope",
+        arguments: { request: "I want to apply for an internship at Warrantee" },
+      },
+    })) as JsonRpcResponse;
+
+    expect(response.result.isError).toBe(false);
+    expect(response.result.content[0].text).toContain("\"fit\": false");
+    expect(response.result.content[0].text).toContain("career_or_internship");
   });
 });

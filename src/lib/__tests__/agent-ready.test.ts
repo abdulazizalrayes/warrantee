@@ -28,6 +28,11 @@ describe("agent-ready helpers", () => {
       pageKey: "blog",
       canonicalPath: "/en/blog",
     });
+    expect(getAgentRouteInfo("/en/security")).toMatchObject({
+      locale: "en",
+      pageKey: "security",
+      canonicalPath: "/en/security",
+    });
     expect(getAgentRouteInfo("/en/dashboard")).toBeNull();
   });
 

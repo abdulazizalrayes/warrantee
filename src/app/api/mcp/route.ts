@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { apiJson } from "@/lib/api-response";
 import { getClientIp, getRateLimitHeaders, rateLimit } from "@/lib/rate-limit";
+import { logAgentUsage } from "@/lib/server/agent-usage-logger";
 
 type JsonRpcMessage = {
   id?: string | number | null;
@@ -14,6 +15,7 @@ type McpModule = {
     context?: {
       env?: Record<string, string | undefined>;
       fetchImpl?: typeof fetch;
+      logAgentUsage?: (event: string, metadata?: Record<string, unknown>) => void;
     }
   ) => Promise<unknown>;
 };
@@ -86,12 +88,12 @@ export async function GET(request: NextRequest) {
         method: "POST",
       },
       authentication: {
-        required: true,
+        required: "private tools only",
         header: "x-api-key",
         instructions:
-          "Generate a scoped integration token from Warrantee Settings > API / CLI / MCP and send it as x-api-key. Do not send a Warrantee username or password.",
+          "Public discovery tools are read-only and do not require private account credentials. Private warranty, claim, document, seller, or account tools require a scoped integration token from Warrantee Settings > API / CLI / MCP sent as x-api-key. Do not send a Warrantee username or password.",
       },
-      publicMethods: ["initialize", "tools/list", "resources/list", "prompts/list", "ping"],
+      publicMethods: ["initialize", "tools/list", "tools/call for public discovery tools", "resources/list", "resources/read", "prompts/list", "ping"],
     },
     { headers: mcpHeaders() }
   );
@@ -137,6 +139,9 @@ export async function POST(request: NextRequest) {
       WARRANTEE_BASE_URL: getBaseUrl(request),
     },
     fetchImpl: fetch,
+    logAgentUsage: (event: string, metadata: Record<string, unknown> = {}) => {
+      logAgentUsage(request, event as Parameters<typeof logAgentUsage>[1], metadata);
+    },
   });
 
   if (!response) {

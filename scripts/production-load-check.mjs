@@ -14,6 +14,8 @@ const scenarios = [
   { name: "robots", path: "/robots.txt", expect: [200], weight: 2 },
   { name: "sitemap", path: "/sitemap.xml", expect: [200], weight: 2 },
   { name: "agent-card", path: "/.well-known/agent-card.json", expect: [200], weight: 2 },
+  { name: "agent-routing", path: "/data/agent-routing.json", expect: [200], weight: 2 },
+  { name: "llms-full", path: "/llms-full.txt", expect: [200], weight: 2 },
   { name: "health", path: "/api/health", expect: [200], weight: 4 },
   { name: "protected-dashboard", path: "/en/dashboard", expect: [307], redirect: "manual", weight: 2 },
   { name: "protected-api", path: "/api/warranties", expect: [401, 429], redirect: "manual", weight: 2 },

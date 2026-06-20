@@ -99,7 +99,13 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        source: "/llms.txt",
+        source: "/:path(llms\\.txt|llms-full\\.txt|openapi\\.json|auth\\.md)",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=3600, stale-while-revalidate=86400" },
+        ],
+      },
+      {
+        source: "/data/:path*",
         headers: [
           { key: "Cache-Control", value: "public, max-age=3600, stale-while-revalidate=86400" },
         ],

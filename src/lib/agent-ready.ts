@@ -29,6 +29,8 @@ export const PUBLIC_AGENT_PATHS = new Set([
   "/ar/verify",
   "/en/api-docs",
   "/ar/api-docs",
+  "/en/security",
+  "/ar/security",
   "/en/support",
   "/ar/support",
   "/en/terms",
@@ -50,6 +52,7 @@ export type AgentPageKey =
   | "guide"
   | "verify"
   | "api-docs"
+  | "security"
   | "support"
   | "terms"
   | "privacy"
@@ -176,6 +179,13 @@ const PAGE_CONTENT: Record<AgentPageKey, AgentPageContent> = {
         "نقطة MCP المستضافة: https://warrantee.io/api/mcp",
         "يتم تطبيق حدود للطلبات لكل مستخدم/رمز وعلى مستوى IP، ويمكن للحساب الاحتفاظ بما يصل إلى 20 رمز تكامل نشط",
       ],
+    },
+  },
+  security: {
+    title: { en: "Warrantee Security And Trust", ar: "الأمان والثقة في وارنتي" },
+    summary: {
+      en: "The security page summarizes Warrantee controls for tenant isolation, API tokens, documents, OCR, Stripe payments, monitoring, and external pentest readiness.",
+      ar: "تلخص صفحة الأمان ضوابط وارنتي لعزل الحسابات ورموز API والمستندات وOCR ومدفوعات Stripe والمراقبة وجاهزية اختبار الاختراق الخارجي.",
     },
   },
   support: {

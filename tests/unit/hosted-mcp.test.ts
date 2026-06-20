@@ -20,6 +20,7 @@ describe("hosted Warrantee MCP endpoint", () => {
 
     expect(response.status).toBe(200);
     expect(body.transport.endpoint).toBe("https://warrantee.io/api/mcp");
+    expect(body.authentication.required).toBe("private tools only");
     expect(body.authentication.header).toBe("x-api-key");
     expect(body.authentication.instructions).toContain("Do not send a Warrantee username or password");
   });
@@ -53,6 +54,50 @@ describe("hosted Warrantee MCP endpoint", () => {
     expect(toolsBody.result.tools.map((tool: { name: string }) => tool.name)).toContain(
       "list_warranties"
     );
+    expect(toolsBody.result.tools.map((tool: { name: string }) => tool.name)).toContain(
+      "get_company_overview"
+    );
+  });
+
+  it("allows public discovery tools and resources without an API key", async () => {
+    const inquiry = await POST(
+      mcpRequest({
+        jsonrpc: "2.0",
+        id: 3,
+        method: "tools/call",
+        params: {
+          name: "prepare_project_inquiry",
+          arguments: { request: "We need ERP API integration for warranty operations" },
+        },
+      })
+    );
+    const inquiryBody = await inquiry.json();
+    expect(inquiry.status).toBe(200);
+    expect(inquiryBody.result.isError).toBe(false);
+    expect(inquiryBody.result.content[0].text).toContain("approvalRequiredBeforeSubmission");
+
+    const resources = await POST(
+      mcpRequest({
+        jsonrpc: "2.0",
+        id: 4,
+        method: "resources/list",
+      })
+    );
+    const resourcesBody = await resources.json();
+    expect(resourcesBody.result.resources.map((resource: { uri: string }) => resource.uri)).toContain(
+      "warrantee://company"
+    );
+
+    const resource = await POST(
+      mcpRequest({
+        jsonrpc: "2.0",
+        id: 5,
+        method: "resources/read",
+        params: { uri: "warrantee://company" },
+      })
+    );
+    const resourceBody = await resource.json();
+    expect(resourceBody.result.contents[0].text).toContain("Warrantee.io");
   });
 
   it("sets CORS headers for MCP clients", async () => {

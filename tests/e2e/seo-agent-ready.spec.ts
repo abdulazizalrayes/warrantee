@@ -9,6 +9,7 @@ test.describe("SEO and agent-readiness endpoints", () => {
     const robotsText = await robots.text();
     expect(robotsText).toContain("Sitemap: https://warrantee.io/sitemap.xml");
     expect(robotsText).toContain("Disallow: /api/");
+    expect(robotsText).toContain("Allow: /api/mcp");
     expect(robotsText).not.toContain("Disallow: /*/dashboard");
 
     const sitemap = await request.get("/sitemap.xml");
@@ -25,10 +26,21 @@ test.describe("SEO and agent-readiness endpoints", () => {
 
     for (const path of [
       "/llms.txt",
+      "/llms-full.txt",
+      "/auth.md",
+      "/openapi.json",
+      "/data/company.json",
+      "/data/services.json",
+      "/data/capabilities.json",
+      "/data/service-areas.json",
+      "/data/project-inquiry-schema.json",
+      "/data/agent-routing.json",
       "/.well-known/agent-card.json",
       "/.well-known/api-catalog",
       "/.well-known/mcp.json",
-      "/.well-known/agent-skills",
+      "/.well-known/mcp/server-card.json",
+      "/.well-known/mcp/server-cards.json",
+      "/.well-known/agent-skills/index.json",
     ]) {
       const response = await request.get(path);
       expect(response.status(), `${path} should be available`).toBe(200);
@@ -37,7 +49,14 @@ test.describe("SEO and agent-readiness endpoints", () => {
     const llms = await request.get("/llms.txt");
     const llmsText = await llms.text();
     expect(llmsText).toContain("Support: https://warrantee.io/en/support");
-    expect(llmsText).toContain("Account dashboards, warranty records, claims, billing, settings, and seller workspaces require authentication.");
+    expect(llmsText).toContain("/data/company.json");
+    expect(llmsText).toContain("/llms-full.txt");
+    expect(llmsText).toContain("Account dashboards, warranty records, claims, billing, settings, seller workspaces, admin pages, and private APIs require authentication.");
+
+    const openapi = await request.get("/openapi.json");
+    const openapiJson = await openapi.json();
+    expect(openapiJson.paths["/data/company.json"]).toBeTruthy();
+    expect(openapiJson.paths["/api/mcp"]).toBeTruthy();
   });
 
   test("key public pages expose canonical links", async ({ page }) => {

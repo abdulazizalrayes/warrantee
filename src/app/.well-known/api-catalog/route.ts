@@ -27,9 +27,14 @@ export function GET() {
           ],
           "service-desc": [
             {
-              href: `${BASE_URL}/.well-known/openapi.json`,
+              href: `${BASE_URL}/openapi.json`,
               type: "application/openapi+json",
               title: "OpenAPI service description",
+            },
+            {
+              href: `${BASE_URL}/.well-known/openapi.json`,
+              type: "application/openapi+json",
+              title: "Well-known OpenAPI alias",
             },
           ],
           "service-doc": [
@@ -53,6 +58,11 @@ export function GET() {
               title: "LLM summary",
             },
             {
+              href: `${BASE_URL}/llms-full.txt`,
+              type: "text/plain",
+              title: "Full LLM brief",
+            },
+            {
               href: `${BASE_URL}/.well-known/agent-card.json`,
               type: "application/json",
               title: "Agent card",
@@ -61,6 +71,16 @@ export function GET() {
               href: `${BASE_URL}/.well-known/mcp.json`,
               type: "application/json",
               title: "MCP discovery card",
+            },
+            {
+              href: `${BASE_URL}/data/company.json`,
+              type: "application/json",
+              title: "Company structured data",
+            },
+            {
+              href: `${BASE_URL}/data/agent-routing.json`,
+              type: "application/json",
+              title: "Agent routing rules",
             },
           ],
         },

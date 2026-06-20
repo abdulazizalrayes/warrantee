@@ -19,6 +19,15 @@ const publicChecks = [
   { path: `/${indexNowKey}.txt`, expect: 200, contains: indexNowKey },
   { path: "/.well-known/agent-card.json", expect: 200 },
   { path: "/.well-known/api-catalog", expect: 200 },
+  { path: "/.well-known/mcp.json", expect: 200 },
+  { path: "/.well-known/mcp/server-cards.json", expect: 200 },
+  { path: "/.well-known/agent-skills/index.json", expect: 200 },
+  { path: "/llms-full.txt", expect: 200 },
+  { path: "/openapi.json", expect: 200 },
+  { path: "/auth.md", expect: 200, contains: "must not ask users for Warrantee usernames or passwords" },
+  { path: "/data/company.json", expect: 200 },
+  { path: "/data/agent-routing.json", expect: 200 },
+  { path: "/api/mcp", expect: 200 },
   { path: "/api/health", expect: 200 },
 ];
 

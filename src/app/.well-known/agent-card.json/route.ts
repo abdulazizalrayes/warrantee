@@ -14,6 +14,17 @@ export function GET() {
       url: BASE_URL,
     },
     documentationUrl: `${BASE_URL}/en/api-docs`,
+    structuredData: {
+      company: `${BASE_URL}/data/company.json`,
+      services: `${BASE_URL}/data/services.json`,
+      capabilities: `${BASE_URL}/data/capabilities.json`,
+      serviceAreas: `${BASE_URL}/data/service-areas.json`,
+      inquirySchema: `${BASE_URL}/data/project-inquiry-schema.json`,
+      routing: `${BASE_URL}/data/agent-routing.json`,
+      llmsFull: `${BASE_URL}/llms-full.txt`,
+      openapi: `${BASE_URL}/openapi.json`,
+      auth: `${BASE_URL}/auth.md`,
+    },
     capabilities: {
       streaming: false,
       pushNotifications: false,
@@ -31,6 +42,18 @@ export function GET() {
         id: "api-cli-mcp-integration",
         name: "API / CLI / MCP Integration",
         description: "Use scoped x-api-key integration tokens with the REST API, Warrantee CLI commands, the Warrantee stdio MCP server, and the hosted https://warrantee.io/api/mcp endpoint while respecting rate limits, owner-isolated warranty APIs, and the no-password integration rule.",
+      },
+      {
+        id: "public-company-discovery",
+        name: "Public Company Discovery",
+        description:
+          "Read public structured data, services, capabilities, service areas, and routing rules without private account access.",
+      },
+      {
+        id: "inquiry-preparation",
+        name: "Inquiry Preparation",
+        description:
+          "Prepare enterprise, seller, partnership, support, or API / CLI / MCP inquiry drafts. Do not submit or contact Warrantee without explicit user approval.",
       },
       {
         id: "warranty-verification",
