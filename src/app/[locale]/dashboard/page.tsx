@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Shield, Clock, AlertTriangle, FileText, Plus, TrendingUp, Activity, ChevronRight } from "lucide-react";
+import { Shield, Clock, AlertTriangle, FileText, Plus, TrendingUp, Activity, ChevronRight, CheckCircle2 } from "lucide-react";
 import { getDictionary, DIRECTION } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth-context";
@@ -291,6 +291,67 @@ export default function DashboardPage() {
               <p className="mt-1 text-[12px] text-white/60">{isRTL ? "راجع ما يحتاج قراراً سريعاً" : "Review items that need a decision"}</p>
             </Link>
           </div>
+        </div>
+      </div>
+
+      <div className="mb-10 rounded-3xl border border-[#d2d2d7]/50 bg-white p-6 shadow-sm">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-[13px] font-semibold uppercase tracking-[0.18em] text-[#0071e3]">
+              {isRTL ? "خطوات القيمة الأولى" : "First-value checklist"}
+            </p>
+            <h2 className="mt-2 text-[24px] font-semibold tracking-tight text-[#1d1d1f]">
+              {isRTL ? "حوّل الحساب إلى نظام تشغيل للضمانات." : "Turn the account into a warranty operating system."}
+            </h2>
+            <p className="mt-2 max-w-2xl text-[15px] leading-relaxed text-[#86868b]">
+              {isRTL
+                ? "ابدأ بضمان واحد، أضف المستندات، ثم راقب المطالبات والانتهاء من نفس المسار."
+                : "Start with one warranty, attach the proof, then watch claims and expiries from the same operating flow."}
+            </p>
+          </div>
+          <Link
+            href={`/${locale}/api-docs`}
+            className="inline-flex w-fit items-center gap-2 rounded-full border border-[#d2d2d7] px-5 py-2.5 text-[14px] font-medium text-[#1d1d1f] transition hover:bg-[#f5f5f7]"
+          >
+            {isRTL ? "ربط الأنظمة" : "Connect systems"}
+            <ChevronRight className="h-4 w-4" />
+          </Link>
+        </div>
+        <div className="mt-5 grid gap-3 md:grid-cols-4">
+          {[
+            {
+              done: (stats?.total_warranties || 0) > 0,
+              title: isRTL ? "أضف أول ضمان" : "Add first warranty",
+              body: isRTL ? "أنشئ سجل ضمان قابل للتتبع." : "Create a warranty record you can track.",
+              href: `/${locale}/warranties/new`,
+            },
+            {
+              done: recentWarranties.length > 0,
+              title: isRTL ? "أرفق الإثبات" : "Attach proof",
+              body: isRTL ? "اربط الفاتورة أو الشهادة بالضمان." : "Link invoice or certificate evidence.",
+              href: recentWarranties[0]?.id ? `/${locale}/warranties/${recentWarranties[0].id}` : `/${locale}/warranties/new`,
+            },
+            {
+              done: (stats?.open_claims || 0) > 0 || (stats?.pending_approval || 0) > 0,
+              title: isRTL ? "راجع القرارات" : "Review decisions",
+              body: isRTL ? "تابع المطالبات والموافقات المفتوحة." : "Watch open claims and approvals.",
+              href: `/${locale}/approval`,
+            },
+            {
+              done: (stats?.total_warranties || 0) >= 3,
+              title: isRTL ? "راقب الذكاء التشغيلي" : "Watch intelligence",
+              body: isRTL ? "افتح التحليلات لمعرفة التعرض والمخاطر." : "Open analytics for exposure and risk.",
+              href: `/${locale}/analytics`,
+            },
+          ].map((item) => (
+            <Link key={item.title} href={item.href} className="rounded-2xl border border-[#d2d2d7]/50 bg-[#fbfbfd] p-4 transition hover:border-[#0071e3]/30 hover:bg-[#f5f5f7]">
+              <div className={`mb-3 flex h-8 w-8 items-center justify-center rounded-full ${item.done ? "bg-[#30d158]/10 text-[#248a3d]" : "bg-[#0071e3]/10 text-[#0071e3]"}`}>
+                {item.done ? <CheckCircle2 size={16} /> : <ChevronRight size={16} />}
+              </div>
+              <p className="text-[14px] font-semibold text-[#1d1d1f]">{item.title}</p>
+              <p className="mt-1 text-[12px] leading-relaxed text-[#86868b]">{item.body}</p>
+            </Link>
+          ))}
         </div>
       </div>
 

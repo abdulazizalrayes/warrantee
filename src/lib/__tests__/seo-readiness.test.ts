@@ -217,6 +217,8 @@ describe("SEO and AI-search readiness metadata", () => {
 
     expect(urls).toContain("https://warrantee.io/en/support");
     expect(urls).toContain("https://warrantee.io/ar/support");
+    expect(urls).toContain("https://warrantee.io/en/security");
+    expect(urls).toContain("https://warrantee.io/ar/security");
     expect(urls).toContain("https://warrantee.io/en/resources/warranty-management-software");
     expect(urls).toContain("https://warrantee.io/ar/resources/warranty-management-software");
     expect(urls).toContain("https://warrantee.io/en/compare/spreadsheets");

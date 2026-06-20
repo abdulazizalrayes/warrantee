@@ -130,3 +130,18 @@ Add at least:
 - 1 handwritten-note edge case if handwritten warranty notes are accepted.
 
 All private samples should be redacted where possible. Keep original private files only in an approved secure QA location, never in Git.
+
+## Current Synthetic Coverage
+
+The committed synthetic gate now covers:
+
+- English Saudi/GCC receipt text.
+- Arabic receipt text.
+- Mixed Arabic/English invoice text.
+- Poor-scan OCR text with common character confusion.
+- Duplicate/forwarded invoice text.
+- Warranty certificate text.
+- Handwritten-note fallback text.
+- Corrupted-PDF fallback text.
+
+This is still not a substitute for the private real-document corpus. It is a release gate that prevents obvious parser regressions while private evidence is collected.

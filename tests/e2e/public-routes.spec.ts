@@ -10,6 +10,7 @@ const publicRoutes = [
   "/en/faq",
   "/en/guide",
   "/en/api-docs",
+  "/en/security",
   "/en/support",
   "/en/seller/register",
   "/en/verify",

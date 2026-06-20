@@ -35,6 +35,7 @@ const PUBLIC_PAGE_LABELS: Record<string, Record<IndexedLocale, string>> = {
   "/guide": { en: "Guide", ar: "الدليل" },
   "/pricing": { en: "Pricing", ar: "الأسعار" },
   "/privacy": { en: "Privacy policy", ar: "سياسة الخصوصية" },
+  "/security": { en: "Security", ar: "الأمان" },
   "/support": { en: "Support", ar: "الدعم" },
   "/terms": { en: "Terms of service", ar: "شروط الخدمة" },
   "/verify": { en: "Verify warranty", ar: "التحقق من الضمان" },

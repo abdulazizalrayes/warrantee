@@ -62,6 +62,7 @@ export function extractWarrantyFields(text: string) {
     /(?:warranty|guarantee|coverage)\s*(?:period|duration)?\s*[:;]?\s*(\d+\s*(?:year|yr|month|mo)s?)/i,
     /(\d+)\s*(?:month|mo)s?\s*(?:warranty|guarantee|coverage)/i,
     /(?:الضمان|الكفالة|مدة الضمان|فترة الضمان)\s*[:؛]?\s*(\d+\s*(?:سنة|سنوات|شهر|أشهر))/i,
+    /(?:الضمان|الكفالة|مدة الضمان|فترة الضمان)\s*[:؛]?\s*((?:سنة|عام|شهر)\s+(?:واحدة|واحد))/i,
     /(\d+)\s*(?:سنة|سنوات|شهر|أشهر)\s*(?:ضمان|كفالة)/i,
   ], 50);
   if (warrantyDuration) {
@@ -71,7 +72,7 @@ export function extractWarrantyFields(text: string) {
 
   const supplier = firstMatch(text, [
     /(?:seller|vendor|supplier|retailer|dealer|sold by|purchased from|store)\s*[:;\-]?\s*(.+?)(?:\n|\r|$)/i,
-    /(?:company|manufacturer|brand)\s*[:;\-]?\s*(.+?)(?:\n|\r|$)/i,
+    /(?:company|manufacturer|brand|issuer)\s*[:;\-]?\s*(.+?)(?:\n|\r|$)/i,
     /(?:البائع|المورد|المتجر|المحل|الشركة|المصنع|العلامة التجارية)\s*[:؛\-]?\s*(.+?)(?:\n|\r|$)/i,
   ]);
   if (supplier) {
@@ -115,6 +116,7 @@ export function extractWarrantyFields(text: string) {
     /\b(?:invoice|inv)\s*(?:number|no|#|ref)?\s*[:;\-]?\s*([A-Za-z0-9\-\/]{3,30})/i,
     /\b(?:po|purchase order)\s*(?:number|no|#|ref)?\s*[:;\-]?\s*([A-Za-z0-9\-\/]{3,30})/i,
     /\b(?:receipt|order)\s*(?:number|no|#|ref)?\s*[:;\-]?\s*([A-Za-z0-9\-\/]{3,30})/i,
+    /\b(?:certificate|warranty certificate)\s*(?:number|no|#|ref)\s*[:;\-]?\s*([A-Za-z0-9\-\/]{3,30})/i,
   ], 30);
   if (invoiceReference) {
     result.invoice_reference = invoiceReference;

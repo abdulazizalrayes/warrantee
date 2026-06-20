@@ -205,6 +205,8 @@ const rawTranslations = {
     growthLens: 'Growth Lens', realCustomersOnly: 'Real customers', allActivity: 'All activity',
     qaExcluded: 'QA/internal excluded', completedOnboarding: 'Onboarding completed',
     warrantyCreators: 'Warranty creators', newUsers30d: 'New users (30d)', newWarranties30d: 'New warranties (30d)',
+    conversionFunnel: 'Conversion Funnel', signedUp: 'Signed up', activated: 'Activated',
+    claimEngaged: 'Claim engaged', payingSignals: 'Paying signals',
     exportData: 'Export CSV', refresh: 'Refresh', search: 'Search...',
     // Team
     teamTitle: 'Team Management', addAdmin: 'Add Team Member', emailPlaceholder: 'Enter email address',
@@ -266,6 +268,8 @@ const rawTranslations = {
     growthLens: 'منظور النمو', realCustomersOnly: 'عملاء حقيقيون', allActivity: 'كل النشاط',
     qaExcluded: 'تم استبعاد الاختبارات والفريق', completedOnboarding: 'اكتمل التسجيل',
     warrantyCreators: 'منشئو الضمانات', newUsers30d: 'مستخدمون جدد (30 يوم)', newWarranties30d: 'ضمانات جديدة (30 يوم)',
+    conversionFunnel: 'قمع التحويل', signedUp: 'سجلوا', activated: 'تفاعلوا',
+    claimEngaged: 'تفاعلوا مع المطالبات', payingSignals: 'إشارات دفع',
     exportData: 'تصدير CSV', refresh: 'تحديث', search: 'بحث...',
     teamTitle: 'إدارة الفريق', addAdmin: 'إضافة عضو', emailPlaceholder: 'أدخل البريد الإلكتروني',
     invite: 'إضافة', removeAccess: 'إزالة', confirmRemove: 'تأكيد الإزالة',
@@ -785,6 +789,34 @@ export default function AdminPage() {
     warranties: Math.max(stats.totalWarranties - realStats.totalWarranties, 0),
     claims: Math.max(stats.totalClaims - realStats.totalClaims, 0),
   };
+  const funnelBase = Math.max(activeStats.totalUsers, 1);
+  const funnelStages = [
+    { label: text.signedUp, value: activeStats.totalUsers, pct: 100, color: '#3B82F6' },
+    {
+      label: text.completedOnboarding,
+      value: activeStats.completedOnboarding,
+      pct: Math.round((activeStats.completedOnboarding / funnelBase) * 100),
+      color: '#10B981',
+    },
+    {
+      label: text.activated,
+      value: activeStats.warrantyCreators,
+      pct: Math.round((activeStats.warrantyCreators / funnelBase) * 100),
+      color: '#0071e3',
+    },
+    {
+      label: text.claimEngaged,
+      value: activeStats.totalClaims,
+      pct: Math.round((activeStats.totalClaims / funnelBase) * 100),
+      color: '#F59E0B',
+    },
+    {
+      label: text.payingSignals,
+      value: activeStats.activeSubscriptions,
+      pct: Math.round((activeStats.activeSubscriptions / funnelBase) * 100),
+      color: '#8B5CF6',
+    },
+  ];
 
   // ─── LOADING / UNAUTHORIZED ───────────────────────────
   if (loading) return (
@@ -959,6 +991,39 @@ export default function AdminPage() {
                   <SparkNumber label={text.warrantyCreators} value={activeStats.warrantyCreators} icon="M17 20h5v-2a4 4 0 00-4-4h-1M9 20H4v-2a4 4 0 014-4h1m0-4a4 4 0 118 0 4 4 0 01-8 0z" color="#3B82F6" />
                   <SparkNumber label={text.newUsers30d} value={activeStats.newUsers30d} icon="M12 4v16m8-8H4" color="#8B5CF6" />
                   <SparkNumber label={text.newWarranties30d} value={activeStats.newWarranties30d} icon="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" color="#0071e3" />
+                </div>
+              </section>
+
+              <section className="rounded-xl border border-[#1a1a3a] bg-[#0e0e20] p-5">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-200">{text.conversionFunnel}</h3>
+                    <p className="mt-1 text-xs text-gray-500">
+                      {locale === 'ar'
+                        ? 'يركز على التحول من التسجيل إلى أول قيمة تشغيلية.'
+                        : 'Tracks movement from signup to first operating value.'}
+                    </p>
+                  </div>
+                  <span className="text-[10px] uppercase tracking-[0.2em] text-[#0071e3]/70">
+                    {growthLens === 'real' ? text.realCustomersOnly : text.allActivity}
+                  </span>
+                </div>
+                <div className="mt-5 grid gap-3 lg:grid-cols-5">
+                  {funnelStages.map((stage) => (
+                    <div key={stage.label} className="rounded-lg border border-[#1a1a3a] bg-[#12122a] p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-xs font-medium text-gray-300">{stage.label}</p>
+                        <p className="text-lg font-bold text-white">{stage.value.toLocaleString()}</p>
+                      </div>
+                      <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#1a1a3a]">
+                        <div
+                          className="h-full rounded-full transition-all"
+                          style={{ width: `${Math.min(stage.pct, 100)}%`, backgroundColor: stage.color }}
+                        />
+                      </div>
+                      <p className="mt-2 text-[10px] text-gray-500">{stage.pct}%</p>
+                    </div>
+                  ))}
                 </div>
               </section>
 

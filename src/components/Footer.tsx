@@ -21,6 +21,7 @@ export function Footer({ locale, dictionary }: FooterProps) {
         { label: dictionary.nav.features, href: `/${locale}#features` },
         { label: dictionary.how_it_works.title, href: `/${locale}#how-it-works` },
         { label: dictionary.nav.pricing, href: `/${locale}#pricing` },
+        { label: isArabic ? 'الأمان والثقة' : 'Security & Trust', href: `/${locale}/security` },
         { label: isArabic ? 'المدونة والأدلة' : 'Blog & Guides', href: `/${locale}/blog` },
         { label: isArabic ? 'برنامج إدارة الضمانات' : 'Warranty Management Software', href: `/${locale}/resources/warranty-management-software` },
         { label: isArabic ? 'Warrantee مقابل الجداول' : 'Warrantee vs Spreadsheets', href: `/${locale}/compare/spreadsheets` },

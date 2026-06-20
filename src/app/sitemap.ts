@@ -20,6 +20,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: '/faq', changeFreq: 'monthly' as const, priority: 0.7 },
     { path: '/guide', changeFreq: 'monthly' as const, priority: 0.7 },
     { path: '/api-docs', changeFreq: 'monthly' as const, priority: 0.7 },
+    { path: '/security', changeFreq: 'monthly' as const, priority: 0.7 },
     { path: '/support', changeFreq: 'monthly' as const, priority: 0.6 },
     { path: '/verify', changeFreq: 'monthly' as const, priority: 0.6 },
     { path: '/terms', changeFreq: 'yearly' as const, priority: 0.3 },

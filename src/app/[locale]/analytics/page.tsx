@@ -37,6 +37,10 @@ interface AnalyticsData {
   statusBreakdown: { status: string; count: number }[];
   topSuppliers: { supplier: string; count: number }[];
   coverageValue: number;
+  extensionOpportunity: number;
+  supplierConcentration: number;
+  assetRiskScore: number;
+  unpricedAssets: number;
 }
 
 interface AnalyticsWarranty {
@@ -70,6 +74,16 @@ const translations = {
     pendingClaims: 'Pending Claims',
     avgDuration: 'Avg Duration',
     coverageValue: 'Coverage Value',
+    assetIntelligence: 'Asset Intelligence',
+    assetIntelligenceDesc: 'Signals that move Warrantee from reminders into lifecycle intelligence.',
+    extensionOpportunity: 'Extension Opportunity',
+    extensionOpportunityDesc: 'Active warranties expiring in the next 90 days.',
+    supplierConcentration: 'Supplier Concentration',
+    supplierConcentrationDesc: 'Share of records held by the top supplier.',
+    assetRiskScore: 'Asset Risk Score',
+    assetRiskScoreDesc: 'Weighted view of expiry exposure and unresolved claims.',
+    unpricedAssets: 'Unpriced Assets',
+    unpricedAssetsDesc: 'Records missing purchase value for portfolio exposure.',
     categoryBreakdown: 'Categories',
     monthlyTrend: 'Monthly Trend',
     statusDistribution: 'Status Distribution',
@@ -95,6 +109,16 @@ const translations = {
     pendingClaims: '\u0645\u0637\u0627\u0644\u0628\u0627\u062a \u0645\u0639\u0644\u0642\u0629',
     avgDuration: '\u0645\u062a\u0648\u0633\u0637 \u0627\u0644\u0645\u062f\u0629',
     coverageValue: '\u0642\u064a\u0645\u0629 \u0627\u0644\u062a\u063a\u0637\u064a\u0629',
+    assetIntelligence: '\u0630\u0643\u0627\u0621 \u0627\u0644\u0623\u0635\u0648\u0644',
+    assetIntelligenceDesc: '\u0625\u0634\u0627\u0631\u0627\u062a \u062a\u0646\u0642\u0644 Warrantee \u0645\u0646 \u0627\u0644\u062a\u0630\u0643\u064a\u0631 \u0625\u0644\u0649 \u0630\u0643\u0627\u0621 \u062f\u0648\u0631\u0629 \u062d\u064a\u0627\u0629 \u0627\u0644\u0623\u0635\u0648\u0644.',
+    extensionOpportunity: '\u0641\u0631\u0635\u0629 \u0627\u0644\u062a\u0645\u062f\u064a\u062f',
+    extensionOpportunityDesc: '\u0636\u0645\u0627\u0646\u0627\u062a \u0646\u0634\u0637\u0629 \u062a\u0646\u062a\u0647\u064a \u062e\u0644\u0627\u0644 \u0669\u0660 \u064a\u0648\u0645\u0627\u064b.',
+    supplierConcentration: '\u062a\u0631\u0643\u0632 \u0627\u0644\u0645\u0648\u0631\u062f\u064a\u0646',
+    supplierConcentrationDesc: '\u062d\u0635\u0629 \u0627\u0644\u0633\u062c\u0644\u0627\u062a \u0644\u0623\u0639\u0644\u0649 \u0645\u0648\u0631\u062f.',
+    assetRiskScore: '\u0645\u0624\u0634\u0631 \u0645\u062e\u0627\u0637\u0631 \u0627\u0644\u0623\u0635\u0648\u0644',
+    assetRiskScoreDesc: '\u0646\u0638\u0631\u0629 \u0645\u0648\u0632\u0648\u0646\u0629 \u0644\u0645\u062e\u0627\u0637\u0631 \u0627\u0644\u0627\u0646\u062a\u0647\u0627\u0621 \u0648\u0627\u0644\u0645\u0637\u0627\u0644\u0628\u0627\u062a.',
+    unpricedAssets: '\u0623\u0635\u0648\u0644 \u0628\u0644\u0627 \u0642\u064a\u0645\u0629',
+    unpricedAssetsDesc: '\u0633\u062c\u0644\u0627\u062a \u062a\u0646\u0642\u0635\u0647\u0627 \u0642\u064a\u0645\u0629 \u0627\u0644\u0634\u0631\u0627\u0621 \u0644\u0642\u064a\u0627\u0633 \u0627\u0644\u062a\u0639\u0631\u0636.',
     categoryBreakdown: '\u0627\u0644\u0641\u0626\u0627\u062a',
     monthlyTrend: '\u0627\u0644\u0627\u062a\u062c\u0627\u0647 \u0627\u0644\u0634\u0647\u0631\u064a',
     statusDistribution: '\u062a\u0648\u0632\u064a\u0639 \u0627\u0644\u062d\u0627\u0644\u0629',
@@ -133,6 +157,10 @@ const emptyAnalyticsData: AnalyticsData = {
   statusBreakdown: [],
   topSuppliers: [],
   coverageValue: 0,
+  extensionOpportunity: 0,
+  supplierConcentration: 0,
+  assetRiskScore: 100,
+  unpricedAssets: 0,
 };
 
 function parseDate(value: string | null | undefined) {
@@ -203,6 +231,11 @@ export default function AnalyticsPage() {
         if (!end) return false;
         return end > now && end <= endOfMonth;
       });
+      const ninetyDaysFromNow = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
+      const extensionOpportunity = warrantyRows.filter((w) => {
+        const end = parseDate(w.end_date);
+        return Boolean(end && end > now && end <= ninetyDaysFromNow);
+      }).length;
 
       const durations = warrantyRows.map((w) => {
         const start = parseDate(w.start_date);
@@ -257,6 +290,19 @@ export default function AnalyticsPage() {
         .sort((a, b) => b.count - a.count).slice(0, 5);
 
       const coverageValue = warrantyRows.reduce((sum, w) => sum + (Number(w.purchase_price) || 0), 0);
+      const supplierConcentration = warrantyRows.length > 0 && topSuppliers.length > 0
+        ? Math.round((topSuppliers[0].count / warrantyRows.length) * 100)
+        : 0;
+      const unpricedAssets = warrantyRows.filter((w) => !(Number(w.purchase_price) > 0)).length;
+      const pendingClaimCount = claimRows.filter((c) => c.status === 'pending').length;
+      const expiryPressure = warrantyRows.length > 0 ? (extensionOpportunity / warrantyRows.length) * 35 : 0;
+      const expiredPressure = warrantyRows.length > 0 ? (expired.length / warrantyRows.length) * 25 : 0;
+      const claimPressure = claimRows.length > 0 ? (pendingClaimCount / claimRows.length) * 25 : 0;
+      const dataQualityPressure = warrantyRows.length > 0 ? (unpricedAssets / warrantyRows.length) * 15 : 0;
+      const assetRiskScore = Math.max(
+        0,
+        Math.min(100, Math.round(100 - expiryPressure - expiredPressure - claimPressure - dataQualityPressure)),
+      );
 
       setData({
         totalWarranties: warrantyRows.length,
@@ -267,6 +313,10 @@ export default function AnalyticsPage() {
         pendingClaims: claimRows.filter((c) => c.status === 'pending').length,
         avgWarrantyDuration: avgDuration,
         categoryBreakdown, monthlyTrend, statusBreakdown, topSuppliers, coverageValue,
+        extensionOpportunity,
+        supplierConcentration,
+        assetRiskScore,
+        unpricedAssets,
       });
     } catch (err) {
       console.error('Analytics error:', err);
@@ -297,6 +347,41 @@ export default function AnalyticsPage() {
     { icon: Clock, label: t.pendingClaims, value: data.pendingClaims, iconColor: 'text-[#ff9f0a]', iconBg: 'bg-[#fff6e5]' },
     { icon: Calendar, label: t.avgDuration, value: data.avgWarrantyDuration + ' ' + t.days, iconColor: 'text-[#0071e3]', iconBg: 'bg-[#e5f1ff]' },
     { icon: TrendingUp, label: t.coverageValue, value: 'SAR ' + data.coverageValue.toLocaleString(), iconColor: 'text-[#30d158]', iconBg: 'bg-[#e8f9ed]' },
+  ] : [];
+
+  const intelligenceCards = data ? [
+    {
+      icon: Calendar,
+      label: t.extensionOpportunity,
+      value: data.extensionOpportunity,
+      description: t.extensionOpportunityDesc,
+      tone: data.extensionOpportunity > 0 ? 'text-[#c93400]' : 'text-[#1d7a34]',
+      iconBg: data.extensionOpportunity > 0 ? 'bg-[#fff6e5]' : 'bg-[#e8f9ed]',
+    },
+    {
+      icon: Shield,
+      label: t.supplierConcentration,
+      value: `${data.supplierConcentration}%`,
+      description: t.supplierConcentrationDesc,
+      tone: data.supplierConcentration >= 50 ? 'text-[#c93400]' : 'text-[#0071e3]',
+      iconBg: data.supplierConcentration >= 50 ? 'bg-[#fff6e5]' : 'bg-[#e5f1ff]',
+    },
+    {
+      icon: Activity,
+      label: t.assetRiskScore,
+      value: `${data.assetRiskScore}/100`,
+      description: t.assetRiskScoreDesc,
+      tone: data.assetRiskScore >= 80 ? 'text-[#1d7a34]' : data.assetRiskScore >= 55 ? 'text-[#c93400]' : 'text-[#7a1d1d]',
+      iconBg: data.assetRiskScore >= 80 ? 'bg-[#e8f9ed]' : data.assetRiskScore >= 55 ? 'bg-[#fff6e5]' : 'bg-[#feeeed]',
+    },
+    {
+      icon: AlertTriangle,
+      label: t.unpricedAssets,
+      value: data.unpricedAssets,
+      description: t.unpricedAssetsDesc,
+      tone: data.unpricedAssets > 0 ? 'text-[#c93400]' : 'text-[#1d7a34]',
+      iconBg: data.unpricedAssets > 0 ? 'bg-[#fff6e5]' : 'bg-[#e8f9ed]',
+    },
   ] : [];
 
   if (loading) {
@@ -387,6 +472,36 @@ export default function AnalyticsPage() {
                 </p>
               </div>
             ))}
+          </div>
+
+          <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-[#d2d2d7]/40">
+            <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-[13px] font-semibold uppercase tracking-[0.18em] text-[#0071e3]">
+                  {t.assetIntelligence}
+                </p>
+                <h3 className="mt-2 text-[22px] font-semibold tracking-tight text-[#1d1d1f]">
+                  {isRTL ? '\u0625\u0634\u0627\u0631\u0627\u062a \u062a\u0634\u063a\u064a\u0644\u064a\u0629 \u0642\u0627\u0628\u0644\u0629 \u0644\u0644\u062a\u0646\u0641\u064a\u0630' : 'Actionable lifecycle signals'}
+                </h3>
+              </div>
+              <p className="max-w-xl text-[14px] leading-relaxed text-[#86868b]">
+                {t.assetIntelligenceDesc}
+              </p>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              {intelligenceCards.map((card) => (
+                <div key={card.label} className="rounded-2xl border border-[#d2d2d7]/50 bg-[#fbfbfd] p-5">
+                  <div className="mb-4 flex items-center justify-between">
+                    <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${card.iconBg}`}>
+                      <card.icon size={18} className={card.tone} />
+                    </div>
+                    <span className={`text-[24px] font-semibold tracking-tight ${card.tone}`}>{card.value}</span>
+                  </div>
+                  <p className="text-[14px] font-semibold text-[#1d1d1f]">{card.label}</p>
+                  <p className="mt-2 text-[12px] leading-relaxed text-[#86868b]">{card.description}</p>
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* Charts Row */}

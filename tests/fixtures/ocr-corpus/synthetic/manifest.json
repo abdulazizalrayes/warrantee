@@ -1,9 +1,17 @@
 {
   "description": "Synthetic, non-customer OCR regression fixtures safe for Git. Real customer or vendor documents belong only in tests/fixtures/ocr-corpus/private.",
   "requirements": {
-    "minEntries": 4,
+    "minEntries": 8,
     "locales": ["en-SA", "ar-SA", "mixed"],
-    "kinds": ["receipt", "invoice", "poor_scan_text", "duplicate_invoice"]
+    "kinds": [
+      "receipt",
+      "invoice",
+      "poor_scan_text",
+      "duplicate_invoice",
+      "warranty_certificate",
+      "handwritten_note_text",
+      "corrupted_pdf_text"
+    ]
   },
   "entries": [
     {
@@ -86,6 +94,50 @@
         "serial_number": "TAB-DUP-900",
         "invoice_reference": "DUP-2026-900",
         "category": "electronics"
+      }
+    },
+    {
+      "id": "synthetic-en-warranty-certificate-001",
+      "locale": "en-SA",
+      "kind": "warranty_certificate",
+      "sensitivity": "synthetic",
+      "text": "Warranty Certificate\nCertificate No: WC-2026-444\nIssuer: Najd Appliances\nCovered Product: Commercial Refrigerator 900L\nSerial: FRIDGE-900-SA\nCoverage Start: 2026-04-15\nCoverage End: 2028-04-14\nTerms: Compressor covered for 24 months. Labor excluded after first year.",
+      "minConfidence": 0.6,
+      "expectedFields": {
+        "product_name": "Commercial Refrigerator 900L",
+        "serial_number": "FRIDGE-900-SA",
+        "start_date": "2026-04-15",
+        "end_date": "2028-04-14",
+        "supplier": "Najd Appliances",
+        "invoice_reference": "WC-2026-444"
+      }
+    },
+    {
+      "id": "synthetic-ar-handwritten-note-text-001",
+      "locale": "ar-SA",
+      "kind": "handwritten_note_text",
+      "sensitivity": "synthetic",
+      "text": "ملاحظة ضمان بخط اليد\nالبائع: مؤسسة الخليج\nالمنتج: مضخة مياه\nS/N: PUMP-77-SA\nتاريخ الشراء: 2026/03/20\nالضمان سنة واحدة",
+      "minConfidence": 0.4,
+      "expectedFields": {
+        "product_name": "مضخة مياه",
+        "serial_number": "PUMP-77-SA",
+        "supplier": "مؤسسة الخليج",
+        "warranty_duration": "سنة واحدة"
+      }
+    },
+    {
+      "id": "synthetic-corrupted-pdf-text-001",
+      "locale": "mixed",
+      "kind": "corrupted_pdf_text",
+      "sensitivity": "synthetic",
+      "text": "%PDF-1.7 broken stream xref missing\nVisible fallback OCR text:\nInvoice: CORR-19\nSeller: Desert Tools\nProduct: Drill Kit\nSerial Number: DRILL-CORR-19\nWarranty: 6 months\nAmount: SAR 399",
+      "minConfidence": 0.35,
+      "expectedFields": {
+        "product_name": "Drill Kit",
+        "serial_number": "DRILL-CORR-19",
+        "invoice_reference": "CORR-19",
+        "warranty_duration": "6 months"
       }
     }
   ]

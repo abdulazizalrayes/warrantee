@@ -19,6 +19,7 @@ type PageKey =
   | "guide"
   | "verify"
   | "apiDocs"
+  | "security"
   | "support"
   | "auth"
   | "terms"
@@ -36,6 +37,7 @@ const PAGE_PATHS: Record<PageKey, string> = {
   guide: "/guide",
   verify: "/verify",
   apiDocs: "/api-docs",
+  security: "/security",
   support: "/support",
   auth: "/auth",
   terms: "/terms",
@@ -167,6 +169,18 @@ const PAGE_META: Record<
       title: "دليل API / CLI / MCP وارنتي — تكاملات ERP والأنظمة",
       description:
         "ادمج وارنتي مع ERP والمتاجر والسكريبتات والوكلاء والأنظمة الداخلية باستخدام واجهات الضمان وMCP ورموز التكامل الخادمية.",
+    },
+  },
+  security: {
+    en: {
+      title: "Warrantee Security & Trust — Enterprise Warranty Platform Controls",
+      description:
+        "Review Warrantee's security, privacy, tenant isolation, API token, document handling, OCR, payment, and production monitoring controls for warranty operations.",
+    },
+    ar: {
+      title: "الأمان والثقة في وارنتي — ضوابط منصة الضمانات للمؤسسات",
+      description:
+        "تعرّف على ضوابط الأمان والخصوصية وعزل الحسابات ورموز API ومعالجة المستندات وOCR والمدفوعات والمراقبة الإنتاجية في وارنتي.",
     },
   },
   support: {

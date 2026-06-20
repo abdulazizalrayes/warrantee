@@ -16,6 +16,7 @@ test.describe("SEO and agent-readiness endpoints", () => {
     const sitemapText = await sitemap.text();
     expect(sitemapText).toContain("https://warrantee.io/en");
     expect(sitemapText).toContain("https://warrantee.io/en/support");
+    expect(sitemapText).toContain("https://warrantee.io/en/security");
     expect(sitemapText).not.toContain("<lastmod>");
 
     const indexNow = await request.get(`/${indexNowKey}.txt`);
@@ -40,7 +41,7 @@ test.describe("SEO and agent-readiness endpoints", () => {
   });
 
   test("key public pages expose canonical links", async ({ page }) => {
-    for (const path of ["/en", "/en/blog", "/en/features", "/en/pricing", "/en/api-docs", "/en/support"]) {
+    for (const path of ["/en", "/en/blog", "/en/features", "/en/pricing", "/en/api-docs", "/en/security", "/en/support"]) {
       await page.goto(path, { waitUntil: "domcontentloaded" });
       const canonical = page.locator('link[rel="canonical"]');
       await expect(canonical).toHaveAttribute("href", new RegExp(`https://warrantee\\.io${path}$`));
