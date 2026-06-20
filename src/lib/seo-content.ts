@@ -386,6 +386,192 @@ export const RESOURCE_PAGES: SeoContentPage[] = [
       ar: { title: "شغّل الضمانات بالعربية والإنجليزية", body: "استخدم Warrantee لسير البائعين والشهادات والتحقق في المنطقة.", primary: "ابدأ مجانًا" },
     },
   },
+  {
+    slug: "product-passport-warranty-verification",
+    kind: "resource",
+    title: {
+      en: "Product Passport and Warranty Verification",
+      ar: "جواز المنتج والتحقق من الضمان",
+    },
+    description: {
+      en: "How public warranty verification and product-passport records help buyers, sellers, and service teams trust warranty status without exposing private account data.",
+      ar: "كيف يساعد التحقق العام من الضمان وسجلات جواز المنتج المشترين والبائعين وفرق الخدمة على الثقة بحالة الضمان دون كشف بيانات الحساب الخاصة.",
+    },
+    eyebrow: { en: "Public verification", ar: "التحقق العام" },
+    intro: {
+      en: "A warranty should not disappear into a private spreadsheet after purchase. A product-passport style verification page gives buyers and service teams a controlled public record for status, reference numbers, seller context, and next steps while keeping private documents and account data protected.",
+      ar: "لا يجب أن يختفي الضمان في جدول خاص بعد الشراء. تمنح صفحة تحقق بنمط جواز المنتج المشترين وفرق الخدمة سجلًا عامًا مضبوطًا للحالة والرقم المرجعي وسياق البائع والخطوات التالية مع حماية المستندات وبيانات الحساب الخاصة.",
+    },
+    audience: {
+      en: "Best for sellers, distributors, ecommerce teams, service desks, and buyers who need fast proof that a warranty exists and is current.",
+      ar: "مناسب للبائعين والموزعين وفرق التجارة الإلكترونية ومكاتب الخدمة والمشترين الذين يحتاجون إلى إثبات سريع بأن الضمان موجود وحالته واضحة.",
+    },
+    sections: [
+      {
+        title: { en: "What public verification should show", ar: "ما الذي يجب أن يعرضه التحقق العام" },
+        body: {
+          en: "The public layer should answer the operational question without exposing the private record. It should confirm whether the warranty is recognized, whether it is active or expired, and which safe next step the user should take.",
+          ar: "يجب أن تجيب الطبقة العامة على السؤال التشغيلي دون كشف السجل الخاص. يجب أن تؤكد هل الضمان معروف وهل هو نشط أو منتهٍ وما الخطوة الآمنة التالية للمستخدم.",
+        },
+        bullets: {
+          en: ["Reference or verification identifier", "High-level product and warranty status", "Safe claim, support, or certificate path"],
+          ar: ["رقم مرجعي أو معرف تحقق", "ملخص المنتج وحالة الضمان", "مسار آمن للمطالبة أو الدعم أو الشهادة"],
+        },
+      },
+      {
+        title: { en: "What must stay private", ar: "ما الذي يجب أن يبقى خاصًا" },
+        body: {
+          en: "A verification page should not leak customer documents, private notes, account ownership, payment details, or internal approval evidence. Those belong behind authentication and tenant checks.",
+          ar: "يجب ألا تكشف صفحة التحقق مستندات العميل أو الملاحظات الخاصة أو ملكية الحساب أو بيانات الدفع أو أدلة الموافقة الداخلية. هذه تبقى خلف المصادقة وفحص ملكية الحساب.",
+        },
+        bullets: {
+          en: ["No private file URLs", "No account dashboard access", "No cross-tenant warranty details"],
+          ar: ["لا روابط ملفات خاصة", "لا وصول للوحة الحساب", "لا تفاصيل ضمان عبر حسابات أخرى"],
+        },
+      },
+    ],
+    proof: {
+      en: ["Public verification is separate from private warranty records.", "Protected account routes redirect unauthenticated users.", "API and MCP private actions require scoped tokens."],
+      ar: ["التحقق العام منفصل عن سجلات الضمان الخاصة.", "المسارات المحمية تعيد غير المصادقين.", "إجراءات API وMCP الخاصة تتطلب رموزًا محددة النطاق."],
+    },
+    faq: [
+      {
+        question: { en: "Is a product passport the same as a warranty record?", ar: "هل جواز المنتج هو نفسه سجل الضمان؟" },
+        answer: {
+          en: "Not exactly. The product passport is the safe public surface. The private warranty record can include documents, ownership, claims, approvals, and account-specific history.",
+          ar: "ليس تمامًا. جواز المنتج هو الواجهة العامة الآمنة. أما سجل الضمان الخاص فقد يتضمن المستندات والملكية والمطالبات والموافقات والسجل الخاص بالحساب.",
+        },
+      },
+    ],
+    cta: {
+      en: { title: "Give every warranty a trusted public check", body: "Use Warrantee to separate public verification from private warranty operations.", primary: "Verify a warranty" },
+      ar: { title: "امنح كل ضمان تحققًا عامًا موثوقًا", body: "استخدم Warrantee للفصل بين التحقق العام وتشغيل الضمانات الخاصة.", primary: "تحقق من ضمان" },
+    },
+  },
+  {
+    slug: "warranty-extension-marketplace",
+    kind: "resource",
+    title: {
+      en: "Warranty Extension Marketplace Readiness",
+      ar: "الاستعداد لسوق تمديد الضمان",
+    },
+    description: {
+      en: "What businesses need before offering warranty extensions: eligibility rules, payments, audit trails, claim history, underwriting signals, and customer trust.",
+      ar: "ما الذي تحتاجه الشركات قبل تقديم تمديدات الضمان: قواعد الأهلية والمدفوعات وسجلات التدقيق وتاريخ المطالبات وإشارات الاكتتاب وثقة العميل.",
+    },
+    eyebrow: { en: "Warranty extensions", ar: "تمديد الضمان" },
+    intro: {
+      en: "Warranty extensions can become a revenue line, but only if the original warranty record is reliable. Eligibility, product history, claim behavior, payment status, seller policy, and customer communication must be structured before extensions scale.",
+      ar: "يمكن أن تصبح تمديدات الضمان مصدر إيراد، لكن فقط إذا كان سجل الضمان الأصلي موثوقًا. يجب تنظيم الأهلية وتاريخ المنتج وسلوك المطالبات وحالة الدفع وسياسة البائع وتواصل العميل قبل التوسع.",
+    },
+    audience: {
+      en: "Best for sellers, retailers, distributors, and partners evaluating future extended warranty, underwriting, or insurance-like offerings.",
+      ar: "مناسب للبائعين والمتاجر والموزعين والشركاء الذين يقيّمون عروض تمديد الضمان أو الاكتتاب أو الشراكات التأمينية مستقبلًا.",
+    },
+    sections: [
+      {
+        title: { en: "Extension eligibility", ar: "أهلية التمديد" },
+        body: {
+          en: "A customer should not be offered an extension unless the warranty is valid, the product category is eligible, the timing is allowed, and prior claim behavior does not violate policy.",
+          ar: "لا يجب عرض التمديد على العميل إلا إذا كان الضمان صالحًا وفئة المنتج مؤهلة والتوقيت مسموحًا ولا يخالف سجل المطالبات السابق السياسة.",
+        },
+        bullets: {
+          en: ["Active warranty and valid purchase date", "Seller or category extension policy", "Claim and fraud-risk checks"],
+          ar: ["ضمان نشط وتاريخ شراء صالح", "سياسة تمديد للبائع أو الفئة", "فحص المطالبات ومخاطر الاحتيال"],
+        },
+      },
+      {
+        title: { en: "Payment and audit controls", ar: "ضوابط الدفع والتدقيق" },
+        body: {
+          en: "Extensions require payment status, webhook verification, idempotency, customer-visible confirmation, and a clear audit trail showing what changed in coverage.",
+          ar: "تتطلب التمديدات حالة دفع والتحقق من الويب هوك ومنع التكرار وتأكيدًا واضحًا للعميل وسجل تدقيق يوضح ما تغير في التغطية.",
+        },
+        bullets: {
+          en: ["Verified checkout and webhook events", "Coverage change history", "Customer certificate or confirmation path"],
+          ar: ["أحداث دفع وويب هوك موثقة", "سجل تغيير التغطية", "مسار شهادة أو تأكيد للعميل"],
+        },
+      },
+    ],
+    proof: {
+      en: ["Stripe readiness and unsigned webhook rejection are production checked.", "Extension pages and payment routes exist.", "Warranty records carry structured status and dates."],
+      ar: ["تتم فحوص جاهزية Stripe ورفض الويب هوك غير الموقع في الإنتاج.", "صفحات التمديد ومسارات الدفع موجودة.", "تحمل سجلات الضمان حالة وتواريخ منظمة."],
+    },
+    faq: [
+      {
+        question: { en: "Can every warranty be extended?", ar: "هل يمكن تمديد كل ضمان؟" },
+        answer: {
+          en: "No. Extension eligibility should depend on category, seller policy, coverage dates, claim history, payment status, and future underwriting rules.",
+          ar: "لا. يجب أن تعتمد أهلية التمديد على الفئة وسياسة البائع وتواريخ التغطية وسجل المطالبات وحالة الدفع وقواعد الاكتتاب المستقبلية.",
+        },
+      },
+    ],
+    cta: {
+      en: { title: "Prepare warranties for extension revenue", body: "Use structured warranty records before adding extension and partner workflows.", primary: "Explore pricing" },
+      ar: { title: "جهّز الضمانات لإيراد التمديد", body: "استخدم سجلات ضمان منظمة قبل إضافة مسارات التمديد والشراكات.", primary: "استعرض الأسعار" },
+    },
+  },
+  {
+    slug: "recall-asset-lifecycle-intelligence",
+    kind: "resource",
+    title: {
+      en: "Recall and Asset Lifecycle Intelligence",
+      ar: "الاستدعاءات وذكاء دورة حياة الأصول",
+    },
+    description: {
+      en: "How warranty records can evolve into asset lifecycle intelligence for recalls, vendor reliability, product risk, claim patterns, and renewal opportunities.",
+      ar: "كيف يمكن أن تتطور سجلات الضمان إلى ذكاء دورة حياة الأصول للاستدعاءات وموثوقية الموردين ومخاطر المنتجات وأنماط المطالبات وفرص التجديد.",
+    },
+    eyebrow: { en: "Asset lifecycle intelligence", ar: "ذكاء دورة حياة الأصول" },
+    intro: {
+      en: "Warranty reminders are useful, but the strategic value is the asset intelligence created over time: what was purchased, from whom, when coverage ends, how often claims happen, which vendors cause friction, and where recalls or reliability issues may appear.",
+      ar: "تذكيرات الضمان مفيدة، لكن القيمة الاستراتيجية هي ذكاء الأصول الذي يتكون مع الوقت: ماذا تم شراؤه ومن أي بائع ومتى تنتهي التغطية وكم تتكرر المطالبات وأي الموردين يسببون احتكاكًا وأين قد تظهر مشكلات الاستدعاء أو الموثوقية.",
+    },
+    audience: {
+      en: "Best for enterprises, service operators, distributors, and future partners that need warranty data to support recall response, reliability analysis, and lifecycle planning.",
+      ar: "مناسب للمؤسسات ومشغلي الخدمة والموزعين والشركاء المستقبليين الذين يحتاجون إلى بيانات الضمان لدعم الاستدعاءات وتحليل الموثوقية وتخطيط دورة الحياة.",
+    },
+    sections: [
+      {
+        title: { en: "Signals that matter", ar: "الإشارات المهمة" },
+        body: {
+          en: "Lifecycle intelligence starts with clean operational signals. Product category, serial number, seller, coverage dates, claim reason, document quality, and resolution status all become useful when consistently captured.",
+          ar: "يبدأ ذكاء دورة الحياة بإشارات تشغيلية نظيفة. تصبح فئة المنتج والرقم التسلسلي والبائع وتواريخ التغطية وسبب المطالبة وجودة المستند وحالة القرار مفيدة عند التقاطها باستمرار.",
+        },
+        bullets: {
+          en: ["Product and seller reliability", "Claim frequency and reason patterns", "Expiry, renewal, and extension opportunities"],
+          ar: ["موثوقية المنتج والبائع", "تكرار المطالبات وأنماط الأسباب", "فرص الانتهاء والتجديد والتمديد"],
+        },
+      },
+      {
+        title: { en: "Recall readiness", ar: "الاستعداد للاستدعاءات" },
+        body: {
+          en: "Recall workflows need to identify affected products, notify owners, document action, and preserve proof. That is difficult when purchase and warranty records are fragmented.",
+          ar: "تحتاج مسارات الاستدعاء إلى تحديد المنتجات المتأثرة وإبلاغ المالكين وتوثيق الإجراء وحفظ الإثبات. يصبح ذلك صعبًا عندما تكون سجلات الشراء والضمان متفرقة.",
+        },
+        bullets: {
+          en: ["Find affected asset groups", "Notify account owners or customers", "Track recall response and evidence"],
+          ar: ["تحديد مجموعات الأصول المتأثرة", "إبلاغ مالكي الحسابات أو العملاء", "تتبع استجابة الاستدعاء والأدلة"],
+        },
+      },
+    ],
+    proof: {
+      en: ["Warranty records, claims, documents, and seller flows are structured.", "API / CLI / MCP routes support future system integration.", "Public verification can remain separate from private lifecycle analysis."],
+      ar: ["سجلات الضمان والمطالبات والمستندات ومسارات البائع منظمة.", "مسارات API / CLI / MCP تدعم التكامل المستقبلي.", "يمكن أن يبقى التحقق العام منفصلًا عن تحليل دورة الحياة الخاص."],
+    },
+    faq: [
+      {
+        question: { en: "Is Warrantee already a full asset management system?", ar: "هل Warrantee نظام كامل لإدارة الأصول الآن؟" },
+        answer: {
+          en: "Warrantee is focused on warranty operations today, with architecture and data signals that can support broader asset lifecycle intelligence over time.",
+          ar: "تركز Warrantee اليوم على تشغيل الضمانات، مع بنية وإشارات بيانات يمكن أن تدعم ذكاء دورة حياة الأصول لاحقًا.",
+        },
+      },
+    ],
+    cta: {
+      en: { title: "Start with warranty data that can become intelligence", body: "Create reliable warranty records now so lifecycle and reliability insights have a trustworthy foundation later.", primary: "Explore features" },
+      ar: { title: "ابدأ ببيانات ضمان قابلة للتحول إلى ذكاء", body: "أنشئ سجلات ضمان موثوقة الآن حتى تمتلك رؤى دورة الحياة والموثوقية أساسًا موثوقًا لاحقًا.", primary: "استكشف المزايا" },
+    },
+  },
 ];
 
 export const COMPARISON_PAGES: SeoContentPage[] = [

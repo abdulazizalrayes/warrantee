@@ -221,6 +221,10 @@ describe("SEO and AI-search readiness metadata", () => {
     expect(urls).toContain("https://warrantee.io/ar/security");
     expect(urls).toContain("https://warrantee.io/en/resources/warranty-management-software");
     expect(urls).toContain("https://warrantee.io/ar/resources/warranty-management-software");
+    expect(urls).toContain("https://warrantee.io/en/resources/product-passport-warranty-verification");
+    expect(urls).toContain("https://warrantee.io/ar/resources/product-passport-warranty-verification");
+    expect(urls).toContain("https://warrantee.io/en/resources/warranty-extension-marketplace");
+    expect(urls).toContain("https://warrantee.io/en/resources/recall-asset-lifecycle-intelligence");
     expect(urls).toContain("https://warrantee.io/en/compare/spreadsheets");
     expect(urls).toContain("https://warrantee.io/en/compare/build-with-ai");
     expect(urls).not.toContain("https://warrantee.io/fr/pricing");

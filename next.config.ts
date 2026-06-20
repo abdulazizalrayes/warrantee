@@ -280,7 +280,13 @@ const sentryBuildOptions = {
   silent: !process.env.CI,
   tunnelRoute: "/monitoring",
   sourcemaps: {
-    disable: !process.env.SENTRY_AUTH_TOKEN,
+    disable:
+      !process.env.SENTRY_AUTH_TOKEN ||
+      !(
+        process.env.CI === "true" ||
+        process.env.VERCEL === "1" ||
+        process.env.WARRANTEE_ENABLE_LOCAL_SENTRY_UPLOAD === "1"
+      ),
   },
   webpack: {
     automaticVercelMonitors: true,
@@ -290,9 +296,14 @@ const sentryBuildOptions = {
   },
 };
 
+const shouldEnableSentryNextConfig =
+  process.env.CI === "true" ||
+  process.env.VERCEL === "1" ||
+  process.env.WARRANTEE_ENABLE_LOCAL_SENTRY_UPLOAD === "1";
+
 const disableSentryNextConfig =
-  process.env.WARRANTEE_DISABLE_SENTRY_NEXT_CONFIG === "1" &&
-  process.env.VERCEL_ENV !== "production";
+  process.env.WARRANTEE_DISABLE_SENTRY_NEXT_CONFIG === "1" ||
+  !shouldEnableSentryNextConfig;
 
 export default disableSentryNextConfig
   ? nextConfig
