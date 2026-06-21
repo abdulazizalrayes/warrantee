@@ -1,6 +1,14 @@
 # Warrantee Operational Status
 
-Last updated: 2026-06-17
+Last updated: 2026-06-21
+
+## 2026-06-21 Vercel Domain Configuration Cleanup
+
+- Vercel notified that `api.warrantee.io` was misconfigured for the `warrantee` project because the active DNS is managed on Cloudflare, not Vercel DNS.
+- Live production API usage remains on `https://warrantee.io/api/...`; `api.warrantee.io` did not resolve publicly during verification.
+- The stale `api.warrantee.io` project-domain assignment was removed through the Vercel project-domain API. The active project domains are now `warrantee.io` and `warrantee.vercel.app`.
+- `npm run smoke:prod` passed after the cleanup, including public pages, agent-readiness files, `/api/health`, protected API rejection checks, and auth callback safety.
+- If a dedicated API subdomain is approved later, add `A api.warrantee.io 76.76.21.21` in the active Cloudflare DNS zone first, then reattach the subdomain in Vercel.
 
 ## 2026-06-17 Handover Hardening Closure
 
@@ -15,7 +23,7 @@ Last updated: 2026-06-17
 - Vercel cron scheduling now includes daily expiry checks, daily document-security scanning, and daily operational data retention. The document scan cron is daily because the current Vercel Hobby account blocks more-than-daily cron schedules.
 - Production smoke/readiness checks now verify that the data-retention endpoint rejects unauthenticated access and that Redis-backed rate limiting is configured for production.
 - GitHub Actions repository secrets now include normalized `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`, matching the already-configured Vercel production Redis settings without quoted values.
-- Final production deployment for this hardening batch is `dpl_Ei2Nn1D2JvmHiZnDXsFzv3QhSZ8N`, ready and aliased to `https://warrantee.io`, `https://api.warrantee.io`, and `https://warrantee.vercel.app`.
+- Final production deployment for this hardening batch is `dpl_Ei2Nn1D2JvmHiZnDXsFzv3QhSZ8N`, ready and aliased to `https://warrantee.io` and `https://warrantee.vercel.app`.
 - Latest GitHub `CI` passed on commit `32fe4b3`, including loopback guard, type-check, lint, tests, build, and E2E smoke.
 - Manually triggered Production Security Gates passed on run `27678426397`, including production smoke, anonymous RLS probe, operational readiness, production operational E2E, and controlled load.
 - Local production verification after the final deployment passed `npm run smoke:prod` and `npm run readiness:operational` against `https://warrantee.io`.
