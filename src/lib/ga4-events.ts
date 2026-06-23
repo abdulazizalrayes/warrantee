@@ -75,6 +75,28 @@ export function trackAuthIntent(
   });
 }
 
+export function trackFunnelCtaClick(
+  cta: string,
+  destination: string,
+  metadata: Record<string, unknown> = {}
+) {
+  emitEvent("funnel_cta_click", {
+    cta,
+    destination,
+    event_category: "conversion_path",
+    event_label: cta,
+    ...metadata,
+  });
+}
+
+export function trackSignupSubmit(metadata: Record<string, unknown> = {}) {
+  emitEvent("signup_submit", {
+    event_category: "authentication",
+    event_label: "signup_form_submit",
+    ...metadata,
+  });
+}
+
 // Core conversion events
 export function trackSignup(method: string = "email") {
   emitEvent("sign_up", {

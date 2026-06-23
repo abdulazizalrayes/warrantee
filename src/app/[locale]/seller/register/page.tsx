@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Check, ShieldCheck } from 'lucide-react';
 import { PageViewTracker } from '@/components/PageViewTracker';
-import { trackSellerApplication } from '@/lib/ga4-events';
+import { trackFunnelCtaClick, trackSellerApplication } from '@/lib/ga4-events';
 import { DIRECTION, getDictionary, normalizeLocale } from '@/lib/i18n';
 import { Footer } from '@/components/Footer';
 import { Navbar } from '@/components/Navbar';
@@ -115,6 +115,12 @@ export default function SellerRegisterPage() {
   const handleSubmit = async () => {
     setLoading(true);
     setError('');
+    trackFunnelCtaClick('seller_application_submit_attempt', '/api/seller/applications', {
+      locale,
+      step,
+      has_website: Boolean(data.website),
+      industry: data.industry,
+    });
     try {
       const applicationResponse = await fetch('/api/seller/applications', {
         method: 'POST',

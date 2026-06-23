@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { getDictionary, Locale, DIRECTION } from '@/lib/i18n';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
+import { TrackedLink } from '@/components/TrackedLink';
 import { buildPageMetadata } from '@/lib/page-metadata';
 import {
   Shield, Bell, FileCheck, BarChart3, Mail, Link2,
@@ -47,20 +48,26 @@ export default async function HomePage({ params }: HomePageProps) {
               {dictionary.hero.subtitle}
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-4">
-              <a
-                href={`/${locale}/auth`}
+              <TrackedLink
+                href={`/${locale}/auth?tab=signup`}
+                cta="hero_start"
+                locale={locale}
+                location="home_hero"
                 className="inline-flex items-center justify-center px-7 py-3 bg-[#0071e3] hover:bg-[#0077ED] text-white font-normal text-[17px] rounded-full transition-colors"
               >
                 {dictionary.hero.cta_start}
                 <ChevronRight className="w-4 h-4 ml-1.5" />
-              </a>
-              <a
+              </TrackedLink>
+              <TrackedLink
                 href="#contact"
+                cta="hero_demo"
+                locale={locale}
+                location="home_hero"
                 className="inline-flex items-center justify-center px-7 py-3 text-[#0071e3] hover:text-[#0077ED] font-normal text-[17px] transition-colors"
               >
                 {dictionary.hero.cta_demo}
                 <ChevronRight className="w-4 h-4 ml-1.5" />
-              </a>
+              </TrackedLink>
             </div>
             <p className="mt-8 text-[13px] text-[#86868b]">
               {!isRTL
@@ -158,19 +165,25 @@ export default async function HomePage({ params }: HomePageProps) {
                     : 'يمسح العميل مرة واحدة للتحقق من الأصالة، فتح الشهادة، تقديم مطالبة، أو طلب تمديد. ويبقى البائع متصلاً بالعميل بعد البيع.'}
                 </p>
                 <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                  <a
+                  <TrackedLink
                     href={`/${locale}/seller/register`}
+                    cta="seller_start"
+                    locale={locale}
+                    location="product_passport"
                     className="inline-flex items-center justify-center rounded-full bg-[#0071e3] px-6 py-3 text-[15px] font-medium text-white transition-colors hover:bg-[#0077ED]"
                   >
                     {!isRTL ? 'Start issuing warranties' : 'ابدأ إصدار الضمانات'}
                     <ChevronRight className="w-4 h-4 ml-1.5" />
-                  </a>
-                  <a
+                  </TrackedLink>
+                  <TrackedLink
                     href={`/${locale}/api-docs`}
+                    cta="api_docs"
+                    locale={locale}
+                    location="product_passport"
                     className="inline-flex items-center justify-center rounded-full border border-[#d2d2d7] px-6 py-3 text-[15px] font-medium text-[#1d1d1f] transition-colors hover:bg-[#f5f5f7]"
                   >
                     {!isRTL ? 'View API / CLI / MCP' : 'عرض API / CLI / MCP'}
-                  </a>
+                  </TrackedLink>
                 </div>
               </div>
 

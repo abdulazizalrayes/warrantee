@@ -19,7 +19,7 @@ import {
 import { DIRECTION, getDictionary, normalizeLocale } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth-context";
 import { PageViewTracker } from "@/components/PageViewTracker";
-import { trackAuthIntent, trackSignup } from "@/lib/ga4-events";
+import { trackAuthIntent, trackSignup, trackSignupSubmit } from "@/lib/ga4-events";
 
 type AuthTab = "login" | "signup";
 
@@ -88,6 +88,7 @@ export default function AuthPage() {
   };
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault(); setLoading(true); setMessage(""); setErrorMsg("");
+    trackSignupSubmit({ locale, account_type: accountType, has_company_name: Boolean(companyName) });
     if (user) {
       setErrorMsg(isRTL ? "\u0623\u0646\u062a \u0645\u0633\u062c\u0644 \u0627\u0644\u062f\u062e\u0648\u0644 \u062d\u0627\u0644\u064a\u0627. \u0633\u062c\u0644 \u0627\u0644\u062e\u0631\u0648\u062c \u0623\u0648\u0644\u0627 \u0644\u0625\u0646\u0634\u0627\u0621 \u062d\u0633\u0627\u0628 \u062c\u062f\u064a\u062f." : "You are already signed in. Sign out first to create a different account.");
       setLoading(false);

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Check, Shield, Zap, Building2 } from "lucide-react";
 import { DIRECTION, getDictionary, normalizeLocale } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth-context";
+import { trackFunnelCtaClick } from "@/lib/ga4-events";
 import { PublicBreadcrumbs } from "@/components/PublicBreadcrumbs";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
@@ -65,6 +66,19 @@ export default function PricingPage() {
   const [checkoutPlan, setCheckoutPlan] = useState<string | null>(null);
 
   const startCheckout = async (planId: string) => {
+    const trackedDestination = planId === "enterprise"
+      ? `/${locale}/contact?intent=enterprise`
+      : user
+        ? "/api/stripe/checkout"
+        : `/${locale}/auth?tab=signup&plan=${planId}`;
+
+    trackFunnelCtaClick("pricing_plan_cta", trackedDestination, {
+      locale,
+      plan: planId,
+      location: "pricing_plan_card",
+      signed_in: Boolean(user),
+    });
+
     if (planId === "free") {
       window.location.href = `/${locale}/auth?tab=signup`;
       return;
