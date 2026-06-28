@@ -8,7 +8,7 @@ export function isTrustedSameOriginRequest(request: Request, fallbackOrigin = "h
   }
   allowedOrigins.add(fallbackOrigin);
 
-  if (process.env.NODE_ENV !== "production" && process.env.VERCEL_ENV !== "production") {
+  if (process.env.VERCEL_ENV !== "production") {
     try {
       const fallbackUrl = new URL(fallbackOrigin);
       if (["localhost", "127.0.0.1", "::1"].includes(fallbackUrl.hostname)) {
