@@ -49,10 +49,61 @@ function pushMetaPixel(event: string, payload: Record<string, unknown>) {
   window.fbq(method, metaEvent, payload);
 }
 
+const serverTrackedEvents = new Set([
+  "page_view",
+  "auth_intent",
+  "funnel_cta_click",
+  "signup_submit",
+  "sign_up",
+  "contact_form_submit",
+  "seller_application_submit",
+  "onboarding_completed",
+]);
+
+function sanitizeServerPayload(payload: Record<string, unknown>) {
+  const sanitized: Record<string, string | number | boolean | null> = {};
+  for (const [key, value] of Object.entries(payload)) {
+    if (value === null || typeof value === "boolean" || typeof value === "number") {
+      sanitized[key] = value;
+    } else if (typeof value === "string") {
+      sanitized[key] = value.slice(0, 160);
+    }
+  }
+  return sanitized;
+}
+
+function sendServerFunnelEvent(event: string, payload: Record<string, unknown>) {
+  if (typeof window === "undefined" || !serverTrackedEvents.has(event)) return;
+
+  const body = JSON.stringify({
+    event,
+    path: window.location.pathname,
+    referrer: document.referrer || null,
+    metadata: sanitizeServerPayload(payload),
+  });
+
+  try {
+    if (navigator.sendBeacon) {
+      const sent = navigator.sendBeacon("/api/funnel/events", new Blob([body], { type: "application/json" }));
+      if (sent) return;
+    }
+
+    void fetch("/api/funnel/events", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body,
+      keepalive: true,
+    });
+  } catch {
+    // Client analytics should never block the user journey.
+  }
+}
+
 function emitEvent(event: string, payload: Record<string, unknown>) {
   gtag("event", event, payload);
   pushDataLayer(event, payload);
   pushMetaPixel(event, payload);
+  sendServerFunnelEvent(event, payload);
 }
 
 export function trackPageView(pageName: string, metadata: Record<string, unknown> = {}) {
@@ -103,6 +154,14 @@ export function trackSignup(method: string = "email") {
     method,
     event_category: "engagement",
     event_label: "user_registration",
+  });
+}
+
+export function trackOnboardingCompleted(metadata: Record<string, unknown> = {}) {
+  emitEvent("onboarding_completed", {
+    event_category: "activation",
+    event_label: "first_run_onboarding_completed",
+    ...metadata,
   });
 }
 

@@ -181,6 +181,20 @@ export async function POST(request: NextRequest) {
       ticket = basicTicket || null;
     }
 
+    await supabaseAdmin.from("activity_log").insert({
+      actor_id: auth.user?.id || null,
+      entity_type: "funnel_event",
+      entity_id: crypto.randomUUID(),
+      action: input.kind === "seller_application" ? "seller_application_submit" : "contact_form_submit",
+      metadata: {
+        source: "contact_api",
+        subject: input.subject,
+        original_kind: input.kind || "contact_form",
+      },
+    }).then(({ error }) => {
+      if (error) console.warn("Contact funnel log failed:", error.message);
+    });
+
     const emailResult = await sendEmail({
       to: "hello@warrantee.io",
       subject: `[Warrantee] ${input.subject}`,

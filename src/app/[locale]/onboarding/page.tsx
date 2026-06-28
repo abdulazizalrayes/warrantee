@@ -5,6 +5,7 @@ import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { useAuth } from "@/lib/auth-context";
 import { Shield, Phone, Bell, ChevronRight, ChevronLeft, Check, Sparkles } from "lucide-react";
 import Link from "next/link";
+import { trackOnboardingCompleted } from "@/lib/ga4-events";
 
 export default function OnboardingPage() {
   const { locale } = useParams() ?? {};
@@ -36,15 +37,20 @@ export default function OnboardingPage() {
     try {
       const { error } = await supabase.from("profiles").upsert({
         id: user.id,
+        email: user.email || "",
         full_name: userName,
         phone: form.phone || null,
-        notify_expiry: form.notify_expiry,
-        notify_claims: form.notify_claims,
-        notify_newsletter: form.notify_newsletter,
+        email_notifications: form.notify_expiry || form.notify_claims || form.notify_newsletter,
+        push_notifications: form.notify_expiry || form.notify_claims,
+        preferred_locale: form.language,
         preferred_language: form.language,
         onboarding_completed: true,
       });
       if (error) throw error;
+      trackOnboardingCompleted({
+        locale,
+        notifications_enabled: form.notify_expiry || form.notify_claims || form.notify_newsletter,
+      });
       await refreshProfile();
       router.push("/" + locale + "/dashboard");
     } catch (e) {
@@ -201,6 +207,12 @@ export default function OnboardingPage() {
                 >
                   {isAr ? "\u0623\u0636\u0641 \u0636\u0645\u0627\u0646" : "Add Warranty"}
                   <ChevronRight className="w-4 h-4" />
+                </Link>
+                <Link
+                  href={"/" + locale + "/demo/product-passport"}
+                  className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-[#f5f5f7] text-[#1d1d1f] text-[15px] font-medium hover:bg-[#e8e8ed] transition-colors"
+                >
+                  {isAr ? "جرّب نموذج جواز المنتج" : "View Sample Passport"}
                 </Link>
                 <Link
                   href={"/" + locale + "/dashboard"}

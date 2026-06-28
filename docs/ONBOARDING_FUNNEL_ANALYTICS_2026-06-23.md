@@ -25,7 +25,7 @@ The homepage primary CTA now links directly to signup:
 
 This prevents new visitors from landing on the default login tab after clicking the primary start CTA.
 
-The following client-side funnel events are emitted through the existing GA4 / GTM / Meta event layer:
+The following funnel events are emitted through the existing GA4 / GTM / Meta event layer and mirrored into a privacy-safe server-side `activity_log` record with `entity_type = funnel_event`:
 
 | Event | Where it fires | Purpose |
 | --- | --- | --- |
@@ -34,6 +34,7 @@ The following client-side funnel events are emitted through the existing GA4 / G
 | `sign_up` | Successful signup request accepted by Supabase | Measures completed account creation request. |
 | `contact_form_submit` | Contact form accepted by `/api/contact` | Measures lead submission. |
 | `seller_application_submit` | Seller application accepted | Measures seller onboarding conversion. |
+| `onboarding_completed` | First-run onboarding completed | Measures movement from account creation to activated profile setup. |
 
 ## How To Read The Funnel
 
@@ -59,13 +60,14 @@ If `signup_submit` exists but `sign_up` is low, inspect Supabase auth errors, pa
 
 If `sign_up` exists but users do not create warranties, inspect first-run onboarding, empty states, sample data, and dashboard guidance.
 
-## Current Limitation
+## Server-Side Funnel Visibility
 
-The new events are client-side analytics events. They are useful for GA4/GTM/Meta, but they may be affected by browser blockers and consent behavior. For stronger attribution, add a privacy-safe server-side funnel table later, such as `onboarding_funnel_events`, with no raw PII and bounded retention.
+Server-side funnel events are written to `activity_log` instead of a new table so the current RLS/admin tooling remains simple. The log intentionally excludes names, email addresses, message bodies, phone numbers, and raw IP addresses.
+
+Admin users can review these events from the Admin `Funnel` tab. The tab shows counts by event and recent privacy-safe event rows. Contact form submissions are also logged from `/api/contact` after validation so demo and business inquiries are counted even if browser analytics is blocked.
 
 ## Safe Follow-Up Candidates
 
-- Add a sample warranty or guided first-run checklist after signup.
-- Add a live demo or sample product-passport page for visitors who are not ready to create an account.
-- Add a founder/demo CTA for business buyers who prefer conversation over self-serve signup.
-- Add server-side funnel events after the client-side funnel baseline is reviewed.
+- Review the Admin `Funnel` tab after each campaign or launch push.
+- Compare `signup_submit`, `sign_up`, and `onboarding_completed` to find auth or first-run friction.
+- Compare `contact_form_submit` and `seller_application_submit` against HubSpot/support-ticket creation.

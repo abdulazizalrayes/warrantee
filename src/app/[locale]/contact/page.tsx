@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { Mail, MessageCircle, Send } from 'lucide-react';
 import { trackContactForm } from '@/lib/ga4-events';
@@ -87,6 +87,28 @@ export default function ContactPage() {
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    const intent = new URLSearchParams(window.location.search).get('intent');
+    if (intent === 'enterprise-demo' || intent === 'enterprise') {
+      setFormData((current) => ({
+        ...current,
+        subject: 'enterprise',
+        message: current.message || (isRTL
+          ? 'أرغب في عرض توضيحي لمعرفة كيف يمكن استخدام Warrantee لإدارة الضمانات والمطالبات والتكاملات.'
+          : 'I would like a demo to understand how Warrantee can support warranty management, claims, and integrations.'),
+      }));
+    }
+    if (intent === 'api' || intent === 'integration') {
+      setFormData((current) => ({
+        ...current,
+        subject: 'api',
+        message: current.message || (isRTL
+          ? 'أرغب في مناقشة تكامل API / CLI / MCP مع أنظمتنا.'
+          : 'I would like to discuss API / CLI / MCP integration with our systems.'),
+      }));
+    }
+  }, [isRTL]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

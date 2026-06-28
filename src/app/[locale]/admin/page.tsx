@@ -9,7 +9,7 @@ import { getContentLocale, normalizeLocale } from '@/lib/i18n';
 const supabase = createSupabaseBrowserClient();
 
 // ─── TYPES ──────────────────────────────────────────────
-type TabId = 'overview' | 'users' | 'warranties' | 'companies' | 'claims' | 'support' | 'fraud' | 'ingestion' | 'billing' | 'config' | 'team' | 'audit';
+type TabId = 'overview' | 'funnel' | 'users' | 'warranties' | 'companies' | 'claims' | 'support' | 'fraud' | 'ingestion' | 'billing' | 'config' | 'team' | 'audit';
 type GrowthLens = 'real' | 'all';
 
 interface Stats {
@@ -184,6 +184,7 @@ const rawTranslations = {
   en: {
     title: 'Warrantee Admin', subtitle: 'Operations, risk, and service control center', overview: 'Overview', usersTab: 'Users',
     warrantiesTab: 'Warranties', companiesTab: 'Companies', claimsTab: 'Claims', supportTab: 'Support',
+    funnelTab: 'Funnel',
     fraudTab: 'Fraud', ingestionTab: 'Ingestion', billingTab: 'Billing', configTab: 'Config',
     teamTab: 'Team', auditTab: 'Audit Trail',
     totalUsers: 'Total Users', totalWarranties: 'Total Warranties', totalCompanies: 'Companies',
@@ -207,6 +208,7 @@ const rawTranslations = {
     warrantyCreators: 'Warranty creators', newUsers30d: 'New users (30d)', newWarranties30d: 'New warranties (30d)',
     conversionFunnel: 'Conversion Funnel', signedUp: 'Signed up', activated: 'Activated',
     claimEngaged: 'Claim engaged', payingSignals: 'Paying signals',
+    serverFunnel: 'Server-side Funnel Events', noFunnelEvents: 'No server-side funnel events yet.',
     exportData: 'Export CSV', refresh: 'Refresh', search: 'Search...',
     // Team
     teamTitle: 'Team Management', addAdmin: 'Add Team Member', emailPlaceholder: 'Enter email address',
@@ -247,6 +249,7 @@ const rawTranslations = {
   ar: {
     title: 'إدارة وارنتي', subtitle: 'ثق بالشروط™', overview: 'نظرة عامة', usersTab: 'المستخدمون',
     warrantiesTab: 'الضمانات', companiesTab: 'الشركات', claimsTab: 'المطالبات', supportTab: 'الدعم',
+    funnelTab: 'القمع',
     fraudTab: 'الاحتيال', ingestionTab: 'البريد', billingTab: 'الفوترة', configTab: 'الإعدادات',
     teamTab: 'الفريق', auditTab: 'سجل المراجعة',
     totalUsers: 'المستخدمون', totalWarranties: 'الضمانات', totalCompanies: 'الشركات',
@@ -270,6 +273,7 @@ const rawTranslations = {
     warrantyCreators: 'منشئو الضمانات', newUsers30d: 'مستخدمون جدد (30 يوم)', newWarranties30d: 'ضمانات جديدة (30 يوم)',
     conversionFunnel: 'قمع التحويل', signedUp: 'سجلوا', activated: 'تفاعلوا',
     claimEngaged: 'تفاعلوا مع المطالبات', payingSignals: 'إشارات دفع',
+    serverFunnel: 'أحداث القمع من الخادم', noFunnelEvents: 'لا توجد أحداث قمع من الخادم بعد.',
     exportData: 'تصدير CSV', refresh: 'تحديث', search: 'بحث...',
     teamTitle: 'إدارة الفريق', addAdmin: 'إضافة عضو', emailPlaceholder: 'أدخل البريد الإلكتروني',
     invite: 'إضافة', removeAccess: 'إزالة', confirmRemove: 'تأكيد الإزالة',
@@ -408,6 +412,7 @@ export default function AdminPage() {
   const [ingestions, setIngestions] = useState<any[]>([]);
   const [revenueEvents, setRevenueEvents] = useState<any[]>([]);
   const [subscriptions, setSubscriptions] = useState<any[]>([]);
+  const [funnelEvents, setFunnelEvents] = useState<any[]>([]);
   const [systemConfig, setSystemConfig] = useState<any[]>([]);
   const [extensionPolicies, setExtensionPolicies] = useState<any[]>([]);
   const [extensionPoliciesLoading, setExtensionPoliciesLoading] = useState(false);
@@ -465,12 +470,13 @@ export default function AdminPage() {
   // ─── DATA LOADING ─────────────────────────────────────
   const loadAllData = async () => {
     const now = new Date().toISOString();
-    const [usersR, warranR, compR, claimR, actR, tickR, fraudR, ingR, revR, subsR] = await Promise.all([
+    const [usersR, warranR, compR, claimR, actR, funnelR, tickR, fraudR, ingR, revR, subsR] = await Promise.all([
       supabase.from('profiles').select('*').order('created_at', { ascending: false }).limit(200),
       supabase.from('warranties').select('*').is('deleted_at', null).order('created_at', { ascending: false }).limit(200),
       supabase.from('companies').select('*').order('created_at', { ascending: false }).limit(200),
       supabase.from('warranty_claims').select('*').is('deleted_at', null).order('created_at', { ascending: false }).limit(200),
       supabase.from('activity_log').select('*').order('created_at', { ascending: false }).limit(30),
+      supabase.from('activity_log').select('*').eq('entity_type', 'funnel_event').order('created_at', { ascending: false }).limit(100),
       supabase.from('support_tickets').select('*').order('created_at', { ascending: false }).limit(200),
       supabase.from('fraud_signals').select('*').order('created_at', { ascending: false }).limit(100),
       supabase
@@ -488,6 +494,7 @@ export default function AdminPage() {
 
     setUsers(u); setWarranties(w); setCompanies(co); setClaims(cl);
     setTickets(tk); setFraudSignals(fr); setIngestions(ig); setRevenueEvents(rv); setSubscriptions(sb);
+    setFunnelEvents(funnelR.data || []);
 
     const allStats = buildAdminStats({
       users: u, warranties: w, companies: co, claims: cl, tickets: tk, fraudSignals: fr,
@@ -753,6 +760,7 @@ export default function AdminPage() {
   // ─── TABS CONFIG ──────────────────────────────────────
   const baseTabs: { id: TabId; label: string; icon: string }[] = [
     { id: 'overview', label: text.overview, icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
+    { id: 'funnel', label: text.funnelTab, icon: 'M3 4a1 1 0 011-1h16a1 1 0 01.8 1.6L15 12.333V19a1 1 0 01-.553.894l-4 2A1 1 0 019 21v-8.667L3.2 4.6A1 1 0 013 4z' },
     { id: 'users', label: text.usersTab, icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z' },
     { id: 'warranties', label: text.warrantiesTab, icon: 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z' },
     { id: 'companies', label: text.companiesTab, icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' },
@@ -771,6 +779,7 @@ export default function AdminPage() {
   const activeTabLabel = tabs.find(tab => tab.id === activeTab)?.label || text.overview;
   const activeTabDescription = ({
     overview: locale === 'ar' ? 'عرض سريع لصحة المنصة والنشاط والمخاطر المفتوحة.' : 'High-level view of platform health, activity, and open risk.',
+    funnel: locale === 'ar' ? 'متابعة أحداث القمع المسجلة من الخادم بدون بيانات شخصية.' : 'Track privacy-safe server-side funnel events.',
     users: locale === 'ar' ? 'مراجعة المستخدمين والادوار والهواتف وحالة الحسابات.' : 'Review users, roles, phones, and account mix.',
     warranties: locale === 'ar' ? 'متابعة الضمانات والحالة والمصدر والتنبيهات القانونية.' : 'Track warranty status, source, and legal holds.',
     companies: locale === 'ar' ? 'مراجعة الشركات المسجلة وبيانات التواصل والسجل التجاري.' : 'Review registered companies and contact details.',
@@ -817,6 +826,13 @@ export default function AdminPage() {
       color: '#8B5CF6',
     },
   ];
+  const serverFunnelCounts = Object.entries(
+    funnelEvents.reduce((acc: Record<string, number>, event: any) => {
+      const action = event.action || 'unknown';
+      acc[action] = (acc[action] || 0) + 1;
+      return acc;
+    }, {})
+  ).sort((a, b) => b[1] - a[1]);
 
   // ─── LOADING / UNAUTHORIZED ───────────────────────────
   if (loading) return (
@@ -1100,6 +1116,77 @@ export default function AdminPage() {
                   </div>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* ═══ FUNNEL TAB ═══ */}
+          {activeTab === 'funnel' && (
+            <div className="space-y-6">
+              <section className="rounded-xl border border-[#1a1a3a] bg-[#0e0e20] p-5">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-200">{text.serverFunnel}</h3>
+                    <p className="mt-1 text-xs text-gray-500">
+                      {locale === 'ar'
+                        ? 'أحداث مسجلة من الخادم بدون أسماء أو بريد أو رسائل.'
+                        : 'Server-recorded events without names, emails, or message bodies.'}
+                    </p>
+                  </div>
+                  <span className="rounded-full border border-[#2a2a4a] bg-[#12122a] px-3 py-1 text-xs text-gray-400">
+                    {funnelEvents.length.toLocaleString()} {locale === 'ar' ? 'حدث' : 'events'}
+                  </span>
+                </div>
+
+                {serverFunnelCounts.length === 0 ? (
+                  <p className="mt-6 text-sm text-gray-500">{text.noFunnelEvents}</p>
+                ) : (
+                  <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    {serverFunnelCounts.slice(0, 8).map(([action, count]) => (
+                      <div key={action} className="rounded-lg border border-[#1a1a3a] bg-[#12122a] p-4">
+                        <p className="truncate text-xs font-medium text-gray-400">{action}</p>
+                        <p className="mt-2 text-2xl font-bold text-white">{count.toLocaleString()}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </section>
+
+              <section className="rounded-xl border border-[#1a1a3a] bg-[#0e0e20] overflow-hidden">
+                <div className="border-b border-[#1a1a3a] px-5 py-4">
+                  <h3 className="text-sm font-semibold text-gray-200">{text.recentActivity}</h3>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-[#12122a] text-[11px] uppercase tracking-wide text-gray-500">
+                      <tr>
+                        <th className="px-4 py-3 text-left">{text.action}</th>
+                        <th className="px-4 py-3 text-left">{text.source}</th>
+                        <th className="px-4 py-3 text-left">Path</th>
+                        <th className="px-4 py-3 text-left">{text.date}</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#1a1a3a]">
+                      {funnelEvents.length === 0 ? (
+                        <tr>
+                          <td colSpan={4} className="px-4 py-8 text-center text-sm text-gray-500">{text.noFunnelEvents}</td>
+                        </tr>
+                      ) : funnelEvents.map((event) => {
+                        const metadata = (event.metadata || {}) as Record<string, any>;
+                        return (
+                          <tr key={event.id} className="hover:bg-[#12122a]/60">
+                            <td className="px-4 py-3 text-sm font-medium text-gray-200">{event.action}</td>
+                            <td className="px-4 py-3 text-xs text-gray-400">
+                              {event.actor_id ? (locale === 'ar' ? 'مستخدم مسجل' : 'Signed-in user') : (locale === 'ar' ? 'زائر' : 'Visitor')}
+                            </td>
+                            <td className="max-w-[280px] truncate px-4 py-3 text-xs text-gray-500">{metadata.path || EM_DASH}</td>
+                            <td className="px-4 py-3 text-xs text-gray-500">{fmtDateTime(event.created_at)}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
             </div>
           )}
 

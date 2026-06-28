@@ -184,6 +184,15 @@ export default async function HomePage({ params }: HomePageProps) {
                   >
                     {!isRTL ? 'View API / CLI / MCP' : 'عرض API / CLI / MCP'}
                   </TrackedLink>
+                  <TrackedLink
+                    href={`/${locale}/demo/product-passport`}
+                    cta="sample_product_passport"
+                    locale={locale}
+                    location="product_passport"
+                    className="inline-flex items-center justify-center rounded-full border border-[#d2d2d7] px-6 py-3 text-[15px] font-medium text-[#1d1d1f] transition-colors hover:bg-[#f5f5f7]"
+                  >
+                    {!isRTL ? 'View sample passport' : 'عرض نموذج جواز المنتج'}
+                  </TrackedLink>
                 </div>
               </div>
 

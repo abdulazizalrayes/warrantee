@@ -41,6 +41,7 @@ interface AnalyticsData {
   supplierConcentration: number;
   assetRiskScore: number;
   unpricedAssets: number;
+  supplierRiskSignals: { supplier: string; warranties: number; claims: number; expiring: number; riskScore: number }[];
 }
 
 interface AnalyticsWarranty {
@@ -88,6 +89,11 @@ const translations = {
     monthlyTrend: 'Monthly Trend',
     statusDistribution: 'Status Distribution',
     topSuppliers: 'Top Suppliers',
+    supplierReliability: 'Supplier Reliability Signals',
+    supplierReliabilityDesc: 'Claim and expiry pressure by supplier for renewal, sourcing, and support decisions.',
+    supplier: 'Supplier',
+    riskScore: 'Risk',
+    expiring: 'Expiring',
     exportReport: 'Export',
     noData: 'No data available yet. Add warranties to see analytics.',
     loading: 'Loading analytics...',
@@ -123,6 +129,11 @@ const translations = {
     monthlyTrend: '\u0627\u0644\u0627\u062a\u062c\u0627\u0647 \u0627\u0644\u0634\u0647\u0631\u064a',
     statusDistribution: '\u062a\u0648\u0632\u064a\u0639 \u0627\u0644\u062d\u0627\u0644\u0629',
     topSuppliers: '\u0623\u0647\u0645 \u0627\u0644\u0645\u0648\u0631\u062f\u064a\u0646',
+    supplierReliability: '\u0625\u0634\u0627\u0631\u0627\u062a \u0645\u0648\u062b\u0648\u0642\u064a\u0629 \u0627\u0644\u0645\u0648\u0631\u062f\u064a\u0646',
+    supplierReliabilityDesc: '\u0636\u063a\u0637 \u0627\u0644\u0645\u0637\u0627\u0644\u0628\u0627\u062a \u0648\u0627\u0644\u0627\u0646\u062a\u0647\u0627\u0621 \u062d\u0633\u0628 \u0627\u0644\u0645\u0648\u0631\u062f \u0644\u0642\u0631\u0627\u0631\u0627\u062a \u0627\u0644\u062a\u0645\u062f\u064a\u062f \u0648\u0627\u0644\u062f\u0639\u0645.',
+    supplier: '\u0627\u0644\u0645\u0648\u0631\u062f',
+    riskScore: '\u0627\u0644\u0645\u062e\u0627\u0637\u0631',
+    expiring: '\u062a\u0646\u062a\u0647\u064a',
     exportReport: '\u062a\u0635\u062f\u064a\u0631',
     noData: '\u0644\u0627 \u062a\u0648\u062c\u062f \u0628\u064a\u0627\u0646\u0627\u062a \u0628\u0639\u062f. \u0623\u0636\u0641 \u0636\u0645\u0627\u0646\u0627\u062a \u0644\u0639\u0631\u0636 \u0627\u0644\u062a\u062d\u0644\u064a\u0644\u0627\u062a.',
     loading: '\u062c\u0627\u0631\u064a \u062a\u062d\u0645\u064a\u0644 \u0627\u0644\u062a\u062d\u0644\u064a\u0644\u0627\u062a...',
@@ -161,6 +172,7 @@ const emptyAnalyticsData: AnalyticsData = {
   supplierConcentration: 0,
   assetRiskScore: 100,
   unpricedAssets: 0,
+  supplierRiskSignals: [],
 };
 
 function parseDate(value: string | null | undefined) {
@@ -288,6 +300,30 @@ export default function AnalyticsPage() {
       const topSuppliers = Object.entries(suppMap)
         .map(([supplier, count]) => ({ supplier, count }))
         .sort((a, b) => b.count - a.count).slice(0, 5);
+      const claimsByWarranty = claimRows.reduce((acc: Record<string, number>, claim) => {
+        if (claim.warranty_id) acc[claim.warranty_id] = (acc[claim.warranty_id] || 0) + 1;
+        return acc;
+      }, {});
+      const supplierRiskMap: Record<string, { supplier: string; warranties: number; claims: number; expiring: number }> = {};
+      warrantyRows.forEach((w) => {
+        const supplier = w.seller_name || 'Unknown supplier';
+        const end = parseDate(w.end_date);
+        if (!supplierRiskMap[supplier]) supplierRiskMap[supplier] = { supplier, warranties: 0, claims: 0, expiring: 0 };
+        supplierRiskMap[supplier].warranties += 1;
+        supplierRiskMap[supplier].claims += claimsByWarranty[w.id] || 0;
+        if (end && end > now && end <= ninetyDaysFromNow) supplierRiskMap[supplier].expiring += 1;
+      });
+      const supplierRiskSignals = Object.values(supplierRiskMap)
+        .map((supplier) => {
+          const claimRate = supplier.warranties > 0 ? supplier.claims / supplier.warranties : 0;
+          const expiryRate = supplier.warranties > 0 ? supplier.expiring / supplier.warranties : 0;
+          return {
+            ...supplier,
+            riskScore: Math.min(100, Math.round((claimRate * 65) + (expiryRate * 35))),
+          };
+        })
+        .sort((a, b) => b.riskScore - a.riskScore || b.warranties - a.warranties)
+        .slice(0, 6);
 
       const coverageValue = warrantyRows.reduce((sum, w) => sum + (Number(w.purchase_price) || 0), 0);
       const supplierConcentration = warrantyRows.length > 0 && topSuppliers.length > 0
@@ -317,6 +353,7 @@ export default function AnalyticsPage() {
         supplierConcentration,
         assetRiskScore,
         unpricedAssets,
+        supplierRiskSignals,
       });
     } catch (err) {
       console.error('Analytics error:', err);
@@ -502,6 +539,55 @@ export default function AnalyticsPage() {
                 </div>
               ))}
             </div>
+          </div>
+
+          <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-[#d2d2d7]/40">
+            <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <h3 className="text-[17px] font-semibold text-[#1d1d1f]">{t.supplierReliability}</h3>
+                <p className="mt-1 text-[13px] leading-relaxed text-[#86868b]">{t.supplierReliabilityDesc}</p>
+              </div>
+            </div>
+            {data.supplierRiskSignals.length === 0 ? (
+              <div className="rounded-2xl bg-[#fbfbfd] p-6 text-center text-[13px] text-[#86868b]">
+                {isRTL ? 'لا توجد إشارات موردين بعد.' : 'No supplier signals yet.'}
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[640px]">
+                  <thead>
+                    <tr className="border-b border-[#f5f5f7] text-left text-[12px] font-semibold uppercase tracking-wide text-[#86868b]">
+                      <th className="py-3">{t.supplier}</th>
+                      <th className="py-3">{t.warranties}</th>
+                      <th className="py-3">{t.claims}</th>
+                      <th className="py-3">{t.expiring}</th>
+                      <th className="py-3">{t.riskScore}</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#f5f5f7]">
+                    {data.supplierRiskSignals.map((supplier) => (
+                      <tr key={supplier.supplier}>
+                        <td className="py-3 text-[14px] font-medium text-[#1d1d1f]">{supplier.supplier}</td>
+                        <td className="py-3 text-[14px] text-[#6e6e73]">{supplier.warranties}</td>
+                        <td className="py-3 text-[14px] text-[#6e6e73]">{supplier.claims}</td>
+                        <td className="py-3 text-[14px] text-[#6e6e73]">{supplier.expiring}</td>
+                        <td className="py-3">
+                          <div className="flex items-center gap-3">
+                            <div className="h-2 w-24 overflow-hidden rounded-full bg-[#f5f5f7]">
+                              <div
+                                className={`h-full rounded-full ${supplier.riskScore >= 60 ? 'bg-[#ff3b30]' : supplier.riskScore >= 30 ? 'bg-[#ff9f0a]' : 'bg-[#30d158]'}`}
+                                style={{ width: `${supplier.riskScore}%` }}
+                              />
+                            </div>
+                            <span className="text-[13px] font-semibold text-[#1d1d1f]">{supplier.riskScore}/100</span>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
 
           {/* Charts Row */}
