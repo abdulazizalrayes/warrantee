@@ -37,6 +37,11 @@ const allowlist = [
     reason: "localhost is intentionally rejected as an auth email domain.",
   },
   {
+    file: "src/lib/request-origin.ts",
+    patterns: new Set(["localhost", "127.0.0.1", "::1"]),
+    reason: "Non-production same-origin checks accept loopback aliases for CI/browser tests only.",
+  },
+  {
     file: "scripts/check-no-loopback-links.mjs",
     patterns: new Set(patterns.map((pattern) => pattern.name)),
     reason: "This guard contains the loopback patterns it scans for.",

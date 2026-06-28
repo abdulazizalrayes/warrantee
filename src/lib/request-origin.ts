@@ -8,6 +8,20 @@ export function isTrustedSameOriginRequest(request: Request, fallbackOrigin = "h
   }
   allowedOrigins.add(fallbackOrigin);
 
+  if (process.env.NODE_ENV !== "production" && process.env.VERCEL_ENV !== "production") {
+    try {
+      const fallbackUrl = new URL(fallbackOrigin);
+      if (["localhost", "127.0.0.1", "::1"].includes(fallbackUrl.hostname)) {
+        const port = fallbackUrl.port ? `:${fallbackUrl.port}` : "";
+        allowedOrigins.add(`http://localhost${port}`);
+        allowedOrigins.add(`http://127.0.0.1${port}`);
+        allowedOrigins.add(`http://[::1]${port}`);
+      }
+    } catch {
+      // Keep production safety strict; local loopback aliases are only a dev/test convenience.
+    }
+  }
+
   const origin = request.headers.get("origin");
   if (origin) return allowedOrigins.has(origin);
 
