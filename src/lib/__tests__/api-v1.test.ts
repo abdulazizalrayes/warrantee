@@ -83,6 +83,21 @@ describe("api v1 helpers", () => {
     expect(source).toContain("X-RateLimit-Limit");
   });
 
+  it("documents authenticated asset intelligence in OpenAPI", () => {
+    const source = fs.readFileSync(path.join(process.cwd(), "src/lib/public-openapi.ts"), "utf8");
+    const route = fs.readFileSync(
+      path.join(process.cwd(), "src/app/api/v1/intelligence/route.ts"),
+      "utf8"
+    );
+
+    expect(source).toContain('"/api/v1/intelligence"');
+    expect(source).toContain("Asset intelligence summary returned");
+    expect(route).toContain('authorizeApiV1Request(request, "warranties:read")');
+    expect(route).toContain("parsePositiveInt");
+    expect(route).toContain("computeAssetIntelligence");
+    expect(route).toContain("recordApiV1Usage");
+  });
+
   it("keeps claims and document metadata API routes scoped and access-controlled", () => {
     const claimsList = fs.readFileSync(
       path.join(process.cwd(), "src/app/api/v1/claims/route.ts"),

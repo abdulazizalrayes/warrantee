@@ -197,6 +197,17 @@ export function getDocument(id, options = {}) {
   });
 }
 
+export function getAssetIntelligence(options = {}) {
+  return apiRequest({
+    ...options,
+    path: "/api/v1/intelligence",
+    method: "GET",
+    query: {
+      limit: options.limit,
+    },
+  });
+}
+
 export function verifyWarranty(query, options = {}) {
   return apiRequest({
     ...options,
@@ -218,5 +229,6 @@ export const warranteeApi = {
   getClaim,
   listDocuments,
   getDocument,
+  getAssetIntelligence,
   verifyWarranty,
 };

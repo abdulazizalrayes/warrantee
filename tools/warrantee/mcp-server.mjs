@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import {
   createWarranty,
   deleteWarranty,
+  getAssetIntelligence,
   getClaim,
   getDocument,
   getWarranty,
@@ -447,6 +448,19 @@ export const tools = [
     },
   },
   {
+    name: "get_asset_intelligence",
+    title: "Get asset lifecycle intelligence",
+    description:
+      "Return authenticated portfolio-level warranty, claim, supplier, expiry, data-quality, and next-action signals. Requires warranties:read through x-api-key.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        ...authProperties,
+        limit: { type: "number", minimum: 1, maximum: 10000, default: 5000 },
+      },
+    },
+  },
+  {
     name: "get_document",
     title: "Get document metadata",
     description:
@@ -526,6 +540,11 @@ export async function callTool(name, args = {}, context = {}) {
         limit: optionalNumber(args, "limit"),
         warrantyId: optionalString(args, "warranty_id"),
         query: optionalString(args, "query"),
+      });
+    case "get_asset_intelligence":
+      return getAssetIntelligence({
+        ...options,
+        limit: optionalNumber(args, "limit"),
       });
     case "get_document":
       return getDocument(requireString(args, "id"), options);

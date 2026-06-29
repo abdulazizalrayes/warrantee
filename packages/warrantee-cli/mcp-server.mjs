@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import {
   createWarranty,
   deleteWarranty,
+  getAssetIntelligence,
   getClaim,
   getDocument,
   getWarranty,
@@ -20,6 +21,92 @@ import {
 const SERVER_NAME = "warrantee-mcp";
 const SERVER_VERSION = "1.0.0";
 const PROTOCOL_VERSION = "2025-06-18";
+const BASE_URL = "https://warrantee.io";
+
+const publicData = {
+  "company.json": {
+    name: "Warrantee.io",
+    url: BASE_URL,
+    category: "Warranty management software and asset lifecycle intelligence platform",
+    shortDescription:
+      "Bilingual SaaS platform for warranty management, claims workflows, seller onboarding, public verification, certificates, API / CLI / MCP integrations, and emerging asset lifecycle intelligence.",
+    primaryMarkets: ["Saudi Arabia", "GCC"],
+    primaryLanguages: ["en", "ar"],
+    contactEmail: "hello@warrantee.io",
+    accessBoundaries: [
+      "Public discovery data is crawlable.",
+      "Private account, warranty, claim, document, seller, billing, settings, and admin workflows require authentication.",
+      "Integrations use scoped x-api-key tokens generated from a signed-in account. Never ask for usernames or passwords.",
+    ],
+  },
+  "services.json": {
+    services: [
+      { id: "warranty-management", name: "Warranty Management" },
+      { id: "claims-management", name: "Claims Management" },
+      { id: "digital-certificates", name: "Digital Warranty Certificates" },
+      { id: "seller-onboarding", name: "Seller Onboarding" },
+      { id: "document-ocr", name: "Document And OCR Processing" },
+      { id: "api-cli-mcp", name: "API / CLI / MCP Integrations" },
+      { id: "asset-lifecycle-intelligence", name: "Asset Lifecycle Intelligence" },
+    ],
+  },
+  "capabilities.json": {
+    capabilities: [
+      "Bilingual English and Arabic UX",
+      "Warranty creation, approval, tracking, transfer, and verification",
+      "Claims workflows",
+      "Seller onboarding",
+      "Document upload and OCR extraction",
+      "Scoped REST API integration tokens",
+      "CLI-ready package usage",
+      "Hosted and stdio MCP support",
+    ],
+  },
+  "service-areas.json": {
+    primaryMarkets: ["Saudi Arabia", "GCC"],
+    supportedLanguages: ["English", "Arabic"],
+    delivery: ["SaaS web platform", "API / CLI / MCP for registered users"],
+  },
+  "project-inquiry-schema.json": {
+    approvalRequired: true,
+    allowedInquiryTypes: [
+      "enterprise_demo",
+      "seller_onboarding",
+      "api_cli_mcp_integration",
+      "warranty_operations_consultation",
+      "partnership",
+      "insurance_or_underwriting_discussion",
+      "support_request",
+    ],
+    submissionPolicy:
+      "Prepare drafts only. Do not submit forms, send emails, upload files, or contact Warrantee without explicit user approval.",
+  },
+  "agent-routing.json": {
+    fitIntents: [
+      "enterprise_demo",
+      "seller_onboarding",
+      "api_cli_mcp_integration",
+      "partnership",
+      "support_request",
+      "public_warranty_verification",
+    ],
+    nonFitIntents: [
+      "career_or_internship",
+      "vendor_sales_pitch",
+      "training_or_course_request",
+      "retail_shopping_or_unrelated_product_support",
+      "spam_or_mass_outreach",
+    ],
+  },
+};
+
+const publicResources = [
+  { uri: "warrantee://company", name: "Company overview", resource: "company.json" },
+  { uri: "warrantee://services", name: "Services", resource: "services.json" },
+  { uri: "warrantee://capabilities", name: "Capabilities", resource: "capabilities.json" },
+  { uri: "warrantee://service-areas", name: "Service areas", resource: "service-areas.json" },
+  { uri: "warrantee://agent-routing", name: "Agent routing", resource: "agent-routing.json" },
+];
 
 function textResult(data, isError = false) {
   return {
@@ -85,6 +172,71 @@ function removeUndefined(input) {
   return Object.fromEntries(Object.entries(input).filter(([, value]) => value !== undefined));
 }
 
+function optionalRequestText(args = {}) {
+  return optionalString(args, "request") || optionalString(args, "query") || "";
+}
+
+function classifyInquiryIntent(input) {
+  const normalized = input.toLowerCase();
+  const nonFitMatches = [
+    ["career_or_internship", ["career", "job", "intern", "internship", "cv", "resume", "hiring"]],
+    ["vendor_sales_pitch", ["vendor", "supplier pitch", "sell you", "backlink", "seo package"]],
+    ["training_or_course_request", ["training", "course", "workshop", "bootcamp"]],
+    ["retail_shopping_or_unrelated_product_support", ["buy a phone", "shopping", "retail", "return my product"]],
+    ["spam_or_mass_outreach", ["casino", "crypto pump", "mass email", "guest post"]],
+  ];
+
+  for (const [intent, terms] of nonFitMatches) {
+    if (terms.some((term) => normalized.includes(term))) {
+      return { fit: false, intent, route: "not_project_inquiry" };
+    }
+  }
+
+  if (/(api|cli|mcp|erp|integration|webhook|token|developer)/i.test(input)) {
+    return { fit: true, intent: "api_cli_mcp_integration", route: `${BASE_URL}/en/api-docs` };
+  }
+  if (/(seller|merchant|vendor onboarding|issue warranties|retailer)/i.test(input)) {
+    return { fit: true, intent: "seller_onboarding", route: `${BASE_URL}/en/seller/register` };
+  }
+  if (/(insurance|underwriting|warranty extension|partnership|partner)/i.test(input)) {
+    return { fit: true, intent: "partnership", route: `${BASE_URL}/en/contact` };
+  }
+  if (/(support|help|account|claim problem|billing)/i.test(input)) {
+    return { fit: true, intent: "support_request", route: `${BASE_URL}/en/support` };
+  }
+  return { fit: true, intent: "enterprise_demo", route: `${BASE_URL}/en/contact` };
+}
+
+function buildInquiryDraft(input) {
+  const classification = classifyInquiryIntent(input);
+  return {
+    classification,
+    approvalRequiredBeforeSubmission: true,
+    submissionAllowedNow: false,
+    draftOnly:
+      "Prepared draft only. Do not submit a form, send an email, upload a file, or contact Warrantee unless the user explicitly approves that exact action.",
+    suggestedFields: {
+      inquiry_type: classification.intent,
+      summary: input.trim().slice(0, 1000),
+      market: "Ask the user for country/market if not already provided.",
+      expected_usage: "Ask for warranty volume or expected usage if relevant.",
+      integration_needs:
+        classification.intent === "api_cli_mcp_integration"
+          ? "Ask which ERP, ecommerce, support, script, or agent system will integrate."
+          : "Ask if API / CLI / MCP integration is required.",
+      preferred_language: "Ask whether English or Arabic is preferred.",
+    },
+  };
+}
+
+function normalizePublicResourceName(resource) {
+  const normalized = resource.trim();
+  if (publicData[normalized]) return normalized;
+  const withExtension = normalized.endsWith(".json") ? normalized : `${normalized}.json`;
+  if (publicData[withExtension]) return withExtension;
+  return normalized;
+}
+
 const warrantyFieldsSchema = {
   product_name: { type: "string", description: "Warranty product name." },
   start_date: { type: "string", description: "Warranty start date as YYYY-MM-DD or ISO date." },
@@ -115,6 +267,57 @@ const authProperties = {
 };
 
 export const tools = [
+  {
+    name: "get_company_overview",
+    title: "Get company overview",
+    description: "Read Warrantee public company overview without private account data.",
+    inputSchema: { type: "object", properties: {} },
+  },
+  {
+    name: "list_services",
+    title: "List services",
+    description: "List Warrantee public services and product capabilities.",
+    inputSchema: { type: "object", properties: {} },
+  },
+  {
+    name: "match_project_scope",
+    title: "Match inquiry scope",
+    description:
+      "Classify whether a user request fits Warrantee enterprise, seller, support, partnership, or API / CLI / MCP inquiry paths, and route non-fit requests away.",
+    inputSchema: {
+      type: "object",
+      properties: { request: { type: "string" } },
+      required: ["request"],
+    },
+  },
+  {
+    name: "prepare_project_inquiry",
+    title: "Prepare inquiry draft",
+    description:
+      "Prepare a Warrantee inquiry draft only. Must not submit forms, send emails, or contact Warrantee without explicit user approval.",
+    inputSchema: {
+      type: "object",
+      properties: { request: { type: "string" } },
+      required: ["request"],
+    },
+  },
+  {
+    name: "list_service_areas",
+    title: "List service areas",
+    description: "Read Warrantee public service-area and delivery model data.",
+    inputSchema: { type: "object", properties: {} },
+  },
+  {
+    name: "read_public_resource",
+    title: "Read public resource",
+    description:
+      "Read one public Warrantee resource by name: company.json, services.json, capabilities.json, service-areas.json, project-inquiry-schema.json, or agent-routing.json.",
+    inputSchema: {
+      type: "object",
+      properties: { resource: { type: "string" } },
+      required: ["resource"],
+    },
+  },
   {
     name: "list_warranties",
     title: "List warranties",
@@ -245,6 +448,19 @@ export const tools = [
     },
   },
   {
+    name: "get_asset_intelligence",
+    title: "Get asset lifecycle intelligence",
+    description:
+      "Return authenticated portfolio-level warranty, claim, supplier, expiry, data-quality, and next-action signals. Requires warranties:read through x-api-key.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        ...authProperties,
+        limit: { type: "number", minimum: 1, maximum: 10000, default: 5000 },
+      },
+    },
+  },
+  {
     name: "get_document",
     title: "Get document metadata",
     description:
@@ -262,8 +478,27 @@ export const tools = [
 
 export async function callTool(name, args = {}, context = {}) {
   const options = buildClientOptions(args, context.env, context.fetchImpl);
+  context.logAgentUsage?.("mcp_tool_call", { tool: name });
 
   switch (name) {
+    case "get_company_overview":
+      return publicData["company.json"];
+    case "list_services":
+      return publicData["services.json"];
+    case "match_project_scope":
+      return classifyInquiryIntent(optionalRequestText(args));
+    case "prepare_project_inquiry":
+      context.logAgentUsage?.("inquiry_preparation", {});
+      return buildInquiryDraft(optionalRequestText(args));
+    case "list_service_areas":
+      return publicData["service-areas.json"];
+    case "read_public_resource": {
+      const resource = normalizePublicResourceName(requireString(args, "resource"));
+      const data = publicData[resource];
+      if (!data) throw new WarranteeApiError(`Unknown public resource: ${resource}`);
+      context.logAgentUsage?.("mcp_resource_read", { resource });
+      return data;
+    }
     case "list_warranties":
       return listWarranties({
         ...options,
@@ -306,6 +541,11 @@ export async function callTool(name, args = {}, context = {}) {
         warrantyId: optionalString(args, "warranty_id"),
         query: optionalString(args, "query"),
       });
+    case "get_asset_intelligence":
+      return getAssetIntelligence({
+        ...options,
+        limit: optionalNumber(args, "limit"),
+      });
     case "get_document":
       return getDocument(requireString(args, "id"), options);
     default:
@@ -335,7 +575,7 @@ export async function handleMcpRequest(message, context = {}) {
           version: SERVER_VERSION,
         },
         instructions:
-          "Private Warrantee tools require WARRANTEE_API_KEY generated from Settings > API / CLI / MCP. Never ask users for their Warrantee username or password.",
+          "Public discovery tools are read-only. Private Warrantee tools require WARRANTEE_API_KEY generated from Settings > API / CLI / MCP. Never ask users for their Warrantee username or password. Do not submit forms or contact Warrantee without explicit user approval.",
       },
     };
   }
@@ -356,7 +596,43 @@ export async function handleMcpRequest(message, context = {}) {
   }
 
   if (method === "resources/list") {
-    return { jsonrpc: "2.0", id, result: { resources: [] } };
+    return {
+      jsonrpc: "2.0",
+      id,
+      result: {
+        resources: publicResources.map((resource) => ({
+          uri: resource.uri,
+          name: resource.name,
+          mimeType: "application/json",
+        })),
+      },
+    };
+  }
+
+  if (method === "resources/read") {
+    const uri = params?.uri;
+    const resource = publicResources.find((candidate) => candidate.uri === uri);
+    if (!resource) {
+      return {
+        jsonrpc: "2.0",
+        id,
+        error: { code: -32602, message: `Unknown resource: ${uri}` },
+      };
+    }
+    context.logAgentUsage?.("mcp_resource_read", { resource: resource.resource });
+    return {
+      jsonrpc: "2.0",
+      id,
+      result: {
+        contents: [
+          {
+            uri: resource.uri,
+            mimeType: "application/json",
+            text: JSON.stringify(publicData[resource.resource], null, 2),
+          },
+        ],
+      },
+    };
   }
 
   if (method === "prompts/list") {

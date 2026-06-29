@@ -21,6 +21,7 @@ import {
 import { DashboardPageShell } from '@/components/dashboard/DashboardPageShell';
 import { PageViewTracker } from '@/components/PageViewTracker';
 import { buildWarrantyAccessOrClause } from '@/lib/warranty-access';
+import { computeAssetIntelligence } from '@/lib/asset-intelligence';
 
 const supabase = createSupabaseBrowserClient();
 
@@ -243,12 +244,6 @@ export default function AnalyticsPage() {
         if (!end) return false;
         return end > now && end <= endOfMonth;
       });
-      const ninetyDaysFromNow = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
-      const extensionOpportunity = warrantyRows.filter((w) => {
-        const end = parseDate(w.end_date);
-        return Boolean(end && end > now && end <= ninetyDaysFromNow);
-      }).length;
-
       const durations = warrantyRows.map((w) => {
         const start = parseDate(w.start_date);
         const end = parseDate(w.end_date);
@@ -300,45 +295,8 @@ export default function AnalyticsPage() {
       const topSuppliers = Object.entries(suppMap)
         .map(([supplier, count]) => ({ supplier, count }))
         .sort((a, b) => b.count - a.count).slice(0, 5);
-      const claimsByWarranty = claimRows.reduce((acc: Record<string, number>, claim) => {
-        if (claim.warranty_id) acc[claim.warranty_id] = (acc[claim.warranty_id] || 0) + 1;
-        return acc;
-      }, {});
-      const supplierRiskMap: Record<string, { supplier: string; warranties: number; claims: number; expiring: number }> = {};
-      warrantyRows.forEach((w) => {
-        const supplier = w.seller_name || 'Unknown supplier';
-        const end = parseDate(w.end_date);
-        if (!supplierRiskMap[supplier]) supplierRiskMap[supplier] = { supplier, warranties: 0, claims: 0, expiring: 0 };
-        supplierRiskMap[supplier].warranties += 1;
-        supplierRiskMap[supplier].claims += claimsByWarranty[w.id] || 0;
-        if (end && end > now && end <= ninetyDaysFromNow) supplierRiskMap[supplier].expiring += 1;
-      });
-      const supplierRiskSignals = Object.values(supplierRiskMap)
-        .map((supplier) => {
-          const claimRate = supplier.warranties > 0 ? supplier.claims / supplier.warranties : 0;
-          const expiryRate = supplier.warranties > 0 ? supplier.expiring / supplier.warranties : 0;
-          return {
-            ...supplier,
-            riskScore: Math.min(100, Math.round((claimRate * 65) + (expiryRate * 35))),
-          };
-        })
-        .sort((a, b) => b.riskScore - a.riskScore || b.warranties - a.warranties)
-        .slice(0, 6);
-
       const coverageValue = warrantyRows.reduce((sum, w) => sum + (Number(w.purchase_price) || 0), 0);
-      const supplierConcentration = warrantyRows.length > 0 && topSuppliers.length > 0
-        ? Math.round((topSuppliers[0].count / warrantyRows.length) * 100)
-        : 0;
-      const unpricedAssets = warrantyRows.filter((w) => !(Number(w.purchase_price) > 0)).length;
-      const pendingClaimCount = claimRows.filter((c) => c.status === 'pending').length;
-      const expiryPressure = warrantyRows.length > 0 ? (extensionOpportunity / warrantyRows.length) * 35 : 0;
-      const expiredPressure = warrantyRows.length > 0 ? (expired.length / warrantyRows.length) * 25 : 0;
-      const claimPressure = claimRows.length > 0 ? (pendingClaimCount / claimRows.length) * 25 : 0;
-      const dataQualityPressure = warrantyRows.length > 0 ? (unpricedAssets / warrantyRows.length) * 15 : 0;
-      const assetRiskScore = Math.max(
-        0,
-        Math.min(100, Math.round(100 - expiryPressure - expiredPressure - claimPressure - dataQualityPressure)),
-      );
+      const intelligence = computeAssetIntelligence(warrantyRows, claimRows, now);
 
       setData({
         totalWarranties: warrantyRows.length,
@@ -349,11 +307,11 @@ export default function AnalyticsPage() {
         pendingClaims: claimRows.filter((c) => c.status === 'pending').length,
         avgWarrantyDuration: avgDuration,
         categoryBreakdown, monthlyTrend, statusBreakdown, topSuppliers, coverageValue,
-        extensionOpportunity,
-        supplierConcentration,
-        assetRiskScore,
-        unpricedAssets,
-        supplierRiskSignals,
+        extensionOpportunity: intelligence.extensionOpportunity,
+        supplierConcentration: intelligence.supplierConcentration,
+        assetRiskScore: intelligence.lifecycleHealthScore,
+        unpricedAssets: intelligence.unpricedAssets,
+        supplierRiskSignals: intelligence.supplierRiskSignals.slice(0, 6),
       });
     } catch (err) {
       console.error('Analytics error:', err);

@@ -2,6 +2,15 @@
 
 Last updated: 2026-06-21
 
+## 2026-06-29 Asset Lifecycle Intelligence API / CLI / MCP
+
+- Added a shared asset lifecycle intelligence model in `src/lib/asset-intelligence.ts` so the analytics UI, REST API, CLI, and MCP surfaces use the same warranty, claim, supplier, expiry, data-quality, and next-action calculations.
+- Added authenticated `GET /api/v1/intelligence`, guarded by the existing API v1 authorization layer and requiring `warranties:read`.
+- Added OpenAPI documentation for `/api/v1/intelligence` with scoped token/bearer authentication and no username/password integration pattern.
+- Added CLI support through `warrantee intelligence summary --limit 5000`.
+- Added MCP support through `get_asset_intelligence` for registered users with scoped API keys.
+- Added targeted unit coverage for the intelligence model, API documentation/route guard, and CLI/MCP wiring.
+
 ## 2026-06-21 Vercel Domain Configuration Cleanup
 
 - Vercel notified that `api.warrantee.io` was misconfigured for the `warrantee` project because the active DNS is managed on Cloudflare, not Vercel DNS.

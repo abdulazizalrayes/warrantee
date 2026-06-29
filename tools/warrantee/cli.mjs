@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import {
   createWarranty,
   deleteWarranty,
+  getAssetIntelligence,
   getClaim,
   getDocument,
   getWarranty,
@@ -32,6 +33,7 @@ Usage:
   warrantee claims get <id>
   warrantee documents list [--page N] [--limit N] [--warranty-id ID] [--query TEXT]
   warrantee documents get <id>
+  warrantee intelligence summary [--limit N]
   warrantee verify <reference-or-serial-or-id>
   warrantee-mcp
 
@@ -46,6 +48,7 @@ Repo usage:
   npm run warrantee:cli -- claims get <id>
   npm run warrantee:cli -- documents list [--page N] [--limit N] [--warranty-id ID] [--query TEXT]
   npm run warrantee:cli -- documents get <id>
+  npm run warrantee:cli -- intelligence summary [--limit N]
   npm run warrantee:cli -- verify <reference-or-serial-or-id>
   npm run warrantee:mcp --
 
@@ -256,6 +259,20 @@ export async function runCli(argv = process.argv.slice(2), io = {}) {
       }
 
       throw new WarranteeApiError(`Unknown documents command: ${subcommand}`);
+    }
+
+    if (command === "intelligence") {
+      const subcommand = args.shift();
+      if (subcommand !== "summary") {
+        throw new WarranteeApiError("Expected: warrantee intelligence summary [--limit N]");
+      }
+      const limit = parseNumber(takeOption(args, "--limit"), "--limit");
+      assertNoUnknownOptions(args);
+      writeJson(await getAssetIntelligence({ ...clientOptions, limit }), {
+        pretty: context.pretty,
+        stdout,
+      });
+      return 0;
     }
 
     if (command !== "warranties") {

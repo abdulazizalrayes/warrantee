@@ -146,6 +146,62 @@ describe("Warrantee CLI and MCP", () => {
     expect(JSON.stringify(calls.map((call) => call.init.headers))).not.toContain("username");
   });
 
+  it("exposes asset lifecycle intelligence through API client, CLI, and MCP", async () => {
+    const clientCalls: FetchCall[] = [];
+    const cliCalls: FetchCall[] = [];
+    const mcpCalls: FetchCall[] = [];
+    const stdout: string[] = [];
+    const stderr: string[] = [];
+    const { getAssetIntelligence } = await import(toolModule("api-client.mjs"));
+    const { runCli } = await import(toolModule("cli.mjs"));
+    const { handleMcpRequest } = await import(toolModule("mcp-server.mjs"));
+
+    await getAssetIntelligence({
+      baseUrl: "https://warrantee.io",
+      apiKey: "wrt_test_secret",
+      limit: 250,
+      fetchImpl: mockFetch({ data: { lifecycleHealthScore: 88 } }, clientCalls),
+    });
+
+    const cliCode = await runCli(["--api-key", "wrt_cli_secret", "intelligence", "summary", "--limit", "250"], {
+      fetchImpl: mockFetch({ data: { lifecycleHealthScore: 88 } }, cliCalls),
+      stdout: { write: (value: string) => stdout.push(value) },
+      stderr: { write: (value: string) => stderr.push(value) },
+      env: {},
+    });
+
+    const listResponse = (await handleMcpRequest({
+      jsonrpc: "2.0",
+      id: 7,
+      method: "tools/list",
+    })) as JsonRpcResponse;
+    const callResponse = (await handleMcpRequest(
+      {
+        jsonrpc: "2.0",
+        id: 8,
+        method: "tools/call",
+        params: { name: "get_asset_intelligence", arguments: { limit: 250 } },
+      },
+      {
+        env: { WARRANTEE_API_KEY: "wrt_mcp_secret" },
+        fetchImpl: mockFetch({ data: { lifecycleHealthScore: 88 } }, mcpCalls),
+      }
+    )) as JsonRpcResponse;
+
+    expect(clientCalls[0]?.url).toBe("https://warrantee.io/api/v1/intelligence?limit=250");
+    expect(clientCalls[0]?.init.headers).toMatchObject({ "x-api-key": "wrt_test_secret" });
+    expect(cliCode).toBe(0);
+    expect(stderr.join("")).toBe("");
+    expect(stdout.join("")).toContain("lifecycleHealthScore");
+    expect(cliCalls[0]?.url).toBe("https://warrantee.io/api/v1/intelligence?limit=250");
+    expect(listResponse.result.tools.map((tool: { name: string }) => tool.name)).toContain("get_asset_intelligence");
+    expect(callResponse.result.isError).toBe(false);
+    expect(mcpCalls[0]?.url).toBe("https://warrantee.io/api/v1/intelligence?limit=250");
+    expect(mcpCalls[0]?.init.headers).toMatchObject({ "x-api-key": "wrt_mcp_secret" });
+    expect(JSON.stringify([clientCalls, cliCalls, mcpCalls])).not.toContain("password");
+    expect(JSON.stringify([clientCalls, cliCalls, mcpCalls])).not.toContain("username");
+  });
+
   it("exposes MCP tools and calls private tools through the API key", async () => {
     const calls: FetchCall[] = [];
     const { handleMcpRequest } = await import(toolModule("mcp-server.mjs"));

@@ -88,6 +88,19 @@ Agents must route these away from enterprise or seller inquiry forms:
 - `/auth.md` explains public versus private access and the no-password rule.
 - `robots.txt` allows public content while blocking private/admin/internal areas.
 
+## Authenticated Asset Intelligence
+
+Warrantee now exposes asset lifecycle intelligence through the same authenticated integration model used by the API / CLI / MCP layer.
+
+- Shared model: `src/lib/asset-intelligence.ts`
+- REST endpoint: `GET /api/v1/intelligence`
+- Required access: scoped integration token or bearer session with `warranties:read`
+- CLI command: `warrantee intelligence summary --limit 5000`
+- MCP tool: `get_asset_intelligence`
+- OpenAPI path: `/api/v1/intelligence`
+
+The intelligence model returns portfolio-level warranty, claim, supplier, expiry, data-quality, lifecycle-health, and next-action signals. It does not ask integrators for Warrantee usernames or passwords. Agents and systems should use a scoped `x-api-key` generated from Settings > API / CLI / MCP.
+
 ## Analytics And Privacy
 
 Agent-readiness route handlers log privacy-safe events through the app logger:
@@ -129,7 +142,7 @@ Standard verification:
 
 ```bash
 npm run guard:loopback
-npm run test -- src/lib/__tests__/agent-ready.test.ts src/lib/__tests__/seo-readiness.test.ts tests/unit/hosted-mcp.test.ts tests/unit/cli-mcp.test.ts
+npm run test -- src/lib/__tests__/agent-ready.test.ts src/lib/__tests__/seo-readiness.test.ts src/lib/__tests__/asset-intelligence.test.ts tests/unit/hosted-mcp.test.ts tests/unit/cli-mcp.test.ts
 npm run build
 E2E_BASE_URL="$LOCAL_WARRANTEE_URL" npx playwright test tests/e2e/seo-agent-ready.spec.ts
 ```

@@ -87,6 +87,29 @@ export function buildPublicOpenApi() {
           responses: { "201": { description: "Warranty created" } },
         },
       },
+      "/api/v1/intelligence": {
+        get: {
+          summary: "Read authenticated asset lifecycle intelligence",
+          description:
+            "Returns portfolio-level warranty, claim, supplier, expiry, data-quality, and next-action signals for the authenticated account. Requires a scoped integration token or bearer token with warranties:read access.",
+          security: [{ ApiKeyAuth: [] }, { BearerAuth: [] }],
+          parameters: [
+            {
+              name: "limit",
+              in: "query",
+              required: false,
+              schema: { type: "integer", minimum: 1, maximum: 10000, default: 5000 },
+              description: "Maximum warranties included in the intelligence calculation.",
+            },
+          ],
+          responses: {
+            "200": { description: "Asset intelligence summary returned" },
+            "401": { description: "Missing or invalid authentication" },
+            "403": { description: "Token lacks required scope" },
+            "429": { description: "Rate limit exceeded" },
+          },
+        },
+      },
       "/api/claims": {
         post: {
           summary: "Submit claim",

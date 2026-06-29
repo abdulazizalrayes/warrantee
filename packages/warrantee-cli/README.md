@@ -39,10 +39,13 @@ warrantee claims list --status pending --pretty
 warrantee claims get CLAIM_ID
 warrantee documents list --query receipt --pretty
 warrantee documents get DOCUMENT_ID
+warrantee intelligence summary --limit 5000 --pretty
 warrantee verify WR-12345
 ```
 
 Document commands return metadata only. They do not expose private file URLs or storage paths.
+
+The intelligence command returns portfolio-level lifecycle health, supplier risk, expiry pressure, missing data, claim pressure, and suggested next actions for the authenticated account. It requires a scoped token with `warranties:read`.
 
 ## MCP
 
