@@ -185,6 +185,7 @@ describe("operational hardening", () => {
     const ga4Events = readProjectFile("src/lib/ga4-events.ts");
     const funnelRoute = readProjectFile("src/app/api/funnel/events/route.ts");
     const growthReadiness = readProjectFile("scripts/check-growth-readiness.mjs");
+    const adminPage = readProjectFile("src/app/[locale]/admin/page.tsx");
     const docs = readProjectFile("docs/ONBOARDING_FUNNEL_ANALYTICS_2026-06-23.md");
 
     for (const key of ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "ref"]) {
@@ -198,6 +199,10 @@ describe("operational hardening", () => {
     expect(funnelRoute).toContain("allowedMetadataKeys");
     expect(growthReadiness).toContain("utm_source");
     expect(growthReadiness).toContain("utm_campaign");
+    expect(adminPage).toContain("campaignFunnelCounts");
+    expect(adminPage).toContain("campaignBreakdown");
+    expect(adminPage).toContain("metadata.utm_source");
+    expect(adminPage).toContain("metadata.utm_campaign");
     expect(docs).toContain("Do not place names, emails, phone numbers");
   });
 

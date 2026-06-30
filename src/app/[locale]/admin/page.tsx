@@ -209,6 +209,8 @@ const rawTranslations = {
     conversionFunnel: 'Conversion Funnel', signedUp: 'Signed up', activated: 'Activated',
     claimEngaged: 'Claim engaged', payingSignals: 'Paying signals',
     serverFunnel: 'Server-side Funnel Events', noFunnelEvents: 'No server-side funnel events yet.',
+    campaignBreakdown: 'Campaign Breakdown', noCampaignAttribution: 'No campaign attribution yet.',
+    campaign: 'Campaign', marketingMedium: 'Medium',
     exportData: 'Export CSV', refresh: 'Refresh', search: 'Search...',
     // Team
     teamTitle: 'Team Management', addAdmin: 'Add Team Member', emailPlaceholder: 'Enter email address',
@@ -274,6 +276,8 @@ const rawTranslations = {
     conversionFunnel: 'قمع التحويل', signedUp: 'سجلوا', activated: 'تفاعلوا',
     claimEngaged: 'تفاعلوا مع المطالبات', payingSignals: 'إشارات دفع',
     serverFunnel: 'أحداث القمع من الخادم', noFunnelEvents: 'لا توجد أحداث قمع من الخادم بعد.',
+    campaignBreakdown: 'تحليل الحملات', noCampaignAttribution: 'لا توجد بيانات حملات بعد.',
+    campaign: 'الحملة', marketingMedium: 'الوسيط',
     exportData: 'تصدير CSV', refresh: 'تحديث', search: 'بحث...',
     teamTitle: 'إدارة الفريق', addAdmin: 'إضافة عضو', emailPlaceholder: 'أدخل البريد الإلكتروني',
     invite: 'إضافة', removeAccess: 'إزالة', confirmRemove: 'تأكيد الإزالة',
@@ -833,6 +837,37 @@ export default function AdminPage() {
       return acc;
     }, {})
   ).sort((a, b) => b[1] - a[1]);
+  const campaignFunnelCounts = Object.values(
+    funnelEvents.reduce((acc: Record<string, {
+      source: string;
+      medium: string;
+      campaign: string;
+      count: number;
+      actions: Record<string, number>;
+    }>, event: any) => {
+      const metadata = (event.metadata || {}) as Record<string, unknown>;
+      const source = typeof metadata.utm_source === 'string' ? metadata.utm_source : '';
+      const medium = typeof metadata.utm_medium === 'string' ? metadata.utm_medium : '';
+      const campaign = typeof metadata.utm_campaign === 'string' ? metadata.utm_campaign : '';
+      if (!source && !medium && !campaign) return acc;
+
+      const key = [source || 'unknown', medium || 'unknown', campaign || 'unknown'].join('|');
+      if (!acc[key]) {
+        acc[key] = {
+          source: source || EM_DASH,
+          medium: medium || EM_DASH,
+          campaign: campaign || EM_DASH,
+          count: 0,
+          actions: {},
+        };
+      }
+
+      const action = event.action || 'unknown';
+      acc[key].count += 1;
+      acc[key].actions[action] = (acc[key].actions[action] || 0) + 1;
+      return acc;
+    }, {})
+  ).sort((a, b) => b.count - a.count);
 
   // ─── LOADING / UNAUTHORIZED ───────────────────────────
   if (loading) return (
@@ -1151,6 +1186,49 @@ export default function AdminPage() {
                 )}
               </section>
 
+              <section className="rounded-xl border border-[#1a1a3a] bg-[#0e0e20] p-5">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-200">{text.campaignBreakdown}</h3>
+                    <p className="mt-1 text-xs text-gray-500">
+                      {locale === 'ar'
+                        ? 'يعرض مصدر ووسيط وحملة الزيارات عندما تستخدم روابط UTM في التواصل.'
+                        : 'Shows source, medium, and campaign when outreach uses UTM links.'}
+                    </p>
+                  </div>
+                  <span className="rounded-full border border-[#2a2a4a] bg-[#12122a] px-3 py-1 text-xs text-gray-400">
+                    {campaignFunnelCounts.length.toLocaleString()} {locale === 'ar' ? 'حملة' : 'campaigns'}
+                  </span>
+                </div>
+
+                {campaignFunnelCounts.length === 0 ? (
+                  <p className="mt-6 text-sm text-gray-500">{text.noCampaignAttribution}</p>
+                ) : (
+                  <div className="mt-5 grid gap-3 lg:grid-cols-3">
+                    {campaignFunnelCounts.slice(0, 6).map((campaign) => {
+                      const topAction = Object.entries(campaign.actions).sort((a, b) => b[1] - a[1])[0];
+                      return (
+                        <div key={`${campaign.source}-${campaign.medium}-${campaign.campaign}`} className="rounded-lg border border-[#1a1a3a] bg-[#12122a] p-4">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className="truncate text-xs font-medium text-gray-400">{campaign.source}</p>
+                              <p className="mt-1 truncate text-sm font-semibold text-white">{campaign.campaign}</p>
+                              <p className="mt-1 text-[11px] text-gray-500">{text.marketingMedium}: {campaign.medium}</p>
+                            </div>
+                            <p className="text-2xl font-bold text-white">{campaign.count.toLocaleString()}</p>
+                          </div>
+                          {topAction ? (
+                            <p className="mt-3 truncate text-[11px] text-gray-500">
+                              {topAction[0]}: {topAction[1].toLocaleString()}
+                            </p>
+                          ) : null}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </section>
+
               <section className="rounded-xl border border-[#1a1a3a] bg-[#0e0e20] overflow-hidden">
                 <div className="border-b border-[#1a1a3a] px-5 py-4">
                   <h3 className="text-sm font-semibold text-gray-200">{text.recentActivity}</h3>
@@ -1161,6 +1239,7 @@ export default function AdminPage() {
                       <tr>
                         <th className="px-4 py-3 text-left">{text.action}</th>
                         <th className="px-4 py-3 text-left">{text.source}</th>
+                        <th className="px-4 py-3 text-left">{text.campaign}</th>
                         <th className="px-4 py-3 text-left">Path</th>
                         <th className="px-4 py-3 text-left">{text.date}</th>
                       </tr>
@@ -1168,16 +1247,17 @@ export default function AdminPage() {
                     <tbody className="divide-y divide-[#1a1a3a]">
                       {funnelEvents.length === 0 ? (
                         <tr>
-                          <td colSpan={4} className="px-4 py-8 text-center text-sm text-gray-500">{text.noFunnelEvents}</td>
+                          <td colSpan={5} className="px-4 py-8 text-center text-sm text-gray-500">{text.noFunnelEvents}</td>
                         </tr>
                       ) : funnelEvents.map((event) => {
                         const metadata = (event.metadata || {}) as Record<string, any>;
+                        const source = metadata.utm_source || metadata.ref || (event.actor_id ? (locale === 'ar' ? 'مستخدم مسجل' : 'Signed-in user') : (locale === 'ar' ? 'زائر' : 'Visitor'));
+                        const campaign = metadata.utm_campaign || EM_DASH;
                         return (
                           <tr key={event.id} className="hover:bg-[#12122a]/60">
                             <td className="px-4 py-3 text-sm font-medium text-gray-200">{event.action}</td>
-                            <td className="px-4 py-3 text-xs text-gray-400">
-                              {event.actor_id ? (locale === 'ar' ? 'مستخدم مسجل' : 'Signed-in user') : (locale === 'ar' ? 'زائر' : 'Visitor')}
-                            </td>
+                            <td className="max-w-[180px] truncate px-4 py-3 text-xs text-gray-400">{source}</td>
+                            <td className="max-w-[220px] truncate px-4 py-3 text-xs text-gray-500">{campaign}</td>
                             <td className="max-w-[280px] truncate px-4 py-3 text-xs text-gray-500">{metadata.path || EM_DASH}</td>
                             <td className="px-4 py-3 text-xs text-gray-500">{fmtDateTime(event.created_at)}</td>
                           </tr>
