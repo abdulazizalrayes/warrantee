@@ -60,6 +60,15 @@ const serverTrackedEvents = new Set([
   "onboarding_completed",
 ]);
 
+const campaignParamKeys = [
+  "utm_source",
+  "utm_medium",
+  "utm_campaign",
+  "utm_content",
+  "utm_term",
+  "ref",
+] as const;
+
 function sanitizeServerPayload(payload: Record<string, unknown>) {
   const sanitized: Record<string, string | number | boolean | null> = {};
   for (const [key, value] of Object.entries(payload)) {
@@ -72,6 +81,20 @@ function sanitizeServerPayload(payload: Record<string, unknown>) {
   return sanitized;
 }
 
+function readCampaignParams() {
+  const campaign: Record<string, string> = {};
+
+  if (typeof window === "undefined") return campaign;
+
+  const params = new URLSearchParams(window.location.search);
+  for (const key of campaignParamKeys) {
+    const value = params.get(key);
+    if (value) campaign[key] = value.slice(0, 160);
+  }
+
+  return campaign;
+}
+
 function sendServerFunnelEvent(event: string, payload: Record<string, unknown>) {
   if (typeof window === "undefined" || !serverTrackedEvents.has(event)) return;
 
@@ -79,7 +102,10 @@ function sendServerFunnelEvent(event: string, payload: Record<string, unknown>) 
     event,
     path: window.location.pathname,
     referrer: document.referrer || null,
-    metadata: sanitizeServerPayload(payload),
+    metadata: sanitizeServerPayload({
+      ...readCampaignParams(),
+      ...payload,
+    }),
   });
 
   try {

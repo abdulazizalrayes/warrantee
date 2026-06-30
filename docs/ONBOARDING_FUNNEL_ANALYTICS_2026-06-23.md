@@ -36,6 +36,17 @@ The following funnel events are emitted through the existing GA4 / GTM / Meta ev
 | `seller_application_submit` | Seller application accepted | Measures seller onboarding conversion. |
 | `onboarding_completed` | First-run onboarding completed | Measures movement from account creation to activated profile setup. |
 
+Server-side funnel events also preserve privacy-safe campaign attribution when present:
+
+- `utm_source`
+- `utm_medium`
+- `utm_campaign`
+- `utm_content`
+- `utm_term`
+- `ref`
+
+Do not place names, emails, phone numbers, commercial registration numbers, or private customer details in UTM values.
+
 ## How To Read The Funnel
 
 Use this order when diagnosing onboarding:
@@ -60,6 +71,16 @@ If `signup_submit` exists but `sign_up` is low, inspect Supabase auth errors, pa
 
 If `sign_up` exists but users do not create warranties, inspect first-run onboarding, empty states, sample data, and dashboard guidance.
 
+## Campaign URL Discipline
+
+Use explicit campaign links for every outreach push so funnel events can be attributed later:
+
+- Seller application: `https://warrantee.io/en/seller/register?utm_source=manual_outreach&utm_medium=direct&utm_campaign=seller_pilot_july_2026`
+- Pricing: `https://warrantee.io/en/pricing?utm_source=manual_outreach&utm_medium=direct&utm_campaign=business_pilot_july_2026`
+- API / CLI / MCP: `https://warrantee.io/en/api-docs?utm_source=partner_outreach&utm_medium=direct&utm_campaign=integration_pilot_july_2026`
+
+For Arabic outreach, use the matching `/ar/...` path with the same UTM naming. Keep campaign names lowercase, short, and stable for the full test window.
+
 ## Server-Side Funnel Visibility
 
 Server-side funnel events are written to `activity_log` instead of a new table so the current RLS/admin tooling remains simple. The log intentionally excludes names, email addresses, message bodies, phone numbers, and raw IP addresses.
@@ -69,5 +90,6 @@ Admin users can review these events from the Admin `Funnel` tab. The tab shows c
 ## Safe Follow-Up Candidates
 
 - Review the Admin `Funnel` tab after each campaign or launch push.
+- Compare events by `utm_source`, `utm_medium`, and `utm_campaign` before judging conversion quality.
 - Compare `signup_submit`, `sign_up`, and `onboarding_completed` to find auth or first-run friction.
 - Compare `contact_form_submit` and `seller_application_submit` against HubSpot/support-ticket creation.

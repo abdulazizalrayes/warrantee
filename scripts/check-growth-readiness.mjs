@@ -39,6 +39,9 @@ const funnelClient = fileContains("src/lib/ga4-events.ts", [
   "seller_application_submit",
   "onboarding_completed",
   "sendServerFunnelEvent",
+  "readCampaignParams",
+  "utm_source",
+  "utm_campaign",
 ]);
 assertCheck("client and server funnel events are wired", funnelClient.ok, funnelClient);
 
@@ -48,6 +51,8 @@ const funnelServer = fileContains("src/app/api/funnel/events/route.ts", [
   "activity_log",
   "funnel_event",
   "sanitizeMetadata",
+  "utm_source",
+  "utm_campaign",
 ]);
 assertCheck("server funnel endpoint is privacy-safe and origin-guarded", funnelServer.ok, funnelServer);
 

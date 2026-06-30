@@ -337,6 +337,10 @@ Current launch position:
 
 ## Open Monitoring And External Items
 
+- 2026-06-30 onboarding monitor:
+  - GitHub CI, Production Security Gates, and production smoke were green.
+  - Backend counters still showed no new external accounts, companies, seller applications, invitations, API tokens, or API usage versus the June 23 baseline.
+  - Server-side funnel attribution now captures privacy-safe `utm_*` and `ref` values so the next seller/business outreach push can be measured by source, medium, and campaign without storing personal data in analytics metadata.
 - Google Cloud Vision is not required for launch because Mistral OCR is active and verified in production. CNTXT/Google reseller billing can remain postponed unless we explicitly decide to add Google Vision back as an OCR provider.
 - Full operational E2E is complete in production for the latest June 11 deployment:
   - passed: bulk import, approval, rejection, document upload, strict scan-before-download document flow, OCR, Stripe Checkout, and team guardrails

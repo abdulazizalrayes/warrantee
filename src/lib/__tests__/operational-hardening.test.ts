@@ -181,6 +181,26 @@ describe("operational hardening", () => {
     expect(tokenUsage).toContain("api_usage_events");
   });
 
+  it("keeps funnel attribution privacy-safe and campaign-aware", () => {
+    const ga4Events = readProjectFile("src/lib/ga4-events.ts");
+    const funnelRoute = readProjectFile("src/app/api/funnel/events/route.ts");
+    const growthReadiness = readProjectFile("scripts/check-growth-readiness.mjs");
+    const docs = readProjectFile("docs/ONBOARDING_FUNNEL_ANALYTICS_2026-06-23.md");
+
+    for (const key of ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "ref"]) {
+      expect(ga4Events).toContain(key);
+      expect(funnelRoute).toContain(key);
+      expect(docs).toContain(key);
+    }
+
+    expect(ga4Events).toContain("readCampaignParams");
+    expect(ga4Events).toContain("new URLSearchParams(window.location.search)");
+    expect(funnelRoute).toContain("allowedMetadataKeys");
+    expect(growthReadiness).toContain("utm_source");
+    expect(growthReadiness).toContain("utm_campaign");
+    expect(docs).toContain("Do not place names, emails, phone numbers");
+  });
+
   it("documents API integrations without password sharing", () => {
     const apiDocs = readProjectFile("src/app/[locale]/api-docs/page.tsx");
     const nextConfig = readProjectFile("next.config.ts");
