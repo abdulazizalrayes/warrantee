@@ -101,6 +101,8 @@ Warrantee now exposes asset lifecycle intelligence through the same authenticate
 
 The intelligence model returns portfolio-level warranty, claim, supplier, expiry, data-quality, lifecycle-health, and next-action signals. It does not ask integrators for Warrantee usernames or passwords. Agents and systems should use a scoped `x-api-key` generated from Settings > API / CLI / MCP.
 
+The public MCP card must also advertise `get_asset_intelligence` so discovery metadata stays aligned with the actual hosted and stdio MCP tools.
+
 ## Analytics And Privacy
 
 Agent-readiness route handlers log privacy-safe events through the app logger:
@@ -142,6 +144,7 @@ Standard verification:
 
 ```bash
 npm run guard:loopback
+npm run qa:growth-readiness
 npm run test -- src/lib/__tests__/agent-ready.test.ts src/lib/__tests__/seo-readiness.test.ts src/lib/__tests__/asset-intelligence.test.ts tests/unit/hosted-mcp.test.ts tests/unit/cli-mcp.test.ts
 npm run build
 E2E_BASE_URL="$LOCAL_WARRANTEE_URL" npx playwright test tests/e2e/seo-agent-ready.spec.ts

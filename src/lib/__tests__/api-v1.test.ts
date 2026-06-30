@@ -98,6 +98,22 @@ describe("api v1 helpers", () => {
     expect(route).toContain("recordApiV1Usage");
   });
 
+  it("advertises asset intelligence in MCP and agent discovery metadata", () => {
+    const mcpCard = fs.readFileSync(
+      path.join(process.cwd(), "src/app/.well-known/mcp.json/route.ts"),
+      "utf8"
+    );
+    const agentCard = fs.readFileSync(
+      path.join(process.cwd(), "src/app/.well-known/agent-card.json/route.ts"),
+      "utf8"
+    );
+
+    expect(mcpCard).toContain("get_asset_intelligence");
+    expect(mcpCard).toContain("warranties:read");
+    expect(agentCard).toContain("asset-lifecycle-intelligence");
+    expect(agentCard).toContain("supplier risk");
+  });
+
   it("keeps claims and document metadata API routes scoped and access-controlled", () => {
     const claimsList = fs.readFileSync(
       path.join(process.cwd(), "src/app/api/v1/claims/route.ts"),

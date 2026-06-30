@@ -2,6 +2,15 @@
 
 Last updated: 2026-06-21
 
+## 2026-06-30 Remaining Practical Uplift Closure
+
+- Added `npm run qa:growth-readiness` as a repeatable handover/growth gate.
+- The new gate verifies funnel instrumentation, privacy-safe server funnel logging, onboarding diagnosis docs, asset intelligence API / CLI / MCP / OpenAPI coverage, production security gates, OCR private-corpus handover docs, pentest execution packet, category positioning, and sales/campaign operating notes.
+- Production smoke now checks that anonymous `GET /api/v1/intelligence` is rejected with `401`.
+- Agent-readiness validation now checks that OpenAPI includes `/api/v1/intelligence`, MCP discovery advertises `get_asset_intelligence`, and the private intelligence endpoint rejects anonymous access.
+- MCP and agent discovery metadata now advertise authenticated asset lifecycle intelligence so discovery, OpenAPI, CLI, hosted MCP, and stdio MCP stay aligned.
+- Remaining items that cannot be completed in code remain external: formal third-party pentest execution/sign-off, approved private OCR document collection, and real campaign traffic/onboarding analysis after distribution starts.
+
 ## 2026-06-29 Asset Lifecycle Intelligence API / CLI / MCP
 
 - Added a shared asset lifecycle intelligence model in `src/lib/asset-intelligence.ts` so the analytics UI, REST API, CLI, and MCP surfaces use the same warranty, claim, supplier, expiry, data-quality, and next-action calculations.

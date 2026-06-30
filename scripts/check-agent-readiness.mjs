@@ -83,7 +83,7 @@ if (!robots.includes("Disallow: /api/") || !robots.includes("Allow: /api/mcp")) 
 }
 
 const openapi = JSON.parse((await get("/openapi.json")).text);
-for (const requiredPath of ["/data/company.json", "/data/agent-routing.json", "/api/mcp"]) {
+for (const requiredPath of ["/data/company.json", "/data/agent-routing.json", "/api/mcp", "/api/v1/intelligence"]) {
   if (!openapi.paths?.[requiredPath]) fail("OpenAPI is missing a required path.", { requiredPath });
 }
 
@@ -96,8 +96,19 @@ for (const requiredTool of [
   "prepare_project_inquiry",
   "list_service_areas",
   "read_public_resource",
+  "get_asset_intelligence",
 ]) {
   if (!toolNames.has(requiredTool)) fail("MCP card is missing a public read-only tool.", { requiredTool });
+}
+
+const privateIntelligence = await fetch(`${baseUrl}/api/v1/intelligence`, {
+  headers: { "user-agent": "warrantee-agent-readiness-check/1.0" },
+});
+if (privateIntelligence.status !== 401) {
+  fail("Authenticated asset intelligence endpoint must reject anonymous access.", {
+    path: "/api/v1/intelligence",
+    status: privateIntelligence.status,
+  });
 }
 
 console.log(JSON.stringify({

@@ -25,6 +25,7 @@
     "qa:ocr-corpus:private": "OCR_CORPUS_DIR=tests/fixtures/ocr-corpus/private OCR_CORPUS_REQUIRED=1 node scripts/check-ocr-corpus.mjs",
     "qa:pentest-readiness": "node scripts/check-pentest-readiness.mjs",
     "qa:agent-readiness": "node scripts/check-agent-readiness.mjs",
+    "qa:growth-readiness": "node scripts/check-growth-readiness.mjs",
     "publish:cli": "npm publish ./packages/warrantee-cli --access public",
     "smoke:prod": "node scripts/production-smoke.mjs",
     "load:prod": "node scripts/production-load-check.mjs",

@@ -44,6 +44,12 @@ export function GET() {
         description: "Use scoped x-api-key integration tokens with the REST API, Warrantee CLI commands, the Warrantee stdio MCP server, and the hosted https://warrantee.io/api/mcp endpoint while respecting rate limits, owner-isolated warranty APIs, and the no-password integration rule.",
       },
       {
+        id: "asset-lifecycle-intelligence",
+        name: "Asset Lifecycle Intelligence",
+        description:
+          "Use authenticated API / CLI / MCP access to summarize warranty portfolio health, supplier risk, expiry windows, unresolved claims, missing values, and recommended next actions.",
+      },
+      {
         id: "public-company-discovery",
         name: "Public Company Discovery",
         description:

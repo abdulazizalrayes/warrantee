@@ -117,6 +117,23 @@ export function GET() {
           },
         },
         {
+          name: "get_asset_intelligence",
+          title: "Get Asset Lifecycle Intelligence",
+          description:
+            "Return authenticated warranty, claim, supplier, expiry, data-quality, lifecycle-health, and next-action signals for the user's accessible portfolio. Requires a scoped x-api-key or bearer token with warranties:read.",
+          inputSchema: {
+            type: "object",
+            properties: {
+              limit: {
+                type: "number",
+                minimum: 1,
+                maximum: 10000,
+                default: 5000,
+              },
+            },
+          },
+        },
+        {
           name: "verify-warranty",
           title: "Verify Warranty",
           description:
