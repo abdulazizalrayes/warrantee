@@ -337,6 +337,14 @@ Current launch position:
 
 ## Open Monitoring And External Items
 
+- 2026-07-05 remaining-items recheck:
+  - Production smoke passed for public pages, agent-readiness files, protected route redirects, protected APIs, auth callback safety, `/api/health`, and `/api/mcp`.
+  - Operational readiness passed for Supabase, Resend, HubSpot, Mistral OCR, document-security scanning, Stripe, unsigned webhook rejection, CSP, and Redis-required backend rate limiting.
+  - Agent readiness passed for 13 JSON discovery endpoints and 6 text endpoints.
+  - Growth readiness, pentest readiness, and OCR corpus readiness all passed.
+  - Live `robots.txt` allows public content and intentionally blocks private app/API surfaces. The sitemap currently has 50 URLs, and none of those sitemap URLs are blocked by `robots.txt`.
+  - No Warrantee code fix is indicated for the latest Google Search Console `Blocked by robots.txt` email unless the authenticated Search Console affected examples show public sitemap URLs. Private app/API URLs should remain blocked.
+  - Remaining non-code/external actions are formal third-party pentest execution and signed report, approved private OCR document corpus collection, real campaign/outreach traffic, and post-traffic onboarding analysis.
 - 2026-06-30 onboarding monitor:
   - GitHub CI, Production Security Gates, and production smoke were green.
   - Backend counters still showed no new external accounts, companies, seller applications, invitations, API tokens, or API usage versus the June 23 baseline.
