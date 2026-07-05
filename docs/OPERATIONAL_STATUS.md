@@ -343,7 +343,8 @@ Current launch position:
   - Agent readiness passed for 13 JSON discovery endpoints and 6 text endpoints.
   - Growth readiness, pentest readiness, and OCR corpus readiness all passed.
   - Live `robots.txt` allows public content and intentionally blocks private app/API surfaces. The sitemap currently has 50 URLs, and none of those sitemap URLs are blocked by `robots.txt`.
-  - No Warrantee code fix is indicated for the latest Google Search Console `Blocked by robots.txt` email unless the authenticated Search Console affected examples show public sitemap URLs. Private app/API URLs should remain blocked.
+  - The in-app browser still cannot inspect exact Search Console affected examples because it redirects to the public Search Console landing page instead of the authenticated `abdulaziz.alrayes@gmail.com` Warrantee property. No Warrantee code fix is indicated for the latest Google Search Console `Blocked by robots.txt` email unless the authenticated Search Console affected examples show public sitemap URLs. Private app/API URLs should remain blocked.
+  - Private OCR cannot be marked complete yet: `tests/fixtures/ocr-corpus/private` contains only the README and manifest template, and `npm run qa:ocr-corpus:private` correctly fails because the ignored private `manifest.json` is not present.
   - Remaining non-code/external actions are formal third-party pentest execution and signed report, approved private OCR document corpus collection, real campaign/outreach traffic, and post-traffic onboarding analysis.
 - 2026-06-30 onboarding monitor:
   - GitHub CI, Production Security Gates, and production smoke were green.
