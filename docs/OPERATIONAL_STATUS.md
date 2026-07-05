@@ -343,6 +343,8 @@ Current launch position:
   - Live production already allowed `/api/mcp` and `/en/seller/register`; the remaining examples were protected UI routes that redirected unauthenticated users.
   - Updated robots policy so protected UI routes are crawlable but still auth-protected and non-indexable, while private APIs remain blocked except public MCP/health endpoints.
   - Updated middleware redirects for protected/auth/admin flows to include `X-Robots-Tag: noindex, nofollow`, preserving security while preventing the protected UI routes from remaining in the `Blocked by robots.txt` bucket.
+  - GitHub CI passed for commit `e01b849`, and live production showed the updated robots policy plus `X-Robots-Tag: noindex, nofollow` on `/en/dashboard`.
+  - Started a new Search Console validation for `Blocked by robots.txt` on July 5, 2026. Search Console now shows validation started with 6 pending examples and 0 failed examples.
 - 2026-07-05 remaining-items recheck:
   - Production smoke passed for public pages, agent-readiness files, protected route redirects, protected APIs, auth callback safety, `/api/health`, and `/api/mcp`.
   - Operational readiness passed for Supabase, Resend, HubSpot, Mistral OCR, document-security scanning, Stripe, unsigned webhook rejection, CSP, and Redis-required backend rate limiting.
