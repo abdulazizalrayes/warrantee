@@ -37,7 +37,8 @@ describe("operational hardening", () => {
     expect(readiness).toContain('"content-security-policy"');
     expect(readiness).toContain('csp: "enforced"');
     expect(middleware).toContain("hasSupabaseClientConfig");
-    expect(middleware).toContain("return NextResponse.redirect(buildAuthRedirectUrl(request, locale));");
+    expect(middleware).toContain("function buildNoIndexAuthRedirect");
+    expect(middleware).toContain("return buildNoIndexAuthRedirect(request, locale);");
   });
 
   it("keeps dashboard browser counts aligned with production schema", () => {

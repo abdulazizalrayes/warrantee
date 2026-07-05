@@ -337,6 +337,12 @@ Current launch position:
 
 ## Open Monitoring And External Items
 
+- 2026-07-05 Search Console robots fix:
+  - Opened the regular Chrome browser, not the in-app browser, and verified the Warrantee Search Console property under `abdulaziz.alrayes@gmail.com`.
+  - Search Console `Blocked by robots.txt` showed 6 examples: `/api/mcp`, `/en/seller/register`, `/ar/warranties`, `/en/warranties/new`, `/en/warranties`, and `/en/dashboard`.
+  - Live production already allowed `/api/mcp` and `/en/seller/register`; the remaining examples were protected UI routes that redirected unauthenticated users.
+  - Updated robots policy so protected UI routes are crawlable but still auth-protected and non-indexable, while private APIs remain blocked except public MCP/health endpoints.
+  - Updated middleware redirects for protected/auth/admin flows to include `X-Robots-Tag: noindex, nofollow`, preserving security while preventing the protected UI routes from remaining in the `Blocked by robots.txt` bucket.
 - 2026-07-05 remaining-items recheck:
   - Production smoke passed for public pages, agent-readiness files, protected route redirects, protected APIs, auth callback safety, `/api/health`, and `/api/mcp`.
   - Operational readiness passed for Supabase, Resend, HubSpot, Mistral OCR, document-security scanning, Stripe, unsigned webhook rejection, CSP, and Redis-required backend rate limiting.

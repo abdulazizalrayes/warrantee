@@ -41,6 +41,18 @@ function applyNoIndexHeader(response: NextResponse) {
   return response;
 }
 
+function buildNoIndexRedirect(request: NextRequest, pathname: string) {
+  const response = NextResponse.redirect(buildCleanRedirectUrl(request, pathname));
+  applySecurityHeaders(response);
+  return applyNoIndexHeader(response);
+}
+
+function buildNoIndexAuthRedirect(request: NextRequest, locale: string) {
+  const response = NextResponse.redirect(buildAuthRedirectUrl(request, locale));
+  applySecurityHeaders(response);
+  return applyNoIndexHeader(response);
+}
+
 function getAuthRedirectTarget(request: NextRequest) {
   return `${request.nextUrl.pathname}${request.nextUrl.search}`;
 }
@@ -181,7 +193,7 @@ export async function middleware(request: NextRequest) {
 
   if (!hasSupabaseClientConfig) {
     if (isProtectedAppArea || isAdminArea || isApprovalArea) {
-      return NextResponse.redirect(buildAuthRedirectUrl(request, locale));
+      return buildNoIndexAuthRedirect(request, locale);
     }
 
     if (shouldNoIndexPath) {
@@ -223,7 +235,7 @@ export async function middleware(request: NextRequest) {
 
   if (isAdminArea || isApprovalArea) {
     if (!user) {
-      return NextResponse.redirect(buildAuthRedirectUrl(request, locale));
+      return buildNoIndexAuthRedirect(request, locale);
     }
 
     const { data: profile } = await supabase
@@ -234,23 +246,21 @@ export async function middleware(request: NextRequest) {
 
     if (isAdminArea) {
       if (!profile || !["admin", "super_admin"].includes(profile.role)) {
-        const url = buildCleanRedirectUrl(request, "/" + locale + "/dashboard");
-        return NextResponse.redirect(url);
+        return buildNoIndexRedirect(request, "/" + locale + "/dashboard");
       }
     }
 
     if (isApprovalArea) {
       const approvalRoles = ["approver", "company_admin", "platform_admin", "admin", "super_admin"];
       if (!profile || !approvalRoles.includes(profile.role)) {
-        const url = buildCleanRedirectUrl(request, "/" + locale + "/dashboard");
-        return NextResponse.redirect(url);
+        return buildNoIndexRedirect(request, "/" + locale + "/dashboard");
       }
     }
   }
 
   if (isProtectedAppArea && !isAdminArea && !isApprovalArea) {
     if (!user) {
-      return NextResponse.redirect(buildAuthRedirectUrl(request, locale));
+      return buildNoIndexAuthRedirect(request, locale);
     }
   }
 
@@ -263,8 +273,7 @@ export async function middleware(request: NextRequest) {
     const isExplicitSignupIntent = requestedAuthTab === "signup";
 
     if (!pathname.includes("/auth/callback") && !isExplicitSignupIntent) {
-      const url = buildCleanRedirectUrl(request, "/" + locale + "/dashboard");
-      return NextResponse.redirect(url);
+      return buildNoIndexRedirect(request, "/" + locale + "/dashboard");
     }
   }
 
