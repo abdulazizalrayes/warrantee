@@ -10,6 +10,7 @@ import { trackFunnelCtaClick } from "@/lib/ga4-events";
 import { PublicBreadcrumbs } from "@/components/PublicBreadcrumbs";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
+import { PageViewTracker } from "@/components/PageViewTracker";
 
 const plans = [
   {
@@ -113,6 +114,7 @@ export default function PricingPage() {
 
   return (
     <div dir={direction} className="min-h-screen bg-[#fbfbfd]">
+      <PageViewTracker pageName="pricing" pageType="marketing" locale={locale} />
       <Navbar locale={locale} dictionary={dictionary} />
       <PublicBreadcrumbs locale={locale} includeJsonLd={false} />
       <main className="mx-auto max-w-5xl px-6 py-20">

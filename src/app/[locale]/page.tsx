@@ -3,6 +3,7 @@ import { getDictionary, Locale, DIRECTION } from '@/lib/i18n';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { TrackedLink } from '@/components/TrackedLink';
+import { PageViewTracker } from '@/components/PageViewTracker';
 import { buildPageMetadata } from '@/lib/page-metadata';
 import {
   Shield, Bell, FileCheck, BarChart3, Mail, Link2,
@@ -36,6 +37,7 @@ export default async function HomePage({ params }: HomePageProps) {
 
   return (
     <>
+      <PageViewTracker pageName="home" pageType="marketing" locale={locale} />
       <Navbar locale={locale} dictionary={dictionary} />
 
         {/* Hero Section - Apple style: centered, clean, massive typography */}

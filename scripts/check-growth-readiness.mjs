@@ -56,6 +56,17 @@ const funnelServer = fileContains("src/app/api/funnel/events/route.ts", [
 ]);
 assertCheck("server funnel endpoint is privacy-safe and origin-guarded", funnelServer.ok, funnelServer);
 
+const marketingPageViews = anyFileContains([
+  "src/app/[locale]/page.tsx",
+  "src/app/[locale]/pricing/page.tsx",
+], [
+  "PageViewTracker",
+  'pageName="home"',
+  'pageName="pricing"',
+  'pageType="marketing"',
+]);
+assertCheck("high-intent marketing pages emit server-side funnel page views", marketingPageViews.ok, marketingPageViews);
+
 const onboardingDocs = fileContains("docs/ONBOARDING_FUNNEL_ANALYTICS_2026-06-23.md", [
   "How To Read The Funnel",
   "If page views are low",
