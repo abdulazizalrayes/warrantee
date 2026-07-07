@@ -65,9 +65,14 @@ export async function signInWithPassword(page: Page) {
     throw new Error("Missing E2E_USER_EMAIL or E2E_USER_PASSWORD.");
   }
 
+  async function dismissCookiePreferences() {
+    await page.getByRole("button", { name: /reject all/i }).click({ timeout: 3_000 }).catch(() => {});
+  }
+
   await page.goto("/en/auth", { waitUntil: "domcontentloaded" });
-  await page.getByRole("button", { name: /reject all/i }).click({ timeout: 3_000 }).catch(() => {});
+  await dismissCookiePreferences();
   await page.getByRole("button", { name: /password instead/i }).click();
+  await dismissCookiePreferences();
   await page.getByLabel(/email/i).fill(email);
   await page.getByLabel(/^password$/i).fill(password);
   await page.getByRole("button", { name: /^sign in$/i }).click();

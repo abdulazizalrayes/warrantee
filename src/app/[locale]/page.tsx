@@ -427,8 +427,11 @@ export default async function HomePage({ params }: HomePageProps) {
                       )}
                     </div>
                   </div>
-                  <a
-                    href={`/${locale}/auth`}
+                  <TrackedLink
+                    href={`/${locale}/auth?tab=signup`}
+                    cta={`pricing_${plan.name.toLowerCase().replace(/\s+/g, '_')}`}
+                    locale={locale}
+                    location="home_pricing"
                     className={`block text-center w-full py-2.5 rounded-full text-[15px] font-medium transition-colors mb-8 ${
                       idx === 1
                         ? 'bg-[#0071e3] hover:bg-[#0077ED] text-white'
@@ -436,7 +439,7 @@ export default async function HomePage({ params }: HomePageProps) {
                     }`}
                   >
                     {plan.cta}
-                  </a>
+                  </TrackedLink>
                   <ul className="space-y-3">
                     {plan.features.map((feature, featureIdx) => (
                       <li key={featureIdx} className="flex items-start gap-2.5">
@@ -463,13 +466,16 @@ export default async function HomePage({ params }: HomePageProps) {
                 : '\u0627\u0628\u062f\u0623 \u062d\u0633\u0627\u0628\u0643 \u0627\u0644\u0645\u062c\u0627\u0646\u064a \u0627\u0644\u064a\u0648\u0645. \u0644\u0627 \u062a\u0648\u062c\u062f \u062d\u0627\u062c\u0629 \u0644\u0628\u0637\u0627\u0642\u0629 \u0627\u0626\u062a\u0645\u0627\u0646.'}
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-3">
-              <a
-                href={`/${locale}/auth`}
+              <TrackedLink
+                href={`/${locale}/auth?tab=signup`}
+                cta="bottom_get_started"
+                locale={locale}
+                location="home_bottom_cta"
                 className="inline-flex items-center justify-center px-7 py-3 bg-[#0071e3] hover:bg-[#0077ED] text-white font-normal text-[17px] rounded-full transition-colors"
               >
                 {!isRTL ? 'Get Started' : '\u0627\u0628\u062f\u0623 \u0627\u0644\u0622\u0646'}
                 <ChevronRight className="w-4 h-4 ml-1.5" />
-              </a>
+              </TrackedLink>
               <a
                 href="mailto:hello@warrantee.io"
                 className="inline-flex items-center justify-center px-7 py-3 text-[#0071e3] hover:text-[#0077ED] font-normal text-[17px] transition-colors"

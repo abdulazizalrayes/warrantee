@@ -26,6 +26,7 @@
     "qa:pentest-readiness": "node scripts/check-pentest-readiness.mjs",
     "qa:agent-readiness": "node scripts/check-agent-readiness.mjs",
     "qa:growth-readiness": "node scripts/check-growth-readiness.mjs",
+    "qa:full-local": "node scripts/run-local-full-qa.mjs",
     "campaign:links": "node scripts/generate-campaign-links.mjs",
     "publish:cli": "npm publish ./packages/warrantee-cli --access public",
     "smoke:prod": "node scripts/production-smoke.mjs",

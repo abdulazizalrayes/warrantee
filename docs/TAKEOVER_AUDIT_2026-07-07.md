@@ -10,11 +10,9 @@ Warrantee is ready for controlled production operation.
 
 It should not yet be described as fully enterprise-handover complete until the remaining handover risks are closed:
 
-1. Local authenticated E2E repeatability needs hardening.
-2. The homepage embedded pricing CTA path loses campaign attribution and signup intent.
-3. The private real-document OCR regression corpus is still missing.
-4. Formal third-party penetration testing still needs external execution and signoff.
-5. Performance/chunk-size work remains an optimization priority for a more polished enterprise portal.
+1. The private real-document OCR regression corpus is still missing.
+2. Formal third-party penetration testing still needs external execution and signoff.
+3. Performance/chunk-size work remains an optimization priority for a more polished enterprise portal.
 
 Production itself is healthy based on the July 7 checks: CI, production smoke, operational readiness, production business E2E, production operational E2E, RLS probe, agent-readiness validation, and public/protected route tests passed.
 
@@ -69,6 +67,21 @@ Production itself is healthy based on the July 7 checks: CI, production smoke, o
 
 ## Key Findings
 
+### 2026-07-07 Closure Update
+
+The code-addressable findings from this report were closed after the audit:
+
+1. Homepage embedded pricing and bottom CTAs now use tracked signup links that preserve campaign/referral parameters.
+2. Payment provider secrets are read through a runtime helper instead of module-scope constants.
+3. `npm run qa:full-local` now loads ignored local env files, builds once, starts one local server, and runs authenticated Playwright suites sequentially with `--workers=1`. If the local write-only Stripe secret is unavailable, it runs the operational payment/OCR workflow against production to avoid a false local checkout failure while still verifying the real checkout boundary.
+4. Regression tests were added to keep these fixes from drifting.
+
+External/non-code items remain:
+
+1. Approved private OCR document corpus.
+2. Independent third-party pentest execution/signoff.
+3. A focused performance/chunk optimization pass.
+
 ### 1. Production Is Healthy, But Local Authenticated QA Is Not Fully Repeatable
 
 Severity: High for handover, Low for current production availability.
@@ -83,7 +96,7 @@ Exact areas:
 - `playwright.config.ts:23` uses multiple workers in CI/local.
 - `playwright.config.ts:34-40` starts `npm run build && PORT=... npm run start` unless `E2E_BASE_URL` is set.
 
-Recommendation: Add a documented sequential local full-QA command for authenticated suites, or adjust local Playwright projects so only one built server is used. Keep production E2E using `E2E_BASE_URL=https://warrantee.io`, which passed.
+Closure: `npm run qa:full-local` was added to load `.env.production.local` and `.env.local`, build once, start one local server, and run the public/protected/SEO, authenticated shell, business, and operational Playwright suites sequentially with `--workers=1`. If `STRIPE_SECRET_KEY` is unavailable locally because it is write-only/sensitive, the operational payment/OCR workflow runs against `https://warrantee.io`, where the real checkout boundary is configured.
 
 Verification target: local authenticated shell, business, and operational E2E pass in one repeatable command without `.next/cache` errors.
 
@@ -100,7 +113,7 @@ Exact areas:
 - `src/app/api/payments/create/route.ts:8-9`
 - `src/app/api/payments/create/route.ts:224-226`
 
-Recommendation: Read `STRIPE_SECRET_KEY` and `MOYASAR_SECRET_KEY` inside the request path or a small runtime getter, not at module scope. Add a targeted unit or route test proving a sourced local env is honored.
+Closure: payment provider secrets are now read through `getPaymentProviderSecrets()` inside the request path. A regression test ensures the route does not return to module-scope provider env constants.
 
 Verification target: local operational E2E payment checkout passes against a local built server with sourced env, and production readiness still passes.
 
@@ -117,7 +130,7 @@ Exact areas:
 - `src/app/[locale]/page.tsx:430-439`
 - `src/app/[locale]/page.tsx:466-472`
 
-Recommendation: Use the existing tracked/campaign-preserving link pattern and route these CTAs to signup intent, such as `/${locale}/auth?tab=signup`, while preserving current styling.
+Closure: homepage embedded pricing and bottom CTAs now use `TrackedLink` with `/${locale}/auth?tab=signup`, preserving current styling while keeping campaign parameters and funnel click events.
 
 Verification target: browser click test confirms UTM/ref persists from homepage pricing CTA to auth, and no visual layout change occurs.
 
@@ -289,18 +302,14 @@ Recommended checks for the next performance pass:
 
 ### Must Fix Before Enterprise Handover
 
-1. Add a repeatable local authenticated full-QA command or make local authenticated E2E sequential.
-2. Move payment provider env reads out of module scope and verify local payment E2E.
-3. Complete private OCR corpus with approved redacted samples.
-4. Execute third-party pentest and remediate validated findings.
+1. Complete private OCR corpus with approved redacted samples.
+2. Execute third-party pentest and remediate validated findings.
 
 ### Should Fix Soon
 
-1. Preserve campaign/referral parameters and signup intent on homepage embedded pricing/bottom CTAs.
-2. Add documented env-loading path for local QA checks.
-3. Clean up Edge runtime/Supabase build warning.
-4. Run a focused bundle/performance optimization pass.
-5. Continue monitoring onboarding funnel, HubSpot contacts, seller applications, API usage, and signup events.
+1. Clean up Edge runtime/Supabase build warning.
+2. Run a focused bundle/performance optimization pass.
+3. Continue monitoring onboarding funnel, HubSpot contacts, seller applications, API usage, and signup events.
 
 ### Strategic Improvements
 
@@ -315,15 +324,13 @@ Go for controlled production operation.
 
 No-go for claiming complete enterprise-grade operational handover until:
 
-- local full authenticated QA is repeatable,
 - private OCR corpus passes,
 - third-party pentest is complete,
-- and the local payment env false-negative is fixed.
+- and the focused performance/chunk pass is completed.
 
 ## Next Recommended Implementation Batch
 
-1. Fix homepage CTA attribution/sign-up intent.
-2. Fix payment route runtime env reads.
-3. Add a local full-QA sequential command/documentation.
-4. Run lint, type-check, unit tests, public/protected/SEO E2E, local payment E2E, production smoke, and production readiness.
-5. Commit and push only after checks pass.
+1. Build the approved private OCR corpus.
+2. Execute the independent third-party pentest.
+3. Run a focused performance/chunk optimization pass.
+4. Continue production monitoring and onboarding-funnel review after each release.

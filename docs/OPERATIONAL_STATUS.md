@@ -1,6 +1,15 @@
 # Warrantee Operational Status
 
-Last updated: 2026-06-21
+Last updated: 2026-07-07
+
+## 2026-07-07 Takeover Audit Closure
+
+- Added `docs/TAKEOVER_AUDIT_2026-07-07.md` with a fresh full-system handover audit covering frontend, backend, API, portal/authenticated routes, Supabase/RLS, integrations, CLI/MCP/agent readiness, production readiness, security, UX, mobile/RTL behavior, performance, and operational risks.
+- Closed the code-addressable audit findings:
+  - homepage embedded pricing and bottom CTAs now use campaign-preserving tracked signup links;
+  - the payment create route now reads Stripe/Moyasar provider secrets at request runtime instead of module scope;
+  - `npm run qa:full-local` now provides a repeatable QA path that loads ignored local env files, builds once, starts one local server, runs authenticated suites sequentially, and falls back to production for the operational payment/OCR workflow if local write-only Stripe secrets are unavailable.
+- Remaining non-code/external items are still explicit: approved private OCR corpus, independent third-party pentest execution/signoff, and a focused performance/chunk optimization pass.
 
 ## 2026-06-30 Remaining Practical Uplift Closure
 

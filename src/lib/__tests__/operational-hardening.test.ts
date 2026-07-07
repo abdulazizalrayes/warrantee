@@ -187,6 +187,7 @@ describe("operational hardening", () => {
     const funnelRoute = readProjectFile("src/app/api/funnel/events/route.ts");
     const growthReadiness = readProjectFile("scripts/check-growth-readiness.mjs");
     const campaignLinks = readProjectFile("scripts/generate-campaign-links.mjs");
+    const homePage = readProjectFile("src/app/[locale]/page.tsx");
     const adminPage = readProjectFile("src/app/[locale]/admin/page.tsx");
     const docs = readProjectFile("docs/ONBOARDING_FUNNEL_ANALYTICS_2026-06-23.md");
 
@@ -211,6 +212,42 @@ describe("operational hardening", () => {
     expect(campaignLinks).toContain("safeTrackingValue");
     expect(docs).toContain("npm run campaign:links");
     expect(docs).toContain("Do not place names, emails, phone numbers");
+    expect(homePage).not.toContain('href={`/${locale}/auth`}');
+    expect(homePage).toContain('href={`/${locale}/auth?tab=signup`}');
+    expect(homePage).toContain('location="home_pricing"');
+    expect(homePage).toContain('location="home_bottom_cta"');
+  });
+
+  it("keeps payment provider env reads runtime-safe for local and Vercel execution", () => {
+    const paymentCreate = readProjectFile("src/app/api/payments/create/route.ts");
+
+    expect(paymentCreate).toContain("function getPaymentProviderSecrets()");
+    expect(paymentCreate).not.toContain("const STRIPE_SECRET = process.env.STRIPE_SECRET_KEY");
+    expect(paymentCreate).not.toContain("const MOYASAR_SECRET = process.env.MOYASAR_SECRET_KEY");
+    expect(paymentCreate).toContain("const { stripeSecret } = getPaymentProviderSecrets();");
+    expect(paymentCreate).toContain("const { moyasarSecret } = getPaymentProviderSecrets();");
+    expect(paymentCreate).toContain('process.env["STRIPE_SECRET_KEY"]');
+  });
+
+  it("keeps local full QA sequential and env-file aware", () => {
+    const packageJson = readProjectFile("package.json");
+    const loopbackGuard = readProjectFile("scripts/check-no-loopback-links.mjs");
+    const fullQa = readProjectFile("scripts/run-local-full-qa.mjs");
+
+    expect(packageJson).toContain('"qa:full-local": "node scripts/run-local-full-qa.mjs"');
+    expect(loopbackGuard).toContain('file: "scripts/run-local-full-qa.mjs"');
+    expect(loopbackGuard).toContain("The takeover QA harness starts an isolated local server");
+    expect(fullQa).toContain('const envFiles = [".env.production.local", ".env.local"]');
+    expect(fullQa).toContain("env.E2E_BASE_URL = baseUrl");
+    expect(fullQa).toContain("env.NEXT_PUBLIC_APP_URL = baseUrl");
+    expect(fullQa).toContain('env.VERCEL_ENV = "development"');
+    expect(fullQa).toContain('"--workers=1"');
+    expect(fullQa).toContain('"--timeout=90000"');
+    expect(fullQa).toContain("tests/e2e/authenticated-shell.spec.ts");
+    expect(fullQa).toContain("tests/e2e/business-workflows.spec.ts");
+    expect(fullQa).toContain("tests/e2e/operational-workflows.spec.ts");
+    expect(fullQa).toContain("hasLocalStripeSecret");
+    expect(fullQa).toContain('E2E_BASE_URL: "https://warrantee.io"');
   });
 
   it("documents API integrations without password sharing", () => {

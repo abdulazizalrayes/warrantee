@@ -5,9 +5,6 @@ import { getExtensionEligibility } from '@/lib/extension-eligibility';
 import { getLatestExtensionPolicy } from '@/lib/extension-policy';
 import { getClientIp, getRateLimitHeaders, paymentRateLimit } from '@/lib/rate-limit';
 
-const STRIPE_SECRET = process.env.STRIPE_SECRET_KEY;
-const MOYASAR_SECRET = process.env.MOYASAR_SECRET_KEY;
-
 type PaymentWarranty = {
   id: string;
   product_name: string | null;
@@ -46,6 +43,13 @@ function sameOriginUrl(pathOrUrl: unknown, appUrl: string, fallbackPath: string)
   } catch {
     return new URL(fallbackPath, base).toString();
   }
+}
+
+function getPaymentProviderSecrets() {
+  return {
+    stripeSecret: process.env["STRIPE_SECRET_KEY"],
+    moyasarSecret: process.env["MOYASAR_SECRET_KEY"],
+  };
 }
 
 async function getPaymentWarranty(
@@ -222,14 +226,15 @@ export async function POST(request: NextRequest) {
     }
 
     if (provider === 'stripe') {
-      if (!STRIPE_SECRET) {
+      const { stripeSecret } = getPaymentProviderSecrets();
+      if (!stripeSecret) {
         return NextResponse.json({ error: 'Stripe not configured' }, { status: 503 });
       }
 
       const stripeRes = await fetch('https://api.stripe.com/v1/checkout/sessions', {
         method: 'POST',
         headers: {
-          'Authorization': 'Bearer ' + STRIPE_SECRET,
+          'Authorization': 'Bearer ' + stripeSecret,
           'Content-Type': 'application/x-www-form-urlencoded',
         },
         body: new URLSearchParams({
@@ -255,14 +260,15 @@ export async function POST(request: NextRequest) {
     }
 
     if (provider === 'moyasar') {
-      if (!MOYASAR_SECRET) {
+      const { moyasarSecret } = getPaymentProviderSecrets();
+      if (!moyasarSecret) {
         return NextResponse.json({ error: 'Moyasar not configured' }, { status: 503 });
       }
 
       const moyasarRes = await fetch('https://api.moyasar.com/v1/invoices', {
         method: 'POST',
         headers: {
-          'Authorization': 'Basic ' + Buffer.from(MOYASAR_SECRET + ':').toString('base64'),
+          'Authorization': 'Basic ' + Buffer.from(moyasarSecret + ':').toString('base64'),
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({

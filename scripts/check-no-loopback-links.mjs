@@ -32,6 +32,11 @@ const allowlist = [
     reason: "Playwright starts an isolated local server when E2E_BASE_URL is not set.",
   },
   {
+    file: "scripts/run-local-full-qa.mjs",
+    patterns: new Set(["127.0.0.1"]),
+    reason: "The takeover QA harness starts an isolated local server for browser verification only.",
+  },
+  {
     file: "src/lib/auth-email-guard.ts",
     patterns: new Set(["localhost"]),
     reason: "localhost is intentionally rejected as an auth email domain.",
