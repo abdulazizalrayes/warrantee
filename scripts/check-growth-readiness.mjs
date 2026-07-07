@@ -156,12 +156,16 @@ const trustAndPositioning = anyFileContains([
 assertCheck("category and agent positioning are recorded", trustAndPositioning.ok, trustAndPositioning);
 
 const salesCampaigns = anyFileContains([
+  "scripts/generate-campaign-links.mjs",
   "docs/META_ADS_AI_CONNECTORS_PLAYBOOK.md",
   "docs/SOCIAL_CHANNELS.md",
   "src/lib/agent-skills.ts",
 ], [
   "seller onboarding",
   "campaign",
+  "seller_pilot_july_2026",
+  "business_pilot_july_2026",
+  "integration_pilot_july_2026",
   "Meta",
   "Draft",
 ]);

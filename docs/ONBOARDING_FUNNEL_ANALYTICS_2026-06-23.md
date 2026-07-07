@@ -83,6 +83,15 @@ Use explicit campaign links for every outreach push so funnel events can be attr
 
 For Arabic outreach, use the matching `/ar/...` path with the same UTM naming. Keep campaign names lowercase, short, and stable for the full test window.
 
+Generate the current approved links with:
+
+```bash
+npm run campaign:links
+npm run campaign:links -- --format=json
+```
+
+The generator is the source of truth for the first controlled test links. If a campaign name, source, medium, or destination changes, update the generator and this document together, then run `npm run qa:growth-readiness`.
+
 ## Controlled Acquisition Test
 
 Run one small campaign at a time so attribution stays readable.

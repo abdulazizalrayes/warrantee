@@ -186,6 +186,7 @@ describe("operational hardening", () => {
     const ga4Events = readProjectFile("src/lib/ga4-events.ts");
     const funnelRoute = readProjectFile("src/app/api/funnel/events/route.ts");
     const growthReadiness = readProjectFile("scripts/check-growth-readiness.mjs");
+    const campaignLinks = readProjectFile("scripts/generate-campaign-links.mjs");
     const adminPage = readProjectFile("src/app/[locale]/admin/page.tsx");
     const docs = readProjectFile("docs/ONBOARDING_FUNNEL_ANALYTICS_2026-06-23.md");
 
@@ -204,6 +205,11 @@ describe("operational hardening", () => {
     expect(adminPage).toContain("campaignBreakdown");
     expect(adminPage).toContain("metadata.utm_source");
     expect(adminPage).toContain("metadata.utm_campaign");
+    expect(campaignLinks).toContain("seller_pilot_july_2026");
+    expect(campaignLinks).toContain("business_pilot_july_2026");
+    expect(campaignLinks).toContain("integration_pilot_july_2026");
+    expect(campaignLinks).toContain("safeTrackingValue");
+    expect(docs).toContain("npm run campaign:links");
     expect(docs).toContain("Do not place names, emails, phone numbers");
   });
 
