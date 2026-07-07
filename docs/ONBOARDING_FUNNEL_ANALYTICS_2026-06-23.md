@@ -47,6 +47,8 @@ Server-side funnel events also preserve privacy-safe campaign attribution when p
 
 Do not place names, emails, phone numbers, commercial registration numbers, or private customer details in UTM values.
 
+Internal marketing CTAs preserve these campaign parameters when routing visitors into signup, contact, pricing, and seller onboarding. This is intentional: a visitor who lands on a tagged pricing or homepage URL should still be attributable when they reach `/auth`, `/contact`, or `/seller/register`.
+
 ## How To Read The Funnel
 
 Use this order when diagnosing onboarding:
@@ -80,6 +82,23 @@ Use explicit campaign links for every outreach push so funnel events can be attr
 - API / CLI / MCP: `https://warrantee.io/en/api-docs?utm_source=partner_outreach&utm_medium=direct&utm_campaign=integration_pilot_july_2026`
 
 For Arabic outreach, use the matching `/ar/...` path with the same UTM naming. Keep campaign names lowercase, short, and stable for the full test window.
+
+## Controlled Acquisition Test
+
+Run one small campaign at a time so attribution stays readable.
+
+Recommended first test:
+
+1. Send the seller application link to 20-50 qualified Saudi/GCC sellers with a direct, manual note.
+2. Send the pricing link to 20-50 SMB operators who currently manage warranties in spreadsheets.
+3. Send the API / CLI / MCP link only to technically qualified ERP, ecommerce, or support-system contacts.
+
+Read the result after 48 hours and again after 7 days:
+
+- If tagged `page_view` is low, the issue is outreach volume, targeting, channel, or deliverability.
+- If tagged `page_view` exists but `funnel_cta_click` is zero, the issue is landing-page offer clarity or CTA motivation.
+- If `funnel_cta_click` exists but `signup_submit` / `contact_form_submit` / `seller_application_submit` is zero, the issue is form/auth friction or intent mismatch.
+- If form submissions occur but HubSpot/Supabase records do not increase, treat it as a backend integration incident.
 
 ## Server-Side Funnel Visibility
 

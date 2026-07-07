@@ -40,6 +40,7 @@ const funnelClient = fileContains("src/lib/ga4-events.ts", [
   "onboarding_completed",
   "sendServerFunnelEvent",
   "readCampaignParams",
+  "appendCampaignParams",
   "utm_source",
   "utm_campaign",
 ]);
@@ -66,6 +67,16 @@ const marketingPageViews = anyFileContains([
   'pageType="marketing"',
 ]);
 assertCheck("high-intent marketing pages emit server-side funnel page views", marketingPageViews.ok, marketingPageViews);
+
+const campaignCarryThrough = anyFileContains([
+  "src/components/TrackedLink.tsx",
+  "src/app/[locale]/pricing/page.tsx",
+], [
+  "appendCampaignParams",
+  "attributedHref",
+  "trackedDestination",
+]);
+assertCheck("internal CTAs preserve campaign attribution into conversion paths", campaignCarryThrough.ok, campaignCarryThrough);
 
 const onboardingDocs = fileContains("docs/ONBOARDING_FUNNEL_ANALYTICS_2026-06-23.md", [
   "How To Read The Funnel",

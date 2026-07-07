@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Check, Shield, Zap, Building2 } from "lucide-react";
 import { DIRECTION, getDictionary, normalizeLocale } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth-context";
-import { trackFunnelCtaClick } from "@/lib/ga4-events";
+import { appendCampaignParams, trackFunnelCtaClick } from "@/lib/ga4-events";
 import { PublicBreadcrumbs } from "@/components/PublicBreadcrumbs";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
@@ -67,11 +67,12 @@ export default function PricingPage() {
   const [checkoutPlan, setCheckoutPlan] = useState<string | null>(null);
 
   const startCheckout = async (planId: string) => {
-    const trackedDestination = planId === "enterprise"
+    const rawDestination = planId === "enterprise"
       ? `/${locale}/contact?intent=enterprise`
       : user
         ? "/api/stripe/checkout"
         : `/${locale}/auth?tab=signup&plan=${planId}`;
+    const trackedDestination = appendCampaignParams(rawDestination);
 
     trackFunnelCtaClick("pricing_plan_cta", trackedDestination, {
       locale,
@@ -81,17 +82,17 @@ export default function PricingPage() {
     });
 
     if (planId === "free") {
-      window.location.href = `/${locale}/auth?tab=signup`;
+      window.location.href = appendCampaignParams(`/${locale}/auth?tab=signup`);
       return;
     }
 
     if (planId === "enterprise") {
-      window.location.href = `/${locale}/contact?intent=enterprise`;
+      window.location.href = trackedDestination;
       return;
     }
 
     if (!user) {
-      window.location.href = `/${locale}/auth?tab=signup&plan=${encodeURIComponent(planId)}`;
+      window.location.href = trackedDestination;
       return;
     }
 

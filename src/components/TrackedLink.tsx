@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import type { ReactNode } from "react";
-import { trackFunnelCtaClick } from "@/lib/ga4-events";
+import { useEffect, useState, type ReactNode } from "react";
+import { appendCampaignParams, trackFunnelCtaClick } from "@/lib/ga4-events";
 
 interface TrackedLinkProps {
   href: string;
@@ -21,8 +21,14 @@ export function TrackedLink({
   className,
   children,
 }: TrackedLinkProps) {
+  const [attributedHref, setAttributedHref] = useState(href);
+
+  useEffect(() => {
+    setAttributedHref(appendCampaignParams(href));
+  }, [href]);
+
   const onClick = () => {
-    trackFunnelCtaClick(cta, href, {
+    trackFunnelCtaClick(cta, attributedHref, {
       locale,
       location,
     });
@@ -37,7 +43,7 @@ export function TrackedLink({
   }
 
   return (
-    <Link href={href} className={className} onClick={onClick}>
+    <Link href={attributedHref} className={className} onClick={onClick}>
       {children}
     </Link>
   );

@@ -60,7 +60,7 @@ const serverTrackedEvents = new Set([
   "onboarding_completed",
 ]);
 
-const campaignParamKeys = [
+export const campaignParamKeys = [
   "utm_source",
   "utm_medium",
   "utm_campaign",
@@ -81,7 +81,7 @@ function sanitizeServerPayload(payload: Record<string, unknown>) {
   return sanitized;
 }
 
-function readCampaignParams() {
+export function readCampaignParams() {
   const campaign: Record<string, string> = {};
 
   if (typeof window === "undefined") return campaign;
@@ -93,6 +93,29 @@ function readCampaignParams() {
   }
 
   return campaign;
+}
+
+export function appendCampaignParams(destination: string) {
+  if (typeof window === "undefined") return destination;
+  if (!destination || destination.startsWith("#")) return destination;
+
+  let url: URL;
+  try {
+    url = new URL(destination, window.location.origin);
+  } catch {
+    return destination;
+  }
+
+  if (url.origin !== window.location.origin) return destination;
+
+  const campaign = readCampaignParams();
+  for (const [key, value] of Object.entries(campaign)) {
+    if (!url.searchParams.has(key)) {
+      url.searchParams.set(key, value);
+    }
+  }
+
+  return `${url.pathname}${url.search}${url.hash}`;
 }
 
 function sendServerFunnelEvent(event: string, payload: Record<string, unknown>) {
