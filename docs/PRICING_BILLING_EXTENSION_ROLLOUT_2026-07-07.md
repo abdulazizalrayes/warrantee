@@ -38,6 +38,7 @@ The code and public copy are prepared for the `SAR 149/month` Professional launc
 - `STRIPE_PRO_PRICE_ID` is missing from Vercel Production.
 - Vercel env pull does not expose the sensitive live `STRIPE_SECRET_KEY` locally, so the Stripe API cannot be used from this session.
 - Regular Chrome opens the Stripe dashboard at the login screen for `https://dashboard.stripe.com/products`.
+- Founder account note: logging in to `stripe.com` with `abdulaziz.alrayes@gmail.com` shows a Warrantee account. Start there when Stripe setup resumes.
 
 Required closure path:
 
