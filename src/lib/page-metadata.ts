@@ -103,12 +103,12 @@ const PAGE_META: Record<
     en: {
       title: "Warrantee Pricing — Simple and Transparent Plans",
       description:
-        "Start with a Free plan, no credit card required, or upgrade to the Professional launch offer at $1/month with the first month free. Enterprise warranty management pricing is custom.",
+        "Start with a Free plan, no credit card required, or upgrade to the Professional launch offer at SAR 149/month. Enterprise warranty management pricing is custom.",
     },
     ar: {
       title: "أسعار وارنتي — خطط بسيطة وواضحة",
       description:
-        "ابدأ بالخطة المجانية دون بطاقة ائتمانية، أو انتقل إلى عرض الإطلاق للخطة الاحترافية مقابل دولار واحد شهريًا مع الشهر الأول مجانًا. أسعار المؤسسات مخصصة.",
+        "ابدأ بالخطة المجانية دون بطاقة ائتمانية، أو انتقل إلى عرض الإطلاق للخطة الاحترافية مقابل 149 ريال شهريًا. أسعار المؤسسات مخصصة.",
     },
   },
   contact: {

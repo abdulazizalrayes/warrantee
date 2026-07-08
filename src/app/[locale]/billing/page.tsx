@@ -32,8 +32,8 @@ const plans = [
     iconColor: "text-[#86868b]",
     iconBg: "bg-[#f5f5f7]",
     price: 0,
-    features_en: ["Up to 10 warranties", "Basic dashboard", "Email support", "Single user"],
-    features_ar: ["حتى 10 ضمانات", "لوحة أساسية", "دعم بريد", "مستخدم واحد"],
+    features_en: ["Up to 10 warranties", "Basic dashboard", "Email support", "Single user", "Full warranty history"],
+    features_ar: ["حتى 10 ضمانات", "لوحة أساسية", "دعم بريد", "مستخدم واحد", "سجل ضمانات كامل"],
     name_en: "Free",
     name_ar: "مجاني",
     desc_en: "For individuals getting started",
@@ -44,12 +44,14 @@ const plans = [
     icon: Zap,
     iconColor: "text-[#0071e3]",
     iconBg: "bg-[#0071e3]/10",
-    price: 1,
+    price: 149,
+    currency_en: "SAR",
+    currency_ar: "ر.س",
     pricePrefix_en: "Launch offer",
     pricePrefix_ar: "عرض إطلاق",
     popular: true,
-    features_en: ["Unlimited warranties", "Advanced analytics", "Priority support", "Up to 5 team members", "Custom workflows", "Bilingual certificates", "8% commission"],
-    features_ar: ["ضمانات غير محدودة", "تحليلات متقدمة", "دعم أولوية", "حتى 5 أعضاء", "سير عمل مخصص", "شهادات ثنائية", "عمولة 8%"],
+    features_en: ["Unlimited warranties", "Advanced analytics", "Priority support", "Up to 5 team members", "Full warranty history", "Custom workflows", "Bilingual certificates"],
+    features_ar: ["ضمانات غير محدودة", "تحليلات متقدمة", "دعم أولوية", "حتى 5 أعضاء", "سجل ضمانات كامل", "سير عمل مخصص", "شهادات ثنائية"],
     name_en: "Professional",
     name_ar: "احترافي",
     desc_en: "For growing businesses",
@@ -348,12 +350,11 @@ export default function BillingPage() {
                         <p className="text-[17px] font-semibold text-[#1d1d1f]">{isRTL ? "تواصل معنا" : "Contact Us"}</p>
                       ) : (
                         <div>
-                          <span className="text-[28px] font-semibold tracking-tight text-[#1d1d1f]">${plan.price}</span>
+                          <span className="text-[28px] font-semibold tracking-tight text-[#1d1d1f]">{isRTL ? plan.currency_ar : plan.currency_en} {plan.price}</span>
                           <span className="text-[14px] text-[#86868b]"> /{isRTL ? "شهر" : "month"}</span>
                           {plan.id === "pro" && (
                             <>
                               <p className="text-[12px] text-[#0071e3] font-medium mt-1">{isRTL ? plan.pricePrefix_ar : plan.pricePrefix_en}</p>
-                              <p className="text-[12px] text-[#30d158] font-medium mt-1">{isRTL ? "الشهر الأول مجاني!" : "First month free!"}</p>
                             </>
                           )}
                         </div>

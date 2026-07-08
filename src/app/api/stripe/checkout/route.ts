@@ -46,7 +46,7 @@ export async function POST(request: Request) {
       success_url: `${appOrigin}/${locale}/dashboard?subscription=success`,
       cancel_url: `${appOrigin}/${locale}/dashboard?subscription=cancelled`,
       metadata: { user_id: user.id, plan_id: planId },
-      subscription_data: { trial_period_days: 30, metadata: { user_id: user.id, plan_id: planId } },
+      subscription_data: { metadata: { user_id: user.id, plan_id: planId } },
     });
 
     return NextResponse.json({ url: session.url });

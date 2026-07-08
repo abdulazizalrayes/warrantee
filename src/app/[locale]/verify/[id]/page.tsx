@@ -66,7 +66,7 @@ const copy = {
     extension: "Request extension",
     sellerCta: "Issue warranties for your customers",
     scan: "Scan to reopen this product passport",
-    issuedBy: "Issued via Warrantee Platform",
+    issuedBy: "Powered by Warrantee.io",
     privacy: "Only verification-safe fields are shown publicly.",
   },
   ar: {
@@ -97,7 +97,7 @@ const copy = {
     extension: "طلب تمديد",
     sellerCta: "أصدر ضمانات لعملائك",
     scan: "امسح لإعادة فتح جواز المنتج",
-    issuedBy: "صادر عبر منصة Warrantee",
+    issuedBy: "مدعوم من Warrantee.io",
     privacy: "تظهر الحقول الآمنة للتحقق فقط للعامة.",
   },
 };

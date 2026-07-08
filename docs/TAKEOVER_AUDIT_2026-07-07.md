@@ -12,7 +12,7 @@ It should not yet be described as fully enterprise-handover complete until the r
 
 1. The private real-document OCR regression corpus is still missing.
 2. Formal third-party penetration testing still needs external execution and signoff.
-3. Performance/chunk-size work remains an optimization priority for a more polished enterprise portal.
+3. A deeper shared-JS/provider split remains an optimization opportunity for a more polished enterprise portal.
 
 Production itself is healthy based on the July 7 checks: CI, production smoke, operational readiness, production business E2E, production operational E2E, RLS probe, agent-readiness validation, and public/protected route tests passed.
 
@@ -80,7 +80,7 @@ External/non-code items remain:
 
 1. Approved private OCR document corpus.
 2. Independent third-party pentest execution/signoff.
-3. A focused performance/chunk optimization pass.
+3. A deeper shared-JS/provider split for future optimization.
 
 ### 1. Production Is Healthy, But Local Authenticated QA Is Not Fully Repeatable
 
@@ -288,13 +288,21 @@ Verification target: local QA credential check passes from a documented command 
 
 ## Performance Review
 
-Production smoke/readiness passed, but the build output shows clear optimization opportunities. The biggest near-term win is to keep public marketing pages lean and defer portal/admin/dashboard functionality until it is actually needed by signed-in users.
+Production smoke/readiness passed. The focused code-addressable performance pass was completed after this audit:
+
+- `/api/health` moved from Edge runtime to Node runtime because it performs a Supabase-backed database check. This removed the Supabase Edge-runtime build warning while preserving the health response contract.
+- Static public content pages (`features`, `faq`, `guide`, `privacy`, `terms`, and `cookies`) were converted from page-level client components to server-rendered pages.
+- The guide FAQ now uses native `<details>` disclosure instead of React state.
+- Public `pricing` and `seller/register` no longer load the authenticated route provider unnecessarily.
+- Build output improved the route-specific payload for static pages: `/en/faq` dropped from about 3.18 kB route JS to about 620 B, `/en/privacy`, `/en/terms`, and `/en/cookies` now sit around 356-358 B, and the Supabase Edge warning is gone.
+
+The remaining performance opportunity is shared First Load JS, which is still about 189 kB. Reducing that further should be handled as a deliberate provider/navigation architecture pass, because it touches global layout, auth provider loading, analytics/consent scripts, navigation, and mobile menu behavior.
 
 Recommended checks for the next performance pass:
 
 - Bundle analyzer for public vs portal chunks.
 - Lighthouse/WebPageTest/Core Web Vitals on `/en`, `/en/pricing`, `/en/api-docs`, `/en/auth`, and authenticated dashboard.
-- Review middleware size and imports.
+- Review shared providers, global navigation, middleware size, and imports.
 - Split admin-only dependencies.
 - Confirm no agent/SEO data payloads are inflating public page JS.
 
@@ -307,9 +315,8 @@ Recommended checks for the next performance pass:
 
 ### Should Fix Soon
 
-1. Clean up Edge runtime/Supabase build warning.
-2. Run a focused bundle/performance optimization pass.
-3. Continue monitoring onboarding funnel, HubSpot contacts, seller applications, API usage, and signup events.
+1. Continue monitoring onboarding funnel, HubSpot contacts, seller applications, API usage, and signup events.
+2. Run a deeper shared-JS/provider split only after approving a broader architecture pass.
 
 ### Strategic Improvements
 
@@ -326,11 +333,56 @@ No-go for claiming complete enterprise-grade operational handover until:
 
 - private OCR corpus passes,
 - third-party pentest is complete,
-- and the focused performance/chunk pass is completed.
+- and any future enterprise SLA requires a signed performance budget with field Core Web Vitals.
 
 ## Next Recommended Implementation Batch
 
 1. Build the approved private OCR corpus.
 2. Execute the independent third-party pentest.
-3. Run a focused performance/chunk optimization pass.
-4. Continue production monitoring and onboarding-funnel review after each release.
+3. Continue production monitoring and onboarding-funnel review after each release.
+4. If approved, run a deeper shared-JS/provider split with Lighthouse/WebPageTest evidence.
+
+## July 7 Approved Fix Batch
+
+The founder approved items 1, 2, 3, 4, 5, 6, 8, 9, and 10 from the takeover list and explicitly ignored/postponed item 7.
+
+Completed locally:
+
+- Pricing trust fix:
+  - Public Professional plan changed from `$1/month` plus first-month-free framing to `SAR 149/month` launch offer.
+  - Free plan copy now says records are retained instead of implying limited history.
+  - Extension transaction fees are separated from plan feature lists.
+  - JSON-LD, metadata, FAQ, homepage pricing dictionary, pricing page, billing page, and tests were updated.
+- Billing behavior fix:
+  - Stripe subscription checkout no longer creates a hidden 30-day trial.
+  - Regression test added so the trial and old pricing story do not quietly return.
+- Extension loop:
+  - Existing guarded checkout and webhook design remains intact: approved offer required, payment amount/currency verified, direct fallback checkout disabled.
+  - Rollout requirements recorded in `docs/PRICING_BILLING_EXTENSION_ROLLOUT_2026-07-07.md`.
+- Handover docs:
+  - Added `docs/SYSTEM_MAP.md`, `docs/AUDIT_REPORT.md`, and `docs/BACKLOG.md`.
+- Language evidence:
+  - Kept EN/AR as indexed production locales.
+  - Kept beta locales noindexed/fallback until analytics and content review justify promotion.
+- Activation/growth loop:
+  - Public passport and certificate outputs now include understated `Powered by Warrantee.io` wording.
+
+Verification passed:
+
+- `npm run type-check`
+- `npm run lint`
+- `npm test -- --run src/lib/__tests__/seo-readiness.test.ts src/lib/__tests__/operational-hardening.test.ts src/lib/__tests__/qr-code.test.ts`
+- `npm test`
+- `npm run build`
+- `npm run guard:loopback`
+- `npm run qa:growth-readiness`
+- `npx playwright test tests/e2e/public-routes.spec.ts tests/e2e/seo-agent-ready.spec.ts --project=chromium --workers=1`
+- `npm run readiness:operational`
+- `npm run smoke:prod`
+
+Still external:
+
+1. Confirm or create the live Stripe Professional recurring price at `SAR 149/month` and point Vercel Production `STRIPE_PRO_PRICE_ID` to it.
+2. Collect and run the private OCR corpus.
+3. Execute the independent third-party pentest.
+4. Review real onboarding/language analytics after actual campaign or outreach traffic exists.

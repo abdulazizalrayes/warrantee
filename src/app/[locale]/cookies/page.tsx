@@ -1,12 +1,13 @@
-'use client';
-
-import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { getContentLocale, normalizeLocale } from '@/lib/i18n';
 
-export default function CookiePolicyPage() {
-  const pathname = usePathname();
-  const locale = normalizeLocale(pathname?.split('/').filter(Boolean)[0]);
+type CookiePolicyPageProps = {
+  params: Promise<{ locale: string }>;
+};
+
+export default async function CookiePolicyPage({ params }: CookiePolicyPageProps) {
+  const { locale: routeLocale } = await params;
+  const locale = normalizeLocale(routeLocale);
   const contentLocale = getContentLocale(locale);
   const isRTL = locale === 'ar';
 

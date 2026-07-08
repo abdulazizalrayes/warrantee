@@ -216,8 +216,8 @@ async function generatePdf(
       .fillColor(gray)
       .text(
         isAr
-          ? "صادر عن منصة ضمانتي | warrantee.io"
-          : "Issued by Warrantee Platform | warrantee.io",
+          ? "مدعوم من Warrantee.io | warrantee.io"
+          : "Powered by Warrantee.io | warrantee.io",
         margin,
         y,
         { align: "center", width: contentWidth }
@@ -325,7 +325,7 @@ async function buildHtml(
     <img src="${qrDataUrl}" alt="QR Code" />
     <div class="ref">${isAr ? "امسح للتحقق" : "Scan to verify"} | ${safeVerifyUrl}</div>
   </div>
-  <div class="footer">${isAr ? "صادر عن منصة ضمانتي" : "Issued by Warrantee Platform"} | warrantee.io</div>
+  <div class="footer">${isAr ? "مدعوم من Warrantee.io" : "Powered by Warrantee.io"} | warrantee.io</div>
 </div>
 </body></html>`;
 }

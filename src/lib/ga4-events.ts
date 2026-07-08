@@ -216,7 +216,7 @@ export function trackOnboardingCompleted(metadata: Record<string, unknown> = {})
 
 export function trackUpgrade(plan: string, value: number = 1) {
   emitEvent("purchase", {
-    currency: "USD",
+    currency: "SAR",
     value,
     items: [{ item_name: plan, item_category: "subscription", price: value }],
     event_category: "conversion",

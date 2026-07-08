@@ -1,6 +1,3 @@
-"use client";
-
-import { useParams } from "next/navigation";
 import Link from "next/link";
 
 const content = {
@@ -82,9 +79,13 @@ const content = {
   }
 };
 
-export default function TermsPage() {
-  const params = useParams() ?? {};
-  const locale = (params.locale as string) || "en";
+type TermsPageProps = {
+  params: Promise<{ locale: string }>;
+};
+
+export default async function TermsPage({ params }: TermsPageProps) {
+  const { locale: routeLocale } = await params;
+  const locale = routeLocale || "en";
   const t = content[locale as keyof typeof content] || content.en;
   const isRTL = locale === "ar";
 

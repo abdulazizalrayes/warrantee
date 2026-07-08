@@ -1,8 +1,9 @@
-"use client";
-
-import { useParams } from "next/navigation";
 import { getFAQJsonLd } from "@/lib/jsonld";
 import { getContentLocale, normalizeLocale } from "@/lib/i18n";
+
+type FAQPageProps = {
+  params: Promise<{ locale: string }>;
+};
 
 const faqs = {
   en: [
@@ -12,7 +13,7 @@ const faqs = {
     },
     {
       q: "How much does Warrantee cost?",
-      a: "Warrantee.io offers a Free plan with no credit card required, a Professional launch offer at $1/month with the first month free, and Enterprise plans with custom pricing."
+      a: "Warrantee.io offers a Free plan with no credit card required, a Professional launch offer at SAR 149/month, and Enterprise plans with custom pricing. Warranty-extension transaction fees are separate."
     },
     {
       q: "Is Warrantee available in Arabic?",
@@ -54,7 +55,7 @@ const faqs = {
     },
     {
       q: "\u0643\u0645 \u062A\u0643\u0644\u0641\u0629 Warrantee\u061F",
-      a: "\u064A\u0642\u062F\u0645 Warrantee.io \u062E\u0637\u0629 \u0645\u062C\u0627\u0646\u064A\u0629 \u0628\u062F\u0648\u0646 \u062D\u0627\u062C\u0629 \u0644\u0628\u0637\u0627\u0642\u0629 \u0627\u0626\u062A\u0645\u0627\u0646\u064A\u0629\u060C \u0648\u0639\u0631\u0636 \u0625\u0637\u0644\u0627\u0642 \u0644\u0644\u062E\u0637\u0629 \u0627\u0644\u0627\u062D\u062A\u0631\u0627\u0641\u064A\u0629 \u0628\u062F\u0648\u0644\u0627\u0631 \u0648\u0627\u062D\u062F \u0634\u0647\u0631\u064A\u064B\u0627 \u0645\u0639 \u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u0623\u0648\u0644 \u0645\u062C\u0627\u0646\u064B\u0627\u060C \u0648\u062E\u0637\u0629 \u0645\u0624\u0633\u0633\u064A\u0629 \u0628\u0623\u0633\u0639\u0627\u0631 \u0645\u062E\u0635\u0635\u0629."
+      a: "\u064A\u0642\u062F\u0645 Warrantee.io \u062E\u0637\u0629 \u0645\u062C\u0627\u0646\u064A\u0629 \u0628\u062F\u0648\u0646 \u062D\u0627\u062C\u0629 \u0644\u0628\u0637\u0627\u0642\u0629 \u0627\u0626\u062A\u0645\u0627\u0646\u064A\u0629\u060C \u0648\u0639\u0631\u0636 \u0625\u0637\u0644\u0627\u0642 \u0644\u0644\u062E\u0637\u0629 \u0627\u0644\u0627\u062D\u062A\u0631\u0627\u0641\u064A\u0629 \u0628\u0642\u064A\u0645\u0629 149 \u0631\u064A\u0627\u0644 \u0634\u0647\u0631\u064A\u064B\u0627\u060C \u0648\u062E\u0637\u0629 \u0645\u0624\u0633\u0633\u064A\u0629 \u0628\u0623\u0633\u0639\u0627\u0631 \u0645\u062E\u0635\u0635\u0629. \u0631\u0633\u0648\u0645 \u0645\u0639\u0627\u0645\u0644\u0627\u062A \u062A\u0645\u062F\u064A\u062F \u0627\u0644\u0636\u0645\u0627\u0646 \u0645\u0646\u0641\u0635\u0644\u0629."
     },
     {
       q: "\u0647\u0644 Warrantee \u0645\u062A\u0627\u062D \u0628\u0627\u0644\u0639\u0631\u0628\u064A\u0629\u061F",
@@ -75,9 +76,9 @@ const faqs = {
   ]
 };
 
-export default function FAQPage() {
-  const params = useParams() ?? {};
-  const locale = normalizeLocale(String(params?.locale || "en"));
+export default async function FAQPage({ params }: FAQPageProps) {
+  const { locale: routeLocale } = await params;
+  const locale = normalizeLocale(String(routeLocale || "en"));
   const contentLocale = getContentLocale(locale);
   const isRTL = locale === "ar";
   const items = faqs[contentLocale] || faqs.en;

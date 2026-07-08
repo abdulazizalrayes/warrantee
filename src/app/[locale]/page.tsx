@@ -410,7 +410,7 @@ export default async function HomePage({ params }: HomePageProps) {
                 >
                   {idx === 1 && (
                     <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-[#0071e3] text-white px-4 py-1 rounded-full text-[11px] font-medium">
-                      {!isRTL ? 'Launch offer: first month free' : '\u0639\u0631\u0636 \u0625\u0637\u0644\u0627\u0642: \u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u0623\u0648\u0644 \u0645\u062c\u0627\u0646\u064a'}
+                      {!isRTL ? 'Launch offer in SAR' : 'عرض إطلاق بالريال السعودي'}
                     </div>
                   )}
                   <div className="mb-6">

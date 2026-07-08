@@ -22,13 +22,16 @@ const AUTH_ROUTE_PREFIXES = [
   "/login",
   "/notifications",
   "/onboarding",
-  "/pricing",
   "/reports",
   "/reset-password",
   "/seller",
   "/settings",
   "/signup",
   "/warranties",
+];
+
+const PUBLIC_ROUTE_PREFIXES = [
+  "/seller/register",
 ];
 
 function stripLocale(pathname: string) {
@@ -41,6 +44,14 @@ function stripLocale(pathname: string) {
 
 function needsAuthProvider(pathname: string | null) {
   const path = stripLocale(pathname || "/");
+  if (
+    PUBLIC_ROUTE_PREFIXES.some(
+      (prefix) => path === prefix || path.startsWith(`${prefix}/`)
+    )
+  ) {
+    return false;
+  }
+
   return AUTH_ROUTE_PREFIXES.some(
     (prefix) => path === prefix || path.startsWith(`${prefix}/`)
   );

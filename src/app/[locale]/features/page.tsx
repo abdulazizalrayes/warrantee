@@ -1,6 +1,3 @@
-"use client";
-
-import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
   Shield, FileText, BarChart3, Users, Globe, Mail, Lock, Clock, ArrowRight
@@ -8,6 +5,10 @@ import {
 import { DIRECTION, getDictionary, normalizeLocale } from "@/lib/i18n";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
+
+type FeaturesPageProps = {
+  params: Promise<{ locale: string }>;
+};
 
 const features = [
   { icon: Shield, title_en: "Digital Warranty Certificates", title_ar: "شهادات ضمان رقمية", desc_en: "Issue professional, tamper-proof warranty certificates with QR verification codes.", desc_ar: "إصدار شهادات ضمان احترافية مع رموز QR للتحقق.", color: "text-[#0071e3]", bg: "bg-[#0071e3]/10" },
@@ -20,9 +21,9 @@ const features = [
   { icon: Clock, title_en: "Expiry Tracking", title_ar: "تتبع الانتهاء", desc_en: "Automatic notifications before warranty expiration dates.", desc_ar: "إشعارات تلقائية قبل انتهاء الضمان.", color: "text-[#5856d6]", bg: "bg-[#5856d6]/10" },
 ];
 
-export default function FeaturesPage() {
-  const params = useParams() ?? {};
-  const locale = normalizeLocale(String(params.locale || "en"));
+export default async function FeaturesPage({ params }: FeaturesPageProps) {
+  const { locale: routeLocale } = await params;
+  const locale = normalizeLocale(String(routeLocale || "en"));
   const isRTL = locale === "ar";
   const direction = DIRECTION[locale];
   const dictionary = getDictionary(locale);

@@ -66,11 +66,54 @@ describe("operational hardening", () => {
     expect(webhook).toContain('from("subscriptions")');
   });
 
-  it("keeps the edge health route free of Node-only process APIs", () => {
+  it("keeps Professional billing aligned with the SAR launch price and no hidden trial", () => {
+    const stripePlans = readProjectFile("src/lib/stripe.ts");
+    const checkoutRoute = readProjectFile("src/app/api/stripe/checkout/route.ts");
+    const adminPage = readProjectFile("src/app/[locale]/admin/page.tsx");
+
+    expect(stripePlans).toContain("price: 149");
+    expect(stripePlans).toContain('currency: "SAR"');
+    expect(stripePlans).toContain("Full warranty history");
+    expect(stripePlans).not.toContain("30-day history");
+    expect(stripePlans).not.toContain("12-month history");
+    expect(stripePlans).not.toContain("8% commission on extensions");
+    expect(checkoutRoute).not.toContain("trial_period_days");
+    expect(adminPage).toContain("estimatedSubscriptionMrr");
+    expect(adminPage).toContain("return sum + 149");
+    expect(adminPage).not.toContain("length * 1");
+  });
+
+  it("keeps the Supabase-backed health route on Node runtime without uptime leakage", () => {
     const healthRoute = readProjectFile("src/app/api/health/route.ts");
 
-    expect(healthRoute).toContain('export const runtime = "edge"');
+    expect(healthRoute).toContain('export const runtime = "nodejs"');
     expect(healthRoute).not.toContain("process.uptime");
+  });
+
+  it("keeps public marketing routes from loading authenticated providers unnecessarily", () => {
+    const routeProviders = readProjectFile("src/components/RouteProviders.tsx");
+
+    expect(routeProviders).not.toContain('"/pricing",');
+    expect(routeProviders).toContain("const PUBLIC_ROUTE_PREFIXES");
+    expect(routeProviders).toContain('"/seller/register"');
+  });
+
+  it("keeps static public content pages server-rendered unless they need browser state", () => {
+    const staticPublicPages = [
+      "src/app/[locale]/features/page.tsx",
+      "src/app/[locale]/faq/page.tsx",
+      "src/app/[locale]/guide/page.tsx",
+      "src/app/[locale]/privacy/page.tsx",
+      "src/app/[locale]/terms/page.tsx",
+      "src/app/[locale]/cookies/page.tsx",
+    ];
+
+    for (const page of staticPublicPages) {
+      const source = readProjectFile(page);
+      expect(source).not.toMatch(/["']use client["']/);
+      expect(source).not.toContain("useParams");
+      expect(source).not.toContain("usePathname");
+    }
   });
 
   it("keeps production rate limiting distributed by default", () => {

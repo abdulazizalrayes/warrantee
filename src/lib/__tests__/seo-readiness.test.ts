@@ -58,7 +58,9 @@ describe("SEO and AI-search readiness metadata", () => {
     expect(software.description).toContain("Warranty management software");
     expect(serialized).not.toContain("\"@type\":\"Product\"");
     expect(serialized).toContain("Professional launch offer");
-    expect(serialized).toContain("first month free");
+    expect(serialized).toContain("SAR 149/month");
+    expect(serialized).toContain("Warranty-extension transaction fees are separate");
+    expect(serialized).not.toContain("first month free");
     expect(serialized).not.toContain("first year free");
     expect(serialized).not.toContain("Business plan");
   });
@@ -69,7 +71,7 @@ describe("SEO and AI-search readiness metadata", () => {
       "Saudi Arabia and the GCC",
     );
     expect(englishFaq.mainEntity[1].acceptedAnswer.text).toContain(
-      "Professional launch offer at $1/month",
+      "Professional launch offer at SAR 149/month",
     );
   });
 
@@ -77,7 +79,8 @@ describe("SEO and AI-search readiness metadata", () => {
     const metadata = buildPageMetadata("pricing", "en");
     expect(metadata.description).toContain("Professional");
     expect(metadata.description).toContain("launch offer");
-    expect(metadata.description).toContain("first month free");
+    expect(metadata.description).toContain("SAR 149/month");
+    expect(metadata.description).not.toContain("first month free");
     expect(metadata.description).not.toContain("first year free");
   });
 
@@ -98,16 +101,20 @@ describe("SEO and AI-search readiness metadata", () => {
 
     expect(englishPricing).toContain("Professional");
     expect(englishPricing).toContain("Up to 10 warranties");
-    expect(englishPricing).toContain("Launch offer");
-    expect(englishPricing).toContain("First month free");
+    expect(englishPricing).toContain("SAR 149");
+    expect(englishPricing).toContain("Full warranty history");
+    expect(englishPricing).not.toContain("First month free");
+    expect(englishPricing).not.toContain("30-day history");
+    expect(englishPricing).not.toContain("12-month history");
+    expect(englishPricing).not.toContain("8% commission on extensions");
     expect(englishPricing).not.toContain("Business");
     expect(englishPricing).not.toContain("first year free");
     expect(englishPricing).not.toContain("Up to 50 warranties");
 
     expect(arabicPricing).toContain("احترافي");
     expect(arabicPricing).toContain("حتى 10 ضمانات");
-    expect(arabicPricing).toContain("عرض إطلاق");
-    expect(arabicPricing).toContain("الشهر الأول مجاني");
+    expect(arabicPricing).toContain("149");
+    expect(arabicPricing).not.toContain("الشهر الأول مجاني");
   });
 
   it("registers beta language routes without indexing fallback translations", () => {

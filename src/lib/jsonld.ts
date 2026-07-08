@@ -66,26 +66,26 @@ export function getOrganizationJsonLd() {
             "@type": "Offer",
             name: "Free",
             price: "0",
-            priceCurrency: "USD",
+            priceCurrency: "SAR",
             availability: "https://schema.org/InStock",
             url: `${BASE_URL}/en/pricing`,
-            description: "Free plan available with no credit card required. Includes up to 10 warranties, a basic dashboard, email support, and one user.",
+            description: "Free plan available with no credit card required. Includes up to 10 warranties, a basic dashboard, email support, one user, and retained warranty history.",
           },
           {
             "@type": "Offer",
             name: "Professional",
-            price: "1",
-            priceCurrency: "USD",
+            price: "149",
+            priceCurrency: "SAR",
             availability: "https://schema.org/InStock",
             url: `${BASE_URL}/en/pricing`,
-            description: "Professional launch offer: $1/month with the first month free. Includes unlimited warranties, advanced analytics, priority support, up to 5 team members, custom workflows, and bilingual certificates.",
+            description: "Professional launch offer: SAR 149/month. Includes unlimited warranties, advanced analytics, priority support, up to 5 team members, full warranty history, custom workflows, and bilingual certificates. Warranty-extension transaction fees are separate.",
           },
           {
             "@type": "Offer",
             name: "Enterprise",
             priceSpecification: {
               "@type": "PriceSpecification",
-              priceCurrency: "USD",
+              priceCurrency: "SAR",
               description: "Custom enterprise pricing",
             },
             url: `${BASE_URL}/en/contact?intent=enterprise`,
@@ -133,8 +133,8 @@ export function getFAQJsonLd(locale: string = "en") {
         acceptedAnswer: {
           "@type": "Answer",
           text: isAr
-            ? "\u064A\u0642\u062F\u0645 Warrantee.io \u062E\u0637\u0629 \u0645\u062C\u0627\u0646\u064A\u0629 \u0628\u062F\u0648\u0646 \u062D\u0627\u062C\u0629 \u0644\u0628\u0637\u0627\u0642\u0629 \u0627\u0626\u062A\u0645\u0627\u0646\u064A\u0629\u060C \u0648\u0639\u0631\u0636 \u0625\u0637\u0644\u0627\u0642 \u0644\u0644\u062E\u0637\u0629 \u0627\u0644\u0627\u062D\u062A\u0631\u0627\u0641\u064A\u0629 \u0628\u062F\u0648\u0644\u0627\u0631 \u0648\u0627\u062D\u062F \u0634\u0647\u0631\u064A\u064B\u0627 \u0645\u0639 \u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u0623\u0648\u0644 \u0645\u062C\u0627\u0646\u064B\u0627\u060C \u0648\u062E\u0637\u0629 \u0645\u0624\u0633\u0633\u064A\u0629 \u0628\u0623\u0633\u0639\u0627\u0631 \u0645\u062E\u0635\u0635\u0629."
-            : "Warrantee.io offers a Free plan with no credit card required, a Professional launch offer at $1/month with the first month free, and Enterprise plans with custom pricing.",
+            ? "\u064A\u0642\u062F\u0645 Warrantee.io \u062E\u0637\u0629 \u0645\u062C\u0627\u0646\u064A\u0629 \u0628\u062F\u0648\u0646 \u062D\u0627\u062C\u0629 \u0644\u0628\u0637\u0627\u0642\u0629 \u0627\u0626\u062A\u0645\u0627\u0646\u064A\u0629\u060C \u0648\u0639\u0631\u0636 \u0625\u0637\u0644\u0627\u0642 \u0644\u0644\u062E\u0637\u0629 \u0627\u0644\u0627\u062D\u062A\u0631\u0627\u0641\u064A\u0629 \u0628\u0627\u0644\u0631\u064A\u0627\u0644 \u0627\u0644\u0633\u0639\u0648\u062F\u064A\u060C \u0648\u062E\u0637\u0629 \u0645\u0624\u0633\u0633\u064A\u0629 \u0628\u0623\u0633\u0639\u0627\u0631 \u0645\u062E\u0635\u0635\u0629. \u0631\u0633\u0648\u0645 \u0645\u0639\u0627\u0645\u0644\u0627\u062A \u062A\u0645\u062F\u064A\u062F \u0627\u0644\u0636\u0645\u0627\u0646 \u0645\u0646\u0641\u0635\u0644\u0629."
+            : "Warrantee.io offers a Free plan with no credit card required, a Professional launch offer at SAR 149/month, and Enterprise plans with custom pricing. Warranty-extension transaction fees are separate.",
         },
       },
     ],

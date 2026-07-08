@@ -19,8 +19,8 @@ const plans = [
     iconColor: "text-[#86868b]",
     iconBg: "bg-[#f5f5f7]",
     price: 0,
-    features_en: ["Up to 10 warranties", "Basic dashboard", "Email support", "Single user"],
-    features_ar: ["حتى 10 ضمانات", "لوحة أساسية", "دعم بريد", "مستخدم واحد"],
+    features_en: ["Up to 10 warranties", "Basic dashboard", "Email support", "Single user", "Full warranty history"],
+    features_ar: ["حتى 10 ضمانات", "لوحة أساسية", "دعم بريد", "مستخدم واحد", "سجل ضمانات كامل"],
     name_en: "Free",
     name_ar: "مجاني",
     desc_en: "For individuals getting started",
@@ -31,12 +31,14 @@ const plans = [
     icon: Zap,
     iconColor: "text-[#0071e3]",
     iconBg: "bg-[#0071e3]/10",
-    price: 1,
+    price: 149,
+    currency_en: "SAR",
+    currency_ar: "ر.س",
     pricePrefix_en: "Launch offer",
     pricePrefix_ar: "عرض إطلاق",
     popular: true,
-    features_en: ["Unlimited warranties", "Advanced analytics", "Priority support", "Up to 5 team members", "Custom workflows", "Bilingual certificates", "8% commission"],
-    features_ar: ["ضمانات غير محدودة", "تحليلات متقدمة", "دعم أولوية", "حتى 5 أعضاء", "سير عمل مخصص", "شهادات ثنائية", "عمولة 8%"],
+    features_en: ["Unlimited warranties", "Advanced analytics", "Priority support", "Up to 5 team members", "Full warranty history", "Custom workflows", "Bilingual certificates"],
+    features_ar: ["ضمانات غير محدودة", "تحليلات متقدمة", "دعم أولوية", "حتى 5 أعضاء", "سجل ضمانات كامل", "سير عمل مخصص", "شهادات ثنائية"],
     name_en: "Professional",
     name_ar: "احترافي",
     desc_en: "For growing businesses",
@@ -126,13 +128,13 @@ export default function PricingPage() {
           </h1>
           <p className="text-[17px] text-[#6e6e73] mt-3 max-w-xl mx-auto">
             {isRTL
-              ? "ابدأ بالخطة المجانية دون بطاقة ائتمانية، أو فعّل عرض الإطلاق للاحترافي بدولار واحد شهرياً"
-              : "Start with a Free plan, no card required, or unlock the Professional launch offer at $1/month"}
+              ? "ابدأ بالخطة المجانية دون بطاقة ائتمانية، أو فعّل عرض الإطلاق للاحترافي بالريال السعودي"
+              : "Start with a Free plan, no card required, or unlock the Professional launch offer in SAR"}
           </p>
           <p className="mt-5 text-[13px] font-medium text-[#6e6e73]">
             {isRTL
-              ? "الخطة المجانية تشمل حتى 10 ضمانات. عرض الاحترافي: الشهر الأول مجاني."
-              : "Free includes up to 10 warranties. Professional launch offer: first month free."}
+              ? "الخطة المجانية تشمل حتى 10 ضمانات مع الاحتفاظ بالسجلات. التمديدات لها رسوم معاملات منفصلة عند الشراء."
+              : "Free includes up to 10 warranties with records retained. Extension purchases carry a separate transaction fee."}
           </p>
         </div>
 
@@ -176,15 +178,12 @@ export default function PricingPage() {
                       </p>
                     ) : (
                       <div>
-                        <span className="text-[28px] font-semibold tracking-tight text-[#1d1d1f]">${plan.price}</span>
+                        <span className="text-[28px] font-semibold tracking-tight text-[#1d1d1f]">{isRTL ? plan.currency_ar : plan.currency_en} {plan.price}</span>
                         <span className="text-[14px] text-[#6e6e73]"> /{isRTL ? "شهر" : "month"}</span>
                         {plan.id === "pro" && (
                           <>
                             <p className="text-[12px] text-[#0071e3] font-medium mt-1">
                               {isRTL ? plan.pricePrefix_ar : plan.pricePrefix_en}
-                            </p>
-                            <p className="text-[12px] text-[#30d158] font-medium mt-1">
-                              {isRTL ? "الشهر الأول مجاني!" : "First month free!"}
                             </p>
                           </>
                         )}
@@ -231,15 +230,15 @@ export default function PricingPage() {
           <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
             <div>
               <p className="text-[13px] font-semibold uppercase tracking-[0.18em] text-[#0071e3]">
-                {isRTL ? "وضوح عرض الإطلاق" : "Launch offer clarity"}
+                {isRTL ? "وضوح التسعير" : "Pricing clarity"}
               </p>
               <h2 className="mt-3 text-[28px] font-semibold tracking-tight text-[#1d1d1f]">
-                {isRTL ? "لماذا الخطة الاحترافية بدولار واحد؟" : "Why the $1 Professional launch offer?"}
+                {isRTL ? "لماذا الخطة الاحترافية بالريال السعودي؟" : "Why a SAR Professional launch price?"}
               </h2>
               <p className="mt-4 text-[15px] leading-7 text-[#6e6e73]">
                 {isRTL
-                  ? "السعر الاحترافي هو عرض إطلاق للعملاء الأوائل. يقلل عائق الانضمام بينما نوسع التكاملات ومسارات الدعم. حدود الخطة المجانية والشهر الأول المجاني وعمولة التمديد ظاهرة بوضوح."
-                  : "The Professional price is an early customer launch offer. It lowers onboarding friction while Warrantee expands integrations and support workflows. Free-plan limits, the first free month, and extension commission are shown upfront."}
+                  ? "السعر الاحترافي عرض إطلاق واضح للعملاء الأوائل في السعودية والخليج. حدود الخطة المجانية محفوظة، ورسوم معاملات تمديد الضمان منفصلة عن مزايا الاشتراك حتى لا تختلط التكلفة بالفائدة."
+                  : "The Professional price is a clear early-customer launch offer for Saudi and GCC customers. Free-plan limits are explicit, and warranty-extension transaction fees are separated from subscription benefits so cost never reads like a feature."}
               </p>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
@@ -251,8 +250,8 @@ export default function PricingPage() {
                 },
                 {
                   icon: Check,
-                  title: isRTL ? "شهر أول مجاني" : "First month free",
-                  desc: isRTL ? "عرض الاحترافي موضح قبل الدفع." : "Professional trial terms are stated before checkout.",
+                  title: isRTL ? "سعر واضح بالريال" : "Clear SAR pricing",
+                  desc: isRTL ? "الخطة الاحترافية موضحة قبل الدفع." : "Professional terms are stated before checkout.",
                 },
                 {
                   icon: Building2,

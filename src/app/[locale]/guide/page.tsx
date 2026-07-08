@@ -1,19 +1,18 @@
-"use client";
-
-import { useState } from "react";
-import { useParams } from "next/navigation";
 import { BookOpen, Shield, FileText, Upload, Bell, ChevronRight, Sparkles, ArrowRight, HelpCircle, Zap } from "lucide-react";
 import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
-import { getDictionary, type Locale } from "@/lib/i18n";
+import { getDictionary, normalizeLocale, type Locale } from "@/lib/i18n";
 
-export default function GuidePage() {
-  const params = useParams() ?? {};
-  const locale = params?.locale as string || "en";
+type GuidePageProps = {
+  params: Promise<{ locale: string }>;
+};
+
+export default async function GuidePage({ params }: GuidePageProps) {
+  const { locale: routeLocale } = await params;
+  const locale = normalizeLocale(routeLocale);
   const isRTL = locale === "ar";
   const dictionary = getDictionary(locale as Locale);
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
   const tr = (value: string) => value;
 
   const steps = [
@@ -79,24 +78,21 @@ export default function GuidePage() {
           </h2>
           <div className="bg-white rounded-2xl ring-1 ring-[#d2d2d7]/40 shadow-sm overflow-hidden divide-y divide-[#d2d2d7]/30">
             {faqs.map((faq, i) => (
-              <button
+              <details
                 key={i}
-                onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                className="w-full text-left px-5 py-4 hover:bg-[#fafafa] transition-colors"
+                className="group px-5 py-4 hover:bg-[#fafafa] transition-colors"
               >
-                <div className="flex items-center justify-between gap-3">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <HelpCircle className="w-4 h-4 text-[#0071e3] flex-shrink-0" />
                     <span className="text-[14px] font-medium text-[#1d1d1f]">{faq.q}</span>
                   </div>
-                  <ChevronRight className={"w-4 h-4 text-[#86868b] transition-transform " + (openFaq === i ? "rotate-90" : "")} />
-                </div>
-                {openFaq === i && (
-                  <p className="text-[13px] text-[#86868b] mt-3 leading-relaxed pl-7">
-                    {faq.a}
-                  </p>
-                )}
-              </button>
+                  <ChevronRight className="w-4 h-4 text-[#86868b] transition-transform group-open:rotate-90" />
+                </summary>
+                <p className="text-[13px] text-[#86868b] mt-3 leading-relaxed pl-7">
+                  {faq.a}
+                </p>
+              </details>
             ))}
           </div>
         </div>

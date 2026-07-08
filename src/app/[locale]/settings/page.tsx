@@ -461,7 +461,7 @@ export default function SettingsPage() {
                   </div>
                   <p className="text-[28px] font-semibold tracking-tight">{isRTL ? "\u0645\u062c\u0627\u0646\u064a" : "Free"}</p>
                   <p className="text-[15px] text-white/60 mt-1">
-                    {isRTL ? "\u0627\u0644\u062E\u0637\u0629 \u0627\u0644\u0645\u062C\u0627\u0646\u064A\u0629 \u062A\u0634\u0645\u0644 \u062D\u062A\u0649 10 \u0636\u0645\u0627\u0646\u0627\u062A. \u0639\u0631\u0636 \u0627\u0644\u0627\u062D\u062A\u0631\u0627\u0641\u064A: \u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u0623\u0648\u0644 \u0645\u062C\u0627\u0646\u064A." : "Free includes up to 10 warranties. Professional launch offer: first month free."}
+                    {isRTL ? "الخطة المجانية تشمل حتى 10 ضمانات مع الاحتفاظ بالسجلات. الخطة الاحترافية عرض إطلاق بالريال السعودي." : "Free includes up to 10 warranties with records retained. Professional is a SAR launch offer."}
                   </p>
                 </div>
                 <Link href={`/${locale}/billing`}

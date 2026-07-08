@@ -116,6 +116,7 @@ assertCheck("production gates cover security and intelligence boundaries", produ
 
 const ocrCorpus = anyFileContains([
   "docs/OCR_PRIVATE_CORPUS_COLLECTION_CHECKLIST_2026-06-17.md",
+  "docs/OCR_REAL_CORPUS_EXECUTION_2026-07-08.md",
   "docs/OCR_REGRESSION_CORPUS.md",
   "tests/fixtures/ocr-corpus/synthetic/manifest.json",
   "scripts/check-ocr-corpus.mjs",
@@ -133,6 +134,7 @@ const pentest = anyFileContains([
   "docs/EXTERNAL_PENTEST_SCOPE_2026-06-17.md",
   "docs/PENTEST_VENDOR_SELECTION_2026-06-17.md",
   "docs/PENTEST_EXECUTION_PACKET.md",
+  "docs/PENTEST_OUTREACH_EXECUTION_2026-07-08.md",
   "scripts/check-pentest-readiness.mjs",
 ], [
   "API / CLI / MCP",
@@ -157,6 +159,7 @@ assertCheck("category and agent positioning are recorded", trustAndPositioning.o
 
 const salesCampaigns = anyFileContains([
   "scripts/generate-campaign-links.mjs",
+  "docs/CONTROLLED_ACQUISITION_EXECUTION_2026-07-08.md",
   "docs/META_ADS_AI_CONNECTORS_PLAYBOOK.md",
   "docs/SOCIAL_CHANNELS.md",
   "src/lib/agent-skills.ts",
@@ -176,7 +179,7 @@ console.log(JSON.stringify({
   checks,
   externalStillRequired: [
     "Formal third-party penetration test execution and signed report.",
-    "Approved private OCR document corpus collection and local private-corpus run.",
+    "Real approved customer/vendor OCR document corpus collection and private-corpus run.",
     "Real campaign traffic and onboarding analysis after distribution starts.",
   ],
 }, null, 2));

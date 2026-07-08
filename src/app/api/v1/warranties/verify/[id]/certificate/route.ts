@@ -187,7 +187,7 @@ export async function GET(
       </div>
     </section>
 
-    <p class="footer">${isAr ? "صادر عبر منصة Warrantee | الحقول العامة فقط" : "Issued via Warrantee Platform | public-safe fields only"}</p>
+    <p class="footer">${isAr ? "مدعوم من Warrantee.io | الحقول العامة فقط" : "Powered by Warrantee.io | public-safe fields only"}</p>
   </main>
 </body>
 </html>`;

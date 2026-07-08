@@ -1,6 +1,19 @@
 # Warrantee Operational Status
 
-Last updated: 2026-07-07
+Last updated: 2026-07-08
+
+## 2026-07-08 External Items Recheck
+
+- Stripe Professional live price remains blocked externally. Vercel Production contains `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, and `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, but `STRIPE_PRO_PRICE_ID` is not configured. Vercel env pull does not expose the live Stripe secret locally, and regular Chrome opens Stripe at the login screen for `https://dashboard.stripe.com/products`. Required next action: sign in to Stripe or provide a usable live Stripe secret, then create/confirm the recurring Professional price at `SAR 149/month`, record the `price_...` id, and set Vercel Production `STRIPE_PRO_PRICE_ID`.
+- Per founder direction, Stripe Professional live-price setup is postponed. Stripe dashboard/account setup has no monthly dashboard cost, but live payments still require a configured live price id and Stripe processing fees once customers pay.
+- A local ignored private OCR QA corpus was added under `tests/fixtures/ocr-corpus/private` with 12 redacted local fixtures across English, Arabic, mixed-language, receipts, invoices, warranty certificates, poor scans, duplicate invoices, and corrupted-PDF fallback text. `npm run qa:ocr-corpus:private` now passes locally with 12 file-backed entries. This improves repeatability but is not a substitute for later real approved customer/vendor scan coverage.
+- Added `docs/OCR_REAL_CORPUS_EXECUTION_2026-07-08.md` with the real-document OCR collection target, founder outreach script, redaction rules, intake steps, and completion criteria.
+- Independent third-party pentest remains an external vendor engagement, not a code task. Internal pre-pentest checks passed on 2026-07-08: `npm audit --omit=dev --audit-level=moderate`, `npm run guard:loopback`, `npm run qa:agent-readiness`, `npm run security:rls-probe`, `npm run smoke:prod`, `npm run readiness:operational`, and `npm run qa:pentest-readiness`. The actual signed third-party report still requires vendor selection, authorization/rules of engagement, test accounts/data, assessment execution, and retest evidence.
+- Added `docs/PENTEST_OUTREACH_EXECUTION_2026-07-08.md` with vendor requirements, outreach email, decision checklist, and safe sharing instructions. No vendor was contacted or contracted from code because that requires recipient selection, commercial approval, and signed authorization.
+- Production onboarding/language analytics were rechecked through Supabase service-role backend counts without exposing secrets. Compared with the June 23 baseline, auth users remain `15`, profiles remain `15`, companies remain `2`, seller invitations remain `0`, and API usage events remain `0`. No new auth users, profiles, companies, seller invitations, contact submissions, seller applications, or API usage were created in the last 30 days.
+- The last 30 days contain `2,561` server-side funnel events: `1,923` page views, `637` auth-intent events, `1` pricing CTA click, `0` signup submissions, `0` successful signup events, `0` contact form submissions, `0` seller application submissions, and `0` onboarding completions. Locale split is `2,560` English events and `1` Arabic event. Top paths were `/en/auth`, `/en/notifications`, `/en/settings/team`, `/en`, `/en/pricing`, `/en/contact`, `/en/seller/register`, and `/ar/pricing`.
+- Added `docs/CONTROLLED_ACQUISITION_EXECUTION_2026-07-08.md` with a 7-day founder-led outreach plan, approved tracked EN/AR campaign links, message templates, follow-up copy, and 48-hour measurement rules.
+- Current interpretation: production health is not the limiting factor. The visible blocker is distribution and conversion: almost no tagged campaign traffic, only one pricing CTA click, and no signup/form submissions from recent traffic.
 
 ## 2026-07-07 Takeover Audit Closure
 
@@ -9,7 +22,10 @@ Last updated: 2026-07-07
   - homepage embedded pricing and bottom CTAs now use campaign-preserving tracked signup links;
   - the payment create route now reads Stripe/Moyasar provider secrets at request runtime instead of module scope;
   - `npm run qa:full-local` now provides a repeatable QA path that loads ignored local env files, builds once, starts one local server, runs authenticated suites sequentially, and falls back to production for the operational payment/OCR workflow if local write-only Stripe secrets are unavailable.
-- Remaining non-code/external items are still explicit: approved private OCR corpus, independent third-party pentest execution/signoff, and a focused performance/chunk optimization pass.
+  - `/api/health` now runs on the Node runtime because it uses Supabase, removing the Supabase Edge-runtime build warning while preserving the public health contract;
+  - static public content pages (`features`, `faq`, `guide`, `privacy`, `terms`, and `cookies`) are server-rendered instead of page-level client components;
+  - public `pricing` and `seller/register` no longer load the authenticated route provider unnecessarily.
+- Remaining external items are still explicit: approved private OCR corpus and independent third-party pentest execution/signoff. A deeper shared-JS/provider split remains optional future optimization, not a current blocker.
 
 ## 2026-06-30 Remaining Practical Uplift Closure
 
@@ -346,6 +362,30 @@ Current launch position:
 
 ## Open Monitoring And External Items
 
+- 2026-07-07 approved takeover fixes:
+  - Added Phase 0-2 handover docs:
+    - `docs/SYSTEM_MAP.md`
+    - `docs/AUDIT_REPORT.md`
+    - `docs/BACKLOG.md`
+    - `docs/PRICING_BILLING_EXTENSION_ROLLOUT_2026-07-07.md`
+  - Replaced the public `$1/month` Professional story with a Saudi-first `SAR 149/month` launch offer in plan definitions, pricing copy, metadata, FAQ, and JSON-LD.
+  - Removed the hidden Stripe 30-day trial from subscription checkout so billing behavior matches the public pricing story.
+  - Clarified that Free keeps warranty history and that warranty-extension transaction fees are separate from subscription benefits.
+  - Strengthened the certificate/passport growth loop with understated `Powered by Warrantee.io` wording on public passports and certificate outputs.
+  - Kept beta languages as noindexed/fallback language routes; only English and Arabic remain indexed production locales until analytics proves additional demand.
+  - Local verification passed:
+    - `npm run type-check`
+    - `npm run lint`
+    - `npm test -- --run src/lib/__tests__/seo-readiness.test.ts src/lib/__tests__/operational-hardening.test.ts src/lib/__tests__/qr-code.test.ts`
+    - `npm test`
+    - `npm run build`
+    - `npm run guard:loopback`
+    - `npm run qa:growth-readiness`
+    - `npx playwright test tests/e2e/public-routes.spec.ts tests/e2e/seo-agent-ready.spec.ts --project=chromium --workers=1`
+  - Production checks passed against the currently deployed site:
+    - `npm run readiness:operational`
+    - `npm run smoke:prod`
+  - Production deployment is still pending for the local pricing/handover patch set. Before deploying the billing story as commercial go-live, confirm the live Stripe Professional recurring price is `SAR 149/month` and `STRIPE_PRO_PRICE_ID` points to it in Vercel Production.
 - 2026-07-05 Search Console robots fix:
   - Opened the regular Chrome browser, not the in-app browser, and verified the Warrantee Search Console property under `abdulaziz.alrayes@gmail.com`.
   - Search Console `Blocked by robots.txt` showed 6 examples: `/api/mcp`, `/en/seller/register`, `/ar/warranties`, `/en/warranties/new`, `/en/warranties`, and `/en/dashboard`.

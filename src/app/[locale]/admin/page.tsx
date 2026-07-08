@@ -633,7 +633,12 @@ export default function AdminPage() {
   // ─── HELPERS ──────────────────────────────────────────
   const fmtDate = (d: string) => d ? new Date(d).toLocaleDateString(locale === 'ar' ? 'ar-SA' : 'en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : EM_DASH;
   const fmtDateTime = (d: string) => d ? new Date(d).toLocaleString(locale === 'ar' ? 'ar-SA' : 'en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : EM_DASH;
-  const fmtMoney = (n: number) => `$${(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const fmtMoney = (n: number, currency = 'SAR') => `${currency} ${(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const estimatedSubscriptionMrr = subscriptions.reduce((sum: number, subscription: any) => {
+    if (subscription.status !== 'active' && subscription.status !== 'trialing') return sum;
+    if (subscription.plan_id === 'pro') return sum + 149;
+    return sum;
+  }, 0);
   const userMetrics = (userId: string) => {
     const userWarranties = warranties.filter((w: any) =>
       [w.user_id, w.buyer_id, w.recipient_user_id, w.created_by].includes(userId)
@@ -1595,7 +1600,7 @@ export default function AdminPage() {
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
                 <SparkNumber label={text.totalRevenueLabel} value={fmtMoney(stats.totalRevenue)} icon="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" color="#10B981" />
                 <SparkNumber label={text.activeSubsLabel} value={stats.activeSubscriptions} icon="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" color="#3B82F6" />
-                <SparkNumber label={text.mrrLabel} value={fmtMoney(subscriptions.filter(s => s.status === 'active').length * 1)} icon="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" color="#0071e3" />
+                <SparkNumber label={text.mrrLabel} value={fmtMoney(estimatedSubscriptionMrr)} icon="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" color="#0071e3" />
                 <SparkNumber label={text.extensionRevLabel} value={fmtMoney(revenueEvents.filter(r => r.event_type === 'extension').reduce((s, r) => s + (r.amount || 0), 0))} icon="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" color="#8B5CF6" />
               </div>
               <div className="bg-[#0e0e20] rounded-xl border border-[#1a1a3a] overflow-hidden">
@@ -1610,8 +1615,8 @@ export default function AdminPage() {
                       {revenueEvents.slice(0, 100).map(r => (
                         <tr key={r.id} className="hover:bg-[#12122a]/50 transition">
                           <td className="px-4 py-3 text-gray-200">{r.event_type || EM_DASH}</td>
-                          <td className="px-4 py-3 text-emerald-400 font-medium">{fmtMoney(r.amount)}</td>
-                          <td className="px-4 py-3 text-gray-400">{r.currency || 'USD'}</td>
+                          <td className="px-4 py-3 text-emerald-400 font-medium">{fmtMoney(r.amount, r.currency || 'SAR')}</td>
+                          <td className="px-4 py-3 text-gray-400">{r.currency || 'SAR'}</td>
                           <td className="px-4 py-3 text-gray-500">{fmtDate(r.created_at)}</td>
                         </tr>
                       ))}
