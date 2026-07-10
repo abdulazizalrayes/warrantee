@@ -86,7 +86,7 @@ Agents must route these away from enterprise or seller inquiry forms:
 - `/api/mcp` provides hosted JSON-RPC MCP access.
 - `/openapi.json` documents public discovery endpoints plus authenticated API boundaries.
 - `/auth.md` explains public versus private access and the no-password rule.
-- `robots.txt` allows public content while blocking private/admin/internal areas.
+- `robots.txt` allows public content, blocks private API surfaces, permits the hosted public MCP endpoint, and declares `Content-Signal` preferences for search, AI input, and AI training.
 
 ## Authenticated Asset Intelligence
 

@@ -10,6 +10,7 @@ test.describe("SEO and agent-readiness endpoints", () => {
     expect(robotsText).toContain("Sitemap: https://warrantee.io/sitemap.xml");
     expect(robotsText).toContain("Disallow: /api/");
     expect(robotsText).toContain("Allow: /api/mcp");
+    expect(robotsText).toContain("Content-Signal: search=yes, ai-input=yes, ai-train=no");
     expect(robotsText).not.toContain("Disallow: /*/dashboard");
 
     const sitemap = await request.get("/sitemap.xml");
@@ -57,6 +58,9 @@ test.describe("SEO and agent-readiness endpoints", () => {
     const openapiJson = await openapi.json();
     expect(openapiJson.paths["/data/company.json"]).toBeTruthy();
     expect(openapiJson.paths["/api/mcp"]).toBeTruthy();
+
+    const authGuide = await request.get("/auth.md");
+    expect(await authGuide.text()).toContain("# auth.md - Warrantee API / CLI / MCP Authentication");
   });
 
   test("key public pages expose canonical links", async ({ page }) => {

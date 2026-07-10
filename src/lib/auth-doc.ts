@@ -1,5 +1,5 @@
 export function buildAuthMarkdown() {
-  return `# Warrantee API / CLI / MCP Authentication
+  return `# auth.md - Warrantee API / CLI / MCP Authentication
 
 Warrantee integrations use scoped tokens. Agents and integrators must not ask users for Warrantee usernames or passwords.
 
