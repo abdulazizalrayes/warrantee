@@ -12,6 +12,9 @@ const jsonEndpoints = [
   "/.well-known/mcp.json",
   "/.well-known/mcp/server-card.json",
   "/.well-known/mcp/server-cards.json",
+  "/.well-known/http-message-signatures-directory",
+  "/.well-known/acp.json",
+  "/.well-known/ucp",
   "/.well-known/agent-skills/index.json",
   "/openapi.json",
   "/.well-known/openapi.json",
@@ -85,6 +88,14 @@ if (!robots.includes("Disallow: /api/") || !robots.includes("Allow: /api/mcp")) 
 const openapi = JSON.parse((await get("/openapi.json")).text);
 for (const requiredPath of ["/data/company.json", "/data/agent-routing.json", "/api/mcp", "/api/v1/intelligence"]) {
   if (!openapi.paths?.[requiredPath]) fail("OpenAPI is missing a required path.", { requiredPath });
+}
+
+for (const requiredPath of [
+  "/.well-known/http-message-signatures-directory",
+  "/.well-known/acp.json",
+  "/.well-known/ucp",
+]) {
+  if (!openapi.paths?.[requiredPath]) fail("OpenAPI is missing a remaining agent-readiness path.", { requiredPath });
 }
 
 const mcp = JSON.parse((await get("/.well-known/mcp.json")).text);

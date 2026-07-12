@@ -26,6 +26,9 @@ Discovery:
 - `/.well-known/mcp.json`
 - `/.well-known/mcp/server-card.json`
 - `/.well-known/mcp/server-cards.json`
+- `/.well-known/http-message-signatures-directory`
+- `/.well-known/acp.json`
+- `/.well-known/ucp`
 - `/.well-known/agent-skills/index.json`
 - `/openapi.json`
 - `/.well-known/openapi.json`
@@ -87,6 +90,12 @@ Agents must route these away from enterprise or seller inquiry forms:
 - `/openapi.json` documents public discovery endpoints plus authenticated API boundaries.
 - `/auth.md` explains public versus private access and the no-password rule.
 - `robots.txt` allows public content, blocks private API surfaces, permits the hosted public MCP endpoint, and declares `Content-Signal` preferences for search, AI input, and AI training.
+- `/.well-known/http-message-signatures-directory` is a Web Bot Auth/JWKS-style public-key directory. It stays empty unless real Warrantee-operated signed bot or agent public keys are configured through `WEB_BOT_AUTH_PUBLIC_JWKS`.
+- `/.well-known/acp.json` and `/.well-known/ucp` publish truthful discovery-only status that agent-native commerce is not enabled yet. They must not be changed to `enabled` until real payment rails, approval rules, and checkout verification are implemented.
+
+## Remaining External DNS Task
+
+DNS-AID cannot be completed from the Next.js application. It requires DNS provider access for `warrantee.io` and, ideally, DNSSEC support. The remaining records to evaluate with the DNS provider are `_index._agents.warrantee.io`, `_a2a._agents.warrantee.io`, and `_mcp._agents.warrantee.io` using the current DNS-AID draft's SVCB/HTTPS guidance. Do not add placeholder DNS records unless they point to real maintained discovery endpoints.
 
 ## Authenticated Asset Intelligence
 

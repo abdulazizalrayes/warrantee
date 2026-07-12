@@ -41,6 +41,9 @@ test.describe("SEO and agent-readiness endpoints", () => {
       "/.well-known/mcp.json",
       "/.well-known/mcp/server-card.json",
       "/.well-known/mcp/server-cards.json",
+      "/.well-known/http-message-signatures-directory",
+      "/.well-known/acp.json",
+      "/.well-known/ucp",
       "/.well-known/agent-skills/index.json",
     ]) {
       const response = await request.get(path);
@@ -58,9 +61,22 @@ test.describe("SEO and agent-readiness endpoints", () => {
     const openapiJson = await openapi.json();
     expect(openapiJson.paths["/data/company.json"]).toBeTruthy();
     expect(openapiJson.paths["/api/mcp"]).toBeTruthy();
+    expect(openapiJson.paths["/.well-known/http-message-signatures-directory"]).toBeTruthy();
+    expect(openapiJson.paths["/.well-known/acp.json"]).toBeTruthy();
+    expect(openapiJson.paths["/.well-known/ucp"]).toBeTruthy();
 
     const authGuide = await request.get("/auth.md");
     expect(await authGuide.text()).toContain("# auth.md - Warrantee API / CLI / MCP Authentication");
+
+    const webBotAuth = await request.get("/.well-known/http-message-signatures-directory");
+    const webBotAuthJson = await webBotAuth.json();
+    expect(Array.isArray(webBotAuthJson.keys)).toBe(true);
+
+    const acp = await request.get("/.well-known/acp.json");
+    expect((await acp.json()).protocol.status).toBe("not_enabled");
+
+    const ucp = await request.get("/.well-known/ucp");
+    expect((await ucp.json()).protocol.status).toBe("not_enabled");
   });
 
   test("key public pages expose canonical links", async ({ page }) => {

@@ -53,6 +53,30 @@ export function buildPublicOpenApi() {
       "/.well-known/mcp/server-cards.json": {
         get: { summary: "Read MCP server card collection", responses: { "200": { description: "MCP server cards returned" } } },
       },
+      "/.well-known/http-message-signatures-directory": {
+        get: {
+          summary: "Read Web Bot Auth public key directory",
+          description:
+            "JWKS-style directory for Warrantee-operated signed bot or agent traffic. Returns an empty key set unless public JWKs are explicitly configured; private signing keys are never exposed.",
+          responses: { "200": { description: "Web Bot Auth key directory returned" } },
+        },
+      },
+      "/.well-known/acp.json": {
+        get: {
+          summary: "Read ACP discovery status",
+          description:
+            "Discovery-only ACP metadata. Warrantee does not currently support ACP payments, and agents must not attempt purchases or checkout automation through ACP until the status changes to enabled.",
+          responses: { "200": { description: "ACP discovery status returned" } },
+        },
+      },
+      "/.well-known/ucp": {
+        get: {
+          summary: "Read UCP discovery status",
+          description:
+            "Discovery-only UCP metadata. Warrantee does not currently support UCP content payments or checkout, and agents may use this only to learn that commerce is not enabled.",
+          responses: { "200": { description: "UCP discovery status returned" } },
+        },
+      },
       "/api/mcp": {
         get: {
           summary: "Describe hosted MCP endpoint",
