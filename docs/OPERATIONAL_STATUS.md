@@ -1,6 +1,14 @@
 # Warrantee Operational Status
 
-Last updated: 2026-07-08
+Last updated: 2026-07-13
+
+## 2026-07-13 Auth Funnel Diagnostics
+
+- Production health remains green: latest main CI passed, latest Production Security Gates passed, production smoke passed, operational readiness passed, and agent-readiness validation passed.
+- Live production onboarding counts still show no new account movement compared with the June 23 baseline: auth users remain `15`, profiles remain `15`, companies remain `2`, seller invitations remain `0`, API usage events remain `0`, and HubSpot has `0` new contacts in the last 30 days.
+- The last 7 days do show traffic: `1,341` server-side funnel page views and `421` auth-intent events. The traffic is concentrated on `/en/auth`, but there are still `0` signup submissions, `0` successful signup events, `0` contact submissions, `0` seller application submissions, and `0` onboarding completions.
+- The funnel logger now preserves privacy-safe auth diagnostics (`tab`, `auth_mode`, `account_type`, `has_company_name`) so future checks can distinguish login traffic, signup traffic, consumer/business intent, and auth mode without storing personal data.
+- Current interpretation: production health is not blocking onboarding. The immediate measurement gap was that `/auth` traffic could not be separated into login versus signup intent; future reads should use the new metadata before changing the auth-page visual experience.
 
 ## 2026-07-08 External Items Recheck
 

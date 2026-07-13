@@ -94,3 +94,17 @@ If verification cannot be run, explain why and state the remaining risk.
 - Push back if the requested approach seems risky or overcomplicated.
 - Do not hide uncertainty.
 - Do not claim success without verification.
+
+## External Paperclip Context
+
+Use this section only when the user explicitly asks about cloud Paperclip (`ai.eijarat.com`) or Paperclip agents. Do not mix Paperclip work, accounts, models, or assumptions into Warrantee product work.
+
+- The user reports cloud Paperclip at `ai.eijarat.com` was upgraded to `v2026.707.0`.
+- Before acting on Paperclip, verify the live app state through `/api/health`, a visible running version endpoint, or an authenticated browser/session. Do not assume the release is active just because the user mentioned it.
+- Confirm Paperclip is active and healthy before using it for important work.
+- Confirm the available OpenCode models before assigning agents.
+- Prefer `opencode/big-pickle` for important/main agent work when available.
+- Prefer `opencode/deepseek-v4-flash-free` for cheaper/helper work when available.
+- Watch for older agents that may still carry old model configs; clean or migrate those configs before relying on them.
+- Cloudflare Access may protect Paperclip endpoints. If unauthenticated shell checks return an Access login page, record that the app is access-protected and verify health through an authenticated regular browser/session instead.
+- Familiarize yourself with release-specific Paperclip changes before assuming old Paperclip behavior, especially around model routing, agent configs, health checks, and automation behavior.

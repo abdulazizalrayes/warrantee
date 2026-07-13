@@ -17,11 +17,14 @@ const allowedEvents = new Set([
 
 const allowedMetadataKeys = new Set([
   "action",
+  "account_type",
+  "auth_mode",
   "cta",
   "destination",
   "event_category",
   "event_label",
   "feature",
+  "has_company_name",
   "locale",
   "location",
   "method",
@@ -30,6 +33,7 @@ const allowedMetadataKeys = new Set([
   "plan",
   "source",
   "subject",
+  "tab",
   "utm_campaign",
   "utm_content",
   "utm_medium",

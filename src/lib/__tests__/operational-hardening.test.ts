@@ -239,6 +239,9 @@ describe("operational hardening", () => {
       expect(funnelRoute).toContain(key);
       expect(docs).toContain(key);
     }
+    for (const key of ["tab", "auth_mode", "account_type", "has_company_name"]) {
+      expect(funnelRoute).toContain(key);
+    }
 
     expect(ga4Events).toContain("readCampaignParams");
     expect(ga4Events).toContain("new URLSearchParams(window.location.search)");

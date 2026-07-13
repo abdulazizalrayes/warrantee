@@ -45,6 +45,13 @@ Server-side funnel events also preserve privacy-safe campaign attribution when p
 - `utm_term`
 - `ref`
 
+Auth funnel events also preserve these privacy-safe diagnostics so `/auth` traffic can be separated into login, signup, account type, and auth mode without storing names, emails, phone numbers, or message bodies:
+
+- `tab`
+- `auth_mode`
+- `account_type`
+- `has_company_name`
+
 Do not place names, emails, phone numbers, commercial registration numbers, or private customer details in UTM values.
 
 Internal marketing CTAs preserve these campaign parameters when routing visitors into signup, contact, pricing, and seller onboarding. This is intentional: a visitor who lands on a tagged pricing or homepage URL should still be attributable when they reach `/auth`, `/contact`, or `/seller/register`.
@@ -72,6 +79,8 @@ If `funnel_cta_click` exists but `signup_submit` is low, the issue is auth-page 
 If `signup_submit` exists but `sign_up` is low, inspect Supabase auth errors, password validation, provider setup, email confirmation, and browser console errors.
 
 If `sign_up` exists but users do not create warranties, inspect first-run onboarding, empty states, sample data, and dashboard guidance.
+
+If `/auth` page views and `auth_intent` events exist but `signup_submit` is zero, compare `tab`, `auth_mode`, and `account_type` before changing the page. Heavy `login` activity means existing QA/admin usage or protected-route redirects; heavy `signup` views without submit means the signup form, offer clarity, or trust threshold needs improvement.
 
 ## Campaign URL Discipline
 
