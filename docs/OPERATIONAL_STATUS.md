@@ -296,6 +296,7 @@ Current launch position:
   - measurement ID: `G-ZQJ4LRG4GN`
   - GTM container: `GTM-N6G95MQL`
   - no new GA4 account, property, stream, or GTM container was created
+  - browser business events are consolidated so GTM `dataLayer` is used when GTM is configured, with direct GA4 `gtag` used only as the no-GTM fallback
 - Google Search Console access is recorded for Warrantee only:
   - Google account: `abdulaziz.alrayes@gmail.com`
   - Search Console property: `https://warrantee.io/`

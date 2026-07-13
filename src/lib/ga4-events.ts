@@ -149,8 +149,12 @@ function sendServerFunnelEvent(event: string, payload: Record<string, unknown>) 
 }
 
 function emitEvent(event: string, payload: Record<string, unknown>) {
-  gtag("event", event, payload);
-  pushDataLayer(event, payload);
+  if (process.env.NEXT_PUBLIC_GTM_ID) {
+    pushDataLayer(event, payload);
+  } else if (process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID) {
+    gtag("event", event, payload);
+  }
+
   pushMetaPixel(event, payload);
   sendServerFunnelEvent(event, payload);
 }

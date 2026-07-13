@@ -6,10 +6,11 @@ Scope: Warrantee only (`warrantee.io`).
 
 - Vercel Web Analytics is installed through `@vercel/analytics`.
 - Vercel Speed Insights is installed through `@vercel/speed-insights`.
-- GA4 is wired through `NEXT_PUBLIC_GA_MEASUREMENT_ID` when configured.
-- GTM is supported through `NEXT_PUBLIC_GTM_ID` when configured.
+- GTM is the preferred browser analytics path when `NEXT_PUBLIC_GTM_ID` is configured.
+- Direct GA4 through `NEXT_PUBLIC_GA_MEASUREMENT_ID` is kept as a fallback only when GTM is not configured.
 - Hotjar is supported through `NEXT_PUBLIC_HOTJAR_ID` when configured.
 - Client-side business events are centralized in `src/lib/ga4-events.ts`.
+- Client-side business events emit to either GTM `dataLayer` or direct GA4 `gtag`, never both for the same event.
 - Server-side agent-readiness events are logged as `agent_readiness_event`.
 
 ## Agent-Readiness Events
@@ -69,4 +70,3 @@ Search JSON output for:
 - `/auth.md`
 - `/data/`
 - `/api/mcp`
-
