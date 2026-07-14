@@ -87,6 +87,8 @@ describe("operational hardening", () => {
     const healthRoute = readProjectFile("src/app/api/health/route.ts");
 
     expect(healthRoute).toContain('export const runtime = "nodejs"');
+    expect(healthRoute).toContain("checkCrmReadiness");
+    expect(healthRoute).toContain("checks.checks.crm");
     expect(healthRoute).not.toContain("process.uptime");
   });
 

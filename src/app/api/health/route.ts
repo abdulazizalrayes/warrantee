@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { checkCrmReadiness } from "@/lib/crm";
 import { getRequestId, structuredLog } from "@/lib/monitoring";
 
 export const runtime = "nodejs";
@@ -39,6 +40,23 @@ export async function GET(request: Request) {
     structuredLog("error", {
       route: "/api/health",
       msg: "database health check failed",
+      requestId,
+      error,
+    });
+  }
+
+  try {
+    const crmStart = Date.now();
+    const crm = await checkCrmReadiness();
+    checks.checks.crm = {
+      status: crm.status,
+      latency: Date.now() - crmStart,
+    };
+  } catch (error) {
+    checks.checks.crm = { status: "error" };
+    structuredLog("warn", {
+      route: "/api/health",
+      msg: "CRM health check failed",
       requestId,
       error,
     });
