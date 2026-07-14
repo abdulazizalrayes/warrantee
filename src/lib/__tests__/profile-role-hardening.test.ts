@@ -11,7 +11,7 @@ function readProjectFile(relativePath: string) {
 describe("profile role hardening", () => {
   it("keeps browser profile updates away from authorization columns", () => {
     const migration = readProjectFile(
-      "supabase/migrations/20260530111207_restrict_profile_self_updates.sql"
+      "supabase/migrations/20260714171612_harden_authorization_and_invitation_delivery.sql"
     ).toLowerCase();
     const writableColumnList = migration.match(/writable_columns text\[\] := array\[([\s\S]*?)\];/);
     const writableColumns = Array.from(
@@ -19,14 +19,13 @@ describe("profile role hardening", () => {
       (match) => match[1]
     );
 
-    expect(migration).toContain("revoke update on table public.profiles from authenticated");
+    expect(migration).toContain("revoke all privileges on table public.profiles from anon, authenticated");
     expect(migration).toContain("grant update (%i) on table public.profiles to authenticated");
 
     expect(writableColumns).toEqual(
       expect.arrayContaining([
         "full_name",
         "phone",
-        "company_name",
         "avatar_url",
         "preferred_language",
         "preferred_locale",
@@ -41,6 +40,24 @@ describe("profile role hardening", () => {
     expect(writableColumns).not.toContain("role");
     expect(writableColumns).not.toContain("company_id");
     expect(writableColumns).not.toContain("company_domain");
+  });
+
+  it("keeps signup metadata and public RPCs away from authorization decisions", () => {
+    const migration = readProjectFile(
+      "supabase/migrations/20260714171612_harden_authorization_and_invitation_delivery.sql"
+    ).toLowerCase();
+    const claimPage = readProjectFile("src/app/[locale]/dashboard/claims/[id]/page.tsx");
+    const onboardingPage = readProjectFile("src/app/[locale]/onboarding/page.tsx");
+
+    expect(migration).toContain("'user'");
+    expect(migration).not.toContain("raw_user_meta_data->>'role'");
+    expect(migration).toContain("and p.prosecdef");
+    expect(migration).toContain("from public, anon, authenticated");
+    expect(migration).toContain("function private.is_admin(user_id uuid)");
+    expect(claimPage).not.toContain(".rpc('is_admin')");
+    expect(onboardingPage).not.toMatch(/from\(["']profiles["']\)\.upsert/);
+    expect(onboardingPage).not.toMatch(/\brole\s*:/);
+    expect(onboardingPage).not.toMatch(/\bemail\s*:\s*user\.email/);
   });
 
   it("does not let browser admin pages or billing webhooks mutate profile roles directly", () => {

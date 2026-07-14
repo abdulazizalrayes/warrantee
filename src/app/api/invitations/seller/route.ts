@@ -1,184 +1,203 @@
-// Warrantee — Seller Invitation API
-// POST /api/invitations/seller — Send invitation to a seller
+import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
+import { createServerClient } from "@supabase/ssr";
+import { Resend } from "resend";
+import { upsertCrmContact } from "@/lib/crm";
+import { getBusinessInboxBcc, getEmailFromAddress } from "@/lib/email-config";
+import { getClientIp, getRateLimitHeaders, rateLimit } from "@/lib/rate-limit";
+import { isTrustedSameOriginRequest } from "@/lib/request-origin";
+import {
+  isInvitationRetryable,
+  sendSellerInvitationEmail,
+} from "@/lib/seller-invitation-delivery";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { isValidEmail, sanitizeString } from "@/lib/validation";
 
-import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { createServerClient } from '@supabase/ssr';
-import { Resend } from 'resend';
-import { upsertCrmContact } from '@/lib/crm';
-import { getBusinessInboxBcc, getEmailFromAddress } from '@/lib/email-config';
-import { getClientIp, getRateLimitHeaders, rateLimit } from '@/lib/rate-limit';
-import { isTrustedSameOriginRequest } from '@/lib/request-origin';
-import { isValidEmail, sanitizeString } from '@/lib/validation';
-
-let _resend: Resend | null = null;
+let resend: Resend | null = null;
 function getResend() {
-  if (!_resend) {
-    _resend = new Resend(process.env.RESEND_API_KEY);
-  }
-  return _resend;
+  if (!resend) resend = new Resend(process.env.RESEND_API_KEY);
+  return resend;
 }
 
 export async function POST(request: NextRequest) {
   const rateLimitResult = await rateLimit(getClientIp(request), {
     maxRequests: 10,
     windowMs: 10 * 60 * 1000,
-    identifier: 'seller-invitation',
+    identifier: "seller-invitation",
   });
   if (!rateLimitResult.success) {
     return NextResponse.json(
-      { error: 'Too many requests' },
-      { status: 429, headers: getRateLimitHeaders(rateLimitResult) }
+      { error: "Too many requests" },
+      { status: 429, headers: getRateLimitHeaders(rateLimitResult) },
     );
   }
 
   if (!isTrustedSameOriginRequest(request)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const cookieStore = await cookies();
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { cookies: { getAll: () => cookieStore.getAll() } }
+    { cookies: { getAll: () => cookieStore.getAll() } },
   );
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await request.json();
-  const seller_email = sanitizeString(String(body.seller_email || ''), 254).toLowerCase();
-  const seller_name = body.seller_name ? sanitizeString(String(body.seller_name), 160) : null;
-  const seller_phone = body.seller_phone ? sanitizeString(String(body.seller_phone), 60) : null;
-  const warranty_id = typeof body.warranty_id === 'string' && body.warranty_id.trim()
+  const sellerEmail = sanitizeString(String(body.seller_email || ""), 254).toLowerCase();
+  const sellerName = body.seller_name ? sanitizeString(String(body.seller_name), 160) : null;
+  const sellerPhone = body.seller_phone ? sanitizeString(String(body.seller_phone), 60) : null;
+  const warrantyId = typeof body.warranty_id === "string" && body.warranty_id.trim()
     ? sanitizeString(body.warranty_id, 80)
     : null;
-  const locale = body.locale === 'ar' ? 'ar' : 'en';
+  const locale = body.locale === "ar" ? "ar" : "en";
 
-  if (!isValidEmail(seller_email)) {
-    return NextResponse.json({ error: 'A valid seller_email is required' }, { status: 400 });
+  if (!isValidEmail(sellerEmail)) {
+    return NextResponse.json({ error: "A valid seller_email is required" }, { status: 400 });
   }
 
-  // Check if seller is already registered
-  const { data: existingSeller } = await supabase
-    .from('profiles')
-    .select('id')
-    .eq('email', seller_email.toLowerCase())
-    .single();
-
+  const admin = createSupabaseAdminClient();
+  const { data: existingSeller, error: sellerLookupError } = await admin
+    .from("profiles")
+    .select("id")
+    .eq("email", sellerEmail)
+    .maybeSingle();
+  if (sellerLookupError) {
+    return NextResponse.json({ error: "Could not check seller registration" }, { status: 500 });
+  }
   if (existingSeller) {
     return NextResponse.json({
-      error: 'Seller is already registered',
+      error: "Seller is already registered",
       seller_id: existingSeller.id,
     }, { status: 409 });
   }
 
-  // Check for existing pending invitation
-  const { data: existingInvite } = await supabase
-    .from('seller_invitations')
-    .select('id, status, created_at')
-    .eq('seller_email', seller_email.toLowerCase())
+  const { data: existingInvite, error: inviteLookupError } = await admin
+    .from("seller_invitations")
+    .select("id, token, status, created_at, last_delivery_attempt_at, delivery_attempts, seller_email, seller_name, seller_phone, delivery_locale")
+    .eq("seller_email", sellerEmail)
     .or(`inviter_id.eq.${user.id},invited_by.eq.${user.id}`)
-    .eq('status', 'pending')
-    .single();
-
-  if (existingInvite) {
+    .in("status", ["pending", "pending_delivery"])
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (inviteLookupError) {
+    return NextResponse.json({ error: "Could not check existing invitations" }, { status: 500 });
+  }
+  if (existingInvite && !isInvitationRetryable(existingInvite)) {
     return NextResponse.json({
-      error: 'Invitation already sent',
+      error: "Invitation delivery is already in progress",
       invitation_id: existingInvite.id,
+      retryable: false,
     }, { status: 409 });
   }
 
-  // Create invitation
-  const { data: invitation, error: createError } = await supabase
-    .from('seller_invitations')
-    .insert({
-      inviter_id: user.id,
-      invited_by: user.id,
-      seller_email: seller_email.toLowerCase(),
-      seller_name: seller_name || null,
-      seller_phone: seller_phone || null,
-      warranty_id: warranty_id || null,
-      status: 'pending',
-    })
-    .select('id, token')
-    .single();
-
-  if (createError) {
-    return NextResponse.json({ error: createError.message }, { status: 500 });
+  let invitation = existingInvite;
+  if (!invitation) {
+    const { data, error } = await admin
+      .from("seller_invitations")
+      .insert({
+        inviter_id: user.id,
+        invited_by: user.id,
+        seller_email: sellerEmail,
+        seller_name: sellerName,
+        seller_phone: sellerPhone,
+        warranty_id: warrantyId,
+        delivery_locale: locale,
+        status: "pending",
+      })
+      .select("id, token, status, created_at, last_delivery_attempt_at, delivery_attempts, seller_email, seller_name, seller_phone, delivery_locale")
+      .single();
+    if (error || !data) {
+      return NextResponse.json({ error: error?.message || "Could not create invitation" }, { status: 500 });
+    }
+    invitation = data;
   }
 
-  // Get inviter's profile for the email
-  const { data: inviterProfile } = await supabase
-    .from('profiles')
-    .select('full_name, email')
-    .eq('id', user.id)
-    .single();
+  const deliveryAttemptAt = new Date().toISOString();
+  const { error: attemptStateError } = await admin
+    .from("seller_invitations")
+    .update({
+      status: "pending",
+      delivery_attempts: Number(invitation.delivery_attempts || 0) + 1,
+      last_delivery_attempt_at: deliveryAttemptAt,
+      delivery_error: null,
+    })
+    .eq("id", invitation.id);
+  if (attemptStateError) {
+    return NextResponse.json({ error: "Could not start invitation delivery" }, { status: 500 });
+  }
 
-  // Send invitation email via Resend
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://warrantee.io';
-  const inviteUrl = `${appUrl}/${locale}/seller/accept-invite?token=${invitation.token}`;
+  const { data: inviterProfile } = await admin
+    .from("profiles")
+    .select("full_name, email")
+    .eq("id", user.id)
+    .maybeSingle();
+  const inviterName = inviterProfile?.full_name || "A customer";
+  const effectiveEmail = invitation.seller_email || sellerEmail;
+  const effectiveName = invitation.seller_name || sellerName;
+  const effectivePhone = invitation.seller_phone || sellerPhone;
+  const effectiveLocale = invitation.delivery_locale === "ar" ? "ar" : locale;
+
+  await upsertCrmContact({
+    email: effectiveEmail,
+    firstname: effectiveName || effectiveEmail,
+    phone: effectivePhone,
+    lifecycleStage: "lead",
+    source: "seller_invitation",
+  }).catch((crmError) => {
+    console.warn("[Invitation] CRM sync failed", crmError);
+  });
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://warrantee.io";
+  const inviteUrl = `${appUrl}/${effectiveLocale}/seller/accept-invite?token=${invitation.token}`;
 
   try {
-    await upsertCrmContact({
-      email: seller_email.toLowerCase(),
-      firstname: seller_name || seller_email,
-      phone: seller_phone || null,
-      lifecycleStage: 'lead',
-      source: 'seller_invitation',
-    }).catch((crmError) => {
-      console.warn('[Invitation] CRM sync failed:', crmError);
-    });
-
-    await getResend().emails.send({
+    const { emailId } = await sendSellerInvitationEmail(getResend(), {
+      invitationId: invitation.id,
+      sellerEmail: effectiveEmail,
+      sellerName: effectiveName,
+      inviterName,
+      inviteUrl,
       from: getEmailFromAddress(),
-      to: seller_email,
       bcc: getBusinessInboxBcc(),
-      subject: `${inviterProfile?.full_name || 'A customer'} invited you to Warrantee`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <div style="background: #0F172A; padding: 24px; text-align: center;">
-            <h1 style="color: white; margin: 0;">Warrantee</h1>
-            <p style="color: #94A3B8; margin: 4px 0 0;">Trust the Terms™</p>
-          </div>
-          <div style="padding: 32px 24px;">
-            <p>Hi${seller_name ? ` ${seller_name}` : ''},</p>
-            <p><strong>${inviterProfile?.full_name || 'A customer'}</strong> has registered a warranty for one of your products on Warrantee and would like you to join the platform.</p>
-            <p>By joining Warrantee, you can:</p>
-            <ul>
-              <li>Manage warranty claims from your customers</li>
-              <li>Build trust with verified warranty records</li>
-              <li>Reduce warranty disputes</li>
-              <li>Track your products in the field</li>
-            </ul>
-            <div style="text-align: center; margin: 32px 0;">
-              <a href="${inviteUrl}" style="background: #2563EB; color: white; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: bold;">
-                Accept Invitation
-              </a>
-            </div>
-            <p style="color: #64748B; font-size: 14px;">This invitation expires in 30 days.</p>
-          </div>
-          <div style="background: #F8FAFC; padding: 16px 24px; text-align: center; color: #94A3B8; font-size: 12px;">
-            <p>Warrantee — Trust the Terms™<br>warrantee.io</p>
-          </div>
-        </div>
-      `,
     });
-
-    // Update invitation status
-    await supabase.from('seller_invitations').update({
-      status: 'sent',
-      sent_at: new Date().toISOString(),
-    }).eq('id', invitation.id);
-
+    const { error: sentStateError } = await admin
+      .from("seller_invitations")
+      .update({
+        status: "sent",
+        sent_at: new Date().toISOString(),
+        resend_email_id: emailId,
+        delivery_error: null,
+      })
+      .eq("id", invitation.id);
+    if (sentStateError) {
+      console.error("[Invitation] Resend accepted email but state update failed", sentStateError);
+      return NextResponse.json({
+        error: "Invitation was accepted by the email provider but its status could not be saved",
+        invitation_id: invitation.id,
+      }, { status: 500 });
+    }
+    return NextResponse.json({ invitation_id: invitation.id, status: "sent" });
   } catch (emailError) {
-    console.error('[Invitation] Email send failed:', emailError);
-    // Invitation is created but email failed — can retry later
+    const message = sanitizeString(
+      emailError instanceof Error ? emailError.message : String(emailError),
+      500,
+    );
+    console.error("[Invitation] Email delivery failed", emailError);
+    const { error: failedStateError } = await admin
+      .from("seller_invitations")
+      .update({ status: "pending_delivery", delivery_error: message })
+      .eq("id", invitation.id);
+    if (failedStateError) {
+      return NextResponse.json({ error: "Invitation delivery failed and retry state could not be saved" }, { status: 500 });
+    }
+    return NextResponse.json({
+      invitation_id: invitation.id,
+      status: "pending_delivery",
+      retryable: true,
+    }, { status: 202 });
   }
-
-  return NextResponse.json({
-    invitation_id: invitation.id,
-    status: 'sent',
-  });
 }

@@ -35,9 +35,7 @@ export default function OnboardingPage() {
     if (!user) return;
     setLoading(true);
     try {
-      const { error } = await supabase.from("profiles").upsert({
-        id: user.id,
-        email: user.email || "",
+      const { error } = await supabase.from("profiles").update({
         full_name: userName,
         phone: form.phone || null,
         email_notifications: form.notify_expiry || form.notify_claims || form.notify_newsletter,
@@ -45,7 +43,7 @@ export default function OnboardingPage() {
         preferred_locale: form.language,
         preferred_language: form.language,
         onboarding_completed: true,
-      });
+      }).eq("id", user.id);
       if (error) throw error;
       trackOnboardingCompleted({
         locale,

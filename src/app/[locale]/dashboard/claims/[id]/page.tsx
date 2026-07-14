@@ -91,8 +91,17 @@ export default function ClaimDetailPage() {
     setLoading(true);
     setError('');
     try {
-      const { data: adminCheck } = await supabase.rpc('is_admin');
-      setIsAdmin(!!adminCheck);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single();
+        setIsAdmin(['admin', 'super_admin', 'platform_admin'].includes(profile?.role || ''));
+      } else {
+        setIsAdmin(false);
+      }
 
       const { data: c, error: e1 } = await supabase
         .from('warranty_claims')
