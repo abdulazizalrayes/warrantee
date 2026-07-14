@@ -10,7 +10,7 @@ Scope: Warrantee / warrantee.io only.
 - Supabase Auth, Postgres, Storage, RLS, and server clients.
 - Stripe subscription checkout and webhook handling.
 - Mistral-first OCR with PDF text extraction, Google Vision fallback when configured, and Tesseract emergency fallback.
-- Resend email workflows, HubSpot contact sync, Sentry/Vercel observability, GA4/GTM/Meta-style conversion event helpers.
+- Resend email workflows, Twenty CRM contact sync, Sentry/Vercel observability, GA4/GTM/Meta-style conversion event helpers.
 - Agent discovery layer: `llms.txt`, `llms-full.txt`, `openapi.json`, `auth.md`, `.well-known` agent/MCP/API resources, and hosted `/api/mcp`.
 
 ## Public Routes

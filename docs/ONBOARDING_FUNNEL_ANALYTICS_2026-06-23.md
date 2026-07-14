@@ -10,7 +10,7 @@ The June 23 aggregate production check showed:
 - Supabase auth users: 15 total, 0 new users in the last 30 days.
 - Profiles: 15 total, 0 new profiles in the last 30 days.
 - Companies: 2 total, 0 new companies in the last 30 days.
-- HubSpot contacts: 4 total, 0 new contacts in the last 30 days.
+- CRM contacts: HubSpot is cancelled. Twenty CRM is the intended CRM provider; live Twenty contact counts depend on `TWENTY_API_KEY` being configured.
 - Seller invitations: 0 total.
 - API usage events: 0 total.
 
@@ -67,7 +67,7 @@ Use this order when diagnosing onboarding:
 5. Backend confirmation:
    - Supabase auth user count increased.
    - `profiles` count increased.
-   - HubSpot contacts increased for contact/seller leads.
+   - CRM contacts or internal support tickets increased for contact/seller leads.
    - `seller_invitations` or seller application records increased where applicable.
 
 If page views are low, the issue is acquisition/distribution.
@@ -116,7 +116,7 @@ Read the result after 48 hours and again after 7 days:
 - If tagged `page_view` is low, the issue is outreach volume, targeting, channel, or deliverability.
 - If tagged `page_view` exists but `funnel_cta_click` is zero, the issue is landing-page offer clarity or CTA motivation.
 - If `funnel_cta_click` exists but `signup_submit` / `contact_form_submit` / `seller_application_submit` is zero, the issue is form/auth friction or intent mismatch.
-- If form submissions occur but HubSpot/Supabase records do not increase, treat it as a backend integration incident.
+- If form submissions occur but CRM/Supabase records do not increase, treat it as a backend integration incident.
 
 ## Server-Side Funnel Visibility
 
@@ -129,4 +129,4 @@ Admin users can review these events from the Admin `Funnel` tab. The tab shows c
 - Review the Admin `Funnel` tab after each campaign or launch push.
 - Compare events by `utm_source`, `utm_medium`, and `utm_campaign` before judging conversion quality.
 - Compare `signup_submit`, `sign_up`, and `onboarding_completed` to find auth or first-run friction.
-- Compare `contact_form_submit` and `seller_application_submit` against HubSpot/support-ticket creation.
+- Compare `contact_form_submit` and `seller_application_submit` against Twenty CRM/support-ticket creation.

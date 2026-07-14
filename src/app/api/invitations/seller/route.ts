@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
 import { Resend } from 'resend';
-import { upsertHubSpotContact } from '@/lib/hubspot';
+import { upsertCrmContact } from '@/lib/crm';
 import { getBusinessInboxBcc, getEmailFromAddress } from '@/lib/email-config';
 import { getClientIp, getRateLimitHeaders, rateLimit } from '@/lib/rate-limit';
 import { isTrustedSameOriginRequest } from '@/lib/request-origin';
@@ -121,13 +121,14 @@ export async function POST(request: NextRequest) {
   const inviteUrl = `${appUrl}/${locale}/seller/accept-invite?token=${invitation.token}`;
 
   try {
-    await upsertHubSpotContact({
+    await upsertCrmContact({
       email: seller_email.toLowerCase(),
       firstname: seller_name || seller_email,
       phone: seller_phone || null,
       lifecycleStage: 'lead',
+      source: 'seller_invitation',
     }).catch((crmError) => {
-      console.warn('[Invitation] HubSpot sync failed:', crmError);
+      console.warn('[Invitation] CRM sync failed:', crmError);
     });
 
     await getResend().emails.send({

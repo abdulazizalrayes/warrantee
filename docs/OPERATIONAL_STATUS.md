@@ -1,11 +1,19 @@
 # Warrantee Operational Status
 
-Last updated: 2026-07-13
+Last updated: 2026-07-14
+
+## 2026-07-14 CRM and User Acquisition Update
+
+- HubSpot is cancelled for Warrantee.
+- Twenty CRM is now the intended CRM provider. Runtime CRM sync uses `src/lib/crm.ts` and is non-blocking: if `TWENTY_API_KEY` is missing, signup/contact/seller flows still succeed and internal Warrantee support/funnel records remain the source of truth.
+- Required setup: create a Twenty API key and store it as `TWENTY_API_KEY` in Vercel Production and GitHub Actions secrets. `TWENTY_API_BASE_URL` is optional and only needed for self-hosted Twenty.
+- Added `docs/TWENTY_CRM_MIGRATION_2026-07-14.md`.
+- Added `docs/NO_USERS_ACTION_PLAN_2026-07-14.md` with the recommended 7-day founder-led acquisition sprint. Current diagnosis remains: production health is not blocking onboarding; the bottleneck is before signup and should be attacked through a controlled direct outreach/pilot campaign.
 
 ## 2026-07-13 Auth Funnel Diagnostics
 
 - Production health remains green: latest main CI passed, latest Production Security Gates passed, production smoke passed, operational readiness passed, and agent-readiness validation passed.
-- Live production onboarding counts still show no new account movement compared with the June 23 baseline: auth users remain `15`, profiles remain `15`, companies remain `2`, seller invitations remain `0`, API usage events remain `0`, and HubSpot has `0` new contacts in the last 30 days.
+- Live production onboarding counts still show no new account movement compared with the June 23 baseline: auth users remain `15`, profiles remain `15`, companies remain `2`, seller invitations remain `0`, and API usage events remain `0`.
 - The last 7 days do show traffic: `1,341` server-side funnel page views and `421` auth-intent events. The traffic is concentrated on `/en/auth`, but there are still `0` signup submissions, `0` successful signup events, `0` contact submissions, `0` seller application submissions, and `0` onboarding completions.
 - The funnel logger now preserves privacy-safe auth diagnostics (`tab`, `auth_mode`, `account_type`, `has_company_name`) so future checks can distinguish login traffic, signup traffic, consumer/business intent, and auth mode without storing personal data.
 - Current interpretation: production health is not blocking onboarding. The immediate measurement gap was that `/auth` traffic could not be separated into login versus signup intent; future reads should use the new metadata before changing the auth-page visual experience.
@@ -150,7 +158,7 @@ Last updated: 2026-07-13
 - `npm run observability:sentry` passed for both local and Vercel production readiness, with runtime DSNs and release-upload configuration present.
 - `npm run guard:loopback` passed with no disallowed local development or loopback references.
 - The local QA login was rotated and restored in `.env.local`, and GitHub Actions `E2E_USER_EMAIL` / `E2E_USER_PASSWORD` secrets were updated.
-- Local `OPERATIONAL_BASE_URL=https://warrantee.io npm run readiness:operational` now passes authenticated Supabase, Mistral OCR, document scanner, Stripe, Stripe webhook, Resend, HubSpot, security header, and production URL checks.
+- Local `OPERATIONAL_BASE_URL=https://warrantee.io npm run readiness:operational` now passes authenticated Supabase, Mistral OCR, document scanner, Stripe, Stripe webhook, Resend, CRM, security header, and production URL checks.
 
 ## 2026-06-11 Document Scanner Activation Status
 
@@ -264,7 +272,7 @@ Current launch position:
   - `npm run load:prod` passed with 2,824 requests, 0 failures, p95 355.6 ms, and p99 572 ms
   - `npm run security:rls-probe` completed without exposing anonymous warranty rows
   - `npm run indexnow:submit` submitted 28 public URLs successfully to IndexNow and Bing
-  - `npm run readiness:operational` passes production app URL, home, robots, sitemap, IndexNow key file, health, Supabase, Resend, HubSpot, OCR, and Stripe checks
+  - `npm run readiness:operational` passes production app URL, home, robots, sitemap, IndexNow key file, health, Supabase, Resend, CRM, OCR, and Stripe checks
   - current smoke, readiness, RLS, and operational checks returned no HTTP or workflow failures
   - Stripe production env was replaced in Vercel production and redeployed; a targeted authenticated production checkout probe returned a Stripe Checkout URL and session ID, then cleaned its QA rows
 - Sentry production observability is closed for launch:
@@ -295,10 +303,11 @@ Current launch position:
   - sender defaults to `hello@warrantee.io`
   - admin and seller invite flows BCC the business inbox
 - Production Resend sending has been exercised successfully against the approved mailbox path.
-- CRM capture now covers:
+- CRM capture now targets Twenty CRM and covers:
   - contact form submissions
   - seller invitation leads
   - new signup/contact creation sync
+  - HubSpot is cancelled and should not be re-enabled unless explicitly requested.
 - GA4/GTM analytics are configured on the existing Warrantee property:
   - GA4 account/property: `Warrantee / Warrantee.io`
   - measurement ID: `G-ZQJ4LRG4GN`
@@ -406,7 +415,7 @@ Current launch position:
   - Started a new Search Console validation for `Blocked by robots.txt` on July 5, 2026. Search Console now shows validation started with 6 pending examples and 0 failed examples.
 - 2026-07-05 remaining-items recheck:
   - Production smoke passed for public pages, agent-readiness files, protected route redirects, protected APIs, auth callback safety, `/api/health`, and `/api/mcp`.
-  - Operational readiness passed for Supabase, Resend, HubSpot, Mistral OCR, document-security scanning, Stripe, unsigned webhook rejection, CSP, and Redis-required backend rate limiting.
+  - Operational readiness passed for Supabase, Resend, CRM, Mistral OCR, document-security scanning, Stripe, unsigned webhook rejection, CSP, and Redis-required backend rate limiting.
   - Agent readiness passed for 13 JSON discovery endpoints and 6 text endpoints.
   - Growth readiness, pentest readiness, and OCR corpus readiness all passed.
   - Live `robots.txt` allows public content and intentionally blocks private app/API surfaces. The sitemap currently has 50 URLs, and none of those sitemap URLs are blocked by `robots.txt`.

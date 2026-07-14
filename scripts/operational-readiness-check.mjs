@@ -245,16 +245,20 @@ async function checkEmailSendEndpoint() {
   return { name: "email-send-endpoint", status: "ok", mode: "authenticated-no-send-probe" };
 }
 
-async function checkHubSpot() {
-  requireEnv(["HUBSPOT_ACCESS_TOKEN"]);
-  const response = await fetchWithTimeout("https://api.hubapi.com/crm/v3/objects/contacts?limit=1&archived=false", {
-    headers: { Authorization: `Bearer ${process.env.HUBSPOT_ACCESS_TOKEN}` },
-  });
-  if (response.status !== 200) {
-    throw new Error(`HubSpot contact read check returned ${response.status}`);
+async function checkCrmReadiness() {
+  if (!process.env.TWENTY_API_KEY) {
+    return { name: "crm", status: "disabled", provider: "twenty", reason: "missing_api_key" };
   }
 
-  return { name: "hubspot", status: "ok" };
+  const baseUrl = (process.env.TWENTY_API_BASE_URL || "https://api.twenty.com").replace(/\/$/, "");
+  const response = await fetchWithTimeout(`${baseUrl}/rest/people?limit=1`, {
+    headers: { Authorization: `Bearer ${process.env.TWENTY_API_KEY}` },
+  });
+  if (response.status !== 200) {
+    throw new Error(`Twenty CRM read check returned ${response.status}`);
+  }
+
+  return { name: "crm", status: "ok", provider: "twenty" };
 }
 
 async function checkStripe() {
@@ -639,7 +643,7 @@ async function main() {
     { name: "supabase", run: checkSupabase },
     { name: "resend", run: checkResend },
     { name: "email-send-endpoint", run: checkEmailSendEndpoint },
-    { name: "hubspot", run: checkHubSpot },
+    { name: "crm", run: checkCrmReadiness },
     { name: "ocr-provider", run: checkOCRProvider },
     { name: "document-security-scanner", run: checkDocumentSecurityScanner },
     { name: "data-retention-endpoint", run: checkDataRetentionEndpoint },

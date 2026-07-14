@@ -14,7 +14,8 @@ const serverSchema = z.object({
   VAPID_PRIVATE_KEY: z.string().min(1, "VAPID_PRIVATE_KEY is required"),
   CRON_SECRET: z.string().min(1, "CRON_SECRET is required"),
   // Optional
-  HUBSPOT_ACCESS_TOKEN: z.string().optional(),
+  TWENTY_API_KEY: z.string().optional(),
+  TWENTY_API_BASE_URL: z.string().url("TWENTY_API_BASE_URL must be a valid URL").optional(),
   OCR_PROVIDER: z.enum(["auto", "mistral", "google", "google-vision", "tesseract"]).optional(),
   MISTRAL_API_KEY: z.string().optional(),
   MISTRAL_OCR_MODEL: z.string().optional(),

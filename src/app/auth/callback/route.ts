@@ -1,7 +1,7 @@
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { sendEmail, welcomeEmail } from "@/lib/email";
-import { upsertHubSpotContact } from "@/lib/hubspot";
+import { upsertCrmContact } from "@/lib/crm";
 import { getContentLocale, normalizeLocale, type Locale } from "@/lib/i18n";
 
 function getLocaleFromPath(path: string | null): Locale {
@@ -40,12 +40,13 @@ export async function GET(request: Request) {
             const diffMinutes =
               (now.getTime() - createdAt.getTime()) / (1000 * 60);
 
-            await upsertHubSpotContact({
+            await upsertCrmContact({
               email: profile.email || user.email || "",
               firstname: profile.full_name || profile.email || user.email || "User",
               lifecycleStage: "subscriber",
+              source: "signup",
             }).catch((error) => {
-              console.warn("HubSpot signup sync error:", error);
+              console.warn("CRM signup sync error:", error);
             });
 
             // If profile was created within last 5 minutes, send welcome email

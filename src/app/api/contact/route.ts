@@ -3,7 +3,7 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createClient } from "@supabase/supabase-js";
 import { contactRateLimit, getClientIp, getRateLimitHeaders } from "@/lib/rate-limit";
 import { validateContactInput } from "@/lib/validation";
-import { upsertHubSpotContact } from "@/lib/hubspot";
+import { upsertCrmContact } from "@/lib/crm";
 import { sendEmail } from "@/lib/email";
 import { isTrustedSameOriginRequest } from "@/lib/request-origin";
 
@@ -110,15 +110,17 @@ export async function POST(request: NextRequest) {
     }
 
     const input = validation.sanitized;
-    const hubspotResult = await upsertHubSpotContact({
+    const crmResult = await upsertCrmContact({
       email: input.email,
       firstname: input.name,
       phone: input.phone,
       company: input.company,
       lifecycleStage: input.kind === "seller_application" ? "lead" : undefined,
+      source: input.kind || "contact_form",
     }).catch((error) => ({
       enabled: true as const,
-      error: error instanceof Error ? error.message : "Unknown HubSpot error",
+      provider: "twenty" as const,
+      error: error instanceof Error ? error.message : "Unknown CRM error",
     }));
 
     const supabase = await createServerSupabaseClient();
@@ -146,7 +148,7 @@ export async function POST(request: NextRequest) {
         metadata: {
           phone: input.phone || null,
           original_kind: input.kind || "contact_form",
-          hubspot: hubspotResult,
+          crm: crmResult,
         },
       })
       .select("id, ticket_number")
@@ -172,7 +174,7 @@ export async function POST(request: NextRequest) {
             phone: input.phone || null,
             source: "contact_form",
             original_kind: input.kind || "contact_form",
-            hubspot: hubspotResult,
+            crm: crmResult,
             rich_insert_error: richTicketError.message,
           },
         })
@@ -206,7 +208,7 @@ export async function POST(request: NextRequest) {
         success: true,
         submittedBy: auth.user?.id || null,
         ticket: ticket || null,
-        hubspot: hubspotResult,
+        crm: crmResult,
         emailed: emailResult.success,
       },
       { status: 201 }
