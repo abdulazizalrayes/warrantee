@@ -246,19 +246,30 @@ async function checkEmailSendEndpoint() {
 }
 
 async function checkCrmReadiness() {
-  if (!process.env.TWENTY_API_KEY) {
-    return { name: "crm", status: "disabled", provider: "twenty", reason: "missing_api_key" };
+  if (process.env.TWENTY_API_KEY) {
+    const twentyBaseUrl = (process.env.TWENTY_API_BASE_URL || "https://api.twenty.com").replace(/\/$/, "");
+    const response = await fetchWithTimeout(`${twentyBaseUrl}/rest/people?limit=1`, {
+      headers: { Authorization: `Bearer ${process.env.TWENTY_API_KEY}` },
+    });
+    if (response.status !== 200) {
+      throw new Error(`Twenty CRM read check returned ${response.status}`);
+    }
+
+    return { name: "crm", status: "ok", provider: "twenty", mode: "direct-read" };
   }
 
-  const baseUrl = (process.env.TWENTY_API_BASE_URL || "https://api.twenty.com").replace(/\/$/, "");
-  const response = await fetchWithTimeout(`${baseUrl}/rest/people?limit=1`, {
-    headers: { Authorization: `Bearer ${process.env.TWENTY_API_KEY}` },
-  });
+  const response = await fetchWithTimeout(`${baseUrl}/api/health`, { redirect: "follow" });
   if (response.status !== 200) {
-    throw new Error(`Twenty CRM read check returned ${response.status}`);
+    throw new Error(`Production health check returned ${response.status} while verifying CRM`);
   }
 
-  return { name: "crm", status: "ok", provider: "twenty" };
+  const payload = await response.json().catch(() => null);
+  const crmStatus = payload?.checks?.crm?.status;
+  if (crmStatus !== "ok") {
+    throw new Error(`Production CRM health check returned ${crmStatus || "unknown"}`);
+  }
+
+  return { name: "crm", status: "ok", provider: "twenty", mode: "production-health" };
 }
 
 async function checkStripe() {

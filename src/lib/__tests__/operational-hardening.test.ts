@@ -92,6 +92,15 @@ describe("operational hardening", () => {
     expect(healthRoute).not.toContain("process.uptime");
   });
 
+  it("verifies production CRM readiness when the local shell has no Twenty key", () => {
+    const readiness = readProjectFile("scripts/operational-readiness-check.mjs");
+
+    expect(readiness).toContain('`${baseUrl}/api/health`');
+    expect(readiness).toContain('crmStatus !== "ok"');
+    expect(readiness).toContain('mode: "production-health"');
+    expect(readiness).not.toContain('status: "disabled", provider: "twenty"');
+  });
+
   it("keeps public marketing routes from loading authenticated providers unnecessarily", () => {
     const routeProviders = readProjectFile("src/components/RouteProviders.tsx");
 
