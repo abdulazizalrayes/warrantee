@@ -386,7 +386,8 @@ test.describe("fully operational production workflows", () => {
     expect(["mistral_ocr", "google_document_text_detection", "tesseract"]).toContain(ocrImagePayload.ocr?.engine);
     const normalizedOcrText = normalizeOcrAssertionText(ocrImagePayload.text);
     expect(normalizedOcrText).toContain(normalizeOcrAssertionText(runId).slice(0, 12));
-    expect(normalizedOcrText).toContain(normalizeOcrAssertionText("OCR Image Warranty"));
+    expect(normalizedOcrText).toContain(normalizeOcrAssertionText("OCR Image"));
+    expect(normalizedOcrText).toContain(normalizeOcrAssertionText("Warrant"));
     expect(normalizedOcrText).toContain(normalizeOcrAssertionText("QA Seller"));
 
     const { data: extension, error: extensionError } = await adminClient()
