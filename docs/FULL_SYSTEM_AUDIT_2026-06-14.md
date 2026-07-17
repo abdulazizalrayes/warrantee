@@ -11,7 +11,7 @@ Scope: Warrantee only (`warrantee.io` and this repository). This audit covered m
 - `NEXT_TELEMETRY_DISABLED=1 NODE_ENV=production ./node_modules/.bin/next build` passed.
 - `npm run smoke:prod` passed against `https://warrantee.io`.
 - `npm run security:rls-probe` passed: anonymous access to protected business tables was denied.
-- `npm run readiness:operational` passed: security headers, Supabase, Resend, HubSpot, Mistral OCR, document scanner, Stripe, and Stripe unsigned-webhook rejection were healthy.
+- `npm run readiness:operational` passed: security headers, Supabase, Resend, CRM, Mistral OCR, document scanner, Stripe, and Stripe unsigned-webhook rejection were healthy.
 - `npm run load:prod` passed: 2,936 requests, 0 failures, p95 301.2 ms, p99 442.9 ms.
 - `npx playwright test tests/e2e/public-routes.spec.ts tests/e2e/protected-routes.spec.ts tests/e2e/seo-agent-ready.spec.ts --project=chromium` passed: 29 tests.
 - CLI/MCP package dry run passed: `warrantee@0.1.0`, 5 files, no bundled dependencies.
@@ -24,7 +24,7 @@ Scope: Warrantee only (`warrantee.io` and this repository). This audit covered m
 - Auth: Supabase Auth via server/browser clients, route middleware for protected app pages, and explicit API route checks.
 - Data: Supabase Postgres with RLS migrations for warranties, documents, claims, extensions, notifications, profiles, company/team tables, integration tokens, API usage, subscriptions, document security status, and operational support.
 - Core business modules: warranties, documents, OCR, claims, approvals, extensions, billing, notifications, seller flows, team management, support/contact, public verification.
-- Integrations: Stripe, Resend, HubSpot, Mistral OCR with Google Vision/local fallbacks, Sentry, GA/Meta, IndexNow, hosted MCP, CLI package.
+- Integrations: Stripe, Resend, Twenty CRM, Mistral OCR with Google Vision/local fallbacks, Sentry, GA/Meta, IndexNow, hosted MCP, CLI package.
 - Agent/developer surfaces: `/api/v1/warranties`, `/api/mcp`, `/.well-known/*`, `/llms.txt`, CLI/MCP package, API docs.
 
 ## Findings
@@ -53,7 +53,7 @@ Scope: Warrantee only (`warrantee.io` and this repository). This audit covered m
 3. Anonymous RLS probe denies protected tables.
 4. API/CLI/MCP authentication guidance correctly says to use scoped integration tokens, not usernames/passwords.
 5. Stripe webhook rejects unsigned requests and readiness reports Stripe healthy.
-6. Resend, HubSpot, Mistral OCR, and document scanner are configured in production readiness.
+6. Resend, Twenty CRM, Mistral OCR, and document scanner are configured in production readiness.
 7. Controlled production load at moderate concurrency produced no failures.
 
 ### Remaining Risks / Recommendations

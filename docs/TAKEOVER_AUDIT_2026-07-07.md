@@ -62,7 +62,7 @@ Production itself is healthy based on the July 7 checks: CI, production smoke, o
 - Auth: Supabase Auth with middleware-protected app routes and server-side API authorization.
 - Database: Supabase Postgres with RLS migrations covering warranties, documents, claims, extensions, profiles, team/company structures, integration tokens, usage events, subscriptions, security scan status, and retention controls.
 - Core product: warranty registration, documents, OCR, claims, approvals, warranty extensions, notifications, seller/admin flows, public verification, billing, API/CLI/MCP, and asset intelligence.
-- Integrations: Supabase, Stripe, Resend, HubSpot, Mistral OCR, Sentry, Vercel Analytics/Speed Insights, Google Search Console assets, IndexNow, GitHub Actions, Vercel deployment.
+- Integrations: Supabase, Stripe, Resend, Twenty CRM, Mistral OCR, Sentry, Vercel Analytics/Speed Insights, Google Search Console assets, IndexNow, GitHub Actions, Vercel deployment.
 - Agent surfaces: `/llms.txt`, `/llms-full.txt`, `/.well-known/agent-card.json`, `/.well-known/mcp.json`, `/.well-known/mcp/server-card.json`, `/.well-known/api-catalog`, `/openapi.json`, public data files, hosted MCP, CLI package, and API docs.
 
 ## Key Findings
@@ -260,7 +260,7 @@ Verification target: local QA credential check passes from a documented command 
 - Stripe Checkout passed in production operational E2E.
 - Stripe webhook rejects unsigned requests.
 - Mistral OCR is active production provider.
-- Resend, HubSpot, document security scanner, Supabase, and retention checks passed in operational readiness.
+- Resend, Twenty CRM, document security scanner, Supabase, and retention checks passed in operational readiness.
 - Agent-readiness validation passed for JSON/text endpoints.
 - Public MCP/OpenAPI/agent files are reachable and aligned.
 
@@ -315,7 +315,7 @@ Recommended checks for the next performance pass:
 
 ### Should Fix Soon
 
-1. Continue monitoring onboarding funnel, HubSpot contacts, seller applications, API usage, and signup events.
+1. Continue monitoring onboarding funnel, Twenty CRM contacts and leads, seller applications, API usage, and signup events.
 2. Run a deeper shared-JS/provider split only after approving a broader architecture pass.
 
 ### Strategic Improvements

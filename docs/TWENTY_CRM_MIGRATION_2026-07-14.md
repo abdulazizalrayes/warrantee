@@ -5,7 +5,7 @@ Scope: Warrantee only.
 
 ## Decision
 
-HubSpot is cancelled for Warrantee. Warrantee should use Twenty CRM for lead/contact capture going forward.
+Twenty CRM is Warrantee's sole CRM provider for lead/contact capture.
 
 ## Current Implementation
 
@@ -38,7 +38,7 @@ Source: https://docs.twenty.com/developers/extend/api
 
 ## Safety Rules
 
-- Do not re-enable HubSpot unless explicitly requested.
+- Do not introduce another CRM provider without an explicit architecture and data-governance decision.
 - Do not store CRM secrets in source code.
 - CRM sync must remain non-blocking. A CRM outage must not block real users or leads.
 - Contact form and seller application submissions must continue to create internal Warrantee support/funnel records even when CRM is disabled.

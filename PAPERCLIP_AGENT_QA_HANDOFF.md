@@ -52,7 +52,7 @@ Implemented:
 
 Verification completed:
 - `npm run guard:loopback` passed again; no disallowed loopback references were found.
-- `npm run readiness:operational` passed production app URL, home, robots, sitemap, IndexNow key file, health, Supabase, Resend, and HubSpot checks.
+- `npm run readiness:operational` passed production app URL, home, robots, sitemap, IndexNow key file, health, Supabase, Resend, and CRM checks.
 - `npm run readiness:operational` still failed Google Vision with HTTP 403 because billing/API access is not enabled for project `916427933820`.
 - `npm run readiness:operational` still failed Stripe with HTTP 401 `invalid API key` from the configured secret key.
 - `npm run indexnow:submit` resubmitted 28 URLs successfully to both `https://api.indexnow.org/indexnow` and `https://www.bing.com/indexnow`.
@@ -80,7 +80,7 @@ Context:
 
 Implemented:
 - Added `npm run guard:loopback` and CI enforcement for disallowed local loopback URL references outside intentional test/guard files.
-- Added `npm run readiness:operational` for production dependency checks across public URLs, Supabase, Resend, HubSpot, Google Vision, and Stripe.
+- Added `npm run readiness:operational` for production dependency checks across public URLs, Supabase, Resend, CRM, Google Vision, and Stripe.
 - Added `npm run test:e2e:operational` for destructive-but-cleaned production QA of import, approval/rejection, documents, OCR, team guardrails, and payment checkout.
 - Fixed production schema compatibility in approve/reject/payment routes for missing live columns and live warranty status enum behavior.
 - Fixed PDF OCR packaging on Vercel by tracing `pdfjs-dist/legacy/build/pdf.worker.mjs` into the `/api/ocr` serverless bundle.
@@ -352,7 +352,7 @@ Remaining access-gated verification:
 - Live Paperclip issue/comment sync remains blocked until the Paperclip control plane is accessible from an authenticated session.
 
 CRM note:
-- CRM/HubSpot remains intentionally postponed by founder instruction and must not be treated as a launch blocker for the current operational fixes.
+- CRM expansion remains intentionally postponed by founder instruction and must not be treated as a launch blocker for the current operational fixes.
 
 ## 2026-04-22 - Team invite button and global sidebar placement
 
@@ -399,7 +399,7 @@ Paperclip sync:
 Status: fixed in code, deployed to production, and verified through a live production contact submission.
 
 Issue:
-- The contact/support form returned success, sent email, and created/updated the HubSpot contact, but `ticket` was `null`.
+- The contact/support form returned success, sent email, and synchronized the CRM contact, but `ticket` was `null`.
 - Production `support_tickets` had stricter constraints than the route assumed:
   - `description` is required.
   - `category` must be one of the production-approved values such as `technical`, `billing`, or `other`.
@@ -409,7 +409,7 @@ Agents expected to review:
 - CEO: confirm this is recorded as a Warrantee launch-blocker closure, not a CRM expansion task.
 - CTO: verify the production route now normalizes form intent into valid ticket category and priority values.
 - Customer Support: verify support tickets are visible in the admin/support surface and triage workflow.
-- QA Engineer / CPO fallback: retest contact form, support page, seller application contact, email delivery, HubSpot contact sync, and admin support visibility.
+- QA Engineer / CPO fallback: retest contact form, support page, seller application contact, email delivery, Twenty CRM contact sync, and admin support visibility.
 - Security Engineer: confirm the route still rate-limits public submissions and does not expose service-role details.
 
 Implementation decision:
@@ -428,7 +428,7 @@ Production verification:
 - Vercel production deployment `dpl_Gp1xnAxnYnaWqLMGGhUCzirN1BmR` is ready and aliased to `https://warrantee.io`.
 - Live POST to `https://warrantee.io/api/contact` returned HTTP 201 with:
   - `ticket.ticket_number`: `SUP-MOE7D6G2`
-  - `hubspot.enabled`: `true`
+  - CRM synchronization was enabled.
   - `emailed`: `true`
 - Temporary database probe rows used to discover constraints were deleted immediately after validation.
 

@@ -10,7 +10,7 @@ The June 23 aggregate production check showed:
 - Supabase auth users: 15 total, 0 new users in the last 30 days.
 - Profiles: 15 total, 0 new profiles in the last 30 days.
 - Companies: 2 total, 0 new companies in the last 30 days.
-- CRM contacts: HubSpot is cancelled. Twenty CRM is the intended CRM provider; live Twenty contact counts depend on `TWENTY_API_KEY` being configured.
+- CRM contacts: Twenty CRM is the active provider; live contact counts depend on `TWENTY_API_KEY` being configured.
 - Seller invitations: 0 total.
 - API usage events: 0 total.
 

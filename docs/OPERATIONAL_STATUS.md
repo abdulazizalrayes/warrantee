@@ -4,7 +4,6 @@ Last updated: 2026-07-14
 
 ## 2026-07-14 CRM and User Acquisition Update
 
-- HubSpot is cancelled for Warrantee.
 - Twenty CRM is now the intended CRM provider. Runtime CRM sync uses `src/lib/crm.ts` and is non-blocking: if `TWENTY_API_KEY` is missing, signup/contact/seller flows still succeed and internal Warrantee support/funnel records remain the source of truth.
 - Required setup: create a Twenty API key and store it as `TWENTY_API_KEY` in Vercel Production and GitHub Actions secrets. `TWENTY_API_BASE_URL` is optional and only needed for self-hosted Twenty.
 - Added `docs/TWENTY_CRM_MIGRATION_2026-07-14.md`.
@@ -307,7 +306,6 @@ Current launch position:
   - contact form submissions
   - seller invitation leads
   - new signup/contact creation sync
-  - HubSpot is cancelled and should not be re-enabled unless explicitly requested.
 - GA4/GTM analytics are configured on the existing Warrantee property:
   - GA4 account/property: `Warrantee / Warrantee.io`
   - measurement ID: `G-ZQJ4LRG4GN`
