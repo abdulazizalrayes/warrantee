@@ -163,7 +163,7 @@ const PAGE_META: Record<
     en: {
       title: "Warrantee API / CLI / MCP Guide — ERP & System Integrations",
       description:
-        "Integrate Warrantee with ERP, ecommerce, scripts, agents, and internal systems using warranty APIs, CLI-ready examples, MCP discovery, and server-to-server integration tokens.",
+        "Connect Warrantee to ERP, ecommerce, scripts, and agents through warranty APIs, CLI examples, MCP discovery, and scoped server integration tokens.",
     },
     ar: {
       title: "دليل API / CLI / MCP وارنتي — تكاملات ERP والأنظمة",
