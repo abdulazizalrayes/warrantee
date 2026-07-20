@@ -58,6 +58,11 @@ jobs:
       - name: Production smoke test
         run: npm run smoke:prod
 
+      - name: Production agent Markdown audit
+        env:
+          AGENT_MARKDOWN_BASE_URL: https://warrantee.io
+        run: npm run qa:agent-markdown
+
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 

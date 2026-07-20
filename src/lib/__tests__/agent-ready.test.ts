@@ -9,28 +9,28 @@ import { describe, expect, it } from "vitest";
 describe("agent-ready helpers", () => {
   it("detects markdown negotiation requests", () => {
     expect(isAgentMarkdownRequest("text/html, text/markdown")).toBe(true);
+    expect(isAgentMarkdownRequest("text/markdown;q=0, text/html;q=1")).toBe(false);
+    expect(isAgentMarkdownRequest("text/markdown;q=0.5, text/html;q=1")).toBe(false);
+    expect(isAgentMarkdownRequest("text/markdown;q=1, text/html;q=0.5")).toBe(true);
+    expect(isAgentMarkdownRequest("*/*")).toBe(false);
     expect(isAgentMarkdownRequest("application/json")).toBe(false);
   });
 
   it("maps public routes to agent-aware content", () => {
     expect(getAgentRouteInfo("/en")).toMatchObject({
       locale: "en",
-      pageKey: "home",
       canonicalPath: "/en",
     });
     expect(getAgentRouteInfo("/en/support")).toMatchObject({
       locale: "en",
-      pageKey: "support",
       canonicalPath: "/en/support",
     });
     expect(getAgentRouteInfo("/en/blog")).toMatchObject({
       locale: "en",
-      pageKey: "blog",
       canonicalPath: "/en/blog",
     });
     expect(getAgentRouteInfo("/en/security")).toMatchObject({
       locale: "en",
-      pageKey: "security",
       canonicalPath: "/en/security",
     });
     expect(getAgentRouteInfo("/en/dashboard")).toBeNull();
@@ -38,10 +38,8 @@ describe("agent-ready helpers", () => {
 
   it("builds markdown for public pages", () => {
     const markdown = buildAgentMarkdown("/en/api-docs");
-    expect(markdown).toContain("# Warrantee API / CLI / MCP Guide");
-    expect(markdown).toContain("https://warrantee.io/.well-known/api-catalog");
-    expect(markdown).toContain("https://warrantee.io/api/mcp");
-    expect(markdown).toContain("Settings > API / CLI / MCP");
+    expect(markdown).toContain('canonical: "https://warrantee.io/en/api-docs"');
+    expect(markdown).toContain("# API / CLI / MCP Guide");
   });
 
   it("builds discovery link headers", () => {

@@ -93,6 +93,48 @@ Agents must route these away from enterprise or seller inquiry forms:
 - `/.well-known/http-message-signatures-directory` is a Web Bot Auth/JWKS-style public-key directory. It stays empty unless real Warrantee-operated signed bot or agent public keys are configured through `WEB_BOT_AUTH_PUBLIC_JWKS`.
 - `/.well-known/acp.json` and `/.well-known/ucp` publish truthful discovery-only status that agent-native commerce is not enabled yet. They must not be changed to `enabled` until real payment rails, approval rules, and checkout verification are implemented.
 
+## Markdown For Agents
+
+Every canonical, indexable URL in `/sitemap.xml` has one deterministic Markdown companion. The companions are generated from rendered HTML with Cheerio and Turndown; the generator does not use regex-based page conversion.
+
+- Canonical negotiation: send `Accept: text/markdown` to the normal page URL.
+- Browser behavior: ordinary browser requests and `text/markdown;q=0` continue to receive HTML.
+- Safe fallback: routes without a generated sitemap companion continue to receive HTML.
+- Direct sidecars: use `/data/agent-markdown-manifest.json` to discover `/agent-markdown/.../*.md` locations.
+- Duplicate-index protection: direct sidecars return `X-Robots-Tag: noindex, follow`.
+- Content scope: the deepest public `<main>` is retained; navigation, footer, forms, scripts, styles, hidden UI, controls, admin material, and private application links are excluded.
+- Preserved semantics: title, description, canonical URL, language, public links, meaningful images, headings, lists, tables, details, and valid public JSON-LD.
+- Content policy: `search=yes, ai-input=yes, ai-train=no` is centralized in `src/lib/agent-content-policy.ts` and applied consistently.
+
+Source and validation:
+
+- Generator: `scripts/generate-agent-markdown.mjs`
+- Structured parser/converter: `scripts/lib/agent-markdown-generator.mjs`
+- Generated source: `src/generated/agent-markdown-pages.json`
+- Runtime negotiation: `src/middleware.ts` and `src/app/api/agent-markdown/route.ts`
+- Static sidecars: `src/app/agent-markdown/[...segments]/route.ts`
+- Manifest: `src/app/data/agent-markdown-manifest.json/route.ts`
+- Coverage and response validator: `scripts/check-agent-markdown.mjs`
+- HTML preservation validator: `scripts/check-html-preservation.mjs`
+- Local production release gate: `scripts/run-agent-markdown-local-gate.mjs`
+
+After any canonical public page or sitemap change, rebuild locally, regenerate the companions, and run the release gate:
+
+```bash
+npm run build
+```
+
+Start that build in a separate terminal with a test-only `LOCAL_WARRANTEE_URL`, then run:
+
+```bash
+AGENT_MARKDOWN_BASE_URL="$LOCAL_WARRANTEE_URL" npm run agent-markdown:generate
+npm run build
+npm run qa:agent-markdown:local
+HTML_CANDIDATE_URL="$LOCAL_WARRANTEE_URL" npm run qa:html-preservation
+```
+
+The CI workflow runs `qa:agent-markdown:local` after the production build. The Production Security Gates run the full live sitemap/Markdown audit against `https://warrantee.io`.
+
 ## Remaining External DNS Task
 
 DNS-AID cannot be completed from the Next.js application. It requires DNS provider access for `warrantee.io` and, ideally, DNSSEC support. The remaining records to evaluate with the DNS provider are `_index._agents.warrantee.io`, `_a2a._agents.warrantee.io`, and `_mcp._agents.warrantee.io` using the current DNS-AID draft's SVCB/HTTPS guidance. Do not add placeholder DNS records unless they point to real maintained discovery endpoints.
@@ -133,7 +175,9 @@ Operational checks:
 - In Vercel logs, search for `agent_readiness_event`.
 - Count events by `event`.
 - Filter `user_agent_class = ai_or_search_crawler` to understand AI/search crawler activity.
+- Exclude `user_agent_class = automation` when measuring real agent adoption; release validators use this class intentionally.
 - Review `mcp_tool_call` and `inquiry_preparation` counts for agent usage.
+- Review `agent_markdown_read` for negotiated canonical Markdown usage. Direct sidecars remain statically served for cost and reliability; use platform request logs for aggregate direct-sidecar traffic.
 
 ## Validation Commands
 
@@ -147,6 +191,7 @@ Against production:
 
 ```bash
 AGENT_READINESS_BASE_URL=https://warrantee.io npm run qa:agent-readiness
+AGENT_MARKDOWN_BASE_URL=https://warrantee.io npm run qa:agent-markdown
 ```
 
 Standard verification:

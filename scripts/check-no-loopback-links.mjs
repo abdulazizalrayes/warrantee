@@ -37,6 +37,11 @@ const allowlist = [
     reason: "The takeover QA harness starts an isolated local server for browser verification only.",
   },
   {
+    file: "scripts/run-agent-markdown-local-gate.mjs",
+    patterns: new Set(["127.0.0.1"]),
+    reason: "The Markdown release gate starts an isolated local production server for validation only.",
+  },
+  {
     file: "src/lib/auth-email-guard.ts",
     patterns: new Set(["localhost"]),
     reason: "localhost is intentionally rejected as an auth email domain.",

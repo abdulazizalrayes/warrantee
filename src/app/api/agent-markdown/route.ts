@@ -1,20 +1,36 @@
-import { buildAgentMarkdown } from "@/lib/agent-ready";
+import {
+  buildAgentMarkdownHeaders,
+  resolveAgentMarkdownPage,
+} from "@/lib/agent-markdown-response";
+import { logAgentUsage } from "@/lib/server/agent-usage-logger";
 import { NextRequest, NextResponse } from "next/server";
 
-export function GET(request: NextRequest) {
-  const pathname = request.nextUrl.searchParams.get("path") ?? "/";
-  const markdown = buildAgentMarkdown(pathname);
+function response(request: NextRequest, includeBody: boolean) {
+  const pathname =
+    request.headers.get("x-warrantee-agent-markdown-path") ??
+    request.nextUrl.searchParams.get("path") ??
+    "/";
+  const page = resolveAgentMarkdownPage(pathname);
 
-  if (!markdown) {
+  if (!page) {
     return new NextResponse("Not found", { status: 404 });
   }
 
-  return new NextResponse(markdown, {
-    status: 200,
-    headers: {
-      "Content-Type": "text/markdown; charset=utf-8",
-      Vary: "Accept",
-      "X-Robots-Tag": "noindex",
-    },
+  logAgentUsage(request, "agent_markdown_read", {
+    representation: "negotiated",
+    resource_path: page.path,
   });
+
+  return new NextResponse(includeBody ? page.markdown : null, {
+    status: 200,
+    headers: buildAgentMarkdownHeaders(page),
+  });
+}
+
+export function GET(request: NextRequest) {
+  return response(request, true);
+}
+
+export function HEAD(request: NextRequest) {
+  return response(request, false);
 }

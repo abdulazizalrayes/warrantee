@@ -6,6 +6,7 @@ type AgentUsageEvent =
   | "llms_full_read"
   | "openapi_read"
   | "auth_doc_read"
+  | "agent_markdown_read"
   | "public_data_read"
   | "mcp_tool_call"
   | "mcp_resource_read"
@@ -14,6 +15,9 @@ type AgentUsageEvent =
 function classifyUserAgent(userAgent: string | null) {
   const ua = (userAgent || "").toLowerCase();
   if (!ua) return "unknown";
+  if (/(warrantee-agent-.*(validator|check)|playwright)/.test(ua)) {
+    return "automation";
+  }
   if (/(gptbot|chatgpt|openai|claudebot|anthropic|perplexity|google-extended|gemini|bingbot|applebot|ccbot|bytespider)/.test(ua)) {
     return "ai_or_search_crawler";
   }

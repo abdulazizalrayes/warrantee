@@ -38,6 +38,14 @@ export function buildPublicOpenApi() {
       "/auth.md": {
         get: { summary: "Read integration auth guide", responses: { "200": { description: "Auth guide returned" } } },
       },
+      "/data/agent-markdown-manifest.json": {
+        get: {
+          summary: "Read canonical Markdown companion manifest",
+          description:
+            "Lists every canonical indexable sitemap page, its language, direct noindex Markdown companion, content hash, and response-size reduction.",
+          responses: { "200": { description: "Markdown companion manifest returned" } },
+        },
+      },
       "/.well-known/agent-card.json": {
         get: { summary: "Read agent discovery card", responses: { "200": { description: "Agent card returned" } } },
       },

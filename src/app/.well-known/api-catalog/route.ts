@@ -82,6 +82,11 @@ export function GET() {
               type: "application/json",
               title: "Agent routing rules",
             },
+            {
+              href: `${BASE_URL}/data/agent-markdown-manifest.json`,
+              type: "application/json",
+              title: "Canonical Markdown companion manifest",
+            },
           ],
         },
       ],

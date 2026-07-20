@@ -108,3 +108,12 @@ Use this section only when the user explicitly asks about cloud Paperclip (`ai.e
 - Watch for older agents that may still carry old model configs; clean or migrate those configs before relying on them.
 - Cloudflare Access may protect Paperclip endpoints. If unauthenticated shell checks return an Access login page, record that the app is access-protected and verify health through an authenticated regular browser/session instead.
 - Familiarize yourself with release-specific Paperclip changes before assuming old Paperclip behavior, especially around model routing, agent configs, health checks, and automation behavior.
+
+## Agent Markdown Companions
+
+- Warrantee publishes deterministic Markdown companions only for canonical, indexable sitemap pages.
+- Do not hand-edit `src/generated/agent-markdown-pages.json`.
+- After changing public page content, metadata, structured data, or the sitemap: build the production app, regenerate with `npm run agent-markdown:generate` against that local build, rebuild, and run `npm run qa:agent-markdown:local`.
+- Preserve ordinary HTML output. A change is not release-ready until `npm run qa:html-preservation` confirms the candidate semantic HTML trees match the approved baseline, unless the owner explicitly approved an HTML or visual change.
+- Keep the Content-Signal policy centralized in `src/lib/agent-content-policy.ts`. Do not copy another company policy or change Warrantee's policy without owner approval.
+- Direct Markdown sidecars must remain `noindex, follow`, and `Accept: text/markdown;q=0` must return HTML.

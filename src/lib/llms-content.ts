@@ -43,6 +43,13 @@ ${listPublicResourceLinks().map((resource) => `- ${resource.name}: ${resource.ur
 - Hosted MCP endpoint: ${BASE_URL}/api/mcp
 - Auth guide: ${BASE_URL}/auth.md
 
+## Markdown Representations
+
+- Request any canonical sitemap page with the HTTP header \`Accept: text/markdown\` to receive its deterministic public Markdown representation.
+- Markdown companion manifest: ${BASE_URL}/data/agent-markdown-manifest.json
+- Direct Markdown companions use the manifest's \`contentLocation\` URLs and return \`X-Robots-Tag: noindex, follow\`.
+- If a companion is unavailable, the canonical URL safely continues to return HTML.
+
 ## Access Boundaries
 
 - Public pages and public structured data are crawlable.
@@ -84,5 +91,6 @@ ${capabilitiesData.futureReadiness.map((capability) => `- ${capability}`).join("
 - Use scoped integration tokens generated from Settings > API / CLI / MCP.
 - Respect rate limits, scopes, tenant isolation, and user ownership boundaries.
 - Do not infer private warranty, claim, document, billing, or account data from public pages.
+- Use the Markdown companion manifest for sitemap coverage, language, canonical URL, and direct sidecar discovery.
 `;
 }

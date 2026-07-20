@@ -158,6 +158,8 @@ export function GET() {
         apiCliMcpGuide: `${BASE_URL}/en/api-docs`,
         hostedMcpEndpoint: `${BASE_URL}/api/mcp`,
         serverCards: `${BASE_URL}/.well-known/mcp/server-cards.json`,
+        markdownRepresentations: `${BASE_URL}/data/agent-markdown-manifest.json`,
+        markdownNegotiation: "Send Accept: text/markdown to canonical sitemap URLs.",
         keyManagement: `${BASE_URL}/en/settings?section=integrations`,
         stdioCommand: {
           command: "npm",

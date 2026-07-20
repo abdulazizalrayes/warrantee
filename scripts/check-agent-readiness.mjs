@@ -8,6 +8,7 @@ const jsonEndpoints = [
   "/data/service-areas.json",
   "/data/project-inquiry-schema.json",
   "/data/agent-routing.json",
+  "/data/agent-markdown-manifest.json",
   "/.well-known/agent-card.json",
   "/.well-known/mcp.json",
   "/.well-known/mcp/server-card.json",
@@ -66,6 +67,7 @@ for (const required of [
   "/openapi.json",
   "/auth.md",
   "/api/mcp",
+  "/data/agent-markdown-manifest.json",
 ]) {
   if (!llms.includes(required)) fail("llms.txt is missing a discovery reference.", { required });
 }
@@ -110,6 +112,19 @@ for (const requiredTool of [
   "get_asset_intelligence",
 ]) {
   if (!toolNames.has(requiredTool)) fail("MCP card is missing a public read-only tool.", { requiredTool });
+}
+
+const markdownRepresentation = await fetch(`${baseUrl}/en`, {
+  headers: {
+    Accept: "text/markdown",
+    "user-agent": "warrantee-agent-readiness-check/1.0",
+  },
+});
+if (!markdownRepresentation.headers.get("content-type")?.startsWith("text/markdown")) {
+  fail("Canonical Markdown negotiation is unavailable.", {
+    path: "/en",
+    contentType: markdownRepresentation.headers.get("content-type"),
+  });
 }
 
 const privateIntelligence = await fetch(`${baseUrl}/api/v1/intelligence`, {

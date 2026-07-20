@@ -17,36 +17,6 @@ const contentSecurityPolicy = [
   "manifest-src 'self'",
 ].join("; ");
 
-const markdownEnabledPaths = [
-  "/",
-  "/en",
-  "/ar",
-  "/en/about",
-  "/ar/about",
-  "/en/features",
-  "/ar/features",
-  "/en/pricing",
-  "/ar/pricing",
-  "/en/contact",
-  "/ar/contact",
-  "/en/faq",
-  "/ar/faq",
-  "/en/guide",
-  "/ar/guide",
-  "/en/verify",
-  "/ar/verify",
-  "/en/api-docs",
-  "/ar/api-docs",
-  "/en/support",
-  "/ar/support",
-  "/en/terms",
-  "/ar/terms",
-  "/en/privacy",
-  "/ar/privacy",
-  "/en/cookies",
-  "/ar/cookies",
-];
-
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   serverExternalPackages: ["@napi-rs/canvas", "pdfjs-dist"],
@@ -257,19 +227,6 @@ const nextConfig: NextConfig = {
     }
 
     return redirects;
-  },
-  rewrites: async () => {
-    return markdownEnabledPaths.map((path) => ({
-      source: path,
-      has: [
-        {
-          type: "header",
-          key: "accept",
-          value: ".*text/(x-)?markdown.*",
-        },
-      ],
-      destination: `/api/agent-markdown?path=${encodeURIComponent(path)}`,
-    }));
   },
 };
 

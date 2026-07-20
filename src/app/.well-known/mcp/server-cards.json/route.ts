@@ -45,6 +45,7 @@ const serverCard = {
     apiCatalog: `${BASE_URL}/.well-known/api-catalog`,
     openapi: `${BASE_URL}/openapi.json`,
     auth: `${BASE_URL}/auth.md`,
+    markdownRepresentations: `${BASE_URL}/data/agent-markdown-manifest.json`,
   },
 };
 

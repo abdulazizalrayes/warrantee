@@ -24,6 +24,7 @@ export function GET() {
       llmsFull: `${BASE_URL}/llms-full.txt`,
       openapi: `${BASE_URL}/openapi.json`,
       auth: `${BASE_URL}/auth.md`,
+      markdownRepresentations: `${BASE_URL}/data/agent-markdown-manifest.json`,
     },
     capabilities: {
       streaming: false,
@@ -54,6 +55,12 @@ export function GET() {
         name: "Public Company Discovery",
         description:
           "Read public structured data, services, capabilities, service areas, and routing rules without private account access.",
+      },
+      {
+        id: "canonical-markdown",
+        name: "Canonical Markdown Representation",
+        description:
+          "Request a canonical sitemap URL with Accept: text/markdown or use the noindex direct companion listed in /data/agent-markdown-manifest.json.",
       },
       {
         id: "inquiry-preparation",

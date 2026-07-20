@@ -1,6 +1,5 @@
 import { createServerClient } from "@supabase/ssr";
 import {
-  buildAgentMarkdown,
   buildDiscoveryLinkHeader,
   getAgentRouteInfo,
   isAgentMarkdownRequest,
@@ -84,6 +83,7 @@ export async function middleware(request: NextRequest) {
     isIndexNowKeyPath ||
     isPlatformAssetPath ||
     pathname.startsWith("/.well-known/") ||
+    pathname.startsWith("/agent-markdown/") ||
     pathname === "/llms.txt" ||
     pathname === "/llms-full.txt" ||
     pathname === "/openapi.json" ||
@@ -136,29 +136,25 @@ export async function middleware(request: NextRequest) {
     isAuthArea;
 
   if (
-    request.method === "GET" &&
+    (request.method === "GET" || request.method === "HEAD") &&
     agentRouteInfo &&
+    request.headers.get("x-warrantee-markdown-fallback") !== "html" &&
     isAgentMarkdownRequest(request.headers.get("accept"))
   ) {
-    const markdown = buildAgentMarkdown(pathname);
-    if (markdown) {
-      return new NextResponse(markdown, {
-        status: 200,
-        headers: {
-          "Content-Type": "text/markdown; charset=utf-8",
-          Link: buildDiscoveryLinkHeader(),
-          Vary: "Accept",
-          "X-Robots-Tag": "noindex",
-          "X-Content-Type-Options": "nosniff",
-          "Referrer-Policy": "strict-origin-when-cross-origin",
-          "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
-          "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
-          "X-Frame-Options": "DENY",
-          "X-XSS-Protection": "1; mode=block",
-          "X-DNS-Prefetch-Control": "on",
-        },
-      });
-    }
+    const markdownUrl = request.nextUrl.clone();
+    markdownUrl.pathname = "/api/agent-markdown";
+    markdownUrl.search = "";
+    markdownUrl.searchParams.set("path", agentRouteInfo.canonicalPath);
+    const markdownRequestHeaders = new Headers(request.headers);
+    markdownRequestHeaders.set(
+      "x-warrantee-agent-markdown-path",
+      agentRouteInfo.canonicalPath,
+    );
+    const markdownResponse = NextResponse.rewrite(markdownUrl, {
+      request: { headers: markdownRequestHeaders },
+    });
+    markdownResponse.headers.set("Vary", "Accept");
+    return markdownResponse;
   }
 
   let response = NextResponse.next({

@@ -36,6 +36,7 @@ test.describe("SEO and agent-readiness endpoints", () => {
       "/data/service-areas.json",
       "/data/project-inquiry-schema.json",
       "/data/agent-routing.json",
+      "/data/agent-markdown-manifest.json",
       "/.well-known/agent-card.json",
       "/.well-known/api-catalog",
       "/.well-known/mcp.json",
@@ -77,6 +78,48 @@ test.describe("SEO and agent-readiness endpoints", () => {
 
     const ucp = await request.get("/.well-known/ucp");
     expect((await ucp.json()).protocol.status).toBe("not_enabled");
+  });
+
+  test("canonical sitemap pages negotiate deterministic Markdown safely", async ({ request }) => {
+    const sitemap = await request.get("/sitemap.xml");
+    const sitemapText = await sitemap.text();
+    const paths = [...sitemapText.matchAll(/<loc>https:\/\/warrantee\.io([^<]+)<\/loc>/g)]
+      .map((match) => match[1]);
+    const manifestResponse = await request.get("/data/agent-markdown-manifest.json");
+    const manifest = await manifestResponse.json();
+
+    expect(manifest.pages).toHaveLength(paths.length);
+    expect(new Set(manifest.pages.map((page: { path: string }) => page.path))).toEqual(new Set(paths));
+
+    for (const page of manifest.pages) {
+      const markdown = await request.get(page.path, {
+        headers: { Accept: "text/markdown" },
+      });
+      expect(markdown.status(), page.path).toBe(200);
+      expect(markdown.headers()["content-type"]).toContain("text/markdown");
+      expect(markdown.headers()["access-control-allow-origin"]).toBe("*");
+      expect(markdown.headers()["content-location"]).toBe(page.contentLocation);
+      expect(markdown.headers()["content-language"]).toBe(page.language);
+      expect(markdown.headers()["vary"]?.toLowerCase()).toContain("accept");
+      expect(markdown.headers()["link"]).toContain(`<${page.canonicalUrl}>; rel="canonical"`);
+      expect(markdown.headers()["content-signal"]).toBe("search=yes, ai-input=yes, ai-train=no");
+
+      const direct = await request.get(new URL(page.contentLocation).pathname);
+      expect(direct.status(), page.contentLocation).toBe(200);
+      expect(direct.headers()["access-control-allow-origin"]).toBe("*");
+      expect(direct.headers()["x-robots-tag"]).toBe("noindex, follow");
+
+      const html = await request.get(page.path, {
+        headers: { Accept: "text/markdown;q=0, text/html;q=1" },
+      });
+      expect(html.headers()["content-type"]).toContain("text/html");
+    }
+
+    const fallback = await request.get("/en/demo/product-passport", {
+      headers: { Accept: "text/markdown" },
+    });
+    expect(fallback.status()).toBe(200);
+    expect(fallback.headers()["content-type"]).toContain("text/html");
   });
 
   test("key public pages expose canonical links", async ({ page }) => {
