@@ -6,7 +6,7 @@ Scope: Warrantee and `warrantee.io` only.
 
 ## Handover Verdict
 
-Implementation is production-ready when the final production deployment and live post-deploy checks in this document are complete. No visual or product-content change is included.
+Ready. The final production deployment and all live post-deploy checks completed successfully. No visual or product-content change is included.
 
 ## Identity And Architecture Lock
 
@@ -73,7 +73,7 @@ Pre-release evidence recorded during implementation:
 - Aggregate local response size: HTML 3,547,620 bytes; Markdown 435,200 bytes; 87.73% reduction
 - Generator semantic-content size reduction: 51.47%
 
-Final type-check, lint, unit, build, E2E, visual regression, CI, deployment, and live-production evidence is recorded below after release.
+Final type-check, lint, unit, build, E2E, visual regression, CI, deployment, and live-production evidence is recorded below.
 
 Additional pre-release gates:
 
@@ -107,10 +107,12 @@ No database migration, secret rotation, paid service, DNS change, or destructive
 
 ## Final Release Record
 
-- Source commit: pending
-- Vercel deployment: pending
-- GitHub CI: pending
-- Production Security Gates: pending
-- Production Markdown audit: pending
-- Visual regression: pending
-- Paperclip Warrantee workspace record: pending
+- Implementation commit: `1a42b75922d687b0d3636678b3a3a7e831b24a05`
+- Exhaustive E2E timeout correction: `9f302b8ec8bf77e4f56d411b88e1fd17fc2299bc`
+- Vercel deployment: `dpl_FmAVvyEgDP2YsLS9wdQ74mokT3LQ` (`Ready`, production, aliased to `warrantee.io`)
+- GitHub CI: run `29730768408` passed type-check, lint, unit tests, build, the local Markdown release gate, and full E2E
+- Production Security Gates: run `29731251398` passed smoke, live Markdown audit, anonymous RLS, operational readiness, authenticated E2E, and controlled load
+- Production Markdown audit: 50 of 50 canonical URLs passed HTML, canonical, HTML-tree, Markdown headers/body, CORS, `q=0`, and direct-sidecar noindex checks
+- Production response size: HTML 3,613,833 bytes; Markdown 435,200 bytes; 87.96% reduction
+- Visual regression: regular Chrome desktop/mobile checks remained pixel-identical on the approved representative English and Arabic routes
+- Paperclip: completed Warrantee-only release record `WAR-141`, verified under Paperclip `v2026.707.0+2.git.ee83e6698`
