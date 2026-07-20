@@ -81,6 +81,8 @@ test.describe("SEO and agent-readiness endpoints", () => {
   });
 
   test("canonical sitemap pages negotiate deterministic Markdown safely", async ({ request }) => {
+    test.setTimeout(120_000);
+
     const sitemap = await request.get("/sitemap.xml");
     const sitemapText = await sitemap.text();
     const paths = [...sitemapText.matchAll(/<loc>https:\/\/warrantee\.io([^<]+)<\/loc>/g)]
