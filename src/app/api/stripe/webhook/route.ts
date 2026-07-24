@@ -24,16 +24,6 @@ type SubscriptionLike = Stripe.Subscription & {
   trial_end?: number | null;
 };
 
-type ExtensionPaymentRecord = {
-  id: string;
-  warranty_id: string;
-  new_end_date: string;
-  is_purchased: boolean | null;
-  purchased_by: string | null;
-  price?: number | null;
-  currency?: string | null;
-};
-
 function objectId(value: string | { id?: string } | null | undefined) {
   if (!value) return null;
   return typeof value === "string" ? value : value.id || null;
@@ -51,93 +41,58 @@ function planLimits(planId: string) {
   };
 }
 
-function normalizeMinorUnits(amount: unknown) {
-  const parsed = typeof amount === "number" ? amount : Number(amount);
-  if (!Number.isFinite(parsed) || parsed <= 0) return null;
-  return Math.round(parsed * 100);
-}
-
-function currencyMatches(expected: string | null | undefined, actual: string | null | undefined) {
-  return String(expected || "SAR").toLowerCase() === String(actual || "").toLowerCase();
-}
-
-async function getExtensionPaymentRecord(
-  supabaseAdmin: SupabaseAdminClient,
-  extensionId: string
-): Promise<ExtensionPaymentRecord | null> {
-  const { data, error } = await supabaseAdmin
-    .from("warranty_extensions")
-    .select("id, warranty_id, new_end_date, is_purchased, purchased_by, price, currency")
-    .eq("id", extensionId)
-    .single();
-
-  if (error || !data) return null;
-  return data as unknown as ExtensionPaymentRecord;
-}
-
 async function fulfillVerifiedExtensionPayment(
   supabaseAdmin: SupabaseAdminClient,
   input: {
     extensionId: string;
-    userId?: string | null;
+    userId: string;
     amountPaidMinor: number | null;
     currency?: string | null;
     source: string;
+    checkoutSessionId?: string | null;
+    paymentIntentId?: string | null;
   }
 ) {
-  const extension = await getExtensionPaymentRecord(supabaseAdmin, input.extensionId);
-  if (!extension) {
-    throw new Error("Extension offer not found");
+  if (!input.amountPaidMinor || !input.currency) {
+    throw new Error("Stripe payment amount or currency was missing");
   }
 
-  if (extension.is_purchased && extension.purchased_by && input.userId && extension.purchased_by !== input.userId) {
-    throw new Error("Extension offer was already purchased by another user");
-  }
-
-  const expectedAmountMinor = normalizeMinorUnits(extension.price);
-  if (!expectedAmountMinor || input.amountPaidMinor !== expectedAmountMinor) {
-    throw new Error("Stripe payment amount did not match extension offer");
-  }
-
-  if (!currencyMatches(extension.currency, input.currency)) {
-    throw new Error("Stripe payment currency did not match extension offer");
-  }
-
-  const { error: extError } = await supabaseAdmin
-    .from("warranty_extensions")
-    .update({
-      is_purchased: true,
-      purchased_by: input.userId || extension.purchased_by || null,
-      purchased_at: new Date().toISOString(),
-    })
-    .eq("id", input.extensionId);
-
-  if (extError) throw extError;
-
-  const { error: warrantyError } = await supabaseAdmin
-    .from("warranties")
-    .update({
-      end_date: extension.new_end_date,
-      warranty_end_date: extension.new_end_date,
-      status: "renewed",
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", extension.warranty_id);
-
-  if (warrantyError) throw warrantyError;
-
-  await supabaseAdmin.from("activity_log").insert({
-    actor_id: input.userId || null,
-    entity_type: "warranty_extension",
-    entity_id: input.extensionId,
-    action: "extension_payment_fulfilled",
-    metadata: {
-      warranty_id: extension.warranty_id,
-      amount_minor: input.amountPaidMinor,
-      currency: input.currency || null,
-      source: input.source,
-    },
+  const { error } = await supabaseAdmin.rpc("fulfill_warranty_extension_payment", {
+    p_extension_id: input.extensionId,
+    p_user_id: input.userId,
+    p_amount_paid_minor: input.amountPaidMinor,
+    p_currency: input.currency,
+    p_source: input.source,
+    p_checkout_session_id: input.checkoutSessionId || "",
+    p_payment_intent_id: input.paymentIntentId || "",
   });
+
+  if (error) {
+    if (error.message.includes("extension_payment_amount_mismatch")) {
+      throw new Error("Stripe payment amount did not match extension offer");
+    }
+    if (error.message.includes("extension_payment_currency_mismatch")) {
+      throw new Error("Stripe payment currency did not match extension offer");
+    }
+    throw error;
+  }
+}
+
+async function recordExtensionPaymentException(
+  supabaseAdmin: SupabaseAdminClient,
+  extensionId: string,
+  status: "refunded" | "disputed",
+  eventId: string
+) {
+  const { error } = await supabaseAdmin.rpc(
+    "record_warranty_extension_payment_exception",
+    {
+      p_extension_id: extensionId,
+      p_status: status,
+      p_event_id: eventId,
+    }
+  );
+  if (error) throw error;
 }
 
 async function upsertSubscriptionState(
@@ -205,32 +160,26 @@ async function syncStripeSubscription(
   });
 }
 
-async function hasProcessedEvent(eventId: string, supabaseAdmin: SupabaseAdminClient): Promise<boolean> {
-  try {
-    const { data } = await supabaseAdmin
-      .from("webhook_events")
-      .select("id")
-      .eq("event_id", eventId)
-      .maybeSingle();
-
-    return Boolean(data);
-  } catch (err) {
-    console.warn("Idempotency check failed:", err);
-    return false;
-  }
+async function claimEvent(eventId: string, supabaseAdmin: SupabaseAdminClient) {
+  const { data, error } = await supabaseAdmin.rpc("claim_stripe_webhook_event", {
+    p_event_id: eventId,
+  });
+  if (error) throw error;
+  return data === true;
 }
 
-async function markEventProcessed(event: Stripe.Event, supabaseAdmin: SupabaseAdminClient) {
-  const { error } = await supabaseAdmin
-    .from("webhook_events")
-    .insert({
-      event_id: event.id,
-      processed_at: new Date().toISOString(),
-    });
+async function completeEvent(eventId: string, supabaseAdmin: SupabaseAdminClient) {
+  const { data, error } = await supabaseAdmin.rpc("complete_stripe_webhook_event", {
+    p_event_id: eventId,
+  });
+  if (error || data !== true) throw error || new Error("Stripe webhook event was not claimed");
+}
 
-  if (error && error.code !== "23505") {
-    throw error;
-  }
+async function failEvent(eventId: string, supabaseAdmin: SupabaseAdminClient) {
+  await supabaseAdmin.rpc("fail_stripe_webhook_event", {
+    p_event_id: eventId,
+    p_error: "webhook_processing_failed",
+  });
 }
 
 export async function POST(request: Request) {
@@ -270,8 +219,15 @@ export async function POST(request: Request) {
 
   const supabaseAdmin = getSupabaseAdmin();
 
-  // Idempotency check: skip if we already processed this event
-  if (await hasProcessedEvent(event.id, supabaseAdmin)) {
+  let claimed = false;
+  try {
+    claimed = await claimEvent(event.id, supabaseAdmin);
+  } catch {
+    console.warn("Stripe webhook event claim failed");
+    return NextResponse.json({ error: "Webhook processing unavailable" }, { status: 503 });
+  }
+
+  if (!claimed) {
     return NextResponse.json({ received: true, deduplicated: true });
   }
 
@@ -286,12 +242,17 @@ export async function POST(request: Request) {
         // controlled by invitation and team-management flows, not Stripe metadata.
 
         if (extensionId) {
+          if (!userId) {
+            throw new Error("Stripe extension payment was missing its user");
+          }
           await fulfillVerifiedExtensionPayment(supabaseAdmin, {
             extensionId,
             userId,
             amountPaidMinor: session.amount_total ?? null,
             currency: session.currency,
             source: "checkout.session.completed",
+            checkoutSessionId: session.id,
+            paymentIntentId: objectId(session.payment_intent),
           });
         }
 
@@ -318,9 +279,12 @@ export async function POST(request: Request) {
         const metadata = invoice.metadata;
 
         if (metadata?.extension_id) {
+          if (!metadata.user_id) {
+            throw new Error("Stripe extension invoice was missing its user");
+          }
           await fulfillVerifiedExtensionPayment(supabaseAdmin, {
             extensionId: metadata.extension_id,
-            userId: metadata.user_id || null,
+            userId: metadata.user_id,
             amountPaidMinor: invoice.amount_paid ?? null,
             currency: invoice.currency,
             source: "invoice.payment_succeeded",
@@ -328,10 +292,43 @@ export async function POST(request: Request) {
         }
         break;
       }
+
+      case "charge.refunded": {
+        const charge = event.data.object;
+        const extensionId = charge.metadata?.extension_id;
+        if (extensionId) {
+          await recordExtensionPaymentException(
+            supabaseAdmin,
+            extensionId,
+            "refunded",
+            event.id
+          );
+        }
+        break;
+      }
+
+      case "charge.dispute.created": {
+        const dispute = event.data.object;
+        const chargeId = objectId(dispute.charge);
+        if (chargeId) {
+          const charge = await stripe.charges.retrieve(chargeId);
+          const extensionId = charge.metadata?.extension_id;
+          if (extensionId) {
+            await recordExtensionPaymentException(
+              supabaseAdmin,
+              extensionId,
+              "disputed",
+              event.id
+            );
+          }
+        }
+        break;
+      }
     }
 
-    await markEventProcessed(event, supabaseAdmin);
+    await completeEvent(event.id, supabaseAdmin);
   } catch {
+    await failEvent(event.id, supabaseAdmin);
     console.warn("Webhook processing error for event:", event.type);
     return NextResponse.json({ error: "Webhook processing failed" }, { status: 500 });
   }

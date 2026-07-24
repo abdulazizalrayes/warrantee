@@ -10,7 +10,7 @@ import {
   getWarrantyDocumentSafeExtension,
 } from "@/lib/documents";
 import { getClientIp, getRateLimitHeaders, rateLimit } from "@/lib/rate-limit";
-import { buildWarrantyAccessOrClause } from "@/lib/warranty-access";
+import { resolveWarrantyAccessOrClause } from "@/lib/warranty-access";
 
 export async function POST(
   request: NextRequest,
@@ -43,7 +43,7 @@ export async function POST(
     .from("warranties")
     .select("id")
     .eq("id", warrantyId)
-    .or(buildWarrantyAccessOrClause(user.id))
+    .or(await resolveWarrantyAccessOrClause(supabase, user.id))
     .single();
 
   if (!warranty) {

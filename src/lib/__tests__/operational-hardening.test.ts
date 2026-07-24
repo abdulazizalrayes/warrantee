@@ -174,7 +174,7 @@ describe("operational hardening", () => {
     expect(uploadRoute).toContain("WARRANTY_DOCUMENT_MAX_SIZE");
     expect(uploadRoute).toContain('security_status: "pending_scan"');
     expect(uploadUrlRoute).toContain("createSignedUploadUrl");
-    expect(uploadUrlRoute).toContain("buildWarrantyAccessOrClause");
+    expect(uploadUrlRoute).toContain("resolveWarrantyAccessOrClause");
     expect(uploadUrlRoute).toContain("document-signed-upload");
     expect(downloadRoute).toContain("isWarrantyDocumentDownloadBlocked");
     expect(downloadRoute).toContain("Document is blocked by security review");
@@ -204,11 +204,17 @@ describe("operational hardening", () => {
 
   it("keeps Stripe extension fulfillment verified against stored offer values", () => {
     const webhook = readProjectFile("src/app/api/stripe/webhook/route.ts");
+    const billingMigration = readProjectFile(
+      "supabase/migrations/20260724214255_atomic_billing_and_data_constraints.sql"
+    );
 
     expect(webhook).toContain("fulfillVerifiedExtensionPayment");
     expect(webhook).toContain("Stripe payment amount did not match extension offer");
     expect(webhook).toContain("Stripe payment currency did not match extension offer");
-    expect(webhook).toContain("warranty_end_date");
+    expect(webhook).toContain("fulfill_warranty_extension_payment");
+    expect(webhook).toContain("claim_stripe_webhook_event");
+    expect(billingMigration).toContain("for update");
+    expect(billingMigration).toContain("extension_end_date_must_increase");
   });
 
   it("keeps public API usage metered and token lifecycle audited", () => {
@@ -227,7 +233,9 @@ describe("operational hardening", () => {
     expect(apiCollection).toContain("authorizeApiV1Request");
     expect(apiCollection).toContain("recordApiV1Usage");
     expect(apiItem).toContain("recordApiV1Usage");
-    expect(apiItem).toContain(".or(buildWarrantyAccessOrClause(requester.userId))");
+    expect(apiItem).toContain(
+      ".or(await resolveWarrantyAccessOrClause(supabase, requester.userId))"
+    );
     expect(tokenScopeMigration).toContain("'claims:read'");
     expect(tokenScopeMigration).toContain("'documents:read'");
     expect(tokenCreate).toContain("api_token_created");
@@ -282,7 +290,7 @@ describe("operational hardening", () => {
     expect(paymentCreate).not.toContain("const STRIPE_SECRET = process.env.STRIPE_SECRET_KEY");
     expect(paymentCreate).not.toContain("const MOYASAR_SECRET = process.env.MOYASAR_SECRET_KEY");
     expect(paymentCreate).toContain("const { stripeSecret } = getPaymentProviderSecrets();");
-    expect(paymentCreate).toContain("const { moyasarSecret } = getPaymentProviderSecrets();");
+    expect(paymentCreate).not.toContain("moyasarSecret");
     expect(paymentCreate).toContain('process.env["STRIPE_SECRET_KEY"]');
   });
 
@@ -425,6 +433,7 @@ describe("operational hardening", () => {
     expect(retention).toContain("DATA_RETENTION_INGESTION_PAYLOAD_DAYS");
     expect(retention).toContain("DATA_RETENTION_OCR_TEXT_DAYS");
     expect(retention).toContain("DATA_RETENTION_API_USAGE_DAYS");
+    expect(retention).toContain("DATA_RETENTION_WEBHOOK_EVENT_DAYS");
     expect(retention).toContain("DATA_RETENTION_BATCH_LIMIT");
     expect(retention).toContain("raw_payload: null");
     expect(retention).toContain("text_body: null");
@@ -435,5 +444,6 @@ describe("operational hardening", () => {
     expect(readiness).toContain("/api/cron/data-retention");
     expect(envExample).toContain("DATA_RETENTION_INGESTION_PAYLOAD_DAYS=90");
     expect(envExample).toContain("DATA_RETENTION_API_USAGE_DAYS=400");
+    expect(envExample).toContain("DATA_RETENTION_WEBHOOK_EVENT_DAYS=400");
   });
 });

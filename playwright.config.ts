@@ -1,4 +1,8 @@
+import dotenv from "dotenv";
 import { defineConfig, devices } from "@playwright/test";
+
+dotenv.config({ path: ".env.production.local", override: false, quiet: true });
+dotenv.config({ path: ".env.local", override: false, quiet: true });
 
 const localPort = process.env.E2E_PORT || "3100";
 const baseURL = process.env.E2E_BASE_URL || `http://127.0.0.1:${localPort}`;

@@ -247,8 +247,20 @@ export async function middleware(request: NextRequest) {
     }
 
     if (isApprovalArea) {
-      const approvalRoles = ["approver", "company_admin", "platform_admin", "admin", "super_admin"];
-      if (!profile || !approvalRoles.includes(profile.role)) {
+      const isGlobalApprover =
+        profile && ["admin", "super_admin"].includes(profile.role);
+      const { data: approvalMembership } = isGlobalApprover
+        ? { data: null }
+        : await supabase
+            .from("company_members")
+            .select("id")
+            .eq("user_id", user.id)
+            .eq("is_active", true)
+            .in("role", ["approver", "company_admin", "platform_admin"])
+            .limit(1)
+            .maybeSingle();
+
+      if (!isGlobalApprover && !approvalMembership) {
         return buildNoIndexRedirect(request, "/" + locale + "/dashboard");
       }
     }

@@ -1,3 +1,8 @@
+import dotenv from "dotenv";
+
+dotenv.config({ path: ".env.production.local", override: false, quiet: true });
+dotenv.config({ path: ".env.local", override: false, quiet: true });
+
 const REQUIRED = [
   "E2E_USER_EMAIL",
   "E2E_USER_PASSWORD",

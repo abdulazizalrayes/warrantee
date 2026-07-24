@@ -1,6 +1,6 @@
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
-import { canMutateWarranty, canViewWarranty } from "@/lib/warranty-access";
+import { canMutateWarrantyForUser, canViewWarrantyForUser } from "@/lib/warranty-access";
 import { getExtensionEligibility } from "@/lib/extension-eligibility";
 import { getLatestExtensionPolicy, hasApprovedPricedProvider } from "@/lib/extension-policy";
 
@@ -27,7 +27,7 @@ export async function GET(
     return NextResponse.json({ error: "Warranty not found" }, { status: 404 });
   }
 
-  if (!canViewWarranty(warranty, user.id)) {
+  if (!await canViewWarrantyForUser(supabase, warranty, user.id)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -75,7 +75,7 @@ export async function POST(
     );
   }
 
-  if (!canMutateWarranty(warranty, user.id)) {
+  if (!await canMutateWarrantyForUser(supabase, warranty, user.id)) {
     return NextResponse.json(
       { error: "Only the warranty owner, seller, or issuer can create extension offers" },
       { status: 403 }

@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { apiV1Json, authorizeApiV1Request, recordApiV1Usage } from "@/lib/api-v1";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { buildWarrantyAccessOrClause } from "@/lib/warranty-access";
+import { resolveWarrantyAccessOrClause } from "@/lib/warranty-access";
 
 const CLAIM_SELECT = `
   id,
@@ -47,7 +47,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     .select("id")
     .eq("id", data.warranty_id)
     .is("deleted_at", null)
-    .or(buildWarrantyAccessOrClause(requester.userId))
+    .or(await resolveWarrantyAccessOrClause(supabase, requester.userId))
     .maybeSingle();
 
   if (warrantyError || !visibleWarranty) {

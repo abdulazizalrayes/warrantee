@@ -1,8 +1,8 @@
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import {
-  buildWarrantyAccessOrClause,
-  canMutateWarranty,
+  resolveWarrantyAccessOrClause,
+  canMutateWarrantyForUser,
 } from "@/lib/warranty-access";
 
 export async function GET(
@@ -23,7 +23,7 @@ export async function GET(
       .select("*, warranty_documents(*), warranty_claims(*)")
       .eq("id", id)
       .is("deleted_at", null)
-      .or(buildWarrantyAccessOrClause(user.id))
+      .or(await resolveWarrantyAccessOrClause(supabase, user.id))
       .single();
 
     if (error) {
@@ -54,14 +54,14 @@ export async function PATCH(
       .select("id, user_id, created_by, seller_id, issuer_user_id")
       .eq("id", id)
       .is("deleted_at", null)
-      .or(buildWarrantyAccessOrClause(user.id))
+      .or(await resolveWarrantyAccessOrClause(supabase, user.id))
       .single();
 
     if (lookupError || !existing) {
       return NextResponse.json({ error: "Warranty not found" }, { status: 404 });
     }
 
-    if (!canMutateWarranty(existing, user.id)) {
+    if (!await canMutateWarrantyForUser(supabase, existing, user.id)) {
       return NextResponse.json(
         { error: "Only the warranty owner, seller, or issuer can update this warranty" },
         { status: 403 }
@@ -133,14 +133,14 @@ export async function DELETE(
       .select("id, user_id, created_by, seller_id, issuer_user_id")
       .eq("id", id)
       .is("deleted_at", null)
-      .or(buildWarrantyAccessOrClause(user.id))
+      .or(await resolveWarrantyAccessOrClause(supabase, user.id))
       .single();
 
     if (lookupError || !existing) {
       return NextResponse.json({ error: "Warranty not found" }, { status: 404 });
     }
 
-    if (!canMutateWarranty(existing, user.id)) {
+    if (!await canMutateWarrantyForUser(supabase, existing, user.id)) {
       return NextResponse.json(
         { error: "Only the warranty owner, seller, or issuer can delete this warranty" },
         { status: 403 }

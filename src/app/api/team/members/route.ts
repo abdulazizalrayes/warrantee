@@ -24,6 +24,7 @@ type CompanyMembershipRow = {
   id: string;
   company_id: string;
   user_id: string;
+  role: string;
   is_active?: boolean | null;
 };
 
@@ -137,7 +138,7 @@ async function getRequesterContext() {
   const allowedDomain = getManagedCompanyDomain(email);
   const { data: membership } = await admin
     .from("company_members")
-    .select("id, company_id, user_id, is_active")
+    .select("id, company_id, user_id, role, is_active")
     .eq("user_id", user.id)
     .eq("is_active", true)
     .limit(1)
@@ -153,6 +154,13 @@ async function getRequesterContext() {
     };
   }
 
+  if (membership) {
+    requesterProfile = {
+      ...requesterProfile,
+      role: membership.role,
+    };
+  }
+
   if (!allowedDomain) {
     return {
       error: NextResponse.json(
@@ -162,7 +170,7 @@ async function getRequesterContext() {
     };
   }
 
-  if (!canManageCompanyTeam(requesterProfile.role)) {
+  if (!membership && !canManageCompanyTeam(requesterProfile.role)) {
     const { count } = await admin
       .from("profiles")
       .select("id", { count: "exact", head: true })
@@ -196,13 +204,13 @@ async function getRequesterContext() {
   } satisfies RequesterContext;
 }
 
-function formatMember(member: TeamProfileRow) {
+function formatMember(member: TeamProfileRow, storedRole = member.role) {
   return {
     id: member.id,
     email: member.email,
     full_name: member.full_name,
-    role: mapStoredRoleToTeamTier(member.role),
-    raw_role: member.role,
+    role: mapStoredRoleToTeamTier(storedRole),
+    raw_role: storedRole,
     created_at: member.created_at ?? null,
   };
 }
@@ -213,7 +221,7 @@ async function getActiveCompanyMemberships(
 ) {
   const { data } = await admin
     .from("company_members")
-    .select("id, company_id, user_id, is_active")
+    .select("id, company_id, user_id, role, is_active")
     .eq("company_id", companyId)
     .eq("is_active", true);
 
@@ -249,27 +257,12 @@ async function getCompanyMemberProfiles(
   const memberships = await getActiveCompanyMemberships(admin, companyId);
   const profileMap = await getCompanyMemberProfileMap(admin, memberships);
 
-  return memberships
-    .map((membership) => profileMap.get(membership.user_id))
-    .filter(Boolean) as TeamProfileRow[];
-}
-
-async function countActiveMembershipsForUser(
-  admin: ReturnType<typeof createSupabaseAdminClient>,
-  userId: string
-) {
-  const { count, error } = await admin
-    .from("company_members")
-    .select("id", { count: "exact", head: true })
-    .eq("user_id", userId)
-    .eq("is_active", true);
-
-  if (error) {
-    console.error("Active membership count error:", error);
-    return null;
-  }
-
-  return count ?? 0;
+  return memberships.flatMap((membership) => {
+    const profile = profileMap.get(membership.user_id);
+    return profile
+      ? [{ ...profile, membership_role: membership.role }]
+      : [];
+  });
 }
 
 async function countCompanySuperadmins(
@@ -279,7 +272,9 @@ async function countCompanySuperadmins(
 ) {
   if (companyId) {
     const members = await getCompanyMemberProfiles(admin, companyId);
-    return members.filter((member) => mapStoredRoleToTeamTier(member.role) === "superadmin").length;
+    return members.filter(
+      (member) => mapStoredRoleToTeamTier(member.membership_role) === "superadmin"
+    ).length;
   }
 
   const { data } = await admin
@@ -338,7 +333,7 @@ export async function GET() {
       members: members
         .slice()
         .sort((a, b) => (a.created_at || "").localeCompare(b.created_at || ""))
-        .map((member) => formatMember(member)),
+        .map((member) => formatMember(member, member.membership_role)),
       allowedDomain,
       canManage: canManageCompanyTeam(profile.role),
     });
@@ -435,9 +430,10 @@ export async function POST(req: NextRequest) {
   }
 
   if (companyId) {
+    const storedRole = mapTeamTierToStoredRole(requestedTier);
     const { data: existingMembership, error: membershipLookupError } = await admin
       .from("company_members")
-      .select("id, company_id, user_id, is_active")
+      .select("id, company_id, user_id, role, is_active")
       .eq("company_id", companyId)
       .eq("user_id", existingProfile.id)
       .limit(1)
@@ -457,7 +453,7 @@ export async function POST(req: NextRequest) {
     if (existingMembership) {
       const { error: membershipUpdateError } = await admin
         .from("company_members")
-        .update({ is_active: true })
+        .update({ is_active: true, role: storedRole, invited_by: user.id })
         .eq("id", existingMembership.id);
 
       if (membershipUpdateError) {
@@ -467,26 +463,26 @@ export async function POST(req: NextRequest) {
       const { error: membershipInsertError } = await admin.from("company_members").insert({
         company_id: companyId,
         user_id: existingProfile.id,
+        role: storedRole,
         is_active: true,
+        invited_by: user.id,
       });
 
       if (membershipInsertError) {
         return NextResponse.json({ error: "Failed to add that teammate" }, { status: 500 });
       }
     }
-  }
+  } else {
+    const { error: updateError } = await admin
+      .from("profiles")
+      .update({
+        role: mapTeamTierToStoredRole(requestedTier),
+      })
+      .eq("id", existingProfile.id);
 
-  const { data: updatedProfile, error: updateError } = await admin
-    .from("profiles")
-    .update({
-      role: mapTeamTierToStoredRole(requestedTier),
-    })
-    .eq("id", existingProfile.id)
-    .select(PROFILE_SELECT)
-    .single();
-
-  if (updateError || !updatedProfile) {
-    return NextResponse.json({ error: "Failed to add that teammate" }, { status: 500 });
+    if (updateError) {
+      return NextResponse.json({ error: "Failed to add that teammate" }, { status: 500 });
+    }
   }
 
   try {
@@ -500,7 +496,9 @@ export async function POST(req: NextRequest) {
     // Notification delivery is non-blocking for team management changes.
   }
 
-  return NextResponse.json({ member: formatMember(updatedProfile as TeamProfileRow) });
+  return NextResponse.json({
+    member: formatMember(existingProfile as TeamProfileRow, mapTeamTierToStoredRole(requestedTier)),
+  });
 }
 
 export async function PATCH(req: NextRequest) {
@@ -530,7 +528,7 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: "Invalid team role" }, { status: 400 });
   }
 
-  const { member } = await findMemberProfile(admin, companyId, allowedDomain, memberId);
+  const { member, membership } = await findMemberProfile(admin, companyId, allowedDomain, memberId);
   if (!member) {
     return NextResponse.json({ error: "Team member not found" }, { status: 404 });
   }
@@ -543,7 +541,7 @@ export async function PATCH(req: NextRequest) {
   }
 
   if (
-    mapStoredRoleToTeamTier(member.role) === "superadmin" &&
+    mapStoredRoleToTeamTier(membership?.role || member.role) === "superadmin" &&
     requestedTier !== "superadmin" &&
     (await countCompanySuperadmins(admin, companyId, allowedDomain)) <= 1
   ) {
@@ -553,18 +551,22 @@ export async function PATCH(req: NextRequest) {
     );
   }
 
-  const { data: updatedProfile, error: updateError } = await admin
-    .from("profiles")
-    .update({ role: mapTeamTierToStoredRole(requestedTier) })
-    .eq("id", member.id)
-    .select(PROFILE_SELECT)
-    .single();
+  const storedRole = mapTeamTierToStoredRole(requestedTier);
+  const updateResult = membership
+    ? await admin
+        .from("company_members")
+        .update({ role: storedRole })
+        .eq("id", membership.id)
+    : await admin
+        .from("profiles")
+        .update({ role: storedRole })
+        .eq("id", member.id);
 
-  if (updateError || !updatedProfile) {
+  if (updateResult.error) {
     return NextResponse.json({ error: "Failed to update that role" }, { status: 500 });
   }
 
-  return NextResponse.json({ member: formatMember(updatedProfile as TeamProfileRow) });
+  return NextResponse.json({ member: formatMember(member, storedRole) });
 }
 
 export async function DELETE(req: NextRequest) {
@@ -601,7 +603,7 @@ export async function DELETE(req: NextRequest) {
   }
 
   if (
-    mapStoredRoleToTeamTier(member.role) === "superadmin" &&
+    mapStoredRoleToTeamTier(membership?.role || member.role) === "superadmin" &&
     (await countCompanySuperadmins(admin, companyId, allowedDomain)) <= 1
   ) {
     return NextResponse.json(
@@ -620,22 +622,6 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: "Failed to remove that teammate" }, { status: 500 });
     }
 
-    // In membership-backed workspaces, deactivating the membership is the
-    // primary removal action. Role cleanup is best-effort so a profile-role
-    // edge case does not leave the teammate visibly "stuck" in the company.
-    const remainingMemberships = await countActiveMembershipsForUser(admin, member.id);
-    if (remainingMemberships === 0) {
-      const { error: updateError } = await admin
-        .from("profiles")
-        .update({
-          role: "viewer",
-        })
-        .eq("id", member.id);
-
-      if (updateError) {
-        console.error("Team member role cleanup error:", updateError);
-      }
-    }
   } else {
     const { error: updateError } = await admin
       .from("profiles")

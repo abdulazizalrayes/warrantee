@@ -78,11 +78,11 @@ export function createApiIntegrationToken() {
 }
 
 export function normalizeApiScopes(value: unknown): ApiV1Scope[] {
-  if (!Array.isArray(value)) return [...API_V1_SCOPES];
+  if (!Array.isArray(value)) return [];
   const scopes = value.filter((scope): scope is ApiV1Scope =>
     API_V1_SCOPES.includes(scope as ApiV1Scope)
   );
-  return scopes.length > 0 ? Array.from(new Set(scopes)) : [...API_V1_SCOPES];
+  return Array.from(new Set(scopes));
 }
 
 export function hasApiScope(requester: ApiRequester, requiredScope: ApiV1Scope) {
@@ -218,6 +218,7 @@ async function resolveStoredApiKey(token: string): Promise<ApiRequester | null> 
     .eq("id", data.id);
 
   const scopes = normalizeApiScopes(data.scopes);
+  if (scopes.length === 0) return null;
   const rateLimitPerMinute = normalizeApiRateLimit(data.rate_limit_per_minute);
 
   return {

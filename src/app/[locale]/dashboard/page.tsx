@@ -8,7 +8,7 @@ import { getDictionary, DIRECTION } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth-context";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
-import { buildWarrantyAccessOrClause } from "@/lib/warranty-access";
+import { resolveWarrantyAccessOrClause } from "@/lib/warranty-access";
 
 interface DashboardStats {
   active_warranties: number;
@@ -65,7 +65,7 @@ export default function DashboardPage() {
 
     const fetchDashboardData = async () => {
       setLoading(true);
-      const warrantyAccess = buildWarrantyAccessOrClause(user.id);
+      const warrantyAccess = await resolveWarrantyAccessOrClause(supabase, user.id);
       const today = new Date().toISOString().slice(0, 10);
       const soon = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
       const safeCount = async (

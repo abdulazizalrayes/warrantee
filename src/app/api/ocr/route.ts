@@ -14,6 +14,8 @@ import {
 
 const MAX_OCR_TEXT_LENGTH = 50000;
 const MAX_IMAGE_DATA_URI_BYTES = 4 * 1024 * 1024;
+const OCR_PIPELINE_VERSION = "2026-07-24.1";
+const OCR_FIELD_PARSER_VERSION = "2026-07-24.1";
 const MISTRAL_TIMEOUT_MS = 15000;
 const VISION_TIMEOUT_MS = 8000;
 const LOCAL_OCR_TIMEOUT_MS = 45000;
@@ -91,6 +93,8 @@ function submittedTextTelemetry(): OCRProviderTelemetry {
     mode: "input",
     providerPreference: getOCRProviderPreference(),
     fallback: false,
+    pipelineVersion: OCR_PIPELINE_VERSION,
+    parserVersion: OCR_FIELD_PARSER_VERSION,
   };
 }
 
@@ -110,6 +114,8 @@ async function extractTextWithMistral(dataUri: string, mimeType: string, fallbac
       fallback,
       mimeType,
       model: result.model,
+      pipelineVersion: OCR_PIPELINE_VERSION,
+      parserVersion: OCR_FIELD_PARSER_VERSION,
       confidence: result.confidence,
       pageCount: result.pageCount,
     }),
@@ -133,6 +139,8 @@ function pdfTelemetry(result: Awaited<ReturnType<typeof extractTextFromPdfBuffer
     providerPreference: getOCRProviderPreference(),
     fallback,
     mimeType,
+    pipelineVersion: OCR_PIPELINE_VERSION,
+    parserVersion: OCR_FIELD_PARSER_VERSION,
     confidence: result.confidence,
     pageCount: result.pageCount,
   });
@@ -146,6 +154,8 @@ function tesseractTelemetry(result: Awaited<ReturnType<typeof recognizeImageData
     providerPreference: getOCRProviderPreference(),
     fallback,
     mimeType,
+    pipelineVersion: OCR_PIPELINE_VERSION,
+    parserVersion: OCR_FIELD_PARSER_VERSION,
     confidence: result.confidence,
   });
 }
@@ -250,6 +260,8 @@ async function extractTextFromDocument(dataUri: string): Promise<OCRDocumentExtr
         providerPreference: provider,
         fallback: fallbackFromMistral,
         mimeType,
+        pipelineVersion: OCR_PIPELINE_VERSION,
+        parserVersion: OCR_FIELD_PARSER_VERSION,
       }),
     };
   } catch (error) {

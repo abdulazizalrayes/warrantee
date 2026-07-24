@@ -2,7 +2,7 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import { validateClaimInput } from "@/lib/validation";
 import { apiRateLimit, getClientIp, getRateLimitHeaders } from "@/lib/rate-limit";
-import { buildWarrantyAccessOrClause } from "@/lib/warranty-access";
+import { resolveWarrantyAccessOrClause } from "@/lib/warranty-access";
 
 export async function GET(request: NextRequest) {
   try {
@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     const { data: visibleWarranties, error: warrantyListError } = await supabase
       .from("warranties")
       .select("id")
-      .or(buildWarrantyAccessOrClause(user.id));
+      .or(await resolveWarrantyAccessOrClause(supabase, user.id));
 
     if (warrantyListError) {
       console.warn("Claim warranty scope fetch error:", warrantyListError.message);
@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
       .from("warranties")
       .select("id, status, user_id, buyer_id, recipient_user_id")
       .eq("id", warranty_id)
-      .or(buildWarrantyAccessOrClause(user.id))
+      .or(await resolveWarrantyAccessOrClause(supabase, user.id))
       .single();
 
     if (warrantyError || !warranty) {
@@ -140,10 +140,11 @@ export async function POST(request: NextRequest) {
       .from("warranty_claims")
       .insert({
         warranty_id,
-        user_id: user.id,
-        claim_type,
+        title: `${claim_type.charAt(0).toUpperCase()}${claim_type.slice(1)} claim`,
+        category: claim_type,
         description,
-        status: "pending",
+        status: "submitted",
+        filed_by: user.id,
       })
       .select()
       .single();
@@ -151,6 +152,18 @@ export async function POST(request: NextRequest) {
     if (error) {
       console.warn("Claim insert error:", error.message);
       return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    const { error: eventError } = await supabase.from("claim_events").insert({
+      claim_id: data.id,
+      event_type: "created",
+      new_status: "submitted",
+      description: "Claim submitted",
+      created_by: user.id,
+    });
+
+    if (eventError) {
+      console.warn("Claim event insert error:", eventError.message);
     }
 
     return NextResponse.json({ data }, { status: 201 });

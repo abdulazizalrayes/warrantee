@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { canViewWarranty } from "@/lib/warranty-access";
+import { canViewWarrantyForUser } from "@/lib/warranty-access";
 import { getExtensionEligibility } from "@/lib/extension-eligibility";
 import { getLatestExtensionPolicy } from "@/lib/extension-policy";
 
@@ -30,7 +30,7 @@ export async function GET(
     return NextResponse.json({ error: "Warranty not found" }, { status: 404 });
   }
 
-  if (!canViewWarranty(warranty, user.id)) {
+  if (!await canViewWarrantyForUser(supabase, warranty, user.id)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

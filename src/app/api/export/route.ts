@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getClientIp, getRateLimitHeaders, rateLimit } from "@/lib/rate-limit";
-import { buildWarrantyAccessOrClause } from "@/lib/warranty-access";
+import { resolveWarrantyAccessOrClause } from "@/lib/warranty-access";
 import { rowsToCsv } from "@/lib/csv";
 
 export const dynamic = "force-dynamic";
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
       const { data: warranties, error } = await supabase
         .from("warranties")
         .select("id, reference_number, product_name, product_name_ar, sku, serial_number, quantity, category, status, start_date, end_date, coverage_type, seller_name, seller_email, purchase_price, currency, created_at")
-        .or(buildWarrantyAccessOrClause(user.id))
+        .or(await resolveWarrantyAccessOrClause(supabase, user.id))
         .order("created_at", { ascending: false });
       if (error) throw error;
       data = warranties || [];
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
       const { data: visibleWarranties, error: warrantyError } = await supabase
         .from("warranties")
         .select("id")
-        .or(buildWarrantyAccessOrClause(user.id));
+        .or(await resolveWarrantyAccessOrClause(supabase, user.id));
 
       if (warrantyError) throw warrantyError;
 

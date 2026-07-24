@@ -13,6 +13,8 @@ import {
 } from '@/lib/ocr/mistral';
 
 const VISION_API_URL = 'https://vision.googleapis.com/v1/images:annotate';
+const OCR_PIPELINE_VERSION = '2026-07-24.1';
+const OCR_FIELD_PARSER_VERSION = '2026-07-24.1';
 
 type VisionPage = {
   property?: { detectedLanguages?: Array<{ languageCode: string; confidence: number }> };
@@ -47,7 +49,11 @@ function summarizeOCRProviderError(error: unknown) {
 function withOCRProvider(result: Omit<OCRResult, 'provider'>, provider: OCRProviderTelemetry): OCRResult {
   return {
     ...result,
-    provider: cleanOCRTelemetry(provider),
+    provider: cleanOCRTelemetry({
+      ...provider,
+      pipelineVersion: OCR_PIPELINE_VERSION,
+      parserVersion: OCR_FIELD_PARSER_VERSION,
+    }),
   };
 }
 

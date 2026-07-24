@@ -46,18 +46,8 @@ describe("api v1 helpers", () => {
       "claims:read",
       "documents:read",
     ]);
-    expect(normalizeApiScopes([])).toEqual([
-      "warranties:read",
-      "warranties:write",
-      "claims:read",
-      "documents:read",
-    ]);
-    expect(normalizeApiScopes("warranties:read")).toEqual([
-      "warranties:read",
-      "warranties:write",
-      "claims:read",
-      "documents:read",
-    ]);
+    expect(normalizeApiScopes([])).toEqual([]);
+    expect(normalizeApiScopes("warranties:read")).toEqual([]);
   });
 
   it("bounds per-token API rate limits", () => {
@@ -133,20 +123,28 @@ describe("api v1 helpers", () => {
     );
 
     expect(claimsList).toContain('authorizeApiV1Request(request, "claims:read")');
-    expect(claimsList).toContain("buildWarrantyAccessOrClause(requester.userId)");
+    expect(claimsList).toContain(
+      "resolveWarrantyAccessOrClause(supabase, requester.userId)"
+    );
     expect(claimsList).toContain('{ referencedTable: "warranties" }');
     expect(claimsList).toContain("warranties!inner");
     expect(claimsList).not.toContain(".limit(1000)");
     expect(claimsItem).toContain('authorizeApiV1Request(request, "claims:read")');
-    expect(claimsItem).toContain("buildWarrantyAccessOrClause(requester.userId)");
+    expect(claimsItem).toContain(
+      "resolveWarrantyAccessOrClause(supabase, requester.userId)"
+    );
 
     expect(documentsList).toContain('authorizeApiV1Request(request, "documents:read")');
-    expect(documentsList).toContain("buildWarrantyAccessOrClause(requester.userId)");
+    expect(documentsList).toContain(
+      "resolveWarrantyAccessOrClause(supabase, requester.userId)"
+    );
     expect(documentsList).toContain('{ referencedTable: "warranties" }');
     expect(documentsList).toContain("warranties!inner");
     expect(documentsList).not.toContain(".limit(1000)");
     expect(documentsItem).toContain('authorizeApiV1Request(request, "documents:read")');
-    expect(documentsItem).toContain("buildWarrantyAccessOrClause(requester.userId)");
+    expect(documentsItem).toContain(
+      "resolveWarrantyAccessOrClause(supabase, requester.userId)"
+    );
 
     for (const source of [documentsList, documentsItem]) {
       expect(source).not.toContain("file_url");

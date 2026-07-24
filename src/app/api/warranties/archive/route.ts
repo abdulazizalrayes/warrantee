@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { canMutateWarranty } from '@/lib/warranty-access';
+import { canMutateWarrantyForUser } from '@/lib/warranty-access';
 
 const ADMIN_ROLES = new Set(['admin', 'super_admin', 'platform_admin']);
 
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
     }
 
     const isAdmin = await isPlatformAdmin(supabase, user.id);
-    if (!isAdmin && !canMutateWarranty(warranty, user.id)) {
+    if (!isAdmin && !await canMutateWarrantyForUser(supabase, warranty, user.id)) {
       return NextResponse.json(
         { error: 'You do not have permission to archive this warranty' },
         { status: 403 }

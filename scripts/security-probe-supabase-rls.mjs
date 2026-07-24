@@ -1,8 +1,8 @@
-import "dotenv/config";
 import dotenv from "dotenv";
 import { createClient } from "@supabase/supabase-js";
 
-dotenv.config({ path: ".env.production.local" });
+dotenv.config({ path: ".env.production.local", override: false, quiet: true });
+dotenv.config({ path: ".env.local", override: false, quiet: true });
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;

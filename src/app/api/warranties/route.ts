@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { validateWarrantyInput, isValidDate, sanitizeString, isOneOf, VALID_WARRANTY_STATUSES } from "@/lib/validation";
 import { apiRateLimit, getClientIp, getRateLimitHeaders } from "@/lib/rate-limit";
 import {
-  buildWarrantyAccessOrClause,
+  resolveWarrantyAccessOrClause,
   buildBuyerWarrantyAccessOrClause,
   buildSellerWarrantyAccessOrClause,
   buildWarrantyOwnershipInsert,
@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
         ? buildSellerWarrantyAccessOrClause(user.id)
         : view === "buyer"
           ? buildBuyerWarrantyAccessOrClause(user.id)
-          : buildWarrantyAccessOrClause(user.id);
+          : await resolveWarrantyAccessOrClause(supabase, user.id);
 
     let query = supabase
       .from("warranties")

@@ -4,7 +4,6 @@
 declare global {
   interface Window {
     gtag?: (...args: unknown[]) => void;
-    fbq?: (...args: unknown[]) => void;
     dataLayer?: unknown[];
   }
 }
@@ -19,34 +18,6 @@ function pushDataLayer(event: string, payload: Record<string, unknown>) {
   if (typeof window !== "undefined" && Array.isArray(window.dataLayer)) {
     window.dataLayer.push({ event, ...payload });
   }
-}
-
-const metaEventMap: Record<string, string> = {
-  sign_up: "CompleteRegistration",
-  purchase: "Purchase",
-  contact_form_submit: "Lead",
-  seller_application_submit: "Lead",
-  seller_invite_sent: "Lead",
-  team_invite: "Lead",
-  warranty_created: "WarrantyCreated",
-  warranty_scan: "WarrantyScan",
-  claim_submitted: "WarrantyClaimSubmitted",
-  extension_request: "WarrantyExtensionRequest",
-  extension_wishlist: "WarrantyExtensionWishlist",
-  document_view: "WarrantyDocumentView",
-  report_export_requested: "ReportExportRequested",
-};
-
-function pushMetaPixel(event: string, payload: Record<string, unknown>) {
-  if (typeof window === "undefined" || !window.fbq) return;
-  const metaEvent = metaEventMap[event];
-  if (!metaEvent) return;
-
-  const method = ["CompleteRegistration", "Purchase", "Lead"].includes(metaEvent)
-    ? "track"
-    : "trackCustom";
-
-  window.fbq(method, metaEvent, payload);
 }
 
 const serverTrackedEvents = new Set([
@@ -155,7 +126,6 @@ function emitEvent(event: string, payload: Record<string, unknown>) {
     gtag("event", event, payload);
   }
 
-  pushMetaPixel(event, payload);
   sendServerFunnelEvent(event, payload);
 }
 

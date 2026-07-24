@@ -22,9 +22,8 @@ type SupabaseAdminClient = SupabaseClient<Database>;
  * Priority:
  * 1. Exact email match in auth.users → VERIFIED_OWNER (1.0)
  * 2. CC/reply-to match against auth.users → VERIFIED_SELLER (0.9)
- * 3. Secondary email in profiles → KNOWN_CONTACT (0.6)
- * 4. Domain match against company profiles → KNOWN_CONTACT (0.4)
- * 5. No match → UNKNOWN (0.0)
+ * 3. Verified company domain → KNOWN_CONTACT (0.4), without assigning a user
+ * 4. No match → UNKNOWN (0.0)
  */
 export async function matchSender(
   fromEmail: string,
@@ -42,7 +41,15 @@ export async function matchSender(
     .single();
 
   if (exactMatch) {
-    if (exactMatch.role === 'seller' && ccEmails.length > 0) {
+    const { data: companyMembership } = await supabaseAdmin
+      .from('company_members')
+      .select('id')
+      .eq('user_id', exactMatch.id)
+      .eq('is_active', true)
+      .limit(1)
+      .maybeSingle();
+
+    if (companyMembership && ccEmails.length > 0) {
       const buyerId = await findBuyerFromCC(ccEmails, supabaseAdmin);
       return {
         user_id: exactMatch.id,
@@ -80,44 +87,29 @@ export async function matchSender(
     }
   }
 
-  // Step 3: Check secondary/linked emails in profiles
-  const { data: linkedMatch } = await supabaseAdmin
-    .from('profiles')
-    .select('id')
-    .contains('linked_emails', [normalizedFrom])
-    .single();
-
-  if (linkedMatch) {
-    return {
-      user_id: linkedMatch.id,
-      trust_level: 'known_contact',
-      trust_score: 0.6,
-      match_method: 'linked_email',
-    };
-  }
-
-  // Step 4: Domain match
+  // Step 3: Verified company-domain match. Domain evidence must never assign
+  // an inbound email to a specific user account.
   const domain = normalizedFrom.split('@')[1];
-  if (domain && !isCommonEmailDomain(domain)) {
+  if (domain && /^[a-z0-9.-]+$/.test(domain) && !isCommonEmailDomain(domain)) {
     const { data: domainMatch } = await supabaseAdmin
-      .from('profiles')
+      .from('companies')
       .select('id')
-      .eq('company_domain', domain)
-      .eq('role', 'seller')
+      .eq('is_verified', true)
+      .ilike('email', `%@${domain}`)
       .limit(1)
-      .single();
+      .maybeSingle();
 
     if (domainMatch) {
       return {
-        user_id: domainMatch.id,
+        user_id: null,
         trust_level: 'known_contact',
         trust_score: 0.4,
-        match_method: 'domain_match',
+        match_method: 'verified_company_domain',
       };
     }
   }
 
-  // Step 5: No match
+  // Step 4: No match
   return {
     user_id: null,
     trust_level: 'unknown',

@@ -3,6 +3,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 const DEFAULT_INGESTION_PAYLOAD_DAYS = 90;
 const DEFAULT_OCR_TEXT_DAYS = 90;
 const DEFAULT_API_USAGE_DAYS = 400;
+const DEFAULT_WEBHOOK_EVENT_DAYS = 400;
 const DEFAULT_LIMIT = 250;
 const MAX_LIMIT = 1000;
 
@@ -26,6 +27,12 @@ export function getDataRetentionConfig() {
     ),
     ocrTextDays: boundedInteger(process.env.DATA_RETENTION_OCR_TEXT_DAYS, DEFAULT_OCR_TEXT_DAYS, 7, 3650),
     apiUsageDays: boundedInteger(process.env.DATA_RETENTION_API_USAGE_DAYS, DEFAULT_API_USAGE_DAYS, 30, 3650),
+    webhookEventDays: boundedInteger(
+      process.env.DATA_RETENTION_WEBHOOK_EVENT_DAYS,
+      DEFAULT_WEBHOOK_EVENT_DAYS,
+      30,
+      3650
+    ),
     limit: boundedInteger(process.env.DATA_RETENTION_BATCH_LIMIT, DEFAULT_LIMIT, 1, MAX_LIMIT),
   };
 }
@@ -38,6 +45,7 @@ export async function runOperationalDataRetention() {
   const ingestionPayloadCutoff = daysAgoIso(config.ingestionPayloadDays);
   const ocrTextCutoff = daysAgoIso(config.ocrTextDays);
   const apiUsageCutoff = daysAgoIso(config.apiUsageDays);
+  const webhookEventCutoff = daysAgoIso(config.webhookEventDays);
 
   const { data: ingestionJobs, error: ingestionSelectError } = await supabase
     .from("ingestion_jobs")
@@ -106,6 +114,25 @@ export async function runOperationalDataRetention() {
     if (apiUsageDeleteError) throw apiUsageDeleteError;
   }
 
+  const { data: webhookEvents, error: webhookEventSelectError } = await supabase
+    .from("webhook_events")
+    .select("id")
+    .eq("status", "processed")
+    .lt("processed_at", webhookEventCutoff)
+    .limit(config.limit);
+
+  if (webhookEventSelectError) throw webhookEventSelectError;
+
+  const webhookEventIds = (webhookEvents || []).map((item) => item.id);
+  if (webhookEventIds.length > 0) {
+    const { error: webhookEventDeleteError } = await supabase
+      .from("webhook_events")
+      .delete()
+      .in("id", webhookEventIds);
+
+    if (webhookEventDeleteError) throw webhookEventDeleteError;
+  }
+
   return {
     status: "ok",
     config,
@@ -113,6 +140,7 @@ export async function runOperationalDataRetention() {
       ingestionPayloadCutoff,
       ocrTextCutoff,
       apiUsageCutoff,
+      webhookEventCutoff,
     },
     redacted: {
       ingestionPayloads: ingestionJobIds.length,
@@ -120,6 +148,7 @@ export async function runOperationalDataRetention() {
     },
     deleted: {
       apiUsageEvents: apiUsageEventIds.length,
+      webhookEvents: webhookEventIds.length,
     },
   };
 }

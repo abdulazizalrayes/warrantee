@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
+import { Resend, type AttachmentData } from 'resend';
 import type { Database, Json } from '@/types/database';
 import {
   matchSender,
@@ -40,6 +41,117 @@ function getSupabaseAdmin() {
 type SupabaseAdminClient = ReturnType<typeof getSupabaseAdmin>;
 type InboundAttachment = NonNullable<ResendInboundPayload['attachments']>[number];
 
+type ResendReceivedEvent = {
+  type: 'email.received';
+  created_at: string;
+  data: {
+    email_id: string;
+    message_id?: string | null;
+    from: string;
+    to: string[];
+    cc?: string[] | null;
+    subject?: string | null;
+  };
+};
+
+function createResendClient() {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) throw new Error('RESEND_API_KEY is not configured');
+  return new Resend(apiKey);
+}
+
+function verifyResendWebhook(resend: Resend, body: string, request: NextRequest) {
+  const webhookSecret = process.env.RESEND_WEBHOOK_SECRET;
+  const id = request.headers.get('svix-id');
+  const timestamp = request.headers.get('svix-timestamp');
+  const signature = request.headers.get('svix-signature');
+  if (!webhookSecret || !id || !timestamp || !signature) return null;
+
+  try {
+    return resend.webhooks.verify({
+      payload: body,
+      headers: { id, timestamp, signature },
+      webhookSecret,
+    });
+  } catch {
+    return null;
+  }
+}
+
+async function downloadResendAttachment(attachment: AttachmentData): Promise<InboundAttachment> {
+  if (attachment.size <= 0 || attachment.size > MAX_FILE_SIZE) {
+    throw new Error('Inbound attachment exceeds the supported size');
+  }
+
+  const downloadUrl = new URL(attachment.download_url);
+  if (downloadUrl.protocol !== 'https:' || downloadUrl.username || downloadUrl.password) {
+    throw new Error('Invalid inbound attachment URL');
+  }
+
+  const response = await fetch(downloadUrl, {
+    redirect: 'error',
+    signal: AbortSignal.timeout(20_000),
+  });
+  if (!response.ok) {
+    throw new Error(`Inbound attachment download failed (${response.status})`);
+  }
+
+  const contentLength = Number(response.headers.get('content-length') || attachment.size);
+  if (!Number.isFinite(contentLength) || contentLength <= 0 || contentLength > MAX_FILE_SIZE) {
+    throw new Error('Inbound attachment content length is invalid');
+  }
+
+  const bytes = Buffer.from(await response.arrayBuffer());
+  if (bytes.length <= 0 || bytes.length > MAX_FILE_SIZE) {
+    throw new Error('Inbound attachment download size is invalid');
+  }
+
+  return {
+    filename: sanitizeInboundAttachmentFilename(attachment.filename || 'attachment'),
+    content_type: attachment.content_type.toLowerCase(),
+    content: bytes.toString('base64'),
+    size: bytes.length,
+  };
+}
+
+async function loadReceivedEmail(
+  resend: Resend,
+  event: ResendReceivedEvent
+): Promise<ResendInboundPayload> {
+  const { data: email, error: emailError } = await resend.emails.receiving.get(
+    event.data.email_id,
+    { html_format: 'cid' }
+  );
+  if (emailError || !email) {
+    throw new Error(`Could not retrieve inbound email: ${emailError?.message || 'not found'}`);
+  }
+
+  const { data: attachmentList, error: attachmentError } =
+    await resend.emails.receiving.attachments.list({
+      emailId: event.data.email_id,
+      limit: 20,
+    });
+  if (attachmentError) {
+    throw new Error(`Could not retrieve inbound attachments: ${attachmentError.message}`);
+  }
+
+  const attachments = await Promise.all(
+    (attachmentList?.data || []).slice(0, 20).map(downloadResendAttachment)
+  );
+
+  return {
+    from: email.from,
+    to: email.to[0] || event.data.to[0] || '',
+    cc: (email.cc || []).join(','),
+    subject: email.subject || event.data.subject || '',
+    text: email.text || '',
+    html: email.html || '',
+    attachments,
+    headers: email.headers || {},
+    message_id: email.message_id || event.data.message_id || event.data.email_id,
+  };
+}
+
 export async function POST(request: NextRequest) {
   const clientIp = getClientIp(request);
   const webhookLimitResult = await webhookRateLimit(clientIp);
@@ -53,15 +165,20 @@ export async function POST(request: NextRequest) {
   const supabaseAdmin = getSupabaseAdmin();
   try {
     // 1. Verify Resend webhook signature
-    const signature = request.headers.get('resend-signature');
     const body = await request.text();
-
-    if (!verifyResendSignature(body, signature)) {
+    const resend = createResendClient();
+    const verifiedEvent = verifyResendWebhook(resend, body, request);
+    if (!verifiedEvent) {
       console.error('[Ingest] Invalid webhook signature');
       return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
     }
 
-    const payload: ResendInboundPayload = JSON.parse(body);
+    if (verifiedEvent.type !== 'email.received') {
+      return NextResponse.json({ status: 'ignored' });
+    }
+
+    const receivedEvent = verifiedEvent as ResendReceivedEvent;
+    const payload = await loadReceivedEmail(resend, receivedEvent);
 
     // 2. Rate limiting
     const fromEmail = extractEmailAddress(payload.from).toLowerCase().trim();
@@ -87,7 +204,7 @@ export async function POST(request: NextRequest) {
         html_body: payload.html || '',
         status: 'received',
         attachment_count: payload.attachments?.length || 0,
-        raw_payload: payload as unknown as Json,
+        raw_payload: receivedEvent as unknown as Json,
         ip_address: clientIp,
       })
       .select('id')
@@ -364,12 +481,20 @@ async function processAttachment(
       emailAuth.aligned &&
       !hasFraud
     ) {
-      await autoConfirmWarranty(jobId, attachmentRecord.id, senderMatch.user_id!, ocrResult, supabaseAdmin);
-      await logAudit(jobId, 'auto_confirmed', 'system', {
-        confidence: ocrResult.aggregate_confidence,
-        trust_score: senderMatch.trust_score,
-        email_authentication: emailAuth,
-      }, attachmentRecord.id);
+      const autoConfirmed = await autoConfirmWarranty(
+        jobId,
+        attachmentRecord.id,
+        senderMatch.user_id!,
+        ocrResult,
+        supabaseAdmin
+      );
+      if (autoConfirmed) {
+        await logAudit(jobId, 'auto_confirmed', 'system', {
+          confidence: ocrResult.aggregate_confidence,
+          trust_score: senderMatch.trust_score,
+          email_authentication: emailAuth,
+        }, attachmentRecord.id);
+      }
     }
 
     return { confidence: ocrResult.aggregate_confidence, hasFraud, provisional: provisional || null };
@@ -443,6 +568,12 @@ async function autoConfirmWarranty(
   supabaseAdmin: SupabaseAdminClient
 ) {
   const fields = ocrResult.extracted_fields;
+  const startDate = fields.purchase_date?.value;
+  const endDate = fields.expiry_date?.value;
+
+  if (!startDate || !endDate) {
+    return false;
+  }
 
   const { data: warranty } = await supabaseAdmin
     .from('warranties')
@@ -453,8 +584,8 @@ async function autoConfirmWarranty(
       product_name: fields.product_name?.value || 'Unknown Product',
       sku: fields.model_number?.value || null,
       serial_number: fields.serial_number?.value || null,
-      start_date: fields.purchase_date?.value || null,
-      end_date: fields.expiry_date?.value || null,
+      start_date: startDate,
+      end_date: endDate,
       seller_name: fields.seller_name?.value || null,
       is_self_registered: true,
       source: 'email_ingestion',
@@ -468,23 +599,8 @@ async function autoConfirmWarranty(
       warranty_id: warranty.id,
     }).eq('id', attachmentId);
   }
-}
 
-function verifyResendSignature(body: string, signature: string | null): boolean {
-  if (!signature || !process.env.RESEND_WEBHOOK_SECRET) {
-    if (process.env.NODE_ENV === 'development') return true;
-    return false;
-  }
-
-  const expectedSignature = crypto
-    .createHmac('sha256', process.env.RESEND_WEBHOOK_SECRET)
-    .update(body)
-    .digest('hex');
-
-  const sigBuf = Buffer.from(signature);
-  const expectedBuf = Buffer.from(expectedSignature);
-  if (sigBuf.length !== expectedBuf.length) return false;
-  return crypto.timingSafeEqual(sigBuf, expectedBuf);
+  return Boolean(warranty);
 }
 
 async function checkRateLimit(email: string, clientIp: string): Promise<boolean> {

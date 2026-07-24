@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { buildWarrantyAccessOrClause } from '@/lib/warranty-access';
+import { resolveWarrantyAccessOrClause } from '@/lib/warranty-access';
 import { getExtensionEligibility } from '@/lib/extension-eligibility';
 import { getLatestExtensionPolicy } from '@/lib/extension-policy';
 import { getClientIp, getRateLimitHeaders, paymentRateLimit } from '@/lib/rate-limit';
@@ -48,7 +48,6 @@ function sameOriginUrl(pathOrUrl: unknown, appUrl: string, fallbackPath: string)
 function getPaymentProviderSecrets() {
   return {
     stripeSecret: process.env["STRIPE_SECRET_KEY"],
-    moyasarSecret: process.env["MOYASAR_SECRET_KEY"],
   };
 }
 
@@ -57,7 +56,7 @@ async function getPaymentWarranty(
   warrantyId: string,
   userId: string
 ) {
-  const access = buildWarrantyAccessOrClause(userId);
+  const access = await resolveWarrantyAccessOrClause(supabase, userId);
   const result = await supabase
     .from('warranties')
     .select('id, product_name, status, end_date, currency, user_id, buyer_id, recipient_user_id, seller_id, issuer_user_id')
@@ -121,7 +120,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    if (!['stripe', 'moyasar'].includes(provider)) {
+    if (provider !== 'stripe') {
       return NextResponse.json({ error: 'Invalid payment provider' }, { status: 400 });
     }
 
@@ -249,6 +248,9 @@ export async function POST(request: NextRequest) {
           'metadata[warranty_id]': warrantyId,
           'metadata[extension_months]': String(months),
           'metadata[user_id]': user.id,
+          'payment_intent_data[metadata][extension_id]': resolvedExtensionId!,
+          'payment_intent_data[metadata][warranty_id]': warrantyId,
+          'payment_intent_data[metadata][user_id]': user.id,
         }),
       });
 
@@ -257,34 +259,6 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: session.error.message }, { status: 400 });
       }
       return NextResponse.json({ url: session.url, sessionId: session.id, provider: 'stripe' });
-    }
-
-    if (provider === 'moyasar') {
-      const { moyasarSecret } = getPaymentProviderSecrets();
-      if (!moyasarSecret) {
-        return NextResponse.json({ error: 'Moyasar not configured' }, { status: 503 });
-      }
-
-      const moyasarRes = await fetch('https://api.moyasar.com/v1/invoices', {
-        method: 'POST',
-        headers: {
-          'Authorization': 'Basic ' + Buffer.from(moyasarSecret + ':').toString('base64'),
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          amount: amount * 100,
-          currency,
-          description: 'Warranty Extension - ' + months + ' months',
-          callback_url: new URL('/api/payments/moyasar/callback', appUrl).toString(),
-          metadata: { extension_id: resolvedExtensionId!, warranty_id: warrantyId, extension_months: months, user_id: user.id },
-        }),
-      });
-
-      const invoice = await moyasarRes.json();
-      if (invoice.errors) {
-        return NextResponse.json({ error: invoice.message || 'Moyasar error' }, { status: 400 });
-      }
-      return NextResponse.json({ url: invoice.url, invoiceId: invoice.id, provider: 'moyasar' });
     }
 
     return NextResponse.json({ error: 'Invalid payment provider' }, { status: 400 });

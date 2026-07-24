@@ -70,7 +70,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         .abortSignal(controller.signal)
         .single();
       clearTimeout(timeout);
-      if (data) setProfile(data);
+      if (data) {
+        setProfile({
+          ...data,
+          company_name:
+            typeof data.company === "string" ? data.company : null,
+        });
+      }
     } catch (err: unknown) {
       if (!(err instanceof Error && err.name === "AbortError")) {
         console.error("fetchProfile error:", err);

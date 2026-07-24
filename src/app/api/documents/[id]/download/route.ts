@@ -6,7 +6,7 @@ import {
   isWarrantyDocumentDownloadBlocked,
   normalizeWarrantyDocumentStoragePath,
 } from "@/lib/documents";
-import { canViewWarranty } from "@/lib/warranty-access";
+import { canViewWarrantyForUser } from "@/lib/warranty-access";
 import { isSchemaColumnError } from "@/lib/warranty-document-provenance";
 
 export async function GET(
@@ -57,7 +57,7 @@ export async function GET(
     .eq("id", document.warranty_id)
     .single();
 
-  if (warrantyError || !warranty || !canViewWarranty(warranty, user.id)) {
+  if (warrantyError || !warranty || !await canViewWarrantyForUser(supabase, warranty, user.id)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

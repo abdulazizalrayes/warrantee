@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { buildWarrantyAccessOrClause } from "@/lib/warranty-access";
+import { resolveWarrantyAccessOrClause } from "@/lib/warranty-access";
 import { isSchemaColumnError } from "@/lib/warranty-document-provenance";
 
 export async function GET(request: NextRequest) {
@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
   const { data: warranties, error: warrantyError } = await supabase
     .from("warranties")
     .select("id")
-    .or(buildWarrantyAccessOrClause(user.id))
+    .or(await resolveWarrantyAccessOrClause(supabase, user.id))
     .limit(500);
 
   if (warrantyError) {

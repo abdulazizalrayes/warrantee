@@ -16,8 +16,6 @@ import dynamic from "next/dynamic";
 const RouteProviders = dynamic(() => import("@/components/RouteProviders"));
 const GoogleTagManager = dynamic(() => import("@/components/GoogleTagManager"));
 const GoogleAnalytics = dynamic(() => import("@/components/GoogleAnalytics"));
-const MetaPixel = dynamic(() => import("@/components/MetaPixel"));
-const Hotjar = dynamic(() => import("@/components/Hotjar"));
 const CookieConsent = dynamic(() => import("@/components/CookieConsent"));
 
 export const metadata: Metadata = {
@@ -57,7 +55,6 @@ export const metadata: Metadata = {
     title: "Warrantee.io — Trust the Terms™",
     description: "Track, manage, transfer, verify, and claim warranties. Bilingual AR+EN. Free plan available.",
     images: ["https://warrantee.io/opengraph-image"],
-    creator: "@warrantee_io",
   },
 };
 
@@ -84,15 +81,11 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
       <meta name="theme-color" content="#1A1A2E" />
       {/* Bing Webmaster verification */}
       <meta name="msvalidate.01" content="E1C23BBDB660B5FBF84E7E6B1AE1B743" />
-      {/* Geo meta tags for Saudi Arabia */}
+      {/* Market metadata */}
       <meta name="geo.region" content="SA" />
       <meta name="geo.placename" content="Saudi Arabia" />
-      <meta name="geo.position" content="24.7136;46.6753" />
-      <meta name="ICBM" content="24.7136, 46.6753" />
-      {/* Additional SEO meta */}
       <meta name="distribution" content="global" />
       <meta name="rating" content="general" />
-      <meta name="revisit-after" content="7 days" />
       <meta name="apple-mobile-web-app-title" content="Warrantee.io" />
       <meta name="application-name" content="Warrantee.io" />
       <meta name="mobile-web-app-capable" content="yes" />
@@ -102,8 +95,6 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
       </a>
       <GoogleTagManager />
       <GoogleAnalytics />
-      <MetaPixel />
-      <Hotjar />
       <RouteProviders>
         <main id="main-content">
           <PublicBreadcrumbs locale={locale} visual={false} />

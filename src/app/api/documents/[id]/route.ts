@@ -2,18 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { WARRANTY_DOCUMENTS_BUCKET, normalizeWarrantyDocumentStoragePath } from "@/lib/documents";
-import { canViewWarranty } from "@/lib/warranty-access";
+import {
+  canMutateWarrantyForUser,
+  canViewWarrantyForUser,
+} from "@/lib/warranty-access";
 import { isSchemaColumnError } from "@/lib/warranty-document-provenance";
-
-type WarrantyAccessRow = {
-  id: string;
-  user_id?: string | null;
-  created_by?: string | null;
-  recipient_user_id?: string | null;
-  buyer_id?: string | null;
-  seller_id?: string | null;
-  issuer_user_id?: string | null;
-};
 
 type DocumentRow = {
   id: string;
@@ -23,16 +16,6 @@ type DocumentRow = {
   warranty_id: string;
   uploaded_by?: string | null;
 };
-
-function canDeleteDocument(document: DocumentRow, warranty: WarrantyAccessRow, userId: string) {
-  return (
-    document.uploaded_by === userId ||
-    warranty.user_id === userId ||
-    warranty.created_by === userId ||
-    warranty.issuer_user_id === userId ||
-    warranty.seller_id === userId
-  );
-}
 
 async function getDocument(admin: ReturnType<typeof createSupabaseAdminClient>, id: string) {
   let { data, error } = await admin
@@ -82,11 +65,14 @@ export async function DELETE(
     .eq("id", document.warranty_id)
     .single();
 
-  if (warrantyError || !warranty || !canViewWarranty(warranty, user.id)) {
+  if (warrantyError || !warranty || !await canViewWarrantyForUser(supabase, warranty, user.id)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  if (!canDeleteDocument(document, warranty, user.id)) {
+  const canDelete =
+    document.uploaded_by === user.id ||
+    await canMutateWarrantyForUser(supabase, warranty, user.id);
+  if (!canDelete) {
     return NextResponse.json({ error: "Only the uploader, owner, issuer, or seller can delete this document" }, { status: 403 });
   }
 

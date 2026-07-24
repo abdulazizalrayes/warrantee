@@ -1,7 +1,6 @@
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import {
-  canApproveWarranty,
   isPlatformAdminRole,
 } from "@/lib/server/company-team";
 import { NextRequest, NextResponse } from "next/server";
@@ -10,7 +9,6 @@ type ApprovalWarranty = {
   id: string;
   status: string;
   product_name: string | null;
-  company_id?: string | null;
   issuer_company_id?: string | null;
   created_by?: string | null;
   issuer_user_id?: string | null;
@@ -26,28 +24,36 @@ function isMissingColumnError(error: unknown, column: string) {
   );
 }
 
-async function getApproverProfile(admin: ReturnType<typeof createSupabaseAdminClient>, userId: string) {
-  const result = await admin
+async function getApproverProfile(
+  admin: ReturnType<typeof createSupabaseAdminClient>,
+  userId: string
+) {
+  const { data, error } = await admin
     .from("profiles")
-    .select("role, company_id")
+    .select("role")
     .eq("id", userId)
     .single();
 
-  if (!result.error) return result.data as { role: string | null; company_id?: string | null };
+  return error ? null : data as { role: string | null };
+}
 
-  if (isMissingColumnError(result.error, "company_id")) {
-    const fallback = await admin
-      .from("profiles")
-      .select("role")
-      .eq("id", userId)
-      .single();
+async function canApproveForCompany(
+  admin: ReturnType<typeof createSupabaseAdminClient>,
+  userId: string,
+  companyId: string | null | undefined
+) {
+  if (!companyId) return false;
+  const { data, error } = await admin
+    .from("company_members")
+    .select("id")
+    .eq("company_id", companyId)
+    .eq("user_id", userId)
+    .eq("is_active", true)
+    .in("role", ["approver", "company_admin", "platform_admin"])
+    .limit(1)
+    .maybeSingle();
 
-    if (!fallback.error && fallback.data) {
-      return { ...(fallback.data as { role: string | null }), company_id: null };
-    }
-  }
-
-  return null;
+  return !error && Boolean(data);
 }
 
 // POST /api/warranties/[id]/approve
@@ -68,7 +74,7 @@ export async function POST(
 
   const profile = await getApproverProfile(admin, user.id);
 
-  if (!profile || !canApproveWarranty(profile.role)) {
+  if (!profile) {
     return NextResponse.json(
       { error: "Forbidden: approver role required" },
       { status: 403 }
@@ -76,13 +82,9 @@ export async function POST(
   }
 
   const isPlatformAdmin = isPlatformAdminRole(profile.role);
-  const warrantySelect = isPlatformAdmin
-    ? "id, status, product_name, created_by, issuer_user_id"
-    : "id, status, product_name, company_id, issuer_company_id, created_by, issuer_user_id";
-
   const { data: warrantyRow, error: fetchError } = await admin
     .from("warranties")
-    .select(warrantySelect)
+    .select("id, status, product_name, issuer_company_id, created_by, issuer_user_id")
     .eq("id", id)
     .single();
   const warranty = warrantyRow as ApprovalWarranty | null;
@@ -98,20 +100,18 @@ export async function POST(
     );
   }
 
-  const warrantyCompanyId = "company_id" in warranty
-    ? warranty.company_id || warranty.issuer_company_id || null
-    : null;
-  if (!isPlatformAdmin) {
-    if (!profile.company_id || !warrantyCompanyId || profile.company_id !== warrantyCompanyId) {
-      return NextResponse.json(
-        { error: "Forbidden: you can only approve warranties for your own company" },
-        { status: 403 }
-      );
-    }
+  if (
+    !isPlatformAdmin &&
+    !(await canApproveForCompany(admin, user.id, warranty.issuer_company_id))
+  ) {
+    return NextResponse.json(
+      { error: "Forbidden: approver membership required for this company" },
+      { status: 403 }
+    );
   }
 
   const now = new Date().toISOString();
-  let { error: updateError } = await admin
+  let { data: updatedWarranty, error: updateError } = await admin
     .from("warranties")
     .update({
       status: "active",
@@ -120,7 +120,9 @@ export async function POST(
       updated_at: now,
     })
     .eq("id", id)
-    .eq("status", "pending_approval");
+    .eq("status", "pending_approval")
+    .select("id")
+    .maybeSingle();
 
   if (updateError && (isMissingColumnError(updateError, "approved_by") || isMissingColumnError(updateError, "approved_at"))) {
     const retry = await admin
@@ -130,12 +132,21 @@ export async function POST(
         updated_at: now,
       })
       .eq("id", id)
-      .eq("status", "pending_approval");
+      .eq("status", "pending_approval")
+      .select("id")
+      .maybeSingle();
     updateError = retry.error;
+    updatedWarranty = retry.data;
   }
 
   if (updateError) {
     return NextResponse.json({ error: "Failed to approve warranty" }, { status: 500 });
+  }
+  if (!updatedWarranty) {
+    return NextResponse.json(
+      { error: "Warranty status changed before approval completed" },
+      { status: 409 }
+    );
   }
 
   await admin.from("activity_log").insert({

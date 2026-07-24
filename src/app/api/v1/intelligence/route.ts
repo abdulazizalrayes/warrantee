@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { computeAssetIntelligence } from "@/lib/asset-intelligence";
 import { apiV1Json, authorizeApiV1Request, parsePositiveInt, recordApiV1Usage } from "@/lib/api-v1";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { buildWarrantyAccessOrClause } from "@/lib/warranty-access";
+import { resolveWarrantyAccessOrClause } from "@/lib/warranty-access";
 
 // GET /api/v1/intelligence - Portfolio asset lifecycle intelligence
 export async function GET(request: NextRequest) {
@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     .from("warranties")
     .select("id, status, start_date, end_date, created_at, category, seller_name, supplier, purchase_price")
     .is("deleted_at", null)
-    .or(buildWarrantyAccessOrClause(requester.userId))
+    .or(await resolveWarrantyAccessOrClause(supabase, requester.userId))
     .order("created_at", { ascending: false })
     .limit(limit);
 

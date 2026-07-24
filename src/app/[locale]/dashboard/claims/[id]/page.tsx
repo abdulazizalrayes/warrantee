@@ -5,6 +5,7 @@ import { usePathname, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
 import { normalizeLocale } from '@/lib/i18n';
+import { CLAIM_TRANSITIONS } from '@/lib/claim-transitions';
 
 const supabase = createSupabaseBrowserClient();
 
@@ -24,19 +25,6 @@ const statusCfg: Record<string,{l:string;a:string;bg:string;tx:string}> = {
 const sevCfg: Record<string,{l:string;c:string;bg:string}> = {low:{l:'Low',c:'text-green-700',bg:'bg-green-50'},medium:{l:'Medium',c:'text-yellow-700',bg:'bg-yellow-50'},high:{l:'High',c:'text-orange-700',bg:'bg-orange-50'},critical:{l:'Critical',c:'text-red-700',bg:'bg-red-50'}};
 
 const evIcons: Record<string,string> = {created:'➕',status_change:'➡️',comment:'💬',attachment_added:'📎',assigned:'👤',escalated:'⚠️',info_requested:'❓',info_provided:'ℹ️',approved:'✅',rejected:'❌',reopened:'🔄',closed:'🔒'};
-
-const transitions: Record<string, string[]> = {
-  draft: ['submitted'],
-  submitted: ['under_review'],
-  under_review: ['approved', 'rejected', 'awaiting_info'],
-  awaiting_info: ['under_review'],
-  approved: ['resolved'],
-  rejected: ['closed'],
-  resolved: ['closed'],
-  closed: [],
-  open: ['in_progress', 'resolved'],
-  in_progress: ['resolved', 'closed'],
-};
 
 const actionBtnCfg: Record<string,{bg:string;hover:string}> = {
   approved:{bg:'bg-green-600',hover:'hover:bg-green-700'},
@@ -135,33 +123,16 @@ export default function ClaimDetailPage() {
     if (changingStatus) return;
     setChangingStatus(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      const oldStatus = claim.status;
-      const { error: updErr } = await supabase
-        .from('warranty_claims')
-        .update({ status: newStatus, updated_at: new Date().toISOString() })
-        .eq('id', claimId);
-      if (updErr) throw updErr;
-
-      await supabase.from('claim_events').insert({
-        claim_id: claimId,
-        event_type: 'status_change',
-        old_status: oldStatus,
-        new_status: newStatus,
-        description: statusNote || null,
-        created_by: user?.id
+      const response = await fetch(`/api/claims/${claimId}/transition`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus, note: statusNote || null }),
       });
-
-      await supabase.from('activity_log').insert({
-        action: 'claim_status_changed',
-        entity_type: 'warranty_claim',
-        entity_id: claimId,
-        metadata: { old_status: oldStatus, new_status: newStatus, note: statusNote || null },
-        actor_id: user?.id
-      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload.error || t.err);
 
       setStatusNote('');
-      loadClaim();
+      await loadClaim();
     } catch (e: any) {
       setError(e.message);
     }
@@ -193,7 +164,7 @@ export default function ClaimDetailPage() {
     return <span className={'px-3 py-1.5 rounded-full text-sm font-medium ' + c.bg + ' ' + c.tx}>{isRTL ? c.a : c.l}</span>;
   };
 
-  const availableTransitions = claim ? (transitions[claim.status] || []) : [];
+  const availableTransitions = claim ? (CLAIM_TRANSITIONS[claim.status] || []) : [];
 
   if (loading) return (
     <div className="min-h-[60vh] flex items-center justify-center">

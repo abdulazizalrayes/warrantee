@@ -10,6 +10,17 @@ import { useAuth } from "@/lib/auth-context";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { trackClaim } from "@/lib/ga4-events";
 
+const CLAIM_ATTACHMENT_TYPES = new Map([
+  ["application/pdf", "pdf"],
+  ["image/jpeg", "jpg"],
+  ["image/png", "png"],
+  ["application/msword", "doc"],
+  [
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "docx",
+  ],
+]);
+
 export default function FileClaimPage() {
   const params = useParams() ?? {};
   const router = useRouter();
@@ -44,7 +55,9 @@ export default function FileClaimPage() {
   const handleFiles = (newFiles: FileList | null) => {
     if (!newFiles) return;
     const maxSize = 10 * 1024 * 1024;
-    const valid = Array.from(newFiles).filter(f => f.size <= maxSize);
+    const valid = Array.from(newFiles).filter(
+      (file) => file.size <= maxSize && CLAIM_ATTACHMENT_TYPES.has(file.type)
+    );
     setFiles(prev => [...prev, ...valid].slice(0, 5));
   };
 
@@ -116,8 +129,9 @@ export default function FileClaimPage() {
     if (files.length > 0) {
       setUploadProgress(t.uploading);
       for (const file of files) {
-        const ext = file.name.split('.').pop();
-        const path = `claims/${claim.id}/${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${ext}`;
+        const ext = CLAIM_ATTACHMENT_TYPES.get(file.type);
+        if (!ext) continue;
+        const path = `${user!.id}/claims/${claim.id}/${crypto.randomUUID()}.${ext}`;
         const { error: upErr } = await supabase.storage
           .from('claim-attachments')
           .upload(path, file);
@@ -273,7 +287,7 @@ export default function FileClaimPage() {
                 type="file"
                 multiple
                 className="hidden"
-                accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
+                accept="image/jpeg,image/png,.pdf,.doc,.docx"
                 onChange={e => handleFiles(e.target.files)}
               />
             </div>

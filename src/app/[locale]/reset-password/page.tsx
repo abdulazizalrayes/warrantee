@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { Footer } from "@/components/Footer";
@@ -19,6 +19,8 @@ const dict = {
     mismatch: "Passwords do not match",
     tooShort: "Password must be at least 8 characters",
     error: "Failed to update password. Please try again.",
+    invalidSession: "This password reset link is invalid or has expired. Request a new link.",
+    validating: "Validating reset link...",
     back: "Back to Sign In",
   },
   ar: {
@@ -31,6 +33,8 @@ const dict = {
     mismatch: "كلمات المرور غير متطابقة",
     tooShort: "يجب أن تكون كلمة المرور 8 أحرف على الأقل",
     error: "فشل تحديث كلمة المرور. حاول مرة أخرى.",
+    invalidSession: "رابط إعادة تعيين كلمة المرور غير صالح أو انتهت صلاحيته. اطلب رابطًا جديدًا.",
+    validating: "جارٍ التحقق من رابط إعادة التعيين...",
     back: "العودة لتسجيل الدخول",
   },
 };
@@ -50,11 +54,31 @@ export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [sessionState, setSessionState] = useState<"checking" | "ready" | "invalid">("checking");
+
+  useEffect(() => {
+    let mounted = true;
+    void supabase.auth.getUser().then((result: {
+      data: { user: unknown | null };
+      error: unknown | null;
+    }) => {
+      if (!mounted) return;
+      setSessionState(!result.error && result.data.user ? "ready" : "invalid");
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setMessage("");
+
+    if (sessionState !== "ready") {
+      setError(t.invalidSession);
+      return;
+    }
 
     if (password.length < 8) {
       setError(t.tooShort);
@@ -100,6 +124,16 @@ export default function ResetPasswordPage() {
                 {error}
               </div>
             )}
+            {sessionState === "checking" && (
+              <div className="mb-4 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
+                {t.validating}
+              </div>
+            )}
+            {sessionState === "invalid" && !error && (
+              <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {t.invalidSession}
+              </div>
+            )}
 
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>
@@ -130,7 +164,7 @@ export default function ResetPasswordPage() {
               </div>
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || sessionState !== "ready"}
                 className="w-full rounded-full bg-[#0071e3] px-5 py-3 font-semibold text-white transition hover:bg-[#0077ED] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {loading ? "..." : t.submit}

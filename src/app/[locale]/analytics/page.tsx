@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { DashboardPageShell } from '@/components/dashboard/DashboardPageShell';
 import { PageViewTracker } from '@/components/PageViewTracker';
-import { buildWarrantyAccessOrClause } from '@/lib/warranty-access';
+import { resolveWarrantyAccessOrClause } from '@/lib/warranty-access';
 import { computeAssetIntelligence } from '@/lib/asset-intelligence';
 
 const supabase = createSupabaseBrowserClient();
@@ -207,7 +207,7 @@ export default function AnalyticsPage() {
       const { data: warranties, error: warrantiesError } = await supabase
         .from('warranties')
         .select('id, status, start_date, end_date, created_at, category, seller_name, purchase_price, user_id, created_by, recipient_user_id, buyer_id, seller_id, issuer_user_id')
-        .or(buildWarrantyAccessOrClause(user.id));
+        .or(await resolveWarrantyAccessOrClause(supabase, user.id));
 
       if (warrantiesError) {
         console.error('Analytics warranties query error:', warrantiesError);

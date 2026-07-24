@@ -6,7 +6,7 @@ import {
   recordApiV1Usage,
 } from "@/lib/api-v1";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { buildWarrantyAccessOrClause } from "@/lib/warranty-access";
+import { resolveWarrantyAccessOrClause } from "@/lib/warranty-access";
 import { sanitizeString } from "@/lib/validation";
 
 const CLAIM_SELECT = `
@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
   let query = supabase
     .from("warranty_claims")
     .select(CLAIM_SELECT_WITH_VISIBLE_WARRANTY, { count: "exact" })
-    .or(buildWarrantyAccessOrClause(requester.userId), { referencedTable: "warranties" })
+    .or(await resolveWarrantyAccessOrClause(supabase, requester.userId), { referencedTable: "warranties" })
     .is("warranties.deleted_at", null);
 
   if (warrantyId) {

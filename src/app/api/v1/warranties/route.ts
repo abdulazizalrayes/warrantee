@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { buildWarrantyAccessOrClause, buildWarrantyOwnershipInsert } from '@/lib/warranty-access';
+import { resolveWarrantyAccessOrClause, buildWarrantyOwnershipInsert } from '@/lib/warranty-access';
 import { isOneOf, isValidDate, sanitizeString, VALID_WARRANTY_STATUSES } from '@/lib/validation';
 import {
   apiV1Json,
@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
     .from('warranties')
     .select('*', { count: 'exact' })
     .is('deleted_at', null)
-    .or(buildWarrantyAccessOrClause(requester.userId));
+    .or(await resolveWarrantyAccessOrClause(supabase, requester.userId));
   if (status === 'active') query = query.eq('status', 'active').gt('end_date', new Date().toISOString());
   else if (status === 'expired') query = query.lte('end_date', new Date().toISOString());
   else if (status) query = query.eq('status', status);
@@ -165,7 +165,7 @@ export async function POST(request: NextRequest) {
         .select('*')
         .eq('reference_number', referenceNumber)
         .is('deleted_at', null)
-        .or(buildWarrantyAccessOrClause(requester.userId))
+        .or(await resolveWarrantyAccessOrClause(supabase, requester.userId))
         .maybeSingle();
 
       if (existingWarranty) {

@@ -127,6 +127,12 @@ export async function POST(request: NextRequest) {
   }
 
   const scopes = normalizeApiScopes(body.scopes);
+  if (scopes.length === 0) {
+    return json(
+      { error: "Select at least one valid API scope" },
+      { status: 400 }
+    );
+  }
   const rateLimitPerMinute = normalizeApiRateLimit(body.rate_limit_per_minute);
   const expiresAt = normalizeExpiry(body.expires_at);
   if (!expiresAt) {

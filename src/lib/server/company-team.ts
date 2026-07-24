@@ -74,7 +74,7 @@ export function mapStoredRoleToTeamTier(role: string | null | undefined): TeamTi
     return "superadmin";
   }
 
-  if (role === "manager") {
+  if (role === "approver" || role === "manager") {
     return "manager";
   }
 
@@ -86,7 +86,7 @@ export function mapTeamTierToStoredRole(tier: TeamTier) {
     case "superadmin":
       return "company_admin";
     case "manager":
-      return "manager";
+      return "approver";
     default:
       return "viewer";
   }

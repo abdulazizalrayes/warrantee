@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getClientIp, getRateLimitHeaders, rateLimit } from "@/lib/rate-limit";
-import { buildWarrantyAccessOrClause } from "@/lib/warranty-access";
+import { resolveWarrantyAccessOrClause } from "@/lib/warranty-access";
 
 async function getAuthorizedWarranty(warrantyId: string) {
   const supabase = await createServerSupabaseClient();
@@ -18,7 +18,7 @@ async function getAuthorizedWarranty(warrantyId: string) {
     .from("warranties")
     .select("*")
     .eq("id", warrantyId)
-    .or(buildWarrantyAccessOrClause(user.id))
+    .or(await resolveWarrantyAccessOrClause(supabase, user.id))
     .single();
 
   if (error || !warranty) {

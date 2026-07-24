@@ -18,6 +18,8 @@ export type OCRProviderTelemetry = {
   fallback: boolean;
   mimeType?: string;
   model?: string;
+  pipelineVersion?: string;
+  parserVersion?: string;
   confidence?: number;
   pageCount?: number;
 };

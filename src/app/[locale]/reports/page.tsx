@@ -8,7 +8,7 @@ import { FileText, Download, Calendar, Filter, BarChart3, PieChart, TrendingUp, 
 import { DashboardPageShell } from "@/components/dashboard/DashboardPageShell";
 import { PageViewTracker } from "@/components/PageViewTracker";
 import { trackReportExport } from "@/lib/ga4-events";
-import { buildWarrantyAccessOrClause } from "@/lib/warranty-access";
+import { resolveWarrantyAccessOrClause } from "@/lib/warranty-access";
 
 type ReportType = "warranty_summary" | "expiry_forecast" | "claims_overview" | "supplier_performance";
 type TimeRange = "7d" | "30d" | "90d" | "12m" | "all";
@@ -116,7 +116,7 @@ export default function ReportsPage() {
       const { data, error } = await supabase
         .from("warranties")
         .select("id, status, end_date, created_at, category, seller_name, product_name")
-        .or(buildWarrantyAccessOrClause(user.id));
+        .or(await resolveWarrantyAccessOrClause(supabase, user.id));
       if (!error && data) {
         const now = new Date();
         const rows = data as WarrantyReportRow[];

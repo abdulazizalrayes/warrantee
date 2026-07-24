@@ -9,7 +9,7 @@ import type { Locale } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth-context";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { ProtectedRouteNotice } from "@/components/dashboard/ProtectedRouteNotice";
-import { buildWarrantyAccessOrClause } from "@/lib/warranty-access";
+import { resolveWarrantyAccessOrClause } from "@/lib/warranty-access";
 
 interface SubscriptionInfo {
   plan_id: string;
@@ -114,7 +114,7 @@ export default function BillingPage() {
         const { count, error } = await supabase
           .from("warranties")
           .select("id", { count: "exact", head: true })
-          .or(buildWarrantyAccessOrClause(user.id));
+          .or(await resolveWarrantyAccessOrClause(supabase, user.id));
         if (error) {
           console.warn("[Billing] Warranty usage unavailable:", error.message);
           return 0;

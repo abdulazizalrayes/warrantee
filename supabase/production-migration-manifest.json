@@ -1,0 +1,296 @@
+{
+  "projectRef": "erptubrslnfmkuouczgn",
+  "verifiedAt": "2026-07-24",
+  "migrations": [
+    {
+      "file": "20260324094041_create_contact_submissions.sql",
+      "sha256": "45b236fb897f4fc24fc90f3b0f0971f17a8e06187cf665bbce2591872365bea6",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260324104815_add_missing_columns_and_policies.sql",
+      "sha256": "5d05d141157da0615afed8e90ae80fc5d3e32d4fbfe6ecddb23c84dace15eae1",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260325101757_add_auth_trigger_and_functions.sql",
+      "sha256": "a036315339d9647d91bcdbe8da47aadd2049a704d004bd904271ac75bd2b75b5",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260325133112_create_subscriptions_table.sql",
+      "sha256": "c80d3ec40d06adde8ff8804afaf9f522b1d3c9d2d9450a4e35b63de4e2e44d26",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260325133133_create_analytics_rpc_functions.sql",
+      "sha256": "b52d85c0572a95c3f2e39c2d5325ee41f90bba57d2881d119b67d1860a075fff",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260325140822_create_admin_dashboard_rpc.sql",
+      "sha256": "9d7f08630b1bcf07aa0f33d396cc94482c202da885b82ee3716258704f0299ca",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260325172355_add_api_key_to_companies.sql",
+      "sha256": "8427f07133476bc2d8dca94efda95e860896f24aedfcae86b241b52a1e2cf7d0",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260325172400_create_push_subscriptions_table.sql",
+      "sha256": "16991d2d8a2d48889dcd7d1e120a32f2dcf39f3e16326f7782a3f55760334575",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260327184253_fix_profiles_rls_infinite_recursion.sql",
+      "sha256": "8388d7df4368c9b7d33c725322b95669a611f27d17674754043ea6fd0d596e61",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260327190055_claims_add_enum_values.sql",
+      "sha256": "a68b77cbe628138ab8e123e9a4c8df73a87283cb0db26580fd66a1794294cf8e",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260327190110_claims_workflow_tables_and_policies.sql",
+      "sha256": "00fbe9e1015aadc2ec08ccfc302ab5f0c369922c25ed992ee3b3ebc9e95f5200",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260327201152_fix_company_members_rls_recursion.sql",
+      "sha256": "350d01cf3ee6b545f4adfa1cc7334333cc563daf730cbcf3a6245e1036cad8d6",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260327205009_add_missing_notification_types.sql",
+      "sha256": "2f2ca2654110a48f33d9c11e2917ed8d6926c4b181e0a221b05472908fc5df00",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260327225022_fix_is_admin_rls_softdelete_indexes.sql",
+      "sha256": "2e07e9afe91f913f88254268fd67bc3198196e6874e99a14162715bc0dc1bd78",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260327225214_admin_update_claims_and_events.sql",
+      "sha256": "3ca02efc1ad1822e0c330b5c4c7d1f5b9fc035c519c662fa9e4ad573e78166ae",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260327225428_fix_claim_events_fk_to_profiles.sql",
+      "sha256": "cd054cf86f0b9a7f744b3de6e2ebcff13ef15e3c8ac0d3b50e9c2445167fba75",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260327230606_activity_log_compat_columns.sql",
+      "sha256": "e383fd42a25b777a6ff0508521ab7dc24e2bd15e465e38b3f86ee93b9e6c2251",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260327230856_upsert_subscription_function.sql",
+      "sha256": "833eafa10dbe4991d6d2c8918324ea68459b50fce6e4d884e1ce9e906ca050e7",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260327231002_analytics_compat_columns_and_claims_view.sql",
+      "sha256": "0e08bb95dc3ee68b1ea2f22cac18e04e73836ae7b0bff3569887ab74274b835c",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260329172109_fix_permissive_rls_policies.sql",
+      "sha256": "263db66cfd383e050f71da699c0f221f6342d5d16547197c40249c51cafae91a",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260329172132_optimize_rls_auth_uid_initplan_batch1.sql",
+      "sha256": "d8390524568610772c8adbe09d86ecf339e1a91d1d9daf270ca24ac18b8dbb66",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260329172145_optimize_rls_auth_uid_initplan_batch2.sql",
+      "sha256": "e0e507c3dfa122f880d42df4437e254c5707c6144057ca9e825003ad2ed21129",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260329172158_optimize_rls_auth_uid_initplan_batch3.sql",
+      "sha256": "dcb3201277bd8481b31e16be7766ef87444c36ea7a0a98d6cd01dc4a56101c48",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260329172211_optimize_rls_auth_uid_initplan_batch4.sql",
+      "sha256": "630235a517367c81f36db8e006074e142372636105cee558f404e8ab50a2a71b",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260329172224_optimize_rls_auth_uid_initplan_batch5.sql",
+      "sha256": "1c2dd4def2729ef30d578a87bac393de11468f08b58536561fd2ddfe22681bf4",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260329172240_optimize_rls_auth_uid_initplan_batch6.sql",
+      "sha256": "22206ac4ad97c47fc03acf159415c79371d6edb603183f6ef7626006fef7135d",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260329172256_optimize_rls_auth_uid_initplan_batch7.sql",
+      "sha256": "1af4bad32603d35e188e7803a8b410ef8b290ea8bcd7c0240ee0fef0a2bba13b",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260329172307_optimize_rls_auth_uid_initplan_batch8.sql",
+      "sha256": "ad62ce42ccef9d7ca15470b5874bfa2e3274572da5f6a58769e025321e7587b9",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260329172406_fix_remaining_initplan_and_duplicate_indexes.sql",
+      "sha256": "0fbc50baff67ad204ea3b24c454ef3166dd1b674e4830801fe089fbeb47fadd5",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260329172508_remove_redundant_permissive_policies.sql",
+      "sha256": "0302d8efe18e69edb0c8d764ed863ff204f0918089af9de5d426be64e2279be2",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260329182338_drop_duplicate_triggers_set_updated_at.sql",
+      "sha256": "8aedbe65a52c13087d51c1972a69467b1dd25de631cfbf409a756ee77052c7b4",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260329182344_drop_duplicate_audit_triggers.sql",
+      "sha256": "151dcfdb8c01b9fb0ff6cf08f4ef2cf160633bb6bc654c9066dfa400183763b8",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260329182348_drop_duplicate_warranty_compat_trigger.sql",
+      "sha256": "ce34e99dc3fc8023b68ce63e2e27d811a64ebaaf36526860e3c06e8951078615",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260329184413_create_webhook_events_table.sql",
+      "sha256": "8d1f0e577f01bb328f9ec034fa0b5a4cd21fbf530fd25cde5d4389d1843acbd2",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260329184738_fix_webhook_events_rls_and_add_fk_indexes.sql",
+      "sha256": "933b791b2a6b1ef9669256b92b7c1d555e58fa8d0550c9ae90418162ce9848e2",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260330105642_consolidate_rls_policies.sql",
+      "sha256": "ac5a3d38e4a58caa8f99e40acf270ad6ac1459b34aa8c0ecef6f83ba3cae831f",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260405000159_security_rls_fixes.sql",
+      "sha256": "70666061d23aeabd643b7b8945d0a9aea628f6f8dd216ccae51b84ec15195db1",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260406080725_add_company_branches_and_contacts.sql",
+      "sha256": "1deb2aa5497eb4d0fcbd0c481a356b76de4591a97917fc84cc3a7da86e032741",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260406080746_enforce_warranty_state_machine.sql",
+      "sha256": "02f7a4d9f05a58fdefc76ef503b798bb03a8bb4bec05d0e69ffaff757854ab94",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260412075916_add_coverage_type_to_warranties.sql",
+      "sha256": "498dd7aec2a225ae92a75cfd723514869729f08044d44ca179f4766eb2f3f602",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260413034111_add_description_to_warranties.sql",
+      "sha256": "4fdaeb12ba2842a6a56e333e9773aa25c919a6b512c9fd39d99bfb746fe35425",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260413104149_add_buyer_seller_id_compatibility_columns.sql",
+      "sha256": "fe05b2655040eacb983f1fa676c47492df66b56c7b8406b2b77ef65605567de1",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260520142000_lock_down_warranty_rls.sql",
+      "sha256": "753e381db50ed5afbebab42e3cc1df92705ab1cab6b6e1d021d94d79c644252b",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260530111207_restrict_profile_self_updates.sql",
+      "sha256": "bbd9232c0797a880f9d5e268044d356d2defb1f84874fc3f1eebadf1baaadfae",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260604130000_operational_support_schema.sql",
+      "sha256": "560b0927e5638e47de375500e5d045382d046a49ca41b490375fdbd1daa63f74",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260604140412_api_integration_tokens.sql",
+      "sha256": "18ab2eaf285d748846c8775492aaa050eb907c561f87f95b1a23cd8e882943b4",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260605175727_subscription_billing_state.sql",
+      "sha256": "2309087825b9e21fe7ed2342c198247c2b08953764759bfb4e609814ec5971d6",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260610193000_api_usage_events.sql",
+      "sha256": "e2f5b5b8f174b66779bebb9a7010be45f5373dfe004a396e97fced7fd0a9a505",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260610194500_document_security_status.sql",
+      "sha256": "d9d0e21b6982d3f905525459f25e4fbc682a808c1fa1486cd1a0bde471dad52b",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260616120000_expand_api_integration_token_scopes.sql",
+      "sha256": "3bc9103bead6555fcce9387193e900cd18a2717d381195f52ddcbc9986ba5657",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260617071602_operational_data_retention_controls.sql",
+      "sha256": "27c621135d093ac92c05fcfbe35335eb01d85ff7fffbc9ca870b780e796af7ea",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260714171612_harden_authorization_and_invitation_delivery.sql",
+      "sha256": "ae5b5b4c9f3eda4328faaf28464f6000fde65f8c837d40024bfcc08158b95646",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260715152933_optimize_rls_and_indexes.sql",
+      "sha256": "1a26fb27019d0840e8d01552d6343b6b3e987ff2404038db40394eb8fb9c7ef4",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260724214205_harden_tenant_and_storage_access.sql",
+      "sha256": "0e4fcc0daba0755c6d96ff595432aac8f438f6f491e1193a1bb2396c9258535f",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260724214245_atomic_claim_transitions.sql",
+      "sha256": "654671134bc7a057dd09f6695facb2cb1283c6b336a4b091d8c8e5fc71ea90c0",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260724214255_atomic_billing_and_data_constraints.sql",
+      "sha256": "69b844db8ab8c71e4efed807f66d7898caa702e2f31228a5990f7f73c7451420",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260724214305_self_service_business_onboarding.sql",
+      "sha256": "3c95e10d522e625990675df2ed31b4b0694eeb5bb527dfaa12a8cd7daf65e61b",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260724214735_require_extension_purchase_actor.sql",
+      "sha256": "aeca72c0a2fb11d1848feda1817f3ea5cad9f8d1b1ab21ce5d970b7f7e9dae78",
+      "productionState": "applied"
+    }
+  ]
+}

@@ -3,6 +3,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import QRCode from "qrcode";
 import { escapeHtml } from "@/lib/html-escape";
 import { getClientIp, getRateLimitHeaders, publicLookupRateLimit } from "@/lib/rate-limit";
+import { maskPublicSerialNumber, PUBLIC_WARRANTY_STATUSES } from "@/lib/public-warranty";
 
 const VERIFICATION_SELECT =
   "id, reference_number, product_name, product_name_ar, serial_number, status, start_date, end_date, category, seller_name, created_at";
@@ -21,6 +22,7 @@ async function findPublicWarranty(supabase: SupabaseClient, safeQuery: string) {
       .from("warranties")
       .select(VERIFICATION_SELECT)
       .eq("id", safeQuery)
+      .in("status", PUBLIC_WARRANTY_STATUSES)
       .limit(1)
       .maybeSingle();
 
@@ -31,6 +33,7 @@ async function findPublicWarranty(supabase: SupabaseClient, safeQuery: string) {
     .from("warranties")
     .select(VERIFICATION_SELECT)
     .ilike("reference_number", safeQuery)
+    .in("status", PUBLIC_WARRANTY_STATUSES)
     .limit(1)
     .maybeSingle();
 
@@ -40,6 +43,7 @@ async function findPublicWarranty(supabase: SupabaseClient, safeQuery: string) {
     .from("warranties")
     .select(VERIFICATION_SELECT)
     .ilike("serial_number", safeQuery)
+    .in("status", PUBLIC_WARRANTY_STATUSES)
     .limit(1)
     .maybeSingle();
 }
@@ -115,7 +119,7 @@ export async function GET(
 
   const productName = escapeHtml(isAr && data.product_name_ar ? data.product_name_ar : data.product_name || "-");
   const referenceNumber = escapeHtml(data.reference_number || "-");
-  const serialNumber = escapeHtml(data.serial_number || "-");
+  const serialNumber = escapeHtml(maskPublicSerialNumber(data.serial_number) || "-");
   const category = escapeHtml(data.category || "-");
   const sellerName = escapeHtml(data.seller_name || "-");
   const statusText = isActive ? (isAr ? "نشط" : "Active") : (isAr ? "منتهي" : "Expired");

@@ -25,7 +25,13 @@ function addDays(date: Date, days: number) {
 }
 
 function getRecipientId(warranty: ExpiringWarranty) {
-  return warranty.created_by || warranty.user_id || warranty.recipient_user_id || warranty.buyer_id || null;
+  return (
+    warranty.recipient_user_id ||
+    warranty.buyer_id ||
+    warranty.user_id ||
+    warranty.created_by ||
+    null
+  );
 }
 
 function normalizeLocale(value: unknown) {
@@ -61,6 +67,35 @@ export async function sendExpiryReminders(now = new Date()) {
   let notificationsCreated = 0;
   let emailsSent = 0;
   let warrantiesChecked = 0;
+  const today = dateOnly(now);
+
+  const { data: expiredWarranties, error: expiryUpdateError } = await admin
+    .from("warranties")
+    .update({ status: "expired", updated_at: now.toISOString() })
+    .eq("status", "active")
+    .lt("end_date", today)
+    .select("id");
+
+  if (expiryUpdateError) {
+    throw new Error("Could not reconcile expired warranty statuses");
+  }
+
+  if (expiredWarranties?.length) {
+    const { error: auditError } = await admin.from("activity_log").insert(
+      expiredWarranties.map((warranty) => ({
+        actor_id: null,
+        entity_type: "warranty",
+        entity_id: warranty.id,
+        action: "expired_automatically",
+        previous_state: { status: "active" },
+        new_state: { status: "expired" },
+        metadata: { reconciliation_date: today },
+      }))
+    );
+    if (auditError) {
+      console.warn("Expired warranty audit logging failed:", auditError.message);
+    }
+  }
 
   for (const days of EXPIRY_REMINDER_DAYS) {
     const notificationType = `warranty_expiring_${days}d`;
@@ -142,5 +177,6 @@ export async function sendExpiryReminders(now = new Date()) {
     notifications_created: notificationsCreated,
     emails_sent: emailsSent,
     checked_at: now.toISOString(),
+    warranties_expired: expiredWarranties?.length || 0,
   };
 }

@@ -12,9 +12,17 @@ const publicRoutes = [
   "/en/api-docs",
   "/en/security",
   "/en/support",
+  "/en/privacy",
+  "/en/terms",
+  "/en/cookies",
   "/en/seller/register",
   "/en/verify",
   "/en/auth",
+  "/ar",
+  "/ar/pricing",
+  "/ar/privacy",
+  "/ar/verify",
+  "/ar/auth",
 ];
 
 test.describe("public experience", () => {
@@ -23,8 +31,12 @@ test.describe("public experience", () => {
       const errors = watchForPageErrors(page, testInfo);
 
       await expectHealthyPage(page, path);
-      await expect(page).toHaveTitle(/Warrantee/i);
+      await expect(page).toHaveTitle(/Warrantee|وارنتي/i);
       await expect(page.locator("body")).not.toContainText(/Something went wrong|Internal error/i);
+      const horizontalOverflow = await page.evaluate(
+        () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      );
+      expect(horizontalOverflow, `${path} should not overflow the viewport`).toBeLessThanOrEqual(1);
 
       await errors.assertClean();
     });

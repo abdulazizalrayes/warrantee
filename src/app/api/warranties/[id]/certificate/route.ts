@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { buildWarrantyAccessOrClause } from "@/lib/warranty-access";
+import { resolveWarrantyAccessOrClause } from "@/lib/warranty-access";
 import { escapeHtml } from "@/lib/html-escape";
 import QRCode from "qrcode";
 
@@ -24,7 +24,7 @@ export async function GET(
     .from("warranties")
     .select("*")
     .eq("id", id)
-    .or(buildWarrantyAccessOrClause(user.id))
+    .or(await resolveWarrantyAccessOrClause(supabase, user.id))
     .single();
 
   // Fall back to party_warranties membership (sellers/partners)

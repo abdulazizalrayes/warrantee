@@ -128,9 +128,12 @@ export async function detectFraud(
       signals.map((s) => ({
         ingestion_job_id: ingestionJobId,
         attachment_id: attachmentId,
+        entity_type: 'ingestion_attachment',
+        entity_id: attachmentId,
         signal_type: s.signal_type,
         severity: s.severity,
-        details: s.details as Json,
+        description: s.signal_type.replace(/_/g, ' '),
+        evidence: s.details as Json,
       }))
     );
   }
@@ -153,7 +156,7 @@ async function checkDuplicateFileHash(
 
 async function checkDuplicateSerial(
   serialNumber: string, currentUserId: string | null, supabaseAdmin: SupabaseAdminClient
-): Promise<{ id: string; user_id: string } | null> {
+): Promise<{ id: string; user_id: string | null } | null> {
   const { data } = await supabaseAdmin
     .from('warranties')
     .select('id, user_id')

@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { buildWarrantyAccessOrClause, canMutateWarranty } from '@/lib/warranty-access';
+import { resolveWarrantyAccessOrClause, canMutateWarrantyForUser } from '@/lib/warranty-access';
 import { apiV1Json, authorizeApiV1Request, recordApiV1Usage } from '@/lib/api-v1';
 import { isOneOf, isValidDate, sanitizeString, VALID_WARRANTY_STATUSES } from '@/lib/validation';
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
@@ -30,7 +30,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     .select('*')
     .eq('id', id)
     .is('deleted_at', null)
-    .or(buildWarrantyAccessOrClause(requester.userId))
+    .or(await resolveWarrantyAccessOrClause(supabase, requester.userId))
     .single();
 
   if (error || !data) {
@@ -63,7 +63,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       .select('id, user_id, created_by, seller_id, issuer_user_id, start_date, end_date')
       .eq('id', id)
       .is('deleted_at', null)
-      .or(buildWarrantyAccessOrClause(requester.userId))
+      .or(await resolveWarrantyAccessOrClause(supabase, requester.userId))
       .single();
 
     if (existingError || !existing) {
@@ -75,7 +75,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       return apiV1Json({ error: 'Warranty not found' }, { status: 404 });
     }
 
-    if (!canMutateWarranty(existing, requester.userId)) {
+    if (!await canMutateWarrantyForUser(supabase, existing, requester.userId)) {
       await recordApiV1Usage(supabase, request, requester, {
         statusCode: 403,
         scope: 'warranties:write',
@@ -174,7 +174,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       .from('warranties')
       .update({ ...updateData, updated_at: new Date().toISOString() })
       .eq('id', id)
-      .or(buildWarrantyAccessOrClause(requester.userId))
+      .or(await resolveWarrantyAccessOrClause(supabase, requester.userId))
       .select()
       .single();
 
@@ -215,7 +215,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     .select('id, user_id, created_by, seller_id, issuer_user_id')
     .eq('id', id)
     .is('deleted_at', null)
-    .or(buildWarrantyAccessOrClause(requester.userId))
+    .or(await resolveWarrantyAccessOrClause(supabase, requester.userId))
     .single();
 
   if (existingError || !existing) {
@@ -227,7 +227,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     return apiV1Json({ error: 'Warranty not found' }, { status: 404 });
   }
 
-  if (!canMutateWarranty(existing, requester.userId)) {
+  if (!await canMutateWarrantyForUser(supabase, existing, requester.userId)) {
     await recordApiV1Usage(supabase, request, requester, {
       statusCode: 403,
       scope: 'warranties:write',
@@ -244,7 +244,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     .from('warranties')
     .update({ deleted_at: now, updated_at: now })
     .eq('id', id)
-    .or(buildWarrantyAccessOrClause(requester.userId))
+    .or(await resolveWarrantyAccessOrClause(supabase, requester.userId))
     .is('deleted_at', null);
 
   if (error) {

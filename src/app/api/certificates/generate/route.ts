@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { createClient } from "@supabase/supabase-js";
 import crypto from "crypto";
-import { buildWarrantyAccessOrClause } from "@/lib/warranty-access";
+import { resolveWarrantyAccessOrClause } from "@/lib/warranty-access";
 import { escapeHtml } from "@/lib/html-escape";
 import { certificateRateLimit, getClientIp, getRateLimitHeaders } from "@/lib/rate-limit";
 
@@ -158,7 +158,7 @@ export async function POST(request: Request) {
       .from("warranties")
       .select("*, companies(*)")
       .eq("id", warrantyId)
-      .or(buildWarrantyAccessOrClause(user.id))
+      .or(await resolveWarrantyAccessOrClause(supabase, user.id))
       .single();
 
     if (wError || !warranty) {
