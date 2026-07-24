@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "Official Warrantee CLI and MCP server for API / CLI / MCP integrations.",
   "type": "module",
-  "license": "UNLICENSED",
+  "license": "Apache-2.0",
   "homepage": "https://warrantee.io/en/api-docs",
   "repository": {
     "type": "git",
@@ -30,7 +30,8 @@
     "cli.mjs",
     "mcp-server.mjs",
     "update-client.mjs",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ],
   "engines": {
     "node": ">=20 <25"

@@ -41,6 +41,26 @@ warrantee update --check --pretty
 
 ## Release Process
 
+### First public release only
+
+The npm registry does not allow staged publishing for a brand-new package.
+Therefore, the first `warrantee@0.1.0` release must be performed interactively
+by the npm owner:
+
+1. Sign in to npm and enable publishing 2FA.
+2. Run all repository and package release checks.
+3. Publish `packages/warrantee-cli` directly with `npm publish --access public`.
+4. Verify the package name, version, license, contents, installation, and
+   read-only diagnostics.
+5. Configure the package's trusted publisher for stage-only GitHub OIDC.
+6. Require 2FA and disallow traditional publishing tokens.
+7. Create the matching GitHub release after the initial package is verified.
+
+The initial direct publish is the sole exception. Do not store an npm token in
+GitHub or Vercel.
+
+### Subsequent releases
+
 1. Update `CLI_VERSION` and `packages/warrantee-cli/package.json` together.
 2. Run `npm run qa:cli-release`.
 3. Run focused CLI/MCP tests and `npm run pack:cli`.
@@ -53,13 +73,13 @@ warrantee update --check --pretty
 9. Verify `npm view warrantee version`, provenance, signatures, installation,
    `warrantee doctor`, token revocation, and one read-only account call.
 
-The first public release also requires the npm owner to create or claim the
-`warrantee` package and configure this trusted publisher:
+After the first public release, configure this trusted publisher:
 
 - GitHub owner: `abdulazizalrayes`
 - Repository: `warrantee`
 - Workflow: `release-cli.yml`
 - Allowed action: stage publish
+- GitHub environment: `npm-production`
 - Recommended npm policy: require 2FA and disallow traditional publish tokens
 
 No long-lived npm publishing token should be stored in GitHub.

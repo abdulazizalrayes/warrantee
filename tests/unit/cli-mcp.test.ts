@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
+import { mkdtempSync, rmSync, symlinkSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { spawnSync } from "node:child_process";
 import { pathToFileURL } from "node:url";
 
 type FetchCall = {
@@ -41,6 +44,24 @@ describe("Warrantee CLI and MCP", () => {
 
     expect(code).toBe(0);
     expect(stdout.join("").trim()).toBe("0.1.0");
+  });
+
+  it("executes through an npm-style binary symlink", () => {
+    const directory = mkdtempSync(join(tmpdir(), "warrantee-cli-"));
+    const executable = join(directory, "warrantee");
+
+    try {
+      symlinkSync(join(process.cwd(), "tools/warrantee/cli.mjs"), executable);
+      const result = spawnSync(process.execPath, [executable, "--version"], {
+        encoding: "utf8",
+      });
+
+      expect(result.status).toBe(0);
+      expect(result.stderr).toBe("");
+      expect(result.stdout.trim()).toBe("0.1.0");
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
   });
 
   it("runs read-only operational status with a scoped integration token", async () => {

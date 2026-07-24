@@ -21,14 +21,17 @@ if (packageJson.name !== "warrantee") fail("Package name must be warrantee");
 if (packageJson.version !== CLI_VERSION) {
   fail(`Package version ${packageJson.version} does not match CLI version ${CLI_VERSION}`);
 }
-if (packageJson.license !== "UNLICENSED") {
-  fail("CLI package must remain UNLICENSED until the owner approves a public license");
+if (packageJson.license !== "Apache-2.0") {
+  fail("CLI package license must be Apache-2.0");
 }
 if (packageJson.scripts && Object.keys(packageJson.scripts).length > 0) {
   fail("CLI package must not contain lifecycle scripts");
 }
 if (packageJson.repository?.url !== "git+https://github.com/abdulazizalrayes/warrantee.git") {
   fail("Package repository identity does not match Warrantee");
+}
+if (!packageJson.files?.includes("LICENSE")) {
+  fail("CLI package must include its Apache-2.0 LICENSE");
 }
 
 for (const file of expectedFiles) {
