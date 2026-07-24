@@ -143,7 +143,6 @@ async function seedBusinessQaData(projectName: string) {
   );
 
   qaWarrantyId = String(warranty.id);
-  await cleanupQaArtifacts();
 }
 
 test.describe("deeper authenticated business workflows", () => {
