@@ -839,7 +839,7 @@ Treat OCR as an assisted draft, not an autonomous source of truth. A user must c
 - Internal routes require bearer authentication.
 - Stripe webhook signature validation exists.
 - No committed secrets were found.
-- Loopback/localhost production-link guard passed.
+- The production-link loopback guard passed.
 - Production rate limiting fails closed when Redis is required.
 - Security headers and controlled load gates are present.
 
