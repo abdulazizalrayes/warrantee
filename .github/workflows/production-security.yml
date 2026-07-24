@@ -66,6 +66,9 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
+      - name: Create disposable QA identity
+        run: npm run qa:user:ensure
+
       - name: Supabase anonymous RLS probe
         run: npm run security:rls-probe
 
@@ -80,3 +83,11 @@ jobs:
 
       - name: Controlled production load check
         run: npm run load:prod
+
+      - name: Remove disposable QA identity and artifacts
+        if: always()
+        run: npm run qa:user:cleanup
+
+      - name: Verify no persistent QA identity remains
+        if: always()
+        run: npm run qa:user:verify-clean

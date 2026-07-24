@@ -102,6 +102,26 @@ async function seedAuthenticatedQaData() {
   qaWarrantyId = String(warranty.id);
 }
 
+async function cleanupAuthenticatedQaData() {
+  if (!qaWarrantyId) return;
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } },
+  );
+  const cleanupQueries = [
+    supabase.from("notifications").delete().eq("warranty_id", qaWarrantyId),
+    supabase.from("warranty_extensions").delete().eq("warranty_id", qaWarrantyId),
+    supabase.from("activity_log").delete().eq("entity_type", "warranty").eq("entity_id", qaWarrantyId),
+  ];
+  const results = await Promise.all(cleanupQueries);
+  const cleanupError = results.find((result) => result.error)?.error;
+  if (cleanupError) throw cleanupError;
+
+  const { error } = await supabase.from("warranties").delete().eq("id", qaWarrantyId);
+  if (error) throw error;
+}
+
 test.describe("authenticated core operating flows", () => {
   test.describe.configure({ mode: "serial" });
   test.skip(!hasCredentials, "Set E2E_USER_EMAIL and E2E_USER_PASSWORD to enable signed-in flow QA.");
@@ -109,6 +129,10 @@ test.describe("authenticated core operating flows", () => {
 
   test.beforeAll(async () => {
     await seedAuthenticatedQaData();
+  });
+
+  test.afterAll(async () => {
+    await cleanupAuthenticatedQaData();
   });
 
   test.beforeEach(async ({ page }) => {

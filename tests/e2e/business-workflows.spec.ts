@@ -47,16 +47,33 @@ async function adaptiveUpsert(table: string, payload: Record<string, unknown>, o
 async function cleanupQaArtifacts() {
   const supabase = adminClient();
   if (qaWarrantyId) {
-    await supabase.from("warranty_extensions").delete().eq("warranty_id", qaWarrantyId);
-    await supabase
+    const cleanupQueries = [
+      supabase.from("notifications").delete().eq("warranty_id", qaWarrantyId),
+      supabase.from("warranty_extensions").delete().eq("warranty_id", qaWarrantyId),
+      supabase
       .from("activity_log")
       .delete()
       .eq("entity_type", "warranty")
-      .eq("entity_id", qaWarrantyId)
-      .in("action", ["extension_interest_registered", "warranty_extension_requested"]);
+      .eq("entity_id", qaWarrantyId),
+    ];
+    const results = await Promise.all(cleanupQueries);
+    const cleanupError = results.find((result) => result.error)?.error;
+    if (cleanupError) throw cleanupError;
   }
 
-  await supabase.from("warranty_claims").delete().ilike("title", `${claimTitlePrefix}%`);
+  const { error: claimsError } = await supabase
+    .from("warranty_claims")
+    .delete()
+    .ilike("title", `${claimTitlePrefix}%`);
+  if (claimsError) throw claimsError;
+
+  if (qaWarrantyId) {
+    const { error: warrantyError } = await supabase
+      .from("warranties")
+      .delete()
+      .eq("id", qaWarrantyId);
+    if (warrantyError) throw warrantyError;
+  }
 }
 
 function projectSlug(projectName: string) {

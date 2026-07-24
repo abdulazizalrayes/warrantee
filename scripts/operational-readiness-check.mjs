@@ -534,10 +534,20 @@ async function cleanupStripeCheckoutData(seed) {
   if (!seed) return;
   const supabase = createSupabaseAdminClient();
   if (seed.extensionId) {
-    await supabase.from("warranty_extensions").delete().eq("id", seed.extensionId);
+    const { error } = await supabase.from("warranty_extensions").delete().eq("id", seed.extensionId);
+    if (error) throw error;
   }
   if (seed.warrantyId) {
-    await supabase.from("warranties").delete().eq("id", seed.warrantyId);
+    const cleanupQueries = [
+      supabase.from("notifications").delete().eq("warranty_id", seed.warrantyId),
+      supabase.from("activity_log").delete().eq("entity_type", "warranty").eq("entity_id", seed.warrantyId),
+    ];
+    const results = await Promise.all(cleanupQueries);
+    const cleanupError = results.find((result) => result.error)?.error;
+    if (cleanupError) throw cleanupError;
+
+    const { error } = await supabase.from("warranties").delete().eq("id", seed.warrantyId);
+    if (error) throw error;
   }
 }
 
