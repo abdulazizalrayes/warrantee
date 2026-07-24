@@ -6,9 +6,12 @@ import { fileURLToPath } from "node:url";
 import {
   createWarranty,
   deleteWarranty,
+  getAgentCapabilities,
   getAssetIntelligence,
   getClaim,
   getDocument,
+  getIntegrationStatus,
+  getPlatformHealth,
   getWarranty,
   listClaims,
   listDocuments,
@@ -19,11 +22,22 @@ import {
   WarranteeApiError,
 } from "./api-client.mjs";
 import { runMcpServer } from "./mcp-server.mjs";
+import {
+  CLI_VERSION,
+  getUpdateStatus,
+  installVerifiedUpdate,
+} from "./update-client.mjs";
 
 const HELP = `Warrantee CLI
 
 Usage:
+  warrantee --version
   warrantee auth status [--api-key KEY] [--base-url URL]
+  warrantee doctor [--api-key KEY] [--base-url URL]
+  warrantee ops health [--base-url URL]
+  warrantee ops status [--api-key KEY] [--base-url URL]
+  warrantee ops capabilities [--base-url URL]
+  warrantee update [--check|--confirm]
   warrantee warranties list [--page N] [--limit N] [--status STATUS] [--category CATEGORY]
   warrantee warranties get <id>
   warrantee warranties create --product-name NAME --start-date YYYY-MM-DD --end-date YYYY-MM-DD [options]
@@ -78,6 +92,8 @@ Create/update options:
 Security:
   Generate keys from Warrantee Settings > API / CLI / MCP. Do not pass or store
   a Warrantee username or password in external systems.
+  Updates require --confirm and only install exact versions with trusted npm
+  registry, SHA-512 integrity, and registry-signature metadata.
 `;
 
 function takeOption(args, name) {
@@ -157,6 +173,103 @@ function writeJson(data, { pretty = false, stdout = process.stdout } = {}) {
   stdout.write(`${JSON.stringify(data, null, pretty ? 2 : 0)}\n`);
 }
 
+async function runDoctor(clientOptions, { env, fetchImpl }) {
+  const checks = [];
+
+  try {
+    const health = await getPlatformHealth(clientOptions);
+    checks.push({
+      name: "platform-health",
+      status: health?.status === "ok" ? "pass" : "fail",
+      details: {
+        status: health?.status || "unknown",
+        checks: health?.checks || {},
+        totalLatency: health?.totalLatency,
+      },
+    });
+  } catch (error) {
+    checks.push({
+      name: "platform-health",
+      status: "fail",
+      message: error instanceof Error ? error.message : String(error),
+    });
+  }
+
+  try {
+    const capabilities = await getAgentCapabilities(clientOptions);
+    checks.push({
+      name: "agent-capabilities",
+      status: capabilities?.name === "Warrantee Agent" ? "pass" : "fail",
+      details: {
+        name: capabilities?.name || null,
+        skillCount: Array.isArray(capabilities?.skills) ? capabilities.skills.length : 0,
+        hostedMcp: capabilities?.capabilities?.hostedMcp === true,
+      },
+    });
+  } catch (error) {
+    checks.push({
+      name: "agent-capabilities",
+      status: "fail",
+      message: error instanceof Error ? error.message : String(error),
+    });
+  }
+
+  if (resolveApiKey({ apiKey: clientOptions.apiKey, env })) {
+    try {
+      const status = await getIntegrationStatus(clientOptions);
+      checks.push({
+        name: "integration-token",
+        status: status?.ok ? "pass" : "fail",
+        details: status,
+      });
+    } catch (error) {
+      checks.push({
+        name: "integration-token",
+        status: "fail",
+        message: error instanceof Error ? error.message : String(error),
+      });
+    }
+  } else {
+    checks.push({
+      name: "integration-token",
+      status: "warning",
+      message: "WARRANTEE_API_KEY is not configured; private account checks were skipped",
+    });
+  }
+
+  try {
+    const update = await getUpdateStatus({ currentVersion: CLI_VERSION, fetchImpl });
+    checks.push({
+      name: "cli-release",
+      status: !update.published || update.updateAvailable ? "warning" : "pass",
+      details: update,
+    });
+  } catch (error) {
+    checks.push({
+      name: "cli-release",
+      status: "warning",
+      message: error instanceof Error ? error.message : String(error),
+    });
+  }
+
+  const summary = checks.reduce(
+    (result, check) => {
+      result[check.status] += 1;
+      return result;
+    },
+    { pass: 0, warning: 0, fail: 0 }
+  );
+
+  return {
+    ok: summary.fail === 0,
+    status: summary.fail > 0 ? "failed" : summary.warning > 0 ? "warning" : "healthy",
+    cliVersion: CLI_VERSION,
+    baseUrl: clientOptions.baseUrl || env.WARRANTEE_BASE_URL || "https://warrantee.io",
+    summary,
+    checks,
+  };
+}
+
 export async function runCli(argv = process.argv.slice(2), io = {}) {
   const stdout = io.stdout || process.stdout;
   const stderr = io.stderr || process.stderr;
@@ -166,6 +279,10 @@ export async function runCli(argv = process.argv.slice(2), io = {}) {
 
   if (args.length === 0 || args.includes("--help") || args.includes("-h")) {
     stdout.write(HELP);
+    return 0;
+  }
+  if (args.length === 1 && (args[0] === "--version" || args[0] === "-v")) {
+    stdout.write(`${CLI_VERSION}\n`);
     return 0;
   }
 
@@ -184,6 +301,51 @@ export async function runCli(argv = process.argv.slice(2), io = {}) {
   };
 
   try {
+    if (command === "doctor") {
+      assertNoUnknownOptions(args);
+      const result = await runDoctor(clientOptions, { env, fetchImpl });
+      writeJson(result, { pretty: context.pretty, stdout });
+      return result.status === "failed" ? 1 : result.status === "warning" ? 2 : 0;
+    }
+
+    if (command === "ops") {
+      const subcommand = args.shift();
+      assertNoUnknownOptions(args);
+      if (subcommand === "health") {
+        writeJson(await getPlatformHealth(clientOptions), { pretty: context.pretty, stdout });
+        return 0;
+      }
+      if (subcommand === "status") {
+        writeJson(await getIntegrationStatus(clientOptions), { pretty: context.pretty, stdout });
+        return 0;
+      }
+      if (subcommand === "capabilities") {
+        writeJson(await getAgentCapabilities(clientOptions), { pretty: context.pretty, stdout });
+        return 0;
+      }
+      throw new WarranteeApiError(
+        "Expected: warrantee ops health|status|capabilities"
+      );
+    }
+
+    if (command === "update") {
+      const checkOnly = takeFlag(args, "--check");
+      const confirmed = takeFlag(args, "--confirm");
+      assertNoUnknownOptions(args);
+      if (checkOnly && confirmed) {
+        throw new WarranteeApiError("Choose either --check or --confirm");
+      }
+      const result = confirmed
+        ? await installVerifiedUpdate({
+            currentVersion: CLI_VERSION,
+            fetchImpl,
+            spawnImpl: io.spawnImpl,
+          })
+        : await getUpdateStatus({ currentVersion: CLI_VERSION, fetchImpl });
+      writeJson(result, { pretty: context.pretty, stdout });
+      return 0;
+    }
+
     if (command === "auth") {
       const subcommand = args.shift();
       if (subcommand !== "status") throw new WarranteeApiError("Expected: warrantee auth status");
@@ -335,7 +497,7 @@ export async function runCli(argv = process.argv.slice(2), io = {}) {
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     writeJson({ ok: false, error: message }, { pretty: context.pretty, stdout: stderr });
-    return error instanceof WarranteeApiError && error.status ? error.status : 1;
+    return 1;
   }
 }
 

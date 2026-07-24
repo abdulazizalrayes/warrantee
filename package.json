@@ -20,6 +20,7 @@
     "warrantee:cli": "node tools/warrantee/cli.mjs",
     "warrantee:mcp": "node tools/warrantee/mcp-server.mjs",
     "pack:cli": "npm pack ./packages/warrantee-cli --dry-run",
+    "qa:cli-release": "node scripts/check-cli-release.mjs",
     "qa:e2e-env": "node scripts/check-local-e2e-env.mjs",
     "qa:ocr-corpus": "node scripts/check-ocr-corpus.mjs",
     "qa:ocr-corpus:private": "OCR_CORPUS_DIR=tests/fixtures/ocr-corpus/private OCR_CORPUS_REQUIRED=1 node scripts/check-ocr-corpus.mjs",

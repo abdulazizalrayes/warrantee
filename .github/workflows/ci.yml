@@ -45,6 +45,12 @@ jobs:
       - name: Verify migration source integrity
         run: npm run qa:migrations
 
+      - name: Verify CLI release package
+        run: npm run qa:cli-release
+
+      - name: Inspect CLI package contents
+        run: npm run pack:cli
+
       - name: Type-check
         run: npm run type-check
 

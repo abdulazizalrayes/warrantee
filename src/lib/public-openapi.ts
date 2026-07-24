@@ -22,7 +22,7 @@ export function buildPublicOpenApi() {
     openapi: "3.1.0",
     info: {
       title: "Warrantee Public Discovery And Integration API",
-      version: "1.1.0",
+      version: "1.2.0",
       description:
         "Public OpenAPI description for Warrantee structured data, agent discovery, warranty verification, API / CLI / MCP integration guidance, and authenticated warranty-management APIs.",
     },
@@ -117,6 +117,19 @@ export function buildPublicOpenApi() {
           summary: "Create authenticated warranty",
           security: [{ ApiKeyAuth: [] }, { BearerAuth: [] }],
           responses: { "201": { description: "Warranty created" } },
+        },
+      },
+      "/api/v1/status": {
+        get: {
+          summary: "Inspect integration-token capabilities",
+          description:
+            "Returns the authenticated credential kind, granted scopes, rate limit, and safety boundaries without exposing user, company, token, or private record identifiers.",
+          security: [{ ApiKeyAuth: [] }, { BearerAuth: [] }],
+          responses: {
+            "200": { description: "Integration capability status returned" },
+            "401": { description: "Missing or invalid authentication" },
+            "429": { description: "Rate limit exceeded" },
+          },
         },
       },
       "/api/v1/intelligence": {

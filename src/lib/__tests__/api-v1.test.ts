@@ -88,6 +88,26 @@ describe("api v1 helpers", () => {
     expect(route).toContain("recordApiV1Usage");
   });
 
+  it("provides a rate-limited integration status route without identity leakage", () => {
+    const openApi = fs.readFileSync(
+      path.join(process.cwd(), "src/lib/public-openapi.ts"),
+      "utf8"
+    );
+    const route = fs.readFileSync(
+      path.join(process.cwd(), "src/app/api/v1/status/route.ts"),
+      "utf8"
+    );
+
+    expect(openApi).toContain('"/api/v1/status"');
+    expect(route).toContain("authorizeApiV1StatusRequest");
+    expect(route).toContain("recordApiV1Usage");
+    expect(route).toContain('"Cache-Control": "no-store, no-cache, must-revalidate"');
+    expect(route).toContain("requester.scopes");
+    expect(route).toContain("requester.rateLimitPerMinute");
+    expect(route).not.toContain("requester.userId");
+    expect(route).not.toContain("requester.tokenId");
+  });
+
   it("advertises asset intelligence in MCP and agent discovery metadata", () => {
     const mcpCard = fs.readFileSync(
       path.join(process.cwd(), "src/app/.well-known/mcp.json/route.ts"),

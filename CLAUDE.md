@@ -121,3 +121,13 @@ Use this section only when the user explicitly asks about cloud Paperclip (`ai.e
 - Preserve ordinary HTML output. A change is not release-ready until `npm run qa:html-preservation` confirms the candidate semantic HTML trees match the approved baseline, unless the owner explicitly approved an HTML or visual change.
 - Keep the Content-Signal policy centralized in `src/lib/agent-content-policy.ts`. Do not copy another company policy or change Warrantee's policy without owner approval.
 - Direct Markdown sidecars must remain `noindex, follow`, and `Accept: text/markdown;q=0` must return HTML.
+
+## CLI And MCP Operations
+
+- Read `docs/WARRANTEE_CLI_OPERATIONS.md` before changing or releasing the Warrantee CLI.
+- Private CLI/API/MCP commands use scoped integration tokens, never usernames or passwords.
+- Keep repository CLI files in `tools/warrantee` byte-identical to distributable files in `packages/warrantee-cli`; verify with `npm run qa:cli-release`.
+- Agents may use read-only CLI diagnostics and propose source improvements. They must not silently self-modify the CLI or bypass normal review, CI, release, and rollback controls.
+- `warrantee update --check` is read-only. `warrantee update --confirm` requires explicit owner approval and must retain the trusted-registry, exact-version, integrity, signature, and no-lifecycle-script safeguards.
+- Do not publish, stage, deprecate, or unpublish the npm package; create a CLI release/tag; or change its license without explicit owner approval.
+- After any CLI/API/MCP contract change, verify API authorization, scopes, tenant isolation, rate limits, usage metering, package contents, focused CLI/MCP tests, OpenAPI, and production smoke/readiness checks.

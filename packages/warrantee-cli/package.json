@@ -29,6 +29,7 @@
     "api-client.mjs",
     "cli.mjs",
     "mcp-server.mjs",
+    "update-client.mjs",
     "README.md"
   ],
   "engines": {

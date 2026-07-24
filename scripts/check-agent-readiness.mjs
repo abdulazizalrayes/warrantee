@@ -88,7 +88,13 @@ if (!robots.includes("Disallow: /api/") || !robots.includes("Allow: /api/mcp")) 
 }
 
 const openapi = JSON.parse((await get("/openapi.json")).text);
-for (const requiredPath of ["/data/company.json", "/data/agent-routing.json", "/api/mcp", "/api/v1/intelligence"]) {
+for (const requiredPath of [
+  "/data/company.json",
+  "/data/agent-routing.json",
+  "/api/mcp",
+  "/api/v1/status",
+  "/api/v1/intelligence",
+]) {
   if (!openapi.paths?.[requiredPath]) fail("OpenAPI is missing a required path.", { requiredPath });
 }
 

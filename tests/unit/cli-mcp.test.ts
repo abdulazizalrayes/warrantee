@@ -30,6 +30,178 @@ function toolModule(path: string) {
 }
 
 describe("Warrantee CLI and MCP", () => {
+  it("reports the CLI version without network access", async () => {
+    const stdout: string[] = [];
+    const { runCli } = await import(toolModule("cli.mjs"));
+
+    const code = await runCli(["--version"], {
+      stdout: { write: (value: string) => stdout.push(value) },
+      env: {},
+    });
+
+    expect(code).toBe(0);
+    expect(stdout.join("").trim()).toBe("0.1.0");
+  });
+
+  it("runs read-only operational status with a scoped integration token", async () => {
+    const calls: FetchCall[] = [];
+    const stdout: string[] = [];
+    const stderr: string[] = [];
+    const { runCli } = await import(toolModule("cli.mjs"));
+
+    const code = await runCli(
+      ["--api-key", "wrt_ops_secret", "ops", "status", "--pretty"],
+      {
+        fetchImpl: mockFetch(
+          {
+            ok: true,
+            apiVersion: "v1",
+            credential: {
+              kind: "api_key",
+              scopes: ["warranties:read"],
+              rateLimitPerMinute: 100,
+            },
+          },
+          calls
+        ),
+        stdout: { write: (value: string) => stdout.push(value) },
+        stderr: { write: (value: string) => stderr.push(value) },
+        env: {},
+      }
+    );
+
+    expect(code).toBe(0);
+    expect(stderr.join("")).toBe("");
+    expect(stdout.join("")).toContain("\"warranties:read\"");
+    expect(calls[0]?.url).toBe("https://warrantee.io/api/v1/status");
+    expect(calls[0]?.init.headers).toMatchObject({ "x-api-key": "wrt_ops_secret" });
+  });
+
+  it("runs doctor checks without exposing credentials and warns before the first npm release", async () => {
+    const calls: FetchCall[] = [];
+    const stdout: string[] = [];
+    const stderr: string[] = [];
+    const { runCli } = await import(toolModule("cli.mjs"));
+    const fetchImpl = async (url: URL | RequestInfo, init?: RequestInit) => {
+      calls.push({ url: String(url), init: init || {} });
+      if (String(url).endsWith("/api/health")) {
+        return jsonResponse({ status: "ok", checks: { database: { status: "ok" } } });
+      }
+      if (String(url).endsWith("/.well-known/agent-card.json")) {
+        return jsonResponse({
+          name: "Warrantee Agent",
+          capabilities: { hostedMcp: true },
+          skills: [{ name: "API" }],
+        });
+      }
+      if (String(url).endsWith("/api/v1/status")) {
+        return jsonResponse({
+          ok: true,
+          credential: {
+            kind: "api_key",
+            scopes: ["warranties:read"],
+            rateLimitPerMinute: 100,
+          },
+        });
+      }
+      return jsonResponse({ error: "not found" }, { status: 404 });
+    };
+
+    const code = await runCli(
+      ["--api-key", "wrt_doctor_secret", "doctor", "--pretty"],
+      {
+        fetchImpl,
+        stdout: { write: (value: string) => stdout.push(value) },
+        stderr: { write: (value: string) => stderr.push(value) },
+        env: {},
+      }
+    );
+
+    expect(code).toBe(2);
+    expect(stderr.join("")).toBe("");
+    expect(stdout.join("")).toContain("\"status\": \"warning\"");
+    expect(stdout.join("")).toContain("\"published\": false");
+    expect(stdout.join("")).not.toContain("wrt_doctor_secret");
+    expect(
+      JSON.stringify(
+        calls
+          .filter((call) => !call.url.endsWith("/api/v1/status"))
+          .map((call) => call.init.headers)
+      )
+    ).not.toContain("wrt_doctor_secret");
+    expect(calls.find((call) => call.url.endsWith("/api/v1/status"))?.init.headers).toMatchObject({
+      "x-api-key": "wrt_doctor_secret",
+    });
+  });
+
+  it("checks and installs only exact signed npm registry versions after confirmation", async () => {
+    const stdout: string[] = [];
+    const stderr: string[] = [];
+    const spawnCalls: Array<{ command: string; args: string[] }> = [];
+    const { runCli } = await import(toolModule("cli.mjs"));
+    const registryMetadata = {
+      name: "warrantee",
+      version: "0.2.0",
+      dist: {
+        tarball: "https://registry.npmjs.org/warrantee/-/warrantee-0.2.0.tgz",
+        integrity: "sha512-test",
+        signatures: [{ keyid: "SHA256:test", sig: "test" }],
+      },
+    };
+
+    const code = await runCli(["update", "--confirm"], {
+      fetchImpl: mockFetch(registryMetadata),
+      spawnImpl: (command: string, args: string[]) => {
+        spawnCalls.push({ command, args });
+        return { status: 0 };
+      },
+      stdout: { write: (value: string) => stdout.push(value) },
+      stderr: { write: (value: string) => stderr.push(value) },
+      env: {},
+    });
+
+    expect(code).toBe(0);
+    expect(stderr.join("")).toBe("");
+    expect(stdout.join("")).toContain("\"updated\":true");
+    expect(spawnCalls).toHaveLength(1);
+    expect(spawnCalls[0]?.args).toEqual([
+      "install",
+      "--global",
+      "warrantee@0.2.0",
+      "--ignore-scripts",
+      "--registry=https://registry.npmjs.org",
+    ]);
+  });
+
+  it("refuses update metadata from an untrusted tarball host", async () => {
+    const stderr: string[] = [];
+    const spawnCalls: unknown[] = [];
+    const { runCli } = await import(toolModule("cli.mjs"));
+
+    const code = await runCli(["update", "--confirm"], {
+      fetchImpl: mockFetch({
+        name: "warrantee",
+        version: "0.2.0",
+        dist: {
+          tarball: "https://evil.example/warrantee-0.2.0.tgz",
+          integrity: "sha512-test",
+          signatures: [{ keyid: "SHA256:test", sig: "test" }],
+        },
+      }),
+      spawnImpl: (...args: unknown[]) => {
+        spawnCalls.push(args);
+        return { status: 0 };
+      },
+      stdout: { write: () => undefined },
+      stderr: { write: (value: string) => stderr.push(value) },
+      env: {},
+    });
+
+    expect(code).toBe(1);
+    expect(stderr.join("")).toContain("trusted Warrantee registry path");
+    expect(spawnCalls).toHaveLength(0);
+  });
+
   it("sends generated integration tokens as x-api-key without usernames or passwords", async () => {
     const calls: FetchCall[] = [];
     const { listWarranties } = await import(toolModule("api-client.mjs"));

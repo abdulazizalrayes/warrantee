@@ -1,0 +1,47 @@
+name: Stage Warrantee CLI
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  stage:
+    name: Verify and stage signed CLI package
+    if: startsWith(github.event.release.tag_name, 'warrantee-cli-v')
+    runs-on: ubuntu-latest
+    environment: npm-production
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24.18.0'
+          registry-url: 'https://registry.npmjs.org'
+          package-manager-cache: false
+
+      - name: Install supported npm CLI
+        run: npm install --global npm@12.0.1
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify release identity and package synchronization
+        run: npm run qa:cli-release -- --tag "${{ github.event.release.tag_name }}"
+
+      - name: Run CLI and MCP tests
+        run: npm test -- --run tests/unit/cli-mcp.test.ts tests/unit/hosted-mcp.test.ts
+
+      - name: Inspect package contents
+        run: npm run pack:cli
+
+      - name: Stage package with npm trusted publishing
+        run: npm stage publish ./packages/warrantee-cli --access public

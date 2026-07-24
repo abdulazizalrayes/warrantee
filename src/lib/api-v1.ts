@@ -151,6 +151,21 @@ export async function authorizeApiV1Request(request: NextRequest, scope: ApiV1Sc
   return { requester };
 }
 
+export async function authorizeApiV1StatusRequest(request: NextRequest) {
+  const ipLimitResponse = await enforceApiV1IpRateLimit(request);
+  if (ipLimitResponse) return { response: ipLimitResponse };
+
+  const requester = await resolveApiRequester(request);
+  if (!requester.ok) {
+    return { response: apiV1Json({ error: requester.error }, { status: requester.status }) };
+  }
+
+  const requesterLimitResponse = await enforceApiV1RequesterRateLimit(requester);
+  if (requesterLimitResponse) return { response: requesterLimitResponse };
+
+  return { requester };
+}
+
 export async function recordApiV1Usage(
   supabase: ReturnType<typeof createSupabaseAdminClient>,
   request: NextRequest,

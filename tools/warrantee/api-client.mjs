@@ -58,6 +58,7 @@ export async function apiRequest({
   idempotencyKey,
   requireAuth = true,
   fetchImpl = globalThis.fetch,
+  timeoutMs = 10_000,
 } = {}) {
   if (!path || !String(path).startsWith("/")) {
     throw new WarranteeApiError("API path must start with /");
@@ -79,7 +80,7 @@ export async function apiRequest({
   const headers = {
     Accept: "application/json",
   };
-  if (resolvedApiKey) headers["x-api-key"] = resolvedApiKey;
+  if (requireAuth && resolvedApiKey) headers["x-api-key"] = resolvedApiKey;
   if (idempotencyKey) headers["Idempotency-Key"] = String(idempotencyKey);
   if (body !== undefined) headers["Content-Type"] = "application/json";
 
@@ -87,6 +88,7 @@ export async function apiRequest({
     method,
     headers,
     body: body === undefined ? undefined : JSON.stringify(body),
+    signal: AbortSignal.timeout(timeoutMs),
   });
   const parsed = await parseResponse(response);
 
@@ -208,6 +210,32 @@ export function getAssetIntelligence(options = {}) {
   });
 }
 
+export function getIntegrationStatus(options = {}) {
+  return apiRequest({
+    ...options,
+    path: "/api/v1/status",
+    method: "GET",
+  });
+}
+
+export function getPlatformHealth(options = {}) {
+  return apiRequest({
+    ...options,
+    path: "/api/health",
+    method: "GET",
+    requireAuth: false,
+  });
+}
+
+export function getAgentCapabilities(options = {}) {
+  return apiRequest({
+    ...options,
+    path: "/.well-known/agent-card.json",
+    method: "GET",
+    requireAuth: false,
+  });
+}
+
 export function verifyWarranty(query, options = {}) {
   return apiRequest({
     ...options,
@@ -230,5 +258,8 @@ export const warranteeApi = {
   listDocuments,
   getDocument,
   getAssetIntelligence,
+  getIntegrationStatus,
+  getPlatformHealth,
+  getAgentCapabilities,
   verifyWarranty,
 };
