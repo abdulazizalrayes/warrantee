@@ -130,4 +130,5 @@ Use this section only when the user explicitly asks about cloud Paperclip (`ai.e
 - Agents may use read-only CLI diagnostics and propose source improvements. They must not silently self-modify the CLI or bypass normal review, CI, release, and rollback controls.
 - `warrantee update --check` is read-only. `warrantee update --confirm` requires explicit owner approval and must retain the trusted-registry, exact-version, integrity, signature, and no-lifecycle-script safeguards.
 - Do not publish, stage, deprecate, or unpublish the npm package; create a CLI release/tag; or change its license without explicit owner approval.
+- Owner decision recorded 2026-07-25: public npm publication is postponed and is not a Warrantee launch blocker. Do not request npm login or resume npm setup unless the owner explicitly reverses this decision.
 - After any CLI/API/MCP contract change, verify API authorization, scopes, tenant isolation, rate limits, usage metering, package contents, focused CLI/MCP tests, OpenAPI, and production smoke/readiness checks.

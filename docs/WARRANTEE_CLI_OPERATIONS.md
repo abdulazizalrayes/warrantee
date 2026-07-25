@@ -8,6 +8,17 @@ The Warrantee CLI gives registered users and approved agents a typed operational
 surface over the same tenant-scoped API used by MCP. It is not a privileged
 backdoor and never accepts a Warrantee username or password.
 
+## Publication Status
+
+Public npm publication was explicitly postponed by the owner on 2026-07-25.
+
+- The `warrantee` npm package is not published.
+- npm publication is not a website, API, hosted MCP, onboarding, or launch blocker.
+- Do not request npm login, create a package release or tag, or resume publishing
+  work unless the owner explicitly asks to resume it.
+- Keep the repository CLI, hosted MCP, release checks, and future release workflow
+  ready so publication can be completed later without redesign.
+
 ## Safety Contract
 
 - Private commands require a scoped `wrt_...` integration token.
