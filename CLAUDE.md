@@ -132,3 +132,12 @@ Use this section only when the user explicitly asks about cloud Paperclip (`ai.e
 - Do not publish, stage, deprecate, or unpublish the npm package; create a CLI release/tag; or change its license without explicit owner approval.
 - Owner decision recorded 2026-07-25: public npm publication is postponed and is not a Warrantee launch blocker. Do not request npm login or resume npm setup unless the owner explicitly reverses this decision.
 - After any CLI/API/MCP contract change, verify API authorization, scopes, tenant isolation, rate limits, usage metering, package contents, focused CLI/MCP tests, OpenAPI, and production smoke/readiness checks.
+
+## Architecture Map
+
+- Read `docs/warrantee-architecture-map.json` before non-trivial feature, integration, security, data, or workflow work. It is the canonical machine-readable map for future agents.
+- Use `docs/WARRANTEE_ARCHITECTURE_MAP.html` for the interactive human view. It is generated and must not be hand-edited.
+- Update the JSON when a route, API, table, RLS boundary, background job, provider, deployment path, or major user journey changes.
+- Run `npm run architecture:generate` after updating the JSON, then run `npm run qa:architecture-map`.
+- The validation gate checks graph integrity, flow steps, repository references, database-table coverage, inventory counts, identity lock, and obvious secret leakage.
+- Keep the map internal under `docs/`. Do not expose it as a public production route because it describes security and operational boundaries.

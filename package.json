@@ -27,6 +27,8 @@
     "qa:pentest-readiness": "node scripts/check-pentest-readiness.mjs",
     "qa:migrations": "node scripts/check-migration-integrity.mjs",
     "qa:agent-readiness": "node scripts/check-agent-readiness.mjs",
+    "architecture:generate": "node scripts/generate-architecture-map.mjs",
+    "qa:architecture-map": "node scripts/generate-architecture-map.mjs --check",
     "agent-markdown:generate": "node scripts/generate-agent-markdown.mjs",
     "agent-markdown:check": "node scripts/generate-agent-markdown.mjs --check",
     "qa:agent-markdown": "node scripts/check-agent-markdown.mjs",
