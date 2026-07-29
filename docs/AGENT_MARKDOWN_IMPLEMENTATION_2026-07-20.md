@@ -169,7 +169,7 @@ Pre-deployment verification:
 - Local response size: HTML 3,491,378 bytes; Markdown 436,031 bytes; 87.51%
   reduction
 - Production dependency audit: 0 vulnerabilities
-- Loopback guard: no prohibited localhost or loopback references
+- Loopback guard: no prohibited loopback references
 
 Release commit, deployment, CI, production-gate, live endpoint, and rollback
 evidence are recorded after production promotion.
