@@ -7,16 +7,21 @@ import {
 
 export function buildAgentMarkdownHeaders(
   page: AgentMarkdownPage,
-  options: { directSidecar?: boolean } = {},
+  options: {
+    contentLocationPath?: string;
+    directSidecar?: boolean;
+  } = {},
 ) {
+  const contentLocationPath =
+    options.contentLocationPath ?? page.directSidecarPath;
   const headers = new Headers({
     "Access-Control-Allow-Origin": "*",
     "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
     "Content-Language": page.language,
-    "Content-Location": `https://warrantee.io${page.sidecarPath}`,
+    "Content-Location": `https://warrantee.io${contentLocationPath}`,
     "Content-Signal": CONTENT_SIGNAL_HEADER,
     "Content-Type": "text/markdown; charset=utf-8",
-    Link: buildDiscoveryLinkHeader(page.canonicalUrl),
+    Link: buildDiscoveryLinkHeader(page, { includeCanonical: true }),
     Vary: "Accept",
     "X-Content-Type-Options": "nosniff",
   });

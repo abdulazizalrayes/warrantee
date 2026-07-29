@@ -110,11 +110,65 @@ test.describe("SEO and agent-readiness endpoints", () => {
       expect(direct.status(), page.contentLocation).toBe(200);
       expect(direct.headers()["access-control-allow-origin"]).toBe("*");
       expect(direct.headers()["x-robots-tag"]).toBe("noindex, follow");
+      expect(direct.headers()["vary"]?.toLowerCase()).toContain("accept");
+
+      const legacy = await request.get(
+        new URL(page.legacyContentLocation).pathname,
+      );
+      expect(legacy.status(), page.legacyContentLocation).toBe(200);
+      expect(legacy.headers()["x-robots-tag"]).toBe("noindex, follow");
+      expect(legacy.headers()["vary"]?.toLowerCase()).toContain("accept");
 
       const html = await request.get(page.path, {
         headers: { Accept: "text/markdown;q=0, text/html;q=1" },
       });
       expect(html.headers()["content-type"]).toContain("text/html");
+      expect(html.headers()["vary"]?.toLowerCase()).toContain("accept");
+      expect(html.headers()["link"]).toContain(
+        `<${page.contentLocation}>; rel="alternate"; type="text/markdown"`,
+      );
+    }
+
+    const negotiationCases = [
+      ["text/markdown", "text/markdown"],
+      ["text/html", "text/html"],
+      ["text/markdown;q=0.5, text/html;q=1", "text/html"],
+      ["text/markdown;q=1, text/html;q=0.5", "text/markdown"],
+      ["text/markdown;q=1, text/html;q=1", "text/html"],
+      ["text/markdown;q=0, text/html;q=1", "text/html"],
+      ["*/*", "text/html"],
+      ["text/*", "text/html"],
+      ["text/*;q=0.8, text/markdown;q=0.5", "text/html"],
+      ["text/html;q=0, text/*;q=0.8", "text/markdown"],
+    ];
+    for (const path of ["/en/pricing", "/ar/pricing"]) {
+      const manifestPage = manifest.pages.find(
+        (page: { path: string }) => page.path === path,
+      );
+      expect(manifestPage).toBeTruthy();
+
+      for (const [accept, expectedType] of negotiationCases) {
+        const response = await request.get(path, { headers: { Accept: accept } });
+        expect(response.headers()["content-type"], `${path}: ${accept}`).toContain(
+          expectedType,
+        );
+      }
+
+      const head = await request.head(path, {
+        headers: { Accept: "text/html" },
+      });
+      expect(head.status()).toBe(200);
+      expect(head.headers()["content-type"]).toContain("text/html");
+      expect(head.headers()["link"]).toContain(
+        `<${manifestPage.contentLocation}>; rel="alternate"; type="text/markdown"`,
+      );
+
+      const unavailable = await request.get(path, {
+        headers: {
+          Accept: "text/html;q=0, text/markdown;q=0, text/*;q=0, */*;q=0",
+        },
+      });
+      expect(unavailable.status()).toBe(406);
     }
 
     const fallback = await request.get("/en/demo/product-passport", {

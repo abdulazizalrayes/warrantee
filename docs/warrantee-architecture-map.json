@@ -391,12 +391,15 @@
       "layer": "experience",
       "kind": "agent_surface",
       "status": "active",
-      "responsibility": "Expose llms guidance, agent cards, skills, structured data, content negotiation, and deterministic Markdown companions.",
+      "responsibility": "Expose llms guidance, agent cards, skills, structured data, standards-correct Accept negotiation, canonical .md aliases, and deterministic Markdown companions.",
       "code_refs": [
         "src/app/llms.txt/route.ts",
         "src/app/llms-full.txt/route.ts",
         "src/app/.well-known/agent-card.json/route.ts",
         "src/app/agent-markdown/[...segments]/route.ts",
+        "src/app/api/agent-markdown/route.ts",
+        "src/lib/agent-ready.ts",
+        "src/middleware.ts",
         "src/generated/agent-markdown-pages.json"
       ]
     },

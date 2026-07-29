@@ -14,8 +14,9 @@ function manifest() {
     },
     pages: generatedPages.pages.map((page) => ({
       canonicalUrl: page.canonicalUrl,
-      contentLocation: `${generatedPages.canonicalOrigin}${page.sidecarPath}`,
+      contentLocation: `${generatedPages.canonicalOrigin}${page.directSidecarPath}`,
       description: page.description,
+      legacyContentLocation: `${generatedPages.canonicalOrigin}${page.sidecarPath}`,
       htmlTreeSha256: page.htmlTreeSha256,
       language: page.language,
       markdownBytes: page.markdownBytes,

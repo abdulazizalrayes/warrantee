@@ -31,6 +31,11 @@ describe("agent Markdown generator", () => {
       </html>`;
     const page = pageHtmlToMarkdown({ html, canonicalUrl, expectedPathname: "/en/example" });
 
+    expect(page.directSidecarPath).toBe("/en/example.md");
+    expect(page.sidecarPath).toBe("/agent-markdown/en/example.md");
+    expect(page.markdown).toContain(
+      'content_location: "https://warrantee.io/en/example.md"',
+    );
     expect(page.markdown).toContain("# Public heading");
     expect(page.markdown).toContain("https://warrantee.io/en/about");
     expect(page.markdown).toContain("![Warrantee logo](https://warrantee.io/icons/icon.svg)");

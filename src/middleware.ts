@@ -1,9 +1,11 @@
 import { createServerClient } from "@supabase/ssr";
 import {
   buildDiscoveryLinkHeader,
+  getAgentDirectSidecarRouteInfo,
   getAgentRouteInfo,
-  isAgentMarkdownRequest,
+  negotiateAgentRepresentation,
 } from "@/lib/agent-ready";
+import type { AgentRouteInfo } from "@/lib/agent-ready";
 import {
   DEFAULT_LOCALE,
   LOCALE_PREFIX_PATTERN,
@@ -14,7 +16,10 @@ import type { NextRequest } from "next/server";
 
 const LOCALE_PREFIX_RE = new RegExp(`^/(${LOCALE_PREFIX_PATTERN})(/|$)`);
 
-function applySecurityHeaders(response: NextResponse, hasAgentRouteInfo = false) {
+function applySecurityHeaders(
+  response: NextResponse,
+  agentRouteInfo: AgentRouteInfo | null = null,
+) {
   response.headers.set("X-Frame-Options", "DENY");
   response.headers.set("X-Content-Type-Options", "nosniff");
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
@@ -26,10 +31,10 @@ function applySecurityHeaders(response: NextResponse, hasAgentRouteInfo = false)
     "Strict-Transport-Security",
     "max-age=31536000; includeSubDomains",
   );
-  response.headers.set("Vary", "Accept");
 
-  if (hasAgentRouteInfo) {
-    response.headers.set("Link", buildDiscoveryLinkHeader());
+  if (agentRouteInfo) {
+    response.headers.set("Vary", "Accept");
+    response.headers.set("Link", buildDiscoveryLinkHeader(agentRouteInfo));
   }
 
   return response;
@@ -74,6 +79,7 @@ export async function middleware(request: NextRequest) {
   const localeMatch = pathname.match(LOCALE_PREFIX_RE);
   const locale = normalizeLocale(localeMatch?.[1] || DEFAULT_LOCALE);
   const agentRouteInfo = getAgentRouteInfo(pathname);
+  const directSidecarRouteInfo = getAgentDirectSidecarRouteInfo(pathname);
   const isIndexNowKeyPath = /^\/[A-Za-z0-9-]{8,128}\.txt$/.test(pathname);
   const isPlatformAssetPath =
     pathname.startsWith("/_next/") ||
@@ -135,12 +141,44 @@ export async function middleware(request: NextRequest) {
     isApprovalArea ||
     isAuthArea;
 
-  if (
-    (request.method === "GET" || request.method === "HEAD") &&
-    agentRouteInfo &&
-    request.headers.get("x-warrantee-markdown-fallback") !== "html" &&
-    isAgentMarkdownRequest(request.headers.get("accept"))
-  ) {
+  const isRepresentationRequest =
+    request.method === "GET" || request.method === "HEAD";
+  const forceHtml =
+    request.headers.get("x-warrantee-markdown-fallback") === "html";
+  const representation =
+    agentRouteInfo && isRepresentationRequest && !forceHtml
+      ? negotiateAgentRepresentation(request.headers.get("accept"))
+      : "html";
+
+  if (isRepresentationRequest && directSidecarRouteInfo) {
+    const markdownUrl = request.nextUrl.clone();
+    markdownUrl.pathname = "/api/agent-markdown";
+    markdownUrl.search = "";
+    markdownUrl.searchParams.set(
+      "path",
+      directSidecarRouteInfo.canonicalPath,
+    );
+    const markdownRequestHeaders = new Headers(request.headers);
+    markdownRequestHeaders.set(
+      "x-warrantee-agent-markdown-path",
+      directSidecarRouteInfo.canonicalPath,
+    );
+    markdownRequestHeaders.set("x-warrantee-agent-markdown-direct", "1");
+    const markdownResponse = NextResponse.rewrite(markdownUrl, {
+      request: { headers: markdownRequestHeaders },
+    });
+    markdownResponse.headers.set("Vary", "Accept");
+    return markdownResponse;
+  }
+
+  if (agentRouteInfo && representation === "not-acceptable") {
+    return applySecurityHeaders(
+      new NextResponse(null, { status: 406 }),
+      agentRouteInfo,
+    );
+  }
+
+  if (agentRouteInfo && representation === "markdown") {
     const markdownUrl = request.nextUrl.clone();
     markdownUrl.pathname = "/api/agent-markdown";
     markdownUrl.search = "";
@@ -161,7 +199,7 @@ export async function middleware(request: NextRequest) {
     request: { headers: request.headers },
   });
 
-  applySecurityHeaders(response, Boolean(agentRouteInfo));
+  applySecurityHeaders(response, agentRouteInfo);
 
   if (
     !localeMatch &&
@@ -212,7 +250,7 @@ export async function middleware(request: NextRequest) {
             request.cookies.set(name, value),
           );
           response = NextResponse.next({ request });
-          applySecurityHeaders(response, Boolean(agentRouteInfo));
+          applySecurityHeaders(response, agentRouteInfo);
           cookiesToSet.forEach(({ name, value, options }) =>
             response.cookies.set(name, value, {
               ...options,

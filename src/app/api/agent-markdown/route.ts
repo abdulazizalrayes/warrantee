@@ -17,13 +17,23 @@ function response(request: NextRequest, includeBody: boolean) {
   }
 
   logAgentUsage(request, "agent_markdown_read", {
-    representation: "negotiated",
+    representation:
+      request.headers.get("x-warrantee-agent-markdown-direct") === "1"
+        ? "direct"
+        : "negotiated",
     resource_path: page.path,
   });
 
+  const directSidecar =
+    request.headers.get("x-warrantee-agent-markdown-direct") === "1";
   return new NextResponse(includeBody ? page.markdown : null, {
     status: 200,
-    headers: buildAgentMarkdownHeaders(page),
+    headers: buildAgentMarkdownHeaders(page, {
+      contentLocationPath: directSidecar
+        ? page.directSidecarPath
+        : undefined,
+      directSidecar,
+    }),
   });
 }
 

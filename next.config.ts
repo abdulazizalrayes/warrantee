@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
+import generatedPages from "./src/generated/agent-markdown-pages.json";
 
 const scriptSources = [
   "'self'",
@@ -62,6 +63,14 @@ const nextConfig: NextConfig = {
   },
   headers: async () => {
     return [
+      ...generatedPages.pages.map((page) => ({
+        source: page.path,
+        headers: [{ key: "Vary", value: "Accept" }],
+      })),
+      {
+        source: "/agent-markdown/:path*",
+        headers: [{ key: "Vary", value: "Accept" }],
+      },
       {
         source: "/favicon.svg",
         headers: [

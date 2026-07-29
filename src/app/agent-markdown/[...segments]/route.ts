@@ -28,7 +28,10 @@ async function response(context: RouteContext, includeBody: boolean) {
   }
 
   return new NextResponse(includeBody ? page.markdown : null, {
-    headers: buildAgentMarkdownHeaders(page, { directSidecar: true }),
+    headers: buildAgentMarkdownHeaders(page, {
+      contentLocationPath: page.sidecarPath,
+      directSidecar: true,
+    }),
   });
 }
 

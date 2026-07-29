@@ -4,7 +4,7 @@ import TurndownService from "turndown";
 import { gfm } from "turndown-plugin-gfm";
 
 export const CANONICAL_ORIGIN = "https://warrantee.io";
-export const GENERATED_SCHEMA_VERSION = 1;
+export const GENERATED_SCHEMA_VERSION = 2;
 
 const EXCLUDED_LINK_PREFIXES = [
   "/api/",
@@ -68,6 +68,10 @@ function normalizeLanguage(value, pathname) {
 
 function toSidecarPath(pathname) {
   return `/agent-markdown${normalizePath(pathname)}.md`;
+}
+
+function toDirectSidecarPath(pathname) {
+  return `${normalizePath(pathname)}.md`;
 }
 
 function stableValue(value) {
@@ -323,13 +327,14 @@ export function pageHtmlToMarkdown({ html, canonicalUrl, expectedPathname }) {
   const sanitizedMain = sanitizeMainHtml($.html(main), canonicalUrl);
   const body = normalizeWhitespace(createTurndownService().turndown(sanitizedMain));
   const sidecarPath = toSidecarPath(expectedPathname);
+  const directSidecarPath = toDirectSidecarPath(expectedPathname);
   const frontmatter = [
     "---",
     `title: ${yamlString(title)}`,
     `description: ${yamlString(description)}`,
     `canonical: ${yamlString(canonicalUrl)}`,
     `language: ${yamlString(language)}`,
-    `content_location: ${yamlString(`${CANONICAL_ORIGIN}${sidecarPath}`)}`,
+    `content_location: ${yamlString(`${CANONICAL_ORIGIN}${directSidecarPath}`)}`,
     "---",
   ].join("\n");
   const sections = [frontmatter, body];
@@ -351,6 +356,7 @@ export function pageHtmlToMarkdown({ html, canonicalUrl, expectedPathname }) {
   return {
     canonicalUrl,
     description,
+    directSidecarPath,
     htmlBytes,
     htmlTreeSha256: sha256(canonicalHtmlTree),
     language,

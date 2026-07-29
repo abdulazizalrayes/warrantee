@@ -116,3 +116,60 @@ No database migration, secret rotation, paid service, DNS change, or destructive
 - Production response size: HTML 3,613,833 bytes; Markdown 435,200 bytes; 87.96% reduction
 - Visual regression: regular Chrome desktop/mobile checks remained pixel-identical on the approved representative English and Arabic routes
 - Paperclip: completed Warrantee-only release record `WAR-141`, verified under Paperclip `v2026.707.0+2.git.ee83e6698`
+
+## Protocol Remediation — 2026-07-29
+
+The implementation was re-audited against stricter HTTP negotiation and
+discovery requirements before this release. The approved owner policy remains:
+
+```text
+search=yes, ai-input=yes, ai-train=no
+```
+
+Validated production gaps before remediation:
+
+1. Equal explicit HTML and Markdown preferences selected Markdown instead of
+   the safer HTML default.
+2. Wildcard precedence and representation-specific `q=0` exclusions were not
+   handled correctly in every combination.
+3. Canonical companions such as `/en/pricing.md` returned 404; only the legacy
+   `/agent-markdown/en/pricing.md` form was available.
+4. Canonical HTML and HEAD responses did not advertise their page-specific
+   Markdown alternate.
+5. The legacy sidecar did not reliably retain `Vary: Accept` at the deployed
+   edge.
+
+Remediation:
+
+- Added standards-correct parsing for `text/markdown`, `text/x-markdown`,
+  `text/html`, `application/xhtml+xml`, `text/*`, and `*/*`.
+- Added quality, specificity, equal-preference, wildcard, and `q=0` handling;
+  ambiguous or equal explicit requests default to HTML.
+- Added canonical direct sidecars for every generated sitemap page while
+  retaining the legacy sidecars for compatibility.
+- Added page-specific Markdown alternate `Link` headers to canonical HTML and
+  HEAD responses.
+- Added canonical `Content-Location`, language, `Vary: Accept`,
+  `X-Robots-Tag: noindex, follow`, CORS, and the approved `Content-Signal` to
+  direct sidecars.
+- Expanded unit, release-gate, and desktop/mobile browser coverage for all
+  supported negotiation cases.
+
+Pre-deployment verification:
+
+- TypeScript: passed
+- ESLint: passed
+- Vitest: 26 files and 167 tests passed
+- Next.js production build: passed; 245 static pages generated
+- Local Markdown release gate: 50 of 50 English/Arabic sitemap pages passed
+- Agent discovery validation: 17 JSON endpoints and 6 text endpoints passed
+- Playwright: 10 of 10 focused checks passed on desktop and mobile Chrome
+- HTML preservation: 50 of 50 semantic HTML trees were identical to the
+  approved production site
+- Local response size: HTML 3,491,378 bytes; Markdown 436,031 bytes; 87.51%
+  reduction
+- Production dependency audit: 0 vulnerabilities
+- Loopback guard: no prohibited localhost or loopback references
+
+Release commit, deployment, CI, production-gate, live endpoint, and rollback
+evidence are recorded after production promotion.

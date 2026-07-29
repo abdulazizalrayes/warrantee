@@ -46,8 +46,9 @@ ${listPublicResourceLinks().map((resource) => `- ${resource.name}: ${resource.ur
 ## Markdown Representations
 
 - Request any canonical sitemap page with the HTTP header \`Accept: text/markdown\` to receive its deterministic public Markdown representation.
+- Request a direct companion by appending \`.md\` to the canonical path, for example \`${BASE_URL}/en/pricing.md\`.
 - Markdown companion manifest: ${BASE_URL}/data/agent-markdown-manifest.json
-- Direct Markdown companions use the manifest's \`contentLocation\` URLs and return \`X-Robots-Tag: noindex, follow\`.
+- Direct Markdown companions use the manifest's \`contentLocation\` URLs, return \`X-Robots-Tag: noindex, follow\`, and preserve legacy \`/agent-markdown/\` aliases.
 - If a companion is unavailable, the canonical URL safely continues to return HTML.
 
 ## Access Boundaries
