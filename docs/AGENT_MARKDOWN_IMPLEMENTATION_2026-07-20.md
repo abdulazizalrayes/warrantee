@@ -171,5 +171,44 @@ Pre-deployment verification:
 - Production dependency audit: 0 vulnerabilities
 - Loopback guard: no prohibited loopback references
 
-Release commit, deployment, CI, production-gate, live endpoint, and rollback
-evidence are recorded after production promotion.
+Final release evidence:
+
+- Implementation commits:
+  - `04013a8` implements strict HTTP negotiation, canonical `.md` companions,
+    page-specific alternate discovery, deterministic generation, and expanded
+    tests.
+  - `390cf89` removes a prohibited loopback term from the public operations
+    record.
+  - `84f0231` aligns validation with the approved Vercel edge contract and
+    adds Markdown HEAD-response coverage.
+- Validated Vercel deployment:
+  `dpl_9Ab8xQSBD1jCEXkrYYrby6jMpsu3` (`Ready`, production, aliased to
+  `warrantee.io`).
+- GitHub CI run `30475604577`: passed type-check, lint, 167 unit tests,
+  production build, local Markdown release gate, and full browser E2E
+  (116 passed, 2 intentionally skipped).
+- Production Security Gates run `30476574362`: passed production smoke,
+  live Markdown audit, disposable authenticated-user journey, anonymous
+  Supabase RLS probe, operational readiness, production E2E, controlled
+  load, QA cleanup, and verification that no persistent QA identity remained.
+- Live production Markdown audit: all 50 canonical English/Arabic sitemap
+  pages passed HTML and HEAD fallback, semantic HTML-tree preservation,
+  page-specific alternate discovery, canonical and language headers,
+  Markdown GET and HEAD, the complete quality/specificity/`q=0` negotiation
+  matrix, direct and legacy sidecars, and `noindex, follow`.
+- Live production response size: HTML 3,550,702 bytes; Markdown 436,031
+  bytes; 87.72% reduction.
+- Agent-readiness validation: 17 JSON and 6 text discovery endpoints passed.
+- General production smoke: passed public pages, protected-route redirects,
+  unauthorized API boundaries, cron/internal endpoint protection, and
+  open-redirect callback safety.
+- Cost: SAR 0 beyond the existing Vercel/Cloudflare infrastructure.
+- Visual impact: none. Local comparison confirmed all 50 semantic HTML trees
+  remained unchanged, and focused desktop/mobile browser checks passed.
+- Paperclip follow-up: the Warrantee release record remains `WAR-141`.
+  The shell health check on 2026-07-29 was correctly intercepted by
+  Cloudflare Access before Paperclip, so no unauthenticated Paperclip write
+  was attempted.
+
+Rollback remains a normal revert of the three implementation commits followed
+by production promotion and the smoke, readiness, and Markdown release gates.
