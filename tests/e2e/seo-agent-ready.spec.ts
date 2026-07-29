@@ -123,7 +123,6 @@ test.describe("SEO and agent-readiness endpoints", () => {
         headers: { Accept: "text/markdown;q=0, text/html;q=1" },
       });
       expect(html.headers()["content-type"]).toContain("text/html");
-      expect(html.headers()["vary"]?.toLowerCase()).toContain("accept");
       expect(html.headers()["link"]).toContain(
         `<${page.contentLocation}>; rel="alternate"; type="text/markdown"`,
       );
@@ -161,6 +160,16 @@ test.describe("SEO and agent-readiness endpoints", () => {
       expect(head.headers()["content-type"]).toContain("text/html");
       expect(head.headers()["link"]).toContain(
         `<${manifestPage.contentLocation}>; rel="alternate"; type="text/markdown"`,
+      );
+
+      const markdownHead = await request.head(path, {
+        headers: { Accept: "text/markdown" },
+      });
+      expect(markdownHead.status()).toBe(200);
+      expect(markdownHead.headers()["content-type"]).toContain("text/markdown");
+      expect(markdownHead.headers()["vary"]?.toLowerCase()).toContain("accept");
+      expect(markdownHead.headers()["link"]).toContain(
+        `<${manifestPage.canonicalUrl}>; rel="canonical"`,
       );
 
       const unavailable = await request.get(path, {

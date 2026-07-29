@@ -61,9 +61,6 @@ async function validatePage(entry) {
   if (!htmlResponse.headers.get("link")?.includes(expectedAlternate)) {
     fail(entry.pathname, "html-alternate", htmlResponse.headers.get("link"));
   }
-  if (!htmlResponse.headers.get("vary")?.toLowerCase().includes("accept")) {
-    fail(entry.pathname, "html-vary", htmlResponse.headers.get("vary"));
-  }
 
   const htmlHeadResponse = await request(entry.pathname, "text/html", "HEAD");
   if (
@@ -74,9 +71,6 @@ async function validatePage(entry) {
   }
   if (!htmlHeadResponse.headers.get("link")?.includes(expectedAlternate)) {
     fail(entry.pathname, "html-head-alternate", htmlHeadResponse.headers.get("link"));
-  }
-  if (!htmlHeadResponse.headers.get("vary")?.toLowerCase().includes("accept")) {
-    fail(entry.pathname, "html-head-vary", htmlHeadResponse.headers.get("vary"));
   }
 
   const markdownResponse = await request(entry.pathname, "text/markdown");
@@ -109,6 +103,44 @@ async function validatePage(entry) {
   }
   if (markdown !== expected.markdown) {
     fail(entry.pathname, "markdown-body", "Negotiated body differs from generated companion");
+  }
+
+  const markdownHeadResponse = await request(
+    entry.pathname,
+    "text/markdown",
+    "HEAD",
+  );
+  if (
+    markdownHeadResponse.status !== 200 ||
+    !markdownHeadResponse.headers
+      .get("content-type")
+      ?.startsWith("text/markdown")
+  ) {
+    fail(
+      entry.pathname,
+      "markdown-head",
+      `status=${markdownHeadResponse.status}`,
+    );
+  }
+  if (
+    !markdownHeadResponse.headers.get("vary")?.toLowerCase().includes("accept")
+  ) {
+    fail(
+      entry.pathname,
+      "markdown-head-vary",
+      markdownHeadResponse.headers.get("vary"),
+    );
+  }
+  if (
+    !markdownHeadResponse.headers
+      .get("link")
+      ?.includes(`<${entry.canonicalUrl}>; rel="canonical"`)
+  ) {
+    fail(
+      entry.pathname,
+      "markdown-head-canonical",
+      markdownHeadResponse.headers.get("link"),
+    );
   }
 
   const negotiationCases = [
@@ -228,9 +260,10 @@ console.log(JSON.stringify({
       "html-head",
       "canonical",
       "html-tree",
-      "page-specific-alternate",
-      "markdown-headers",
-      "public-cors",
+    "page-specific-alternate",
+    "markdown-headers",
+    "markdown-head",
+    "public-cors",
       "markdown-body",
       "accept-negotiation-matrix",
       "direct-sidecar",
