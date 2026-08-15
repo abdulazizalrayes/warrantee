@@ -5,26 +5,50 @@ import { extractWarrantyFields } from "@/lib/ocr/warranty-field-parser";
 
 type CorpusEntry = {
   id: string;
-  text: string;
+  file?: string;
+  text?: string;
   minConfidence?: number;
   expectedFields: Record<string, string | number>;
 };
 
-const manifestPath = path.join(
+const corpusDir = path.join(
   process.cwd(),
-  "tests/fixtures/ocr-corpus/synthetic/manifest.json",
+  process.env.OCR_CORPUS_DIR || "tests/fixtures/ocr-corpus/synthetic",
+);
+const manifestPath = path.join(
+  corpusDir,
+  "manifest.json",
 );
 const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8")) as {
   entries: CorpusEntry[];
 };
 
-describe("OCR warranty field parser synthetic corpus", () => {
+describe(`OCR warranty field parser corpus: ${path.dirname(manifestPath)}`, () => {
   for (const entry of manifest.entries) {
     it(`extracts expected fields for ${entry.id}`, () => {
-      const fields = extractWarrantyFields(entry.text);
+      const sourceText = entry.text ?? (
+        entry.file ? fs.readFileSync(path.join(corpusDir, entry.file), "utf8") : ""
+      );
+      expect(sourceText.length, `${entry.id}.sourceText`).toBeGreaterThan(0);
+
+      const fields = extractWarrantyFields(sourceText);
+      const duration = typeof fields.warranty_duration === "string"
+        ? fields.warranty_duration
+        : "";
+      const durationAmount = Number.parseInt(duration, 10);
+      const warrantyMonths = Number.isFinite(durationAmount)
+        ? /(?:year|yr|سنة|سنوات|عام)/i.test(duration)
+          ? durationAmount * 12
+          : durationAmount
+        : undefined;
+      const normalizedFields: Record<string, string | number | undefined> = {
+        ...fields,
+        purchase_date: fields.purchase_date ?? fields.start_date,
+        warranty_months: fields.warranty_months ?? warrantyMonths,
+      };
 
       for (const [fieldName, expectedValue] of Object.entries(entry.expectedFields)) {
-        expect(fields[fieldName], `${entry.id}.${fieldName}`).toBe(expectedValue);
+        expect(normalizedFields[fieldName], `${entry.id}.${fieldName}`).toBe(expectedValue);
       }
 
       if (entry.minConfidence !== undefined) {

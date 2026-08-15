@@ -4,6 +4,12 @@ export type ExtractedWarrantyFields = {
   [field: string]: string | number;
 };
 
+const FIELD_END = String.raw`(?=\.\s+(?:[A-Z\u0600-\u06FF%]|$)|\n|\r|$)`;
+
+function fieldPattern(prefix: string, flags = "i") {
+  return new RegExp(`${prefix}\\s*[:;؛\\-]?\\s*(.+?)${FIELD_END}`, flags);
+}
+
 function firstMatch(text: string, patterns: RegExp[], maxLength = 100) {
   for (const pattern of patterns) {
     const match = text.match(pattern);
@@ -19,10 +25,10 @@ export function extractWarrantyFields(text: string) {
   const result: ExtractedWarrantyFields = { confidence: 0, raw_text: text.substring(0, 500) };
 
   const productName = firstMatch(text, [
-    /(?:product|item|device|model|equipment)\s*(?:name|description)?\s*[:;\-]?\s*(.+?)(?:\n|\r|$)/i,
+    fieldPattern(String.raw`(?:pr[o0]duct|item|device|model|equipment)\s*(?:name|description)?`),
     /(?:warranty|guarantee)\s+(?:for|of|on)\s+(.+?)(?:\.|\n|$)/i,
     /(?:purchased|bought)\s+(?:a\s+)?(.+?)(?:\s+on|\s+from|\.|\n|$)/i,
-    /(?:المنتج|الصنف|الجهاز|الموديل|اسم المنتج|وصف المنتج)\s*[:؛\-]?\s*(.+?)(?:\n|\r|$)/i,
+    fieldPattern(String.raw`(?:المنتج|الصنف|الجهاز|الموديل|اسم المنتج|وصف المنتج)`),
     /(?:ضمان|كفالة)\s+(?:على|لـ|ل)\s*(.+?)(?:\.|\n|$)/i,
     /^([A-Z][A-Za-z0-9\s\-]+(?:Pro|Plus|Max|Ultra|Mini|Air)?)/m,
   ]);
@@ -59,10 +65,10 @@ export function extractWarrantyFields(text: string) {
 
   const warrantyDuration = firstMatch(text, [
     /(\d+)\s*(?:year|yr)s?\s*(?:warranty|guarantee|coverage)/i,
-    /(?:warranty|guarantee|coverage)\s*(?:period|duration)?\s*[:;]?\s*(\d+\s*(?:year|yr|month|mo)s?)/i,
-    /(\d+)\s*(?:month|mo)s?\s*(?:warranty|guarantee|coverage)/i,
-    /(?:الضمان|الكفالة|مدة الضمان|فترة الضمان)\s*[:؛]?\s*(\d+\s*(?:سنة|سنوات|شهر|أشهر))/i,
-    /(?:الضمان|الكفالة|مدة الضمان|فترة الضمان)\s*[:؛]?\s*((?:سنة|عام|شهر)\s+(?:واحدة|واحد))/i,
+    /(?:warranty|guarantee|coverage)\s*(?:period|duration)?\s*[:;]?\s*(\d+\s*(?:year|yr|m[o0]nth|mo)s?)/i,
+    /(\d+)\s*(?:m[o0]nth|mo)s?\s*(?:warranty|guarantee|coverage)/i,
+    /(?:الضمان|الكفالة|مدة الضمان|فترة الضمان|التغطية)\s*[:؛]?\s*(\d+\s*(?:سنة|سنوات|شهر|أشهر))/i,
+    /(?:الضمان|الكفالة|مدة الضمان|فترة الضمان|التغطية)\s*[:؛]?\s*((?:سنة|عام|شهر)\s+(?:واحدة|واحد))/i,
     /(\d+)\s*(?:سنة|سنوات|شهر|أشهر)\s*(?:ضمان|كفالة)/i,
   ], 50);
   if (warrantyDuration) {
@@ -71,9 +77,9 @@ export function extractWarrantyFields(text: string) {
   }
 
   const supplier = firstMatch(text, [
-    /(?:seller|vendor|supplier|retailer|dealer|sold by|purchased from|store)\s*[:;\-]?\s*(.+?)(?:\n|\r|$)/i,
-    /(?:company|manufacturer|brand|issuer)\s*[:;\-]?\s*(.+?)(?:\n|\r|$)/i,
-    /(?:البائع|المورد|المتجر|المحل|الشركة|المصنع|العلامة التجارية)\s*[:؛\-]?\s*(.+?)(?:\n|\r|$)/i,
+    fieldPattern(String.raw`(?:seller|vendor|supplier|retailer|dealer|s[o0]ld by|purchased from|store)`),
+    fieldPattern(String.raw`(?:company|manufacturer|brand|issuer)`),
+    fieldPattern(String.raw`(?:البائع|المورد|المتجر|المحل|الشركة|المصنع|العلامة التجارية|الوكيل)`),
   ]);
   if (supplier) {
     result.supplier = supplier;
