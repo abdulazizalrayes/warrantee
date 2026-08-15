@@ -193,8 +193,15 @@ test.describe("deeper authenticated business workflows", () => {
     });
     await expect(extensionButton).toBeVisible();
     if (await page.getByRole("button", { name: /Request Extension from Seller/i }).isVisible()) {
-      await page.getByRole("button", { name: /Request Extension from Seller/i }).click();
-      await expect(page.getByRole("heading", { name: /Extension request sent/i })).toBeVisible();
+      const [extensionCreateResponse] = await Promise.all([
+        page.waitForResponse((response) =>
+          response.request().method() === "POST"
+          && response.url().includes(`/api/warranties/${qaWarrantyId}/extensions`)
+        ),
+        page.getByRole("button", { name: /Request Extension from Seller/i }).click(),
+      ]);
+      expect(extensionCreateResponse.status()).toBe(201);
+      await expect(page.getByRole("heading", { name: /Extension request sent/i })).toBeVisible({ timeout: 15_000 });
     }
 
     const extensionsResponse = await page.request.get(`/api/warranties/${qaWarrantyId}/extensions`);
