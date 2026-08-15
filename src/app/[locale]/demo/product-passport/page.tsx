@@ -74,6 +74,7 @@ export default async function DemoProductPassportPage({ params }: DemoPassportPa
                 <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                   <Link
                     href={`/${locale}/warranties/new`}
+                    prefetch={false}
                     className="inline-flex items-center justify-center rounded-full bg-[#0071e3] px-6 py-3 text-[15px] font-medium text-white transition-colors hover:bg-[#0077ED]"
                   >
                     {isRTL ? "أضف ضمانك الأول" : "Add your first warranty"}
@@ -81,6 +82,7 @@ export default async function DemoProductPassportPage({ params }: DemoPassportPa
                   </Link>
                   <Link
                     href={`/${locale}/contact?intent=enterprise-demo`}
+                    prefetch={false}
                     className="inline-flex items-center justify-center rounded-full border border-[#d2d2d7] px-6 py-3 text-[15px] font-medium text-[#1d1d1f] transition-colors hover:bg-[#f5f5f7]"
                   >
                     {isRTL ? "اطلب عرضا للشركات" : "Request an enterprise demo"}

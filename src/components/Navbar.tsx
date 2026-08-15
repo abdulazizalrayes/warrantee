@@ -51,12 +51,14 @@ export function Navbar({ locale, dictionary }: NavbarProps) {
             <LanguageToggle currentLocale={locale} variant="text" />
             <Link
               href={`/${locale}/login`}
+              prefetch={false}
               className="px-4 py-2 text-sm font-medium text-[#1d1d1f] transition-colors hover:text-[#0071e3]"
             >
               {dictionary.nav.login}
             </Link>
             <Link
               href={`/${locale}/auth?tab=signup`}
+              prefetch={false}
               className="rounded-full bg-[#0071e3] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#0077ED]"
             >
               {dictionary.nav.signup}
@@ -90,6 +92,7 @@ export function Navbar({ locale, dictionary }: NavbarProps) {
             <div className="space-y-2 border-t border-black/[0.06] pt-2">
               <Link
                 href={`/${locale}/login`}
+                prefetch={false}
                 className="block px-4 py-2 text-sm font-medium text-[#1d1d1f] transition-colors hover:text-[#0071e3]"
                 onClick={() => setIsOpen(false)}
               >
@@ -97,6 +100,7 @@ export function Navbar({ locale, dictionary }: NavbarProps) {
               </Link>
               <Link
                 href={`/${locale}/auth?tab=signup`}
+                prefetch={false}
                 className="block rounded-full bg-[#0071e3] px-4 py-2 text-center text-sm font-medium text-white transition-colors hover:bg-[#0077ED]"
                 onClick={() => setIsOpen(false)}
               >

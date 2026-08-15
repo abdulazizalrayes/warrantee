@@ -5,7 +5,6 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Check, Shield, Zap, Building2 } from "lucide-react";
 import { DIRECTION, getDictionary, normalizeLocale } from "@/lib/i18n";
-import { useAuth } from "@/lib/auth-context";
 import { appendCampaignParams, trackFunnelCtaClick } from "@/lib/ga4-events";
 import { PublicBreadcrumbs } from "@/components/PublicBreadcrumbs";
 import { Navbar } from "@/components/Navbar";
@@ -65,22 +64,20 @@ export default function PricingPage() {
   const isRTL = locale === "ar";
   const direction = DIRECTION[locale];
   const dictionary = getDictionary(locale);
-  const { user } = useAuth();
   const [checkoutPlan, setCheckoutPlan] = useState<string | null>(null);
 
   const startCheckout = async (planId: string) => {
     const rawDestination = planId === "enterprise"
       ? `/${locale}/contact?intent=enterprise`
-      : user
-        ? "/api/stripe/checkout"
-        : `/${locale}/auth?tab=signup&plan=${planId}`;
+      : planId === "free"
+        ? `/${locale}/auth?tab=signup`
+        : "/api/stripe/checkout";
     const trackedDestination = appendCampaignParams(rawDestination);
 
     trackFunnelCtaClick("pricing_plan_cta", trackedDestination, {
       locale,
       plan: planId,
       location: "pricing_plan_card",
-      signed_in: Boolean(user),
     });
 
     if (planId === "free") {
@@ -93,11 +90,6 @@ export default function PricingPage() {
       return;
     }
 
-    if (!user) {
-      window.location.href = trackedDestination;
-      return;
-    }
-
     setCheckoutPlan(planId);
     const response = await fetch("/api/stripe/checkout", {
       method: "POST",
@@ -106,6 +98,11 @@ export default function PricingPage() {
     });
     const payload = await response.json().catch(() => null);
     setCheckoutPlan(null);
+
+    if (response.status === 401) {
+      window.location.href = appendCampaignParams(`/${locale}/auth?tab=signup&plan=${planId}`);
+      return;
+    }
 
     if (response.ok && payload?.url) {
       window.location.href = payload.url;

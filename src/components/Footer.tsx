@@ -1,5 +1,3 @@
-'use client';
-
 import Link from 'next/link';
 import { Dictionary, Locale, DIRECTION } from '@/lib/i18n';
 import { LanguageToggle } from './LanguageToggle';

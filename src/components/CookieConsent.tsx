@@ -28,14 +28,14 @@ export default function CookieConsent() {
     const parsed = readStoredCookieConsent(saved);
 
     if (!saved) {
-      const timer = setTimeout(() => setShowBanner(true), 1500);
-      return () => clearTimeout(timer);
+      setShowBanner(true);
+      return;
     }
 
     if (!parsed) {
       localStorage.removeItem('warrantee_cookie_consent');
-      const timer = setTimeout(() => setShowBanner(true), 1500);
-      return () => clearTimeout(timer);
+      setShowBanner(true);
+      return;
     }
 
     setConsent({

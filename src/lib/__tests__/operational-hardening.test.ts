@@ -103,10 +103,15 @@ describe("operational hardening", () => {
 
   it("keeps public marketing routes from loading authenticated providers unnecessarily", () => {
     const routeProviders = readProjectFile("src/components/RouteProviders.tsx");
+    const pricingPage = readProjectFile("src/app/[locale]/pricing/page.tsx");
 
     expect(routeProviders).not.toContain('"/pricing",');
     expect(routeProviders).toContain("const PUBLIC_ROUTE_PREFIXES");
     expect(routeProviders).toContain('"/seller/register"');
+    expect(routeProviders).toContain("{ ssr: false }");
+    expect(pricingPage).not.toContain('from "@/lib/auth-context"');
+    expect(pricingPage).toContain("response.status === 401");
+    expect(pricingPage).toContain('fetch("/api/stripe/checkout"');
   });
 
   it("keeps static public content pages server-rendered unless they need browser state", () => {

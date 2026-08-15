@@ -4,8 +4,9 @@ import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import { LOCALES } from "@/lib/i18n";
 
-const AuthProvider = dynamic(() =>
-  import("@/lib/auth-context").then((mod) => mod.AuthProvider)
+const AuthProvider = dynamic(
+  () => import("@/lib/auth-context").then((mod) => mod.AuthProvider),
+  { ssr: false }
 );
 
 const AUTH_ROUTE_PREFIXES = [

@@ -49,4 +49,14 @@ test.describe("public experience", () => {
     await page.goto("/favicon.ico", { waitUntil: "domcontentloaded" });
     await expect(page).toHaveURL(/\/favicon\.svg$/);
   });
+
+  test("Professional checkout sends a signed-out visitor to signup", async ({ page }) => {
+    await expectHealthyPage(page, "/en/pricing");
+    const checkoutResponse = page.waitForResponse(
+      (response) => response.url().endsWith("/api/stripe/checkout"),
+    );
+    await page.getByRole("button", { name: "Start Professional" }).click();
+    await expect((await checkoutResponse).status()).toBe(401);
+    await expect(page).toHaveURL(/\/en\/auth\?tab=signup&plan=pro/);
+  });
 });
