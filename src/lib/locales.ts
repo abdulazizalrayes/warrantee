@@ -73,7 +73,7 @@ export const DIRECTION: Record<Locale, "ltr" | "rtl"> = {
   en: "ltr",
   ar: "rtl",
   hi: "ltr",
-  ur: "ltr",
+  ur: "rtl",
   fil: "ltr",
   ml: "ltr",
   ta: "ltr",

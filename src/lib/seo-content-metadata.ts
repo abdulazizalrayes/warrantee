@@ -12,6 +12,7 @@ import {
 } from "@/lib/seo-content";
 
 const BASE_URL = "https://warrantee.io";
+const OG_IMAGE = `${BASE_URL}/opengraph-image`;
 
 export function getSeoContentUrl(page: SeoContentPage, locale: string) {
   const contentLocale = isIndexedLocale(locale) ? locale : "en";
@@ -57,11 +58,20 @@ export function buildSeoContentMetadata(page: SeoContentPage, locale: string): M
       siteName: "Warrantee.io",
       locale: getLocaleLanguageTag(contentLocale as IndexedLocale).replace("-", "_"),
       type: "website",
+      images: [
+        {
+          url: OG_IMAGE,
+          width: 1200,
+          height: 630,
+          alt: `${page.title[contentLocale]} - Warrantee.io`,
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
+      images: [OG_IMAGE],
     },
   };
 }

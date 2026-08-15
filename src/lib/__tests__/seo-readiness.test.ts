@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import { getFAQJsonLd, getOrganizationJsonLd } from "@/lib/jsonld";
 import { buildPageMetadata } from "@/lib/page-metadata";
 import { getBreadcrumbJsonLd, getPublicBreadcrumb } from "@/lib/public-breadcrumbs";
-import { BETA_LOCALES, LOCALES, getDictionary } from "@/lib/i18n";
+import { BETA_LOCALES, DIRECTION, LOCALES, getDictionary } from "@/lib/i18n";
+import { buildSeoContentMetadata } from "@/lib/seo-content-metadata";
+import { RESOURCE_PAGES } from "@/lib/seo-content";
 import sitemap from "@/app/sitemap";
 
 type SchemaNode = {
@@ -172,6 +174,21 @@ describe("SEO and AI-search readiness metadata", () => {
     expect(metadata.alternates?.canonical).toBe("https://warrantee.io/en/pricing");
     expect(metadata.openGraph?.url).toBe("https://warrantee.io/en/pricing");
     expect(getDictionary("fr").pricing.title).toBe(getDictionary("en").pricing.title);
+    expect(DIRECTION.ur).toBe("rtl");
+  });
+
+  it("adds branded share images to long-form resource metadata", () => {
+    const metadata = buildSeoContentMetadata(RESOURCE_PAGES[0], "en");
+    expect(metadata.openGraph?.images).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          url: "https://warrantee.io/opengraph-image",
+          width: 1200,
+          height: 630,
+        }),
+      ]),
+    );
+    expect(metadata.twitter?.images).toContain("https://warrantee.io/opengraph-image");
   });
 
   it("adds breadcrumbs only to public information pages", () => {
