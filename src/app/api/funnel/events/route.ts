@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { apiRateLimit, getClientIp, getRateLimitHeaders } from "@/lib/rate-limit";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { isTrustedSameOriginRequest } from "@/lib/request-origin";
+import { classifyTrafficUserAgent } from "@/lib/traffic-classification";
 
 const allowedEvents = new Set([
   "page_view",
@@ -113,12 +114,14 @@ export async function POST(request: NextRequest) {
   const { data: auth } = await supabase.auth.getUser();
   const supabaseAdmin = createSupabaseAdminClient();
 
+  const userAgent = request.headers.get("user-agent")?.slice(0, 180) || null;
   const metadata = {
     source: "server_funnel",
     path: sanitizePath(body.path),
     referrer: sanitizeReferrer(body.referrer),
-    user_agent: request.headers.get("user-agent")?.slice(0, 180) || null,
+    user_agent: userAgent,
     ...sanitizeMetadata(body.metadata),
+    traffic_class: classifyTrafficUserAgent(userAgent),
   };
 
   const { error } = await supabaseAdmin.from("activity_log").insert({

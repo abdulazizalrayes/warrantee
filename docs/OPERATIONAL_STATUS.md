@@ -309,9 +309,11 @@ Current launch position:
 - GA4/GTM analytics are configured on the existing Warrantee property:
   - GA4 account/property: `Warrantee / Warrantee.io`
   - measurement ID: `G-ZQJ4LRG4GN`
-  - GTM container: `GTM-N6G95MQL`
-  - no new GA4 account, property, stream, or GTM container was created
-  - browser business events are consolidated so GTM `dataLayer` is used when GTM is configured, with direct GA4 `gtag` used only as the no-GTM fallback
+  - GTM Web container: `GTM-WFLBH83M` (`warrantee.io web`), published version 2 on 2026-08-15
+  - the former `GTM-N6G95MQL` value was an iOS container and is retired from Warrantee production
+  - no new GA4 account, property, or stream was created; the existing Warrantee GA4 property remains authoritative
+  - browser business events preserve GTM data-layer context and queue one GA4 business-event command through the published Google tag; explicit app page views are not duplicated, and direct `gtag.js` remains the no-GTM fallback
+  - aggregate funnel events are classified as human, crawler, QA, or monitoring traffic
 - Google Search Console access is recorded for Warrantee only:
   - Google account: `abdulaziz.alrayes@gmail.com`
   - Search Console property: `https://warrantee.io/`

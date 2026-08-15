@@ -1,6 +1,8 @@
 // GA4 Conversion Event Tracking for Warrantee
 // Usage: import { trackSignup, trackUpgrade, trackClaim } from "@/lib/ga4-events";
 
+import { getBrowserTrafficClass } from "@/lib/traffic-classification";
+
 declare global {
   interface Window {
     gtag?: (...args: unknown[]) => void;
@@ -120,13 +122,21 @@ function sendServerFunnelEvent(event: string, payload: Record<string, unknown>) 
 }
 
 function emitEvent(event: string, payload: Record<string, unknown>) {
+  const classifiedPayload = {
+    ...payload,
+    traffic_class: getBrowserTrafficClass(),
+  };
+
   if (process.env.NEXT_PUBLIC_GTM_ID) {
-    pushDataLayer(event, payload);
+    pushDataLayer(event, classifiedPayload);
+    if (event !== "page_view") {
+      gtag("event", event, classifiedPayload);
+    }
   } else if (process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID) {
-    gtag("event", event, payload);
+    gtag("event", event, classifiedPayload);
   }
 
-  sendServerFunnelEvent(event, payload);
+  sendServerFunnelEvent(event, classifiedPayload);
 }
 
 export function trackPageView(pageName: string, metadata: Record<string, unknown> = {}) {

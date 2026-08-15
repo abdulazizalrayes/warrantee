@@ -10,7 +10,8 @@ Scope: Warrantee only (`warrantee.io`).
 - Direct GA4 through `NEXT_PUBLIC_GA_MEASUREMENT_ID` is kept as a fallback only when GTM is not configured.
 - Hotjar is supported through `NEXT_PUBLIC_HOTJAR_ID` when configured.
 - Client-side business events are centralized in `src/lib/ga4-events.ts`.
-- Client-side business events emit to either GTM `dataLayer` or direct GA4 `gtag`, never both for the same event.
+- With GTM configured, client-side business events retain a structured GTM `dataLayer` object and queue one GA4 business event through GTM's `gtag` command interface. Explicit app page views are not duplicated because the Google tag provides the standard page view. Direct `gtag.js` loading remains the no-GTM fallback.
+- Browser and server funnel events classify traffic as `human`, `crawler`, `qa`, or `monitoring` so synthetic activity is not presented as customer onboarding.
 - Server-side agent-readiness events are logged as `agent_readiness_event`.
 
 ## Agent-Readiness Events

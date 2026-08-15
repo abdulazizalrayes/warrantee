@@ -66,7 +66,7 @@ describe("browser analytics dispatch", () => {
     return { dataLayer, gtag, sendBeacon };
   }
 
-  it("uses GTM dataLayer as the single GA browser path when GTM is configured", async () => {
+  it("queues GTM context and the GA4 event when GTM is configured", async () => {
     process.env.NEXT_PUBLIC_GTM_ID = "GTM-TEST";
     process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID = "G-TEST";
     const { dataLayer, gtag } = stubAnalyticsGlobals();
@@ -74,11 +74,19 @@ describe("browser analytics dispatch", () => {
 
     trackSignup("email");
 
-    expect(gtag).not.toHaveBeenCalled();
+    expect(gtag).toHaveBeenCalledWith(
+      "event",
+      "sign_up",
+      expect.objectContaining({
+        method: "email",
+        traffic_class: "human",
+      })
+    );
     expect(dataLayer).toContainEqual(
       expect.objectContaining({
         event: "sign_up",
         method: "email",
+        traffic_class: "human",
       })
     );
     expect(dataLayer).toHaveLength(1);
@@ -99,5 +107,23 @@ describe("browser analytics dispatch", () => {
       })
     );
     expect(dataLayer).toEqual([]);
+  });
+
+  it("does not duplicate GTM's automatic GA4 page view", async () => {
+    process.env.NEXT_PUBLIC_GTM_ID = "GTM-TEST";
+    process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID = "G-TEST";
+    const { dataLayer, gtag } = stubAnalyticsGlobals();
+    const { trackPageView } = await import("../ga4-events");
+
+    trackPageView("home", { locale: "en" });
+
+    expect(gtag).not.toHaveBeenCalled();
+    expect(dataLayer).toContainEqual(
+      expect.objectContaining({
+        event: "page_view",
+        page_name: "home",
+        traffic_class: "human",
+      })
+    );
   });
 });

@@ -169,7 +169,7 @@ Agents expected to review:
 - QA Engineer: own failures in `tests/e2e/authenticated-shell.spec.ts` and `tests/e2e/authenticated-core-flows.spec.ts`.
 - Frontend Engineer / UX: preserve explicit labels, keyboard access, dashboard shell consistency, and polished empty/error states.
 - Security Engineer: keep protected pages redirecting unauthenticated users and keep API routes returning 401 where required.
-- Metrics/Growth Agent: confirm `GTM-N6G95MQL` remains present on the live page and that analytics events are reviewed after traffic.
+- Metrics/Growth Agent: confirm `GTM-WFLBH83M` remains present on the live page and that analytics events are reviewed after traffic.
 
 Verification completed:
 - `npm run type-check` passed.
@@ -180,7 +180,7 @@ Verification completed:
 - Production authenticated Playwright suite passed with 36/36 tests against `https://warrantee.io`.
 - `npm run security:rls-probe` passed without exposing anonymous data rows.
 - Vercel error-log query for the recent deployment window returned no error logs.
-- Live page source includes `GTM-N6G95MQL`.
+- Live page source includes the production GTM container recorded in `CLAUDE.md`.
 - `robots.txt` returns 200 with expected security headers.
 
 Non-blocking follow-up:

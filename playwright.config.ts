@@ -7,6 +7,7 @@ dotenv.config({ path: ".env.local", override: false, quiet: true });
 const localPort = process.env.E2E_PORT || "3100";
 const baseURL = process.env.E2E_BASE_URL || `http://127.0.0.1:${localPort}`;
 const useExternalTarget = Boolean(process.env.E2E_BASE_URL);
+const qaUserAgentPrefix = "Warrantee-QA/1.0";
 
 if (
   process.env.CI &&
@@ -46,11 +47,17 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
-      use: { ...devices["Desktop Chrome"] },
+      use: {
+        ...devices["Desktop Chrome"],
+        userAgent: `${qaUserAgentPrefix} ${devices["Desktop Chrome"].userAgent}`,
+      },
     },
     {
       name: "mobile-chrome",
-      use: { ...devices["Pixel 7"] },
+      use: {
+        ...devices["Pixel 7"],
+        userAgent: `${qaUserAgentPrefix} ${devices["Pixel 7"].userAgent}`,
+      },
     },
   ],
 });

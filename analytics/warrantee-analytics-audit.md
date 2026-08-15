@@ -1,6 +1,6 @@
 Title: Warrantee GA4/GTM Analytics Audit
 
-Status: GA4 key events configured on April 30, 2026
+Status: GA4 key events configured; Web GTM container repaired on August 15, 2026
 
 Scope:
 - Warrantee only.
@@ -11,16 +11,14 @@ Current code status:
 - GA4 measurement ID is configured through NEXT_PUBLIC_GA_MEASUREMENT_ID.
 - GTM container is configured through NEXT_PUBLIC_GTM_ID.
 - Consent-aware Google Tag Manager and Google Analytics components are present.
-- Production deploy verified on April 30, 2026:
-  - Vercel deployment: dpl_EDonpqzvb9WZDY8jDX8YLkuv1EKz
+- Production analytics source of truth as of August 15, 2026:
   - Production alias: https://warrantee.io
-  - Live page https://warrantee.io/en returns HTTP 200.
-  - Live page includes GTM-N6G95MQL.
-  - Live page includes direct GA4 gtag.js for G-ZQJ4LRG4GN.
-- Codex restored direct GA4 event delivery while preserving GTM:
-  - GoogleAnalytics now loads when NEXT_PUBLIC_GA_MEASUREMENT_ID exists, even if GTM is also configured.
-  - When GTM is present, direct GA4 config uses send_page_view: false to avoid duplicate pageview counting.
-  - Business events now have a direct GA4 path and are no longer dependent only on GTM custom triggers.
+  - GA4 measurement ID: G-ZQJ4LRG4GN
+  - GTM Web container: warrantee.io web / GTM-WFLBH83M
+  - GTM version 2, `Initial Warrantee web analytics`, is published under `abdulaziz.alrayes@gmail.com`.
+  - The prior GTM-N6G95MQL value was an iOS container and is retired from Warrantee production configuration.
+  - With GTM configured, the app preserves a plain data-layer event for marketing diagnostics and queues business events through the GTM-provided `gtag` command interface. Explicit app page views are not sent a second time because the Google tag provides the standard page view. Direct `gtag.js` loading remains a no-GTM fallback only.
+  - Every browser and server funnel event includes `traffic_class`: human, crawler, qa, or monitoring.
 - GA4 collection endpoint accepted controlled Warrantee event hits on April 30, 2026 for:
   - sign_up
   - warranty_created
@@ -77,8 +75,8 @@ GA4 console blocker:
   - Property: Warrantee.io
   - Property URL context: a388923325p530040415
   - Measurement ID: G-ZQJ4LRG4GN
-  - GTM container: GTM-N6G95MQL
-- No new GA4 account, property, stream, or GTM container was created.
+  - GTM Web container: GTM-WFLBH83M
+- No new GA4 account, property, or stream was created. A correct Warrantee Web GTM container was created because the previous configured container was an iOS container.
 - GA4 Events > Key events readback now shows 15 key events:
   - approval_action
   - claim_submitted

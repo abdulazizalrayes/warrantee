@@ -141,3 +141,11 @@ Use this section only when the user explicitly asks about cloud Paperclip (`ai.e
 - Run `npm run architecture:generate` after updating the JSON, then run `npm run qa:architecture-map`.
 - The validation gate checks graph integrity, flow steps, repository references, database-table coverage, inventory counts, identity lock, and obvious secret leakage.
 - Keep the map internal under `docs/`. Do not expose it as a public production route because it describes security and operational boundaries.
+
+## Warrantee Analytics Identity Lock
+
+- Use only the Warrantee Google account `abdulaziz.alrayes@gmail.com` for Warrantee analytics and search operations.
+- GA4 account/property: `Warrantee / Warrantee.io`; measurement ID: `G-ZQJ4LRG4GN`.
+- GTM Web container: `warrantee.io web`; public container ID: `GTM-WFLBH83M`; published version 2 on 2026-08-15.
+- `GTM-N6G95MQL` was an incorrect iOS container and must not be restored to Warrantee production.
+- Browser and server funnel records classify aggregate traffic as `human`, `crawler`, `qa`, or `monitoring`. Do not merge QA, crawler, or monitoring activity into real-user onboarding results.
