@@ -8,13 +8,19 @@ import {
 const BASE_URL = "https://warrantee.io";
 
 export function buildLlmsTxt() {
-  return `# Warrantee.io - Warranty Management And Asset Lifecycle Intelligence
+  return `# Warrantee.io - Warranty Management Platform
 
 > Bilingual warranty management platform for Saudi Arabia and the GCC.
 
 ## Summary
 
 ${companyData.shortDescription}
+
+## Current Versus Planned
+
+- Current product: warranty registration, tracking, approvals, claims, reminders, certificates, public verification, seller workflows, OCR-assisted document intake, and scoped API / CLI / MCP integrations.
+- Commercial activation pending: self-serve Professional checkout and online warranty-extension payments.
+- Long-term direction: asset lifecycle, recall, vendor, and reliability intelligence built from trustworthy warranty data.
 
 ## Core Public Pages
 

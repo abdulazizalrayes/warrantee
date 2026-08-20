@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Check, Shield, Zap, Building2 } from "lucide-react";
@@ -33,15 +32,15 @@ const plans = [
     price: 149,
     currency_en: "SAR",
     currency_ar: "ر.س",
-    pricePrefix_en: "Launch offer",
-    pricePrefix_ar: "عرض إطلاق",
-    popular: true,
+    pricePrefix_en: "Planned launch price",
+    pricePrefix_ar: "سعر إطلاق مخطط",
+    featured: true,
     features_en: ["Unlimited warranties", "Advanced analytics", "Priority support", "Up to 5 team members", "Full warranty history", "Custom workflows", "Bilingual certificates"],
     features_ar: ["ضمانات غير محدودة", "تحليلات متقدمة", "دعم أولوية", "حتى 5 أعضاء", "سجل ضمانات كامل", "سير عمل مخصص", "شهادات ثنائية"],
     name_en: "Professional",
     name_ar: "احترافي",
-    desc_en: "For growing businesses",
-    desc_ar: "للشركات النامية",
+    desc_en: "Planned launch offer for growing businesses",
+    desc_ar: "عرض إطلاق مخطط للشركات النامية",
   },
   {
     id: "enterprise",
@@ -49,8 +48,8 @@ const plans = [
     iconColor: "text-[#1d1d1f]",
     iconBg: "bg-[#f5f5f7]",
     price: -1,
-    features_en: ["Everything in Professional", "Unlimited team members", "Dedicated account manager", "Custom integrations", "SLA guarantee"],
-    features_ar: ["كل ما في الاحترافي", "أعضاء غير محدودين", "مدير حساب مخصص", "تكاملات مخصصة", "ضمان SLA"],
+    features_en: ["Everything in Professional", "Team limits by agreement", "Enterprise onboarding by agreement", "Custom integrations by agreement", "Service levels by agreement"],
+    features_ar: ["كل ما في الاحترافي", "حدود الفريق حسب الاتفاق", "تهيئة المؤسسات حسب الاتفاق", "تكاملات مخصصة حسب الاتفاق", "مستويات الخدمة حسب الاتفاق"],
     name_en: "Enterprise",
     name_ar: "مؤسسي",
     desc_en: "For large organizations",
@@ -64,14 +63,12 @@ export default function PricingPage() {
   const isRTL = locale === "ar";
   const direction = DIRECTION[locale];
   const dictionary = getDictionary(locale);
-  const [checkoutPlan, setCheckoutPlan] = useState<string | null>(null);
-
-  const startCheckout = async (planId: string) => {
+  const selectPlan = (planId: string) => {
     const rawDestination = planId === "enterprise"
       ? `/${locale}/contact?intent=enterprise`
       : planId === "free"
         ? `/${locale}/auth?tab=signup`
-        : "/api/stripe/checkout";
+        : `/${locale}/contact?intent=professional-access`;
     const trackedDestination = appendCampaignParams(rawDestination);
 
     trackFunnelCtaClick("pricing_plan_cta", trackedDestination, {
@@ -85,31 +82,7 @@ export default function PricingPage() {
       return;
     }
 
-    if (planId === "enterprise") {
-      window.location.href = trackedDestination;
-      return;
-    }
-
-    setCheckoutPlan(planId);
-    const response = await fetch("/api/stripe/checkout", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ planId, locale }),
-    });
-    const payload = await response.json().catch(() => null);
-    setCheckoutPlan(null);
-
-    if (response.status === 401) {
-      window.location.href = appendCampaignParams(`/${locale}/auth?tab=signup&plan=${planId}`);
-      return;
-    }
-
-    if (response.ok && payload?.url) {
-      window.location.href = payload.url;
-      return;
-    }
-
-    window.location.href = `/${locale}/billing?checkout=unavailable`;
+    window.location.href = trackedDestination;
   };
 
   return (
@@ -125,13 +98,13 @@ export default function PricingPage() {
           </h1>
           <p className="text-[17px] text-[#6e6e73] mt-3 max-w-xl mx-auto">
             {isRTL
-              ? "ابدأ بالخطة المجانية دون بطاقة ائتمانية، أو فعّل عرض الإطلاق للاحترافي بالريال السعودي"
-              : "Start with a Free plan, no card required, or unlock the Professional launch offer in SAR"}
+              ? "ابدأ بالخطة المجانية دون بطاقة ائتمانية، أو اطلب تفعيل سعر الإطلاق المخطط للاحترافي بالريال السعودي"
+              : "Start with a Free plan, no card required, or request access to the planned Professional launch price in SAR"}
           </p>
           <p className="mt-5 text-[13px] font-medium text-[#6e6e73]">
             {isRTL
-              ? "الخطة المجانية تشمل حتى 10 ضمانات مع الاحتفاظ بالسجلات. التمديدات لها رسوم معاملات منفصلة عند الشراء."
-              : "Free includes up to 10 warranties with records retained. Extension purchases carry a separate transaction fee."}
+              ? "الخطة المجانية تشمل حتى 10 ضمانات مع الاحتفاظ بالسجلات. الدفع الإلكتروني للاحترافي والتمديدات ليس مفعّلًا للعامة بعد."
+              : "Free includes up to 10 warranties with records retained. Online Professional and extension payments are not yet generally active."}
           </p>
         </div>
 
@@ -147,14 +120,14 @@ export default function PricingPage() {
               <div
                 key={plan.id}
                 className={`relative overflow-hidden rounded-2xl bg-white ring-1 shadow-sm transition-all duration-200 hover:shadow-md ${
-                  plan.popular
+                  plan.featured
                     ? "ring-2 ring-[#0071e3]"
                     : "ring-[#d2d2d7]/40"
                 }`}
               >
-                {plan.popular && (
+                {plan.featured && (
                   <div className="bg-[#0071e3] text-white text-[12px] font-semibold text-center py-1.5 tracking-wide uppercase">
-                    {isRTL ? "الأكثر شعبية" : "Most Popular"}
+                    {isRTL ? "عرض مخطط" : "Planned offer"}
                   </div>
                 )}
                 <div className="p-6">
@@ -201,20 +174,17 @@ export default function PricingPage() {
 
                   <button
                     type="button"
-                    onClick={() => startCheckout(plan.id)}
-                    disabled={checkoutPlan === plan.id}
+                    onClick={() => selectPlan(plan.id)}
                     className={`w-full py-2.5 rounded-full text-[14px] font-medium transition-all duration-200 text-center block ${
-                      plan.popular
+                      plan.featured
                         ? "bg-[#0071e3] hover:bg-[#0077ED] text-white shadow-sm hover:shadow-md"
                         : "bg-[#f5f5f7] hover:bg-[#e8e8ed] text-[#1d1d1f]"
                     }`}
                   >
-                    {checkoutPlan === plan.id
-                      ? isRTL ? "\u062c\u0627\u0631\u064a \u0627\u0644\u062a\u062d\u0648\u064a\u0644..." : "Redirecting..."
-                      : plan.price === -1
+                    {plan.price === -1
                       ? isRTL ? "تواصل معنا" : "Contact Sales"
                       : plan.id === "pro"
-                      ? isRTL ? "ابدأ الاحترافي" : "Start Professional"
+                      ? isRTL ? "اطلب تفعيل الاحترافي" : "Request Professional access"
                       : isRTL ? "ابدأ الآن" : "Get Started"}
                   </button>
                 </div>
@@ -234,8 +204,8 @@ export default function PricingPage() {
               </h2>
               <p className="mt-4 text-[15px] leading-7 text-[#6e6e73]">
                 {isRTL
-                  ? "السعر الاحترافي عرض إطلاق واضح للعملاء الأوائل في السعودية والخليج. حدود الخطة المجانية محفوظة، ورسوم معاملات تمديد الضمان منفصلة عن مزايا الاشتراك حتى لا تختلط التكلفة بالفائدة."
-                  : "The Professional price is a clear early-customer launch offer for Saudi and GCC customers. Free-plan limits are explicit, and warranty-extension transaction fees are separated from subscription benefits so cost never reads like a feature."}
+                  ? "149 ريالًا هو سعر الإطلاق المخطط للعملاء الأوائل في السعودية والخليج. يُؤكد التفعيل قبل البدء، وتبقى حدود المجاني وشروط مدفوعات التمديد المستقبلية منفصلة وواضحة."
+                  : "SAR 149 is the planned early-customer launch price for Saudi and GCC customers. Access is confirmed before activation, while Free-plan limits and future extension-payment terms remain separate and explicit."}
               </p>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
@@ -248,7 +218,7 @@ export default function PricingPage() {
                 {
                   icon: Check,
                   title: isRTL ? "سعر واضح بالريال" : "Clear SAR pricing",
-                  desc: isRTL ? "الخطة الاحترافية موضحة قبل الدفع." : "Professional terms are stated before checkout.",
+                  desc: isRTL ? "يُؤكد تفعيل الاحترافي وشروطه قبل أي دفع." : "Professional activation and terms are confirmed before any payment.",
                 },
                 {
                   icon: Building2,

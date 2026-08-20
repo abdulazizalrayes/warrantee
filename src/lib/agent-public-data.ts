@@ -15,9 +15,9 @@ export const companyData = {
   url: BASE_URL,
   domain: "warrantee.io",
   contactEmail: "hello@warrantee.io",
-  category: "Warranty management software and asset lifecycle intelligence platform",
+  category: "Warranty management software with an asset lifecycle intelligence product direction",
   shortDescription:
-    "Warrantee.io is a bilingual SaaS platform for warranty management, claims workflows, seller onboarding, public verification, certificates, API / CLI / MCP integrations, and emerging asset lifecycle intelligence.",
+    "Warrantee.io is a bilingual SaaS platform for warranty management, claims workflows, seller onboarding, public verification, certificates, and API / CLI / MCP integrations. Asset lifecycle intelligence is a long-term product direction, not a current full asset-management product.",
   positioning:
     "Warranty reminders are the acquisition mechanism. Asset lifecycle intelligence is the long-term product direction.",
   primaryLanguages: ["en", "ar"],
@@ -121,7 +121,7 @@ export const capabilitiesData = {
     "Email-to-warranty ingestion workflows",
     "Document upload and OCR extraction",
     "CSV import and export workflows",
-    "Stripe billing and extension workflows",
+    "Warranty extension offer and status workflows",
     "Scoped REST API integration tokens",
     "CLI-ready package usage",
     "Hosted and stdio MCP support",
@@ -136,6 +136,10 @@ export const capabilitiesData = {
     "Vendor reliability intelligence",
     "Product reliability intelligence",
     "Global multi-tenant SaaS deployment",
+  ],
+  commercialActivationPending: [
+    "Self-serve Stripe checkout for the Professional plan",
+    "Online payment collection for warranty extensions",
   ],
 } as const;
 

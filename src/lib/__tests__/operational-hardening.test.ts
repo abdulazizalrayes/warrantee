@@ -110,8 +110,9 @@ describe("operational hardening", () => {
     expect(routeProviders).toContain('"/seller/register"');
     expect(routeProviders).toContain("{ ssr: false }");
     expect(pricingPage).not.toContain('from "@/lib/auth-context"');
-    expect(pricingPage).toContain("response.status === 401");
-    expect(pricingPage).toContain('fetch("/api/stripe/checkout"');
+    expect(pricingPage).not.toContain('fetch("/api/stripe/checkout"');
+    expect(pricingPage).toContain("professional-access");
+    expect(pricingPage).toContain("Request Professional access");
   });
 
   it("keeps static public content pages server-rendered unless they need browser state", () => {

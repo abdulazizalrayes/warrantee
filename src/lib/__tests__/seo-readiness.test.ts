@@ -59,9 +59,10 @@ describe("SEO and AI-search readiness metadata", () => {
     ]);
     expect(software.description).toContain("Warranty management software");
     expect(serialized).not.toContain("\"@type\":\"Product\"");
-    expect(serialized).toContain("Professional launch offer");
+    expect(serialized).toContain("Planned Professional launch price");
     expect(serialized).toContain("SAR 149/month");
-    expect(serialized).toContain("Warranty-extension transaction fees are separate");
+    expect(serialized).toContain("https://schema.org/PreOrder");
+    expect(serialized).not.toContain("Warranty-extension transaction fees");
     expect(serialized).not.toContain("first month free");
     expect(serialized).not.toContain("first year free");
     expect(serialized).not.toContain("Business plan");
@@ -73,14 +74,14 @@ describe("SEO and AI-search readiness metadata", () => {
       "Saudi Arabia and the GCC",
     );
     expect(englishFaq.mainEntity[1].acceptedAnswer.text).toContain(
-      "Professional launch offer at SAR 149/month",
+      "planned Professional launch price is SAR 149/month",
     );
   });
 
   it("describes pricing with the current Professional plan", () => {
     const metadata = buildPageMetadata("pricing", "en");
     expect(metadata.description).toContain("Professional");
-    expect(metadata.description).toContain("launch offer");
+    expect(metadata.description).toContain("launch pricing is planned");
     expect(metadata.description).toContain("SAR 149/month");
     expect(metadata.description).not.toContain("first month free");
     expect(metadata.description).not.toContain("first year free");

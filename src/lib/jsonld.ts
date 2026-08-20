@@ -76,9 +76,9 @@ export function getOrganizationJsonLd() {
             name: "Professional",
             price: "149",
             priceCurrency: "SAR",
-            availability: "https://schema.org/InStock",
-            url: `${BASE_URL}/en/pricing`,
-            description: "Professional launch offer: SAR 149/month. Includes unlimited warranties, advanced analytics, priority support, up to 5 team members, full warranty history, custom workflows, and bilingual certificates. Warranty-extension transaction fees are separate.",
+            availability: "https://schema.org/PreOrder",
+            url: `${BASE_URL}/en/contact?intent=professional-access`,
+            description: "Planned Professional launch price: SAR 149/month. Self-serve checkout is not yet generally active, so access currently requires confirmation from Warrantee. Proposed plan terms include unlimited warranties, advanced analytics, priority email support, up to 5 team members, full warranty history, custom workflows, and bilingual certificates.",
           },
           {
             "@type": "Offer",
@@ -89,7 +89,7 @@ export function getOrganizationJsonLd() {
               description: "Custom enterprise pricing",
             },
             url: `${BASE_URL}/en/contact?intent=enterprise`,
-            description: "Custom pricing for large organizations with unlimited team members, dedicated account management, custom integrations, and SLA support.",
+            description: "Custom pricing for large organizations. Team limits, onboarding, integrations, security requirements, service levels, and commercial terms are confirmed by agreement.",
           },
         ],
       },
@@ -133,8 +133,8 @@ export function getFAQJsonLd(locale: string = "en") {
         acceptedAnswer: {
           "@type": "Answer",
           text: isAr
-            ? "\u064A\u0642\u062F\u0645 Warrantee.io \u062E\u0637\u0629 \u0645\u062C\u0627\u0646\u064A\u0629 \u0628\u062F\u0648\u0646 \u062D\u0627\u062C\u0629 \u0644\u0628\u0637\u0627\u0642\u0629 \u0627\u0626\u062A\u0645\u0627\u0646\u064A\u0629\u060C \u0648\u0639\u0631\u0636 \u0625\u0637\u0644\u0627\u0642 \u0644\u0644\u062E\u0637\u0629 \u0627\u0644\u0627\u062D\u062A\u0631\u0627\u0641\u064A\u0629 \u0628\u0627\u0644\u0631\u064A\u0627\u0644 \u0627\u0644\u0633\u0639\u0648\u062F\u064A\u060C \u0648\u062E\u0637\u0629 \u0645\u0624\u0633\u0633\u064A\u0629 \u0628\u0623\u0633\u0639\u0627\u0631 \u0645\u062E\u0635\u0635\u0629. \u0631\u0633\u0648\u0645 \u0645\u0639\u0627\u0645\u0644\u0627\u062A \u062A\u0645\u062F\u064A\u062F \u0627\u0644\u0636\u0645\u0627\u0646 \u0645\u0646\u0641\u0635\u0644\u0629."
-            : "Warrantee.io offers a Free plan with no credit card required, a Professional launch offer at SAR 149/month, and Enterprise plans with custom pricing. Warranty-extension transaction fees are separate.",
+            ? "يقدم Warrantee.io خطة مجانية دون بطاقة ائتمانية. سعر الإطلاق المخطط للخطة الاحترافية هو 149 ريالًا شهريًا، ويتطلب التفعيل حاليًا تأكيدًا من Warrantee. أسعار خطة المؤسسات مخصصة حسب الاتفاق."
+            : "Warrantee.io offers a Free plan with no credit card required. The planned Professional launch price is SAR 149/month and currently requires access confirmation from Warrantee. Enterprise pricing is custom by agreement.",
         },
       },
     ],

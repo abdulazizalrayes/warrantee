@@ -13,19 +13,19 @@ const faqs = {
     },
     {
       q: "How much does Warrantee cost?",
-      a: "Warrantee.io offers a Free plan with no credit card required, a Professional launch offer at SAR 149/month, and Enterprise plans with custom pricing. Warranty-extension transaction fees are separate."
+      a: "Warrantee.io offers a Free plan with no credit card required. The planned Professional launch price is SAR 149/month and currently requires access confirmation from Warrantee. Enterprise pricing is custom by agreement."
     },
     {
       q: "Is Warrantee available in Arabic?",
-      a: "Yes! Warrantee is fully bilingual, supporting both English and Arabic with complete RTL (right-to-left) layout support."
+      a: "Yes. Core public and account workflows are available in English and Arabic, with right-to-left layout support where applicable."
     },
     {
       q: "How do I add a warranty?",
-      a: "After signing up and logging into your dashboard, click 'Add Warranty' and fill in the product details, supplier information, start date, and duration. You can also forward warranty emails to your Warrantee inbox for automatic extraction."
+      a: "After signing up and logging into your dashboard, click 'Add Warranty' and enter the product details, supplier information, start date, and duration. Supported warranty emails can also be forwarded through the configured ingestion flow for review."
     },
     {
       q: "Can I import warranties via email?",
-      a: "Yes. Warrantee supports email ingestion — forward warranty confirmations to your dedicated inbox address, and our system will automatically extract warranty details using AI."
+      a: "Yes, for supported messages. The email-ingestion flow prepares extracted warranty fields and keeps supported attachments connected. Review the prepared record before confirming it."
     },
     {
       q: "How do I file a warranty claim?",
@@ -33,11 +33,11 @@ const faqs = {
     },
     {
       q: "Is my data secure?",
-      a: "Absolutely. Warrantee uses Supabase with Row Level Security (RLS), ensuring your data is isolated and protected. All connections are encrypted with TLS, and we enforce strict security headers."
+      a: "Warrantee uses Supabase Row Level Security (RLS), company-scoped authorization, TLS, and security headers to protect customer data and reduce cross-account access risk."
     },
     {
       q: "Can I invite my team?",
-      a: "Yes. On the Professional and Enterprise plans, you can invite team members as sellers or administrators to collaborate on warranty management."
+      a: "Team collaboration is included in the proposed Professional terms and can be configured for Enterprise customers by agreement. Access and limits are confirmed before activation."
     },
     {
       q: "What happens when a warranty is about to expire?",
@@ -45,7 +45,7 @@ const faqs = {
     },
     {
       q: "How do I contact support?",
-      a: "Visit our Contact page or email us at support@warrantee.io. Enterprise customers have access to priority support."
+      a: "Visit the Contact page or email hello@warrantee.io. Enterprise support terms are confirmed by agreement."
     }
   ],
   ar: [
@@ -55,11 +55,11 @@ const faqs = {
     },
     {
       q: "\u0643\u0645 \u062A\u0643\u0644\u0641\u0629 Warrantee\u061F",
-      a: "\u064A\u0642\u062F\u0645 Warrantee.io \u062E\u0637\u0629 \u0645\u062C\u0627\u0646\u064A\u0629 \u0628\u062F\u0648\u0646 \u062D\u0627\u062C\u0629 \u0644\u0628\u0637\u0627\u0642\u0629 \u0627\u0626\u062A\u0645\u0627\u0646\u064A\u0629\u060C \u0648\u0639\u0631\u0636 \u0625\u0637\u0644\u0627\u0642 \u0644\u0644\u062E\u0637\u0629 \u0627\u0644\u0627\u062D\u062A\u0631\u0627\u0641\u064A\u0629 \u0628\u0642\u064A\u0645\u0629 149 \u0631\u064A\u0627\u0644 \u0634\u0647\u0631\u064A\u064B\u0627\u060C \u0648\u062E\u0637\u0629 \u0645\u0624\u0633\u0633\u064A\u0629 \u0628\u0623\u0633\u0639\u0627\u0631 \u0645\u062E\u0635\u0635\u0629. \u0631\u0633\u0648\u0645 \u0645\u0639\u0627\u0645\u0644\u0627\u062A \u062A\u0645\u062F\u064A\u062F \u0627\u0644\u0636\u0645\u0627\u0646 \u0645\u0646\u0641\u0635\u0644\u0629."
+      a: "يقدم Warrantee.io خطة مجانية دون بطاقة ائتمانية. سعر الإطلاق المخطط للخطة الاحترافية هو 149 ريالًا شهريًا، ويتطلب التفعيل حاليًا تأكيدًا من Warrantee. أسعار خطة المؤسسات مخصصة حسب الاتفاق."
     },
     {
       q: "\u0647\u0644 Warrantee \u0645\u062A\u0627\u062D \u0628\u0627\u0644\u0639\u0631\u0628\u064A\u0629\u061F",
-      a: "\u0646\u0639\u0645! Warrantee \u062B\u0646\u0627\u0626\u064A \u0627\u0644\u0644\u063A\u0629 \u0628\u0627\u0644\u0643\u0627\u0645\u0644\u060C \u064A\u062F\u0639\u0645 \u0627\u0644\u0625\u0646\u062C\u0644\u064A\u0632\u064A\u0629 \u0648\u0627\u0644\u0639\u0631\u0628\u064A\u0629 \u0645\u0639 \u062F\u0639\u0645 \u0643\u0627\u0645\u0644 \u0644\u0644\u062A\u0646\u0633\u064A\u0642 \u0645\u0646 \u0627\u0644\u064A\u0645\u064A\u0646 \u0625\u0644\u0649 \u0627\u0644\u064A\u0633\u0627\u0631."
+      a: "نعم. تتوفر مسارات العمل العامة والأساسية داخل الحساب بالإنجليزية والعربية، مع دعم اتجاه الكتابة من اليمين إلى اليسار حيث ينطبق."
     },
     {
       q: "\u0643\u064A\u0641 \u0623\u0636\u064A\u0641 \u0636\u0645\u0627\u0646\u061F",
@@ -67,11 +67,11 @@ const faqs = {
     },
     {
       q: "\u0647\u0644 \u0628\u064A\u0627\u0646\u0627\u062A\u064A \u0622\u0645\u0646\u0629\u061F",
-      a: "\u0628\u0627\u0644\u062A\u0623\u0643\u064A\u062F. \u064A\u0633\u062A\u062E\u062F\u0645 Warrantee \u0623\u0645\u0627\u0646 \u0645\u0633\u062A\u0648\u0649 \u0627\u0644\u0635\u0641 \u0645\u0639 Supabase\u060C \u0648\u062C\u0645\u064A\u0639 \u0627\u0644\u0627\u062A\u0635\u0627\u0644\u0627\u062A \u0645\u0634\u0641\u0631\u0629."
+      a: "يستخدم Warrantee أمان مستوى الصف في Supabase، وصلاحيات مرتبطة بالشركة، واتصالات TLS، وترويسات أمنية لحماية بيانات العملاء وتقليل مخاطر الوصول بين الحسابات."
     },
     {
       q: "\u0643\u064A\u0641 \u0623\u062A\u0648\u0627\u0635\u0644 \u0645\u0639 \u0627\u0644\u062F\u0639\u0645\u061F",
-      a: "\u0642\u0645 \u0628\u0632\u064A\u0627\u0631\u0629 \u0635\u0641\u062D\u0629 \u0627\u0644\u0627\u062A\u0635\u0627\u0644 \u0623\u0648 \u0631\u0627\u0633\u0644\u0646\u0627 \u0639\u0628\u0631 support@warrantee.io."
+      a: "زر صفحة الاتصال أو راسلنا عبر hello@warrantee.io. تُؤكد شروط دعم المؤسسات حسب الاتفاق."
     }
   ]
 };

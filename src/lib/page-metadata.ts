@@ -67,12 +67,12 @@ const PAGE_META: Record<
     en: {
       title: "About Warrantee — Our Story",
       description:
-        "Learn how Warrantee is transforming warranty management for businesses across Saudi Arabia and the GCC.",
+        "Learn why Warrantee is being built to simplify warranty management for businesses, sellers, and warranty holders in Saudi Arabia and the GCC.",
     },
     ar: {
       title: "عن وارنتي — قصتنا",
       description:
-        "تعرّف على كيف تغيّر وارنتي إدارة الضمانات للشركات في المملكة العربية السعودية ودول الخليج.",
+        "تعرّف على سبب بناء وارنتي لتبسيط إدارة الضمانات للشركات والبائعين وأصحاب الضمانات في السعودية ودول الخليج.",
     },
   },
   blog: {
@@ -91,24 +91,24 @@ const PAGE_META: Record<
     en: {
       title: "Warrantee Features — Smart Warranty Tools",
       description:
-        "Explore Warrantee's approval workflow, expiry reminders, bilingual certificates, and real-time dashboard.",
+        "Explore Warrantee's approval workflows, expiry reminders, bilingual certificates, and current-status warranty dashboard.",
     },
     ar: {
       title: "مزايا وارنتي — أدوات ذكية لإدارة الضمان",
       description:
-        "استكشف سير عمل الموافقات وتذكيرات انتهاء الضمان والشهادات الثنائية اللغة ولوحة المتابعة الفورية في وارنتي.",
+        "استكشف سير الموافقات وتنبيهات انتهاء الضمان والشهادات الثنائية اللغة ولوحة متابعة حالة الضمانات في وارنتي.",
     },
   },
   pricing: {
     en: {
       title: "Warrantee Pricing — Simple and Transparent Plans",
       description:
-        "Start with a Free plan, no credit card required, or upgrade to the Professional launch offer at SAR 149/month. Enterprise warranty management pricing is custom.",
+        "Start with a Free plan, no credit card required. Professional launch pricing is planned at SAR 149/month and currently requires an access request. Enterprise pricing is custom.",
     },
     ar: {
       title: "أسعار وارنتي — خطط بسيطة وواضحة",
       description:
-        "ابدأ بالخطة المجانية دون بطاقة ائتمانية، أو انتقل إلى عرض الإطلاق للخطة الاحترافية مقابل 149 ريال شهريًا. أسعار المؤسسات مخصصة.",
+        "ابدأ بالخطة المجانية دون بطاقة ائتمانية. سعر الإطلاق المخطط للخطة الاحترافية 149 ريالًا شهريًا ويتطلب حاليًا طلب تفعيل. أسعار المؤسسات مخصصة.",
     },
   },
   contact: {

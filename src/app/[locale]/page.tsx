@@ -353,14 +353,14 @@ export default async function HomePage({ params }: HomePageProps) {
                 </h2>
                 <p className="text-[17px] text-[#86868b] mb-8 leading-relaxed">
                   {!isRTL
-                    ? 'Extend warranties before expiration. Sellers offer extensions directly through Warrantee, and buyers purchase them instantly.'
-                    : '\u0645\u062f \u0627\u0644\u0636\u0645\u0627\u0646\u0627\u062a \u0642\u0628\u0644 \u0627\u0646\u062a\u0647\u0627\u0621 \u0627\u0644\u0635\u0644\u0627\u062d\u064a\u0629. \u064a\u0642\u062f\u0645 \u0627\u0644\u0628\u0627\u0626\u0639\u0648\u0646 \u0627\u0644\u062a\u0645\u062f\u064a\u062f\u0627\u062a \u0645\u0628\u0627\u0634\u0631\u0629 \u0639\u0628\u0631 Warrantee.'}
+                    ? 'Prepare and manage extension offers before coverage expires. Sellers can define offers and buyers can review extension status from the warranty record.'
+                    : 'حضّر عروض التمديد وأدرها قبل انتهاء التغطية. يمكن للبائع تحديد العرض وللمشتري مراجعة حالة التمديد من سجل الضمان.'}
                 </p>
                 <ul className="space-y-4">
                   {[
                     !isRTL ? 'Flexible extension terms' : '\u0634\u0631\u0648\u0637 \u062a\u0645\u062f\u064a\u062f \u0645\u0631\u0646\u0629',
-                    !isRTL ? 'Instant approval process' : '\u0639\u0645\u0644\u064a\u0629 \u0645\u0648\u0627\u0641\u0642\u0629 \u0641\u0648\u0631\u064a\u0629',
-                    !isRTL ? 'Transparent pricing' : '\u062a\u0633\u0639\u064a\u0631 \u0634\u0641\u0627\u0641',
+                    !isRTL ? 'Buyer request and seller review' : 'طلب المشتري ومراجعة البائع',
+                    !isRTL ? 'Clear offer status' : 'حالة عرض واضحة',
                   ].map((item, idx) => (
                     <li key={idx} className="flex items-center gap-3">
                       <CheckCircle className="w-5 h-5 text-[#30d158] flex-shrink-0" />
@@ -410,7 +410,7 @@ export default async function HomePage({ params }: HomePageProps) {
                 >
                   {idx === 1 && (
                     <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-[#0071e3] text-white px-4 py-1 rounded-full text-[11px] font-medium">
-                      {!isRTL ? 'Launch offer in SAR' : 'عرض إطلاق بالريال السعودي'}
+                      {!isRTL ? 'Planned launch price in SAR' : 'سعر إطلاق مخطط بالريال السعودي'}
                     </div>
                   )}
                   <div className="mb-6">
@@ -428,7 +428,9 @@ export default async function HomePage({ params }: HomePageProps) {
                     </div>
                   </div>
                   <TrackedLink
-                    href={`/${locale}/auth?tab=signup`}
+                    href={plan.id === 'free'
+                      ? `/${locale}/auth?tab=signup`
+                      : `/${locale}/contact?intent=${plan.id === 'pro' ? 'professional-access' : 'enterprise'}`}
                     cta={`pricing_${plan.name.toLowerCase().replace(/\s+/g, '_')}`}
                     locale={locale}
                     location="home_pricing"

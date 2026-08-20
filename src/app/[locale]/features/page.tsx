@@ -11,13 +11,13 @@ type FeaturesPageProps = {
 };
 
 const features = [
-  { icon: Shield, title_en: "Digital Warranty Certificates", title_ar: "شهادات ضمان رقمية", desc_en: "Issue professional, tamper-proof warranty certificates with QR verification codes.", desc_ar: "إصدار شهادات ضمان احترافية مع رموز QR للتحقق.", color: "text-[#0071e3]", bg: "bg-[#0071e3]/10" },
+  { icon: Shield, title_en: "Digital Warranty Certificates", title_ar: "شهادات ضمان رقمية", desc_en: "Issue bilingual certificates tied to QR-verifiable warranty records.", desc_ar: "أصدر شهادات ثنائية اللغة مرتبطة بسجلات ضمان يمكن التحقق منها عبر QR.", color: "text-[#0071e3]", bg: "bg-[#0071e3]/10" },
   { icon: FileText, title_en: "Claims Management", title_ar: "إدارة المطالبات", desc_en: "Streamlined warranty claims workflow from submission to resolution.", desc_ar: "سير عمل مبسط للمطالبات من التقديم إلى الحل.", color: "text-[#0071e3]", bg: "bg-[#0071e3]/10" },
-  { icon: BarChart3, title_en: "Advanced Analytics", title_ar: "تحليلات متقدمة", desc_en: "Real-time dashboards with warranty performance metrics and insights.", desc_ar: "لوحات معلومات فورية مع مقاييس الأداء.", color: "text-[#30d158]", bg: "bg-[#30d158]/10" },
+  { icon: BarChart3, title_en: "Warranty Analytics", title_ar: "تحليلات الضمان", desc_en: "Current-status dashboards with warranty metrics and operational insights.", desc_ar: "لوحات حالة حالية تعرض مقاييس الضمان ورؤى التشغيل.", color: "text-[#30d158]", bg: "bg-[#30d158]/10" },
   { icon: Users, title_en: "Team Collaboration", title_ar: "تعاون الفريق", desc_en: "Invite team members with role-based access controls.", desc_ar: "دعوة أعضاء الفريق مع صلاحيات مخصصة.", color: "text-[#ff6482]", bg: "bg-[#ff6482]/10" },
-  { icon: Globe, title_en: "Bilingual Support", title_ar: "دعم ثنائي اللغة", desc_en: "Full Arabic and English interface with RTL layout support.", desc_ar: "واجهة كاملة بالعربية والإنجليزية مع دعم RTL.", color: "text-[#bf5af2]", bg: "bg-[#bf5af2]/10" },
-  { icon: Mail, title_en: "Email Ingestion", title_ar: "استيعاب البريد", desc_en: "Automatically create warranties from forwarded emails using AI.", desc_ar: "إنشاء ضمانات تلقائياً من البريد باستخدام الذكاء الاصطناعي.", color: "text-[#64d2ff]", bg: "bg-[#64d2ff]/10" },
-  { icon: Lock, title_en: "Enterprise Security", title_ar: "أمان مؤسسي", desc_en: "Row-level security, encrypted data, and role-based permissions.", desc_ar: "أمان على مستوى الصف وتشفير البيانات.", color: "text-[#86868b]", bg: "bg-[#f5f5f7]" },
+  { icon: Globe, title_en: "Bilingual Support", title_ar: "دعم ثنائي اللغة", desc_en: "Core Arabic and English workflows with RTL layout support.", desc_ar: "مسارات أساسية بالعربية والإنجليزية مع دعم تخطيط RTL.", color: "text-[#bf5af2]", bg: "bg-[#bf5af2]/10" },
+  { icon: Mail, title_en: "Email Ingestion", title_ar: "استيعاب البريد", desc_en: "Prepare warranty records from supported forwarded emails while retaining attachments.", desc_ar: "حضّر سجلات الضمان من رسائل البريد المدعومة مع الاحتفاظ بالمرفقات.", color: "text-[#64d2ff]", bg: "bg-[#64d2ff]/10" },
+  { icon: Lock, title_en: "Data Access Controls", title_ar: "ضوابط الوصول للبيانات", desc_en: "Row-level security, encrypted data, and role-aware permissions.", desc_ar: "أمان على مستوى الصف وبيانات مشفرة وصلاحيات تراعي الأدوار.", color: "text-[#86868b]", bg: "bg-[#f5f5f7]" },
   { icon: Clock, title_en: "Expiry Tracking", title_ar: "تتبع الانتهاء", desc_en: "Automatic notifications before warranty expiration dates.", desc_ar: "إشعارات تلقائية قبل انتهاء الضمان.", color: "text-[#5856d6]", bg: "bg-[#5856d6]/10" },
 ];
 

@@ -47,15 +47,15 @@ const plans = [
     price: 149,
     currency_en: "SAR",
     currency_ar: "ر.س",
-    pricePrefix_en: "Launch offer",
-    pricePrefix_ar: "عرض إطلاق",
-    popular: true,
+    pricePrefix_en: "Planned launch price",
+    pricePrefix_ar: "سعر إطلاق مخطط",
+    featured: true,
     features_en: ["Unlimited warranties", "Advanced analytics", "Priority support", "Up to 5 team members", "Full warranty history", "Custom workflows", "Bilingual certificates"],
     features_ar: ["ضمانات غير محدودة", "تحليلات متقدمة", "دعم أولوية", "حتى 5 أعضاء", "سجل ضمانات كامل", "سير عمل مخصص", "شهادات ثنائية"],
     name_en: "Professional",
     name_ar: "احترافي",
-    desc_en: "For growing businesses",
-    desc_ar: "للشركات النامية"
+    desc_en: "Planned launch offer for growing businesses",
+    desc_ar: "عرض إطلاق مخطط للشركات النامية"
   },
   {
     id: "enterprise",
@@ -63,8 +63,8 @@ const plans = [
     iconColor: "text-[#0071e3]",
     iconBg: "bg-[#0071e3]/10",
     price: -1,
-    features_en: ["Everything in Professional", "Unlimited team members", "Dedicated account manager", "Custom integrations", "SLA guarantee"],
-    features_ar: ["كل ما في الاحترافي", "أعضاء غير محدودين", "مدير حساب مخصص", "تكاملات مخصصة", "ضمان SLA"],
+    features_en: ["Everything in Professional", "Team limits by agreement", "Enterprise onboarding by agreement", "Custom integrations by agreement", "Service levels by agreement"],
+    features_ar: ["كل ما في الاحترافي", "حدود الفريق حسب الاتفاق", "تهيئة المؤسسات حسب الاتفاق", "تكاملات مخصصة حسب الاتفاق", "مستويات الخدمة حسب الاتفاق"],
     name_en: "Enterprise",
     name_ar: "مؤسسي",
     desc_en: "For large organizations",
@@ -100,7 +100,6 @@ export default function BillingPage() {
 
   const [subscription, setSubscription] = useState<SubscriptionInfo | null>(null);
   const [loading, setLoading] = useState(true);
-  const [upgrading, setUpgrading] = useState(false);
 
   useEffect(() => {
     if (authLoading) return;
@@ -146,24 +145,9 @@ export default function BillingPage() {
     fetchSub();
   }, [user, authLoading, supabase]);
 
-  const handleUpgrade = async (planId: string) => {
-    if (planId === "enterprise") {
-      window.location.href = "mailto:hello@warrantee.io?subject=" + encodeURIComponent(isRTL ? "استفسار عن خطة المؤسسات" : "Enterprise Plan Inquiry");
-      return;
-    }
-    setUpgrading(true);
-    try {
-      const res = await fetch("/api/stripe/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ planId, locale }),
-      });
-      const data = await res.json();
-      if (data.url) window.location.href = data.url;
-    } catch (err) {
-      console.error(err);
-    }
-    setUpgrading(false);
+  const handlePlanRequest = (planId: string) => {
+    const intent = planId === "enterprise" ? "enterprise" : "professional-access";
+    window.location.href = `/${locale}/contact?intent=${intent}`;
   };
 
   const formatDate = (d: string | null) => {
@@ -307,7 +291,7 @@ export default function BillingPage() {
           {/* Plans Section Header */}
           <div>
             <h3 className="text-[13px] font-semibold text-[#86868b] uppercase tracking-wide mb-4">
-              {isRTL ? "الخطط المتاحة" : "Available Plans"}
+              {isRTL ? "خيارات الخطط" : "Plan options"}
             </h3>
           </div>
 
@@ -324,16 +308,16 @@ export default function BillingPage() {
                 <div
                   key={plan.id}
                   className={`bg-white rounded-2xl ring-1 shadow-sm overflow-hidden transition-all duration-200 hover:shadow-md relative ${
-                    plan.popular
+                    plan.featured
                       ? "ring-[#0071e3] ring-2"
                       : isCurrentPlan
                       ? "ring-[#0071e3] ring-2"
                       : "ring-[#d2d2d7]/40"
                   }`}
                 >
-                  {plan.popular && (
+                  {plan.featured && (
                     <div className="bg-[#0071e3] text-white text-[12px] font-semibold text-center py-1.5 tracking-wide uppercase">
-                      {isRTL ? "الأكثر شعبية" : "Most Popular"}
+                      {isRTL ? "عرض مخطط" : "Planned offer"}
                     </div>
                   )}
                   <div className="p-6">
@@ -381,19 +365,16 @@ export default function BillingPage() {
                       </button>
                     ) : (
                       <button
-                        onClick={() => handleUpgrade(plan.id)}
-                        disabled={upgrading}
-                        className={`w-full py-2.5 rounded-full text-[14px] font-medium transition-all duration-200 disabled:opacity-50 ${
-                          plan.popular
+                        onClick={() => handlePlanRequest(plan.id)}
+                        className={`w-full py-2.5 rounded-full text-[14px] font-medium transition-all duration-200 ${
+                          plan.featured
                             ? "bg-[#1A1A2E] hover:bg-[#2d2d5e] text-white shadow-sm hover:shadow-md"
                             : "bg-[#f5f5f7] hover:bg-[#e8e8ed] text-[#1d1d1f]"
                         }`}
                       >
-                        {upgrading
-                          ? "..."
-                          : plan.price === -1
+                        {plan.price === -1
                           ? (isRTL ? "تواصل معنا" : "Contact Sales")
-                          : (isRTL ? "ترقية" : "Upgrade")}
+                          : (isRTL ? "اطلب التفعيل" : "Request access")}
                       </button>
                     )}
                   </div>

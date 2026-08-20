@@ -12,22 +12,22 @@ const content = {
   en: {
     storyTitle: "Our Story",
     storyLead:
-      "How a forgotten warranty receipt turned into a mission to protect every purchase you'll ever make.",
-    originTitle: "It Started with a Broken AC",
+      "Why Warrantee is being built to keep warranty terms, evidence, deadlines, and decisions connected.",
+    originTitle: "The Problem Warrantee Is Built to Solve",
     originOne:
-      "In the summer of 2024, our founder's office air conditioning unit failed. It was less than two years old, well within the warranty period. But when he went to file a claim, the receipt was gone. The supplier email was buried in an old thread. The result: SAR 4,500 out of pocket for a repair that should have been free.",
+      "Warranty records are often scattered across receipts, inboxes, spreadsheets, and supplier systems. When coverage is needed, people and businesses can lose time or money simply because the proof, terms, or deadline cannot be found quickly.",
     originTwo:
-      "That was not the first time. A laptop with a dead screen had a warranty that expired two weeks before anyone noticed. A water heater failed while the installer warranty was still valid, but nobody could find the paperwork.",
-    quote:
-      "I realized I was not alone. Every person, every business, every facility manager I talked to had the same problem. Warranties exist to protect us, but we had built no system to manage them.",
-    founder: "Abdulaziz Alrayes, Founder",
+      "Warrantee brings the warranty record, documents, approvals, reminders, claims, and verification path together so each decision can be made from the same evidence.",
+    principle:
+      "A warranty should remain understandable and actionable from purchase through expiry, claim, transfer, or extension request.",
+    principleLabel: "Product principle",
     missionTitle: "The Mission",
     mission:
-      "Warrantee was founded with a simple mission: no one should lose money because they forgot about a warranty. We built a platform that does for warranties what your bank does for your money: keeps track of everything in one place, reminds you when action is needed, and gives you the tools to act.",
+      "Warrantee is being built so people and businesses can keep warranty records in one place, receive reminders when action is needed, and use clear workflows for approvals, claims, certificates, and verification.",
     valuesTitle: "Our Values",
     ctaTitle: "Join Us",
     ctaText:
-      "Start protecting your warranties today. It takes 60 seconds to sign up, and it is free.",
+      "Create a free account and add your first warranty when you are ready.",
     cta: "Get Started Free",
     values: [
       {
@@ -43,7 +43,7 @@ const content = {
       {
         icon: Globe,
         title: "Bilingual by Default",
-        desc: "Arabic and English are equal first-class citizens in every feature and every screen.",
+        desc: "Core public and account workflows support Arabic and English, including right-to-left layout where applicable.",
       },
       {
         icon: Smile,
@@ -55,22 +55,22 @@ const content = {
   ar: {
     storyTitle: "قصتنا",
     storyLead:
-      "كيف تحولت فاتورة ضمان منسية إلى مهمة لحماية كل عملية شراء تقوم بها.",
-    originTitle: "بدأت مع مكيف متعطل",
+      "لماذا يجري بناء وارنتي لربط شروط الضمان وأدلته ومواعيده وقراراته في مكان واحد.",
+    originTitle: "المشكلة التي صُممت وارنتي لمعالجتها",
     originOne:
-      "في صيف 2024، تعطل مكيف مكتب المؤسس. كان عمره أقل من سنتين، أي ضمن فترة الضمان. لكن عند محاولة تقديم المطالبة، لم تكن الفاتورة موجودة، وكان بريد المورد مدفونا في محادثة قديمة. النتيجة: دفع 4,500 ريال من جيبه لإصلاح كان يفترض أن يكون مجانيا.",
+      "غالبًا ما تتوزع سجلات الضمان بين الفواتير والبريد والجداول وأنظمة الموردين. وعند الحاجة إلى التغطية، قد يخسر الأفراد والشركات الوقت أو المال لأن الدليل أو الشروط أو الموعد لا يمكن العثور عليه بسرعة.",
     originTwo:
-      "لم تكن تلك المرة الأولى. جهاز محمول تعطلت شاشته بعد انتهاء الضمان بأسبوعين فقط، وسخان مياه تعطّل بينما كان ضمان المركّب لا يزال ساريا، لكن لم يجد أحد المستندات.",
-    quote:
-      "أدركت أنني لست وحدي. كل شخص، وكل شركة، وكل مدير مرافق تحدثت معه كان يعاني من المشكلة نفسها. الضمانات موجودة لحمايتنا، لكننا لم نبن نظاما لإدارتها.",
-    founder: "عبدالعزيز الرايس، المؤسس",
+      "تجمع وارنتي سجل الضمان والمستندات والموافقات والتنبيهات والمطالبات ومسار التحقق حتى يُتخذ كل قرار بالاستناد إلى الأدلة نفسها.",
+    principle:
+      "يجب أن يبقى الضمان مفهومًا وقابلًا للتنفيذ من الشراء حتى الانتهاء أو المطالبة أو النقل أو طلب التمديد.",
+    principleLabel: "مبدأ المنتج",
     missionTitle: "المهمة",
     mission:
-      "تأسست Warrantee بمهمة بسيطة: ألا يخسر أحد ماله لأنه نسي ضمانا. بنينا منصة تفعل للضمانات ما يفعله البنك لأموالك: تجمع كل شيء في مكان واحد، وتذكرك عند الحاجة إلى التصرف، وتعطيك الأدوات اللازمة للتنفيذ.",
+      "يجري بناء Warrantee ليتمكن الأفراد والشركات من حفظ سجلات الضمان في مكان واحد، وتلقي التنبيهات عند الحاجة إلى الإجراء، واستخدام مسارات واضحة للموافقات والمطالبات والشهادات والتحقق.",
     valuesTitle: "قيمنا",
     ctaTitle: "انضم إلينا",
     ctaText:
-      "ابدأ حماية ضماناتك اليوم. التسجيل يستغرق 60 ثانية، وهو مجاني.",
+      "أنشئ حسابًا مجانيًا وأضف ضمانك الأول عندما تكون مستعدًا.",
     cta: "ابدأ مجانا",
     values: [
       {
@@ -86,7 +86,7 @@ const content = {
       {
         icon: Globe,
         title: "ثنائي اللغة من الأساس",
-        desc: "العربية والإنجليزية لغتان أساسيتان في كل ميزة وكل شاشة.",
+        desc: "تدعم المسارات العامة ومسارات الحساب الأساسية العربية والإنجليزية، بما في ذلك اتجاه الكتابة من اليمين إلى اليسار عند الحاجة.",
       },
       {
         icon: Smile,
@@ -126,8 +126,8 @@ export default async function AboutPage({ params }: AboutPageProps) {
             <p className="text-navy/60 text-lg leading-relaxed mb-6">{page.originTwo}</p>
 
             <blockquote className="bg-[#f5f9ff] border-l-4 border-[#0071e3] rounded-r-2xl p-8 my-10">
-              <p className="text-navy text-lg italic leading-relaxed">&ldquo;{page.quote}&rdquo;</p>
-              <footer className="text-[#0071e3] font-semibold mt-4">- {page.founder}</footer>
+              <p className="text-navy text-lg italic leading-relaxed">{page.principle}</p>
+              <footer className="text-[#0071e3] font-semibold mt-4">{page.principleLabel}</footer>
             </blockquote>
 
             <h2 className="text-3xl font-bold text-navy mb-6">{page.missionTitle}</h2>
