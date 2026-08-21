@@ -1,7 +1,7 @@
 {
   "description": "Synthetic, non-customer OCR regression fixtures safe for Git. Real customer or vendor documents belong only in tests/fixtures/ocr-corpus/private.",
   "requirements": {
-    "minEntries": 8,
+    "minEntries": 14,
     "locales": ["en-SA", "ar-SA", "mixed"],
     "kinds": [
       "receipt",
@@ -10,7 +10,12 @@
       "duplicate_invoice",
       "warranty_certificate",
       "handwritten_note_text",
-      "corrupted_pdf_text"
+      "corrupted_pdf_text",
+      "receipt_image",
+      "poor_scan_image",
+      "mixed_invoice_image",
+      "multipage_pdf",
+      "corrupted_pdf"
     ]
   },
   "entries": [
@@ -137,6 +142,131 @@
         "product_name": "Drill Kit",
         "serial_number": "DRILL-CORR-19",
         "invoice_reference": "CORR-19",
+        "warranty_duration": "6 months"
+      }
+    },
+    {
+      "id": "synthetic-en-receipt-image-001",
+      "locale": "en-SA",
+      "kind": "receipt_image",
+      "sensitivity": "synthetic",
+      "file": "media/synthetic-en-receipt-clean.png",
+      "sha256": "1474619862a6db464ee9867736ea3b05882e1c2c192a86cc8f5fc737a9b4229b",
+      "syntheticMediaCheck": "tesseract",
+      "ocrContains": ["SYN-INV-2026-001", "SYN-LAP-2026-0001", "4299"],
+      "text": "Invoice No: SYN-INV-2026-001\nSeller: Example Riyadh Electronics\nProduct: Laptop Pro 14\nSerial Number: SYN-LAP-2026-0001\nPurchase Date: 2026-06-01\nWarranty: 24 months\nTotal: SAR 4299",
+      "minConfidence": 0.65,
+      "expectedFields": {
+        "product_name": "Laptop Pro 14",
+        "serial_number": "SYN-LAP-2026-0001",
+        "start_date": "2026-06-01",
+        "warranty_duration": "24 months",
+        "supplier": "Example Riyadh Electronics",
+        "purchase_price": "4299",
+        "category": "electronics",
+        "invoice_reference": "SYN-INV-2026-001"
+      }
+    },
+    {
+      "id": "synthetic-en-poor-scan-image-001",
+      "locale": "en-SA",
+      "kind": "poor_scan_image",
+      "sensitivity": "synthetic",
+      "file": "media/synthetic-en-poor-scan.png",
+      "sha256": "603782a6f0e396a91a992da11175d92bbfed72ec7e581b13c23341ed930f5b86",
+      "syntheticMediaCheck": "tesseract",
+      "ocrContains": ["SYN-BLUR-4421", "SYN-WS-4421-KSA", "1899"],
+      "text": "Invoice No: SYN-BLUR-4421\nSeller: Example Appliance Services\nProduct: Washer 9kg\nSerial Number: SYN-WS-4421-KSA\nPurchase Date: 2026-03-18\nWarranty: 24 months\nTotal: SAR 1899",
+      "minConfidence": 0.65,
+      "expectedFields": {
+        "product_name": "Washer 9kg",
+        "serial_number": "SYN-WS-4421-KSA",
+        "start_date": "2026-03-18",
+        "warranty_duration": "24 months",
+        "supplier": "Example Appliance Services",
+        "purchase_price": "1899",
+        "category": "appliances",
+        "invoice_reference": "SYN-BLUR-4421"
+      }
+    },
+    {
+      "id": "synthetic-ar-receipt-image-001",
+      "locale": "ar-SA",
+      "kind": "receipt_image",
+      "sensitivity": "synthetic",
+      "file": "media/synthetic-ar-receipt-clean.png",
+      "sha256": "a915010ee7a0a5b74072dbf03cfd99890060b8d7b1e10141fb82128e607a365e",
+      "syntheticMediaCheck": "tesseract",
+      "ocrContains": ["SYN-ARINV-55", "SYN-AR-123456", "1999"],
+      "text": "رقم الفاتورة: SYN-ARINV-55\nالبائع: متجر تجريبي بالرياض\nالمنتج: غسالة ذكية\nالرقم التسلسلي: SYN-AR-123456\nتاريخ الشراء: 2026-05-10\nالضمان: 24 شهر\nالإجمالي: 1999 ريال",
+      "minConfidence": 0.65,
+      "expectedFields": {
+        "product_name": "غسالة ذكية",
+        "serial_number": "SYN-AR-123456",
+        "start_date": "2026-05-10",
+        "warranty_duration": "24 شهر",
+        "supplier": "متجر تجريبي بالرياض",
+        "purchase_price": "1999",
+        "category": "appliances",
+        "invoice_reference": "SYN-ARINV-55"
+      }
+    },
+    {
+      "id": "synthetic-mixed-invoice-image-001",
+      "locale": "mixed",
+      "kind": "mixed_invoice_image",
+      "sensitivity": "synthetic",
+      "file": "media/synthetic-mixed-invoice.png",
+      "sha256": "91a7e7002386739656947cc574e5a62407faa2d2c4acf7201444534c9d50430d",
+      "syntheticMediaCheck": "tesseract",
+      "ocrContains": ["SYN-MIX-7788", "SYN-AC-7788-KSA", "2500"],
+      "text": "فاتورة / Invoice No: SYN-MIX-7788\nStore: Example Gulf Warranty Store\nProduct: مكيف Smart AC 2 Ton\nSerial Number: SYN-AC-7788-KSA\nDate: 2026-05-10\nCoverage: 2 years\nAmount: SAR 2500",
+      "minConfidence": 0.55,
+      "expectedFields": {
+        "product_name": "مكيف Smart AC 2 Ton",
+        "serial_number": "SYN-AC-7788-KSA",
+        "start_date": "2026-05-10",
+        "warranty_duration": "2 years",
+        "supplier": "Example Gulf Warranty Store",
+        "purchase_price": "2500",
+        "category": "appliances",
+        "invoice_reference": "SYN-MIX-7788"
+      }
+    },
+    {
+      "id": "synthetic-multipage-warranty-pdf-001",
+      "locale": "en-SA",
+      "kind": "multipage_pdf",
+      "sensitivity": "synthetic",
+      "file": "media/synthetic-multipage-warranty.pdf",
+      "sha256": "327d46fd246bf0683e7ec06c08a0da5f28bb9dcfa9c26f5440cb86be91d890b7",
+      "syntheticMediaCheck": "pdfjs",
+      "ocrContains": ["SYN-WC-2026-444", "SYN-FRIDGE-900-SA", "2028-04-14"],
+      "text": "Warranty Certificate\nCertificate No: SYN-WC-2026-444\nIssuer: Example Equipment Services\nCovered Product: Commercial Refrigerator 900L\nSerial Number: SYN-FRIDGE-900-SA\nCoverage Start: 2026-04-15\nCoverage End: 2028-04-14\nWarranty: 24 months",
+      "minConfidence": 0.6,
+      "expectedFields": {
+        "product_name": "Commercial Refrigerator 900L",
+        "serial_number": "SYN-FRIDGE-900-SA",
+        "start_date": "2026-04-15",
+        "end_date": "2028-04-14",
+        "supplier": "Example Equipment Services",
+        "invoice_reference": "SYN-WC-2026-444"
+      }
+    },
+    {
+      "id": "synthetic-corrupted-pdf-001",
+      "locale": "mixed",
+      "kind": "corrupted_pdf",
+      "sensitivity": "synthetic",
+      "file": "media/synthetic-corrupted.pdf",
+      "sha256": "ae0d5807f3c62e50b195a7eed39afbb2ac72bf51c27021c0c337a6e578f0b046",
+      "syntheticMediaCheck": "reject",
+      "text": "Invoice: SYN-CORR-19\nSeller: Example Desert Tools\nProduct: Drill Kit\nSerial Number: SYN-DRILL-CORR-19\nWarranty: 6 months\nAmount: SAR 399",
+      "minConfidence": 0.35,
+      "expectedFields": {
+        "product_name": "Drill Kit",
+        "serial_number": "SYN-DRILL-CORR-19",
+        "invoice_reference": "SYN-CORR-19",
         "warranty_duration": "6 months"
       }
     }

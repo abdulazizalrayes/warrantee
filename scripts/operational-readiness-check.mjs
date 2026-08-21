@@ -367,7 +367,7 @@ async function checkMistralOCR() {
     return checkRemoteOCRProvider();
   }
 
-  const model = process.env.MISTRAL_OCR_MODEL || "mistral-ocr-latest";
+  const model = process.env.MISTRAL_OCR_MODEL || "mistral-ocr-4-1";
   const response = await fetchWithTimeout("https://api.mistral.ai/v1/ocr", {
     method: "POST",
     headers: {

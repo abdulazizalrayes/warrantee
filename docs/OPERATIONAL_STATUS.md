@@ -1,6 +1,16 @@
 # Warrantee Operational Status
 
-Last updated: 2026-07-14
+Last updated: 2026-08-21
+
+## 2026-08-21 External-Risk Substitutes And Founder Decisions
+
+- **Professional billing remains postponed by owner decision.** Warrantee must keep Professional checkout fail-closed while `STRIPE_PRO_PRICE_ID` is absent. The planned `SAR 149/month` price is a proposal, not an active paid offer. Stripe account context remains `abdulaziz.alrayes@gmail.com`; do not resume or reinterpret this decision without owner approval.
+- **Extension recommendation:** validate demand before implementing settlement. Use the existing guarded seller offer, eligibility, and `extension_interest_registered` event to run a no-payment pilot. Do not represent extension purchasing as live until an approved payment provider, reconciliation, refund, dispute, and customer proof flow pass a controlled transaction.
+- **Paid independent pentest is deferred while Warrantee is pre-user.** `npm run qa:security-assurance` now provides a repeatable internal adversarial gate across dependency risk, loopback protection, migration integrity, pentest-scope completeness, and 58 focused auth/tenant/email/file/security regression checks. `--production` adds smoke, readiness, and live RLS probes. This reduces risk but is explicitly not an independent pentest or certification. Reopen the independent assessment before enterprise/government onboarding, before storing material customer document volume, or after the first meaningful paid cohort.
+- **Synthetic OCR media coverage is active.** The committed non-customer corpus now includes English, Arabic, and mixed-language PNGs, a degraded scan, a two-page PDF, and a corrupt PDF. Every file is integrity-pinned. `npm run qa:ocr-media` runs free local Tesseract/PDF.js extraction and confirms corrupt-file rejection. This is regression evidence, not a claim of real-world accuracy; a small approved real-document sample remains a later accuracy gate.
+- **Hosted OCR model drift was removed.** Mistral released OCR 4.1 on 2026-07-16; source and readiness defaults now pin `mistral-ocr-4-1` instead of relying on the mutable `latest` alias or the previous 4.0 release.
+- **Sentry issue visibility is separated from release upload.** `npm run observability:sentry-issues` expects a least-privilege `SENTRY_ISSUES_READ_TOKEN` and never prints it. IPv4 access to Sentry is healthy, and the current release-upload token returns `403` for issue inventory as expected. Creating and storing the separate read token remains approval-gated; the release token must not be broadened blindly or placed in the production runtime solely for issue inventory.
+- **First-customer focus:** run the documented seven-day Riyadh commercial-kitchen/equipment-service pilot before adding product breadth or paid acquisition. No prospect record, outreach message, or real send may be created without explicit owner approval.
 
 ## 2026-07-14 CRM and User Acquisition Update
 

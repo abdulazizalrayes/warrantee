@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import crypto from "node:crypto";
 import path from "node:path";
 
 const corpusDir = path.resolve(
@@ -57,6 +58,7 @@ if (!Array.isArray(entries) || entries.length === 0) {
 
 const seen = new Set();
 let fileBackedEntries = 0;
+let integrityCheckedEntries = 0;
 const locales = new Set();
 const kinds = new Set();
 
@@ -86,6 +88,32 @@ for (const [index, entry] of entries.entries()) {
     }
     if (!fs.existsSync(filePath)) {
       fail("OCR corpus file is missing.", { id: entry.id, file: entry.file });
+    }
+
+    const fileBuffer = fs.readFileSync(filePath);
+    if (fileBuffer.length === 0) {
+      fail("OCR corpus file must not be empty.", { id: entry.id, file: entry.file });
+    }
+
+    const extension = path.extname(filePath).toLowerCase();
+    if (![".png", ".jpg", ".jpeg", ".pdf", ".txt"].includes(extension)) {
+      fail("OCR corpus file uses an unsupported fixture format.", {
+        id: entry.id,
+        file: entry.file,
+        extension,
+      });
+    }
+
+    if (entry.sha256 !== undefined) {
+      assertString(entry.sha256, `entries[${index}].sha256`);
+      if (!/^[a-f0-9]{64}$/i.test(entry.sha256)) {
+        fail("OCR corpus sha256 must be a 64-character hexadecimal digest.", { id: entry.id });
+      }
+      const actualDigest = crypto.createHash("sha256").update(fileBuffer).digest("hex");
+      if (actualDigest !== entry.sha256.toLowerCase()) {
+        fail("OCR corpus file integrity check failed.", { id: entry.id, file: entry.file });
+      }
+      integrityCheckedEntries += 1;
     }
   } else {
     assertString(entry.text, `entries[${index}].text`);
@@ -136,6 +164,7 @@ console.log(
       manifestPath,
       entries: entries.length,
       fileBackedEntries,
+      integrityCheckedEntries,
       textOnlyEntries: entries.length - fileBackedEntries,
       locales: Array.from(locales).sort(),
       kinds: Array.from(kinds).sort(),

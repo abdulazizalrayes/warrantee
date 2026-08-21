@@ -54,7 +54,7 @@ The final handover verdict becomes **Ready with known external risks** only afte
 - Upgraded Resend and migrated inbound webhook and attachment handling to the supported SDK contract.
 - Enforced trusted temporary HTTPS attachment URLs, redirect blocking, timeouts, and response-size limits.
 - Avoided persisting raw base64 attachment payloads.
-- Pinned Mistral OCR to `mistral-ocr-4-0` and added pipeline/parser version telemetry.
+- Pinned Mistral OCR to the current reviewed release (`mistral-ocr-4-1` as of 2026-08-21) and added pipeline/parser version telemetry.
 - Tightened internal scanner origin validation and upload/download authorization.
 - Added bounded data retention for raw ingestion/OCR data, API usage, and processed webhook events.
 - Updated the privacy notice in English and Arabic for OCR processing, assisted extraction, cross-border processing, and retention.

@@ -6,8 +6,8 @@ export type ExtractedWarrantyFields = {
 
 const FIELD_END = String.raw`(?=\.\s+(?:[A-Z\u0600-\u06FF%]|$)|\n|\r|$)`;
 
-function fieldPattern(prefix: string, flags = "i") {
-  return new RegExp(`${prefix}\\s*[:;؛\\-]?\\s*(.+?)${FIELD_END}`, flags);
+function lineFieldPattern(prefix: string, flags = "im") {
+  return new RegExp(`(?:^|[\\r\\n])\\s*${prefix}\\s*[:;؛\\-]?\\s*(.+?)${FIELD_END}`, flags);
 }
 
 function firstMatch(text: string, patterns: RegExp[], maxLength = 100) {
@@ -25,10 +25,10 @@ export function extractWarrantyFields(text: string) {
   const result: ExtractedWarrantyFields = { confidence: 0, raw_text: text.substring(0, 500) };
 
   const productName = firstMatch(text, [
-    fieldPattern(String.raw`(?:pr[o0]duct|item|device|model|equipment)\s*(?:name|description)?`),
+    lineFieldPattern(String.raw`(?:covered\s+)?(?:pr[o0]duct|item|device|model|equipment)\s*(?:name|description)?`),
     /(?:warranty|guarantee)\s+(?:for|of|on)\s+(.+?)(?:\.|\n|$)/i,
     /(?:purchased|bought)\s+(?:a\s+)?(.+?)(?:\s+on|\s+from|\.|\n|$)/i,
-    fieldPattern(String.raw`(?:المنتج|الصنف|الجهاز|الموديل|اسم المنتج|وصف المنتج)`),
+    lineFieldPattern(String.raw`(?:المنتج المغطى|المنتج|الصنف|الجهاز|الموديل|اسم المنتج|وصف المنتج)`),
     /(?:ضمان|كفالة)\s+(?:على|لـ|ل)\s*(.+?)(?:\.|\n|$)/i,
     /^([A-Z][A-Za-z0-9\s\-]+(?:Pro|Plus|Max|Ultra|Mini|Air)?)/m,
   ]);
@@ -77,9 +77,9 @@ export function extractWarrantyFields(text: string) {
   }
 
   const supplier = firstMatch(text, [
-    fieldPattern(String.raw`(?:seller|vendor|supplier|retailer|dealer|s[o0]ld by|purchased from|store)`),
-    fieldPattern(String.raw`(?:company|manufacturer|brand|issuer)`),
-    fieldPattern(String.raw`(?:البائع|المورد|المتجر|المحل|الشركة|المصنع|العلامة التجارية|الوكيل)`),
+    lineFieldPattern(String.raw`(?:seller|vendor|supplier|retailer|dealer|s[o0]ld by|purchased from|store)`),
+    lineFieldPattern(String.raw`(?:company|manufacturer|brand|issuer)`),
+    lineFieldPattern(String.raw`(?:البائع|المورد|المتجر|المحل|الشركة|المصنع|العلامة التجارية|الوكيل)`),
   ]);
   if (supplier) {
     result.supplier = supplier;

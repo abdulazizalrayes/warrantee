@@ -1,5 +1,5 @@
 const MISTRAL_OCR_API_URL = "https://api.mistral.ai/v1/ocr";
-const DEFAULT_MISTRAL_OCR_MODEL = "mistral-ocr-4-0";
+const DEFAULT_MISTRAL_OCR_MODEL = "mistral-ocr-4-1";
 const DEFAULT_MISTRAL_OCR_TIMEOUT_MS = 15000;
 
 type MistralOCRPage = {

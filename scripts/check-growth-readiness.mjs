@@ -178,8 +178,8 @@ console.log(JSON.stringify({
   ok: true,
   checks,
   externalStillRequired: [
-    "Formal third-party penetration test execution and signed report.",
-    "Real approved customer/vendor OCR document corpus collection and private-corpus run.",
+    "Independent penetration testing is deferred; run the internal adversarial assurance gate until an external-test trigger is reached.",
+    "Synthetic OCR media coverage is active; real approved customer/vendor accuracy evidence remains a post-traffic gate.",
     "Real campaign traffic and onboarding analysis after distribution starts.",
   ],
 }, null, 2));

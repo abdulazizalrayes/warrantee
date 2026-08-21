@@ -146,7 +146,7 @@ describe("takeover audit remediation", () => {
       "src/lib/ingestion/ocr-pipeline.ts"
     );
 
-    expect(mistral).toContain('DEFAULT_MISTRAL_OCR_MODEL = "mistral-ocr-4-0"');
+    expect(mistral).toContain('DEFAULT_MISTRAL_OCR_MODEL = "mistral-ocr-4-1"');
     expect(telemetry).toContain("pipelineVersion?: string");
     expect(telemetry).toContain("parserVersion?: string");
     expect(ingestionPipeline).toContain("OCR_PIPELINE_VERSION");
