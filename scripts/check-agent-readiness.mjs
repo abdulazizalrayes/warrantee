@@ -1,5 +1,6 @@
 const DEFAULT_BASE_URL = "https://warrantee.io";
 const baseUrl = (process.env.AGENT_READINESS_BASE_URL || DEFAULT_BASE_URL).replace(/\/$/, "");
+const protectedResourceMetadata = `${DEFAULT_BASE_URL}/.well-known/oauth-protected-resource/api`;
 
 const jsonEndpoints = [
   "/data/company.json",
@@ -10,6 +11,7 @@ const jsonEndpoints = [
   "/data/agent-routing.json",
   "/data/agent-markdown-manifest.json",
   "/.well-known/agent-card.json",
+  "/.well-known/ai-catalog.json",
   "/.well-known/mcp.json",
   "/.well-known/mcp/server-card.json",
   "/.well-known/mcp/server-cards.json",
@@ -19,6 +21,7 @@ const jsonEndpoints = [
   "/.well-known/agent-skills/index.json",
   "/openapi.json",
   "/.well-known/openapi.json",
+  "/.well-known/oauth-protected-resource/api",
 ];
 
 const textEndpoints = [
@@ -67,6 +70,7 @@ for (const required of [
   "/openapi.json",
   "/auth.md",
   "/api/mcp",
+  "/.well-known/ai-catalog.json",
   "/data/agent-markdown-manifest.json",
 ]) {
   if (!llms.includes(required)) fail("llms.txt is missing a discovery reference.", { required });
@@ -91,6 +95,8 @@ const openapi = JSON.parse((await get("/openapi.json")).text);
 for (const requiredPath of [
   "/data/company.json",
   "/data/agent-routing.json",
+  "/.well-known/ai-catalog.json",
+  "/.well-known/oauth-protected-resource/api",
   "/api/mcp",
   "/api/v1/status",
   "/api/v1/intelligence",
@@ -141,6 +147,34 @@ if (privateIntelligence.status !== 401) {
     path: "/api/v1/intelligence",
     status: privateIntelligence.status,
   });
+}
+if (!privateIntelligence.headers.get("www-authenticate")?.includes(protectedResourceMetadata)) {
+  fail("Protected API rejection is missing OAuth resource metadata discovery.", {
+    path: "/api/v1/intelligence",
+    wwwAuthenticate: privateIntelligence.headers.get("www-authenticate"),
+  });
+}
+
+const oauthResource = JSON.parse((await get("/.well-known/oauth-protected-resource/api")).text);
+if (oauthResource.resource !== `${DEFAULT_BASE_URL}/api`) {
+  fail("OAuth protected-resource metadata advertises the wrong resource.", {
+    resource: oauthResource.resource,
+  });
+}
+
+const aiCatalog = JSON.parse((await get("/.well-known/ai-catalog.json")).text);
+if (aiCatalog.specVersion !== "1.0" || !Array.isArray(aiCatalog.entries)) {
+  fail("AI catalog is missing its required 1.0 envelope.");
+}
+for (const requiredType of [
+  "application/mcp-server-card+json",
+  "application/agent-skills+json",
+  "application/agent-card+json",
+  "application/openapi+json",
+]) {
+  if (!aiCatalog.entries.some((entry) => entry.type === requiredType)) {
+    fail("AI catalog is missing a required live artifact.", { requiredType });
+  }
 }
 
 console.log(JSON.stringify({

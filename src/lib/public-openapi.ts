@@ -49,8 +49,24 @@ export function buildPublicOpenApi() {
       "/.well-known/agent-card.json": {
         get: { summary: "Read agent discovery card", responses: { "200": { description: "Agent card returned" } } },
       },
+      "/.well-known/ai-catalog.json": {
+        get: {
+          summary: "Read agentic resource catalog",
+          description:
+            "AI Catalog 1.0 manifest referencing Warrantee's live MCP card, skills, generic agent card, OpenAPI description, and API catalog.",
+          responses: { "200": { description: "Agentic resource catalog returned" } },
+        },
+      },
       "/.well-known/api-catalog": {
         get: { summary: "Read API catalog linkset", responses: { "200": { description: "API catalog returned" } } },
+      },
+      "/.well-known/oauth-protected-resource/api": {
+        get: {
+          summary: "Read OAuth protected-resource metadata",
+          description:
+            "RFC 9728 metadata for the protected Warrantee API resource.",
+          responses: { "200": { description: "Protected-resource metadata returned" } },
+        },
       },
       "/.well-known/mcp.json": {
         get: { summary: "Read MCP server card", responses: { "200": { description: "MCP server card returned" } } },

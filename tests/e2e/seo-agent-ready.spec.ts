@@ -38,7 +38,9 @@ test.describe("SEO and agent-readiness endpoints", () => {
       "/data/agent-routing.json",
       "/data/agent-markdown-manifest.json",
       "/.well-known/agent-card.json",
+      "/.well-known/ai-catalog.json",
       "/.well-known/api-catalog",
+      "/.well-known/oauth-protected-resource/api",
       "/.well-known/mcp.json",
       "/.well-known/mcp/server-card.json",
       "/.well-known/mcp/server-cards.json",
@@ -61,6 +63,8 @@ test.describe("SEO and agent-readiness endpoints", () => {
     const openapi = await request.get("/openapi.json");
     const openapiJson = await openapi.json();
     expect(openapiJson.paths["/data/company.json"]).toBeTruthy();
+    expect(openapiJson.paths["/.well-known/ai-catalog.json"]).toBeTruthy();
+    expect(openapiJson.paths["/.well-known/oauth-protected-resource/api"]).toBeTruthy();
     expect(openapiJson.paths["/api/mcp"]).toBeTruthy();
     expect(openapiJson.paths["/.well-known/http-message-signatures-directory"]).toBeTruthy();
     expect(openapiJson.paths["/.well-known/acp.json"]).toBeTruthy();
@@ -68,6 +72,30 @@ test.describe("SEO and agent-readiness endpoints", () => {
 
     const authGuide = await request.get("/auth.md");
     expect(await authGuide.text()).toContain("# auth.md - Warrantee API / CLI / MCP Authentication");
+
+    const aiCatalog = await request.get("/.well-known/ai-catalog.json");
+    expect(aiCatalog.headers()["content-type"]).toContain("application/ai-catalog+json");
+    const aiCatalogJson = await aiCatalog.json();
+    expect(aiCatalogJson.specVersion).toBe("1.0");
+    expect(aiCatalogJson.host.identifier).toBe("warrantee.io");
+    expect(aiCatalogJson.entries).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ type: "application/mcp-server-card+json" }),
+        expect.objectContaining({ type: "application/agent-skills+json" }),
+        expect.objectContaining({ type: "application/agent-card+json" }),
+        expect.objectContaining({ type: "application/openapi+json" }),
+      ]),
+    );
+
+    const oauthResource = await request.get("/.well-known/oauth-protected-resource/api");
+    const oauthResourceJson = await oauthResource.json();
+    expect(oauthResourceJson.resource).toBe("https://warrantee.io/api");
+
+    const protectedApi = await request.get("/api/v1/status");
+    expect(protectedApi.status()).toBe(401);
+    expect(protectedApi.headers()["www-authenticate"]).toContain(
+      'resource_metadata="https://warrantee.io/.well-known/oauth-protected-resource/api"',
+    );
 
     const webBotAuth = await request.get("/.well-known/http-message-signatures-directory");
     const webBotAuthJson = await webBotAuth.json();
@@ -125,6 +153,9 @@ test.describe("SEO and agent-readiness endpoints", () => {
       expect(html.headers()["content-type"]).toContain("text/html");
       expect(html.headers()["link"]).toContain(
         `<${page.contentLocation}>; rel="alternate"; type="text/markdown"`,
+      );
+      expect(html.headers()["link"]).toContain(
+        '</.well-known/ai-catalog.json>; rel="ai-catalog"; type="application/ai-catalog+json"',
       );
     }
 

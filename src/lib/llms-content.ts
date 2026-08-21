@@ -40,6 +40,7 @@ ${listPublicResourceLinks().map((resource) => `- ${resource.name}: ${resource.ur
 ## Machine Discovery
 
 - Full LLM brief: ${BASE_URL}/llms-full.txt
+- Agentic resource catalog: ${BASE_URL}/.well-known/ai-catalog.json
 - API catalog: ${BASE_URL}/.well-known/api-catalog
 - OpenAPI: ${BASE_URL}/openapi.json
 - Agent card: ${BASE_URL}/.well-known/agent-card.json
@@ -48,6 +49,7 @@ ${listPublicResourceLinks().map((resource) => `- ${resource.name}: ${resource.ur
 - MCP server card collection: ${BASE_URL}/.well-known/mcp/server-cards.json
 - Hosted MCP endpoint: ${BASE_URL}/api/mcp
 - Auth guide: ${BASE_URL}/auth.md
+- OAuth protected-resource metadata: ${BASE_URL}/.well-known/oauth-protected-resource/api
 
 ## Markdown Representations
 

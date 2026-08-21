@@ -139,6 +139,13 @@ The CI workflow runs `qa:agent-markdown:local` after the production build. The P
 
 DNS-AID cannot be completed from the Next.js application. It requires DNS provider access for `warrantee.io` and, ideally, DNSSEC support. The remaining records to evaluate with the DNS provider are `_index._agents.warrantee.io`, `_a2a._agents.warrantee.io`, and `_mcp._agents.warrantee.io` using the current DNS-AID draft's SVCB/HTTPS guidance. Do not add placeholder DNS records unless they point to real maintained discovery endpoints.
 
+## Agentic Resource And OAuth Discovery
+
+- `/.well-known/ai-catalog.json` publishes a deterministic AI Catalog 1.0 envelope for Warrantee's live MCP server card, Agent Skills index, generic agent card, OpenAPI description, and API catalog. It does not advertise A2A or commerce protocols that Warrantee does not operate.
+- `/.well-known/oauth-protected-resource/api` publishes RFC 9728 protected-resource metadata for `https://warrantee.io/api`.
+- Anonymous or invalid requests to `/api/v1/*` return a Bearer `WWW-Authenticate` challenge pointing to that protected-resource metadata while continuing to support scoped `x-api-key` integration tokens.
+- The canonical-page discovery `Link` header advertises the AI catalog using `rel="ai-catalog"`.
+
 ## Authenticated Asset Intelligence
 
 Warrantee now exposes asset lifecycle intelligence through the same authenticated integration model used by the API / CLI / MCP layer.

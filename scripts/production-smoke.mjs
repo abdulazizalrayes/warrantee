@@ -18,7 +18,9 @@ const publicChecks = [
   { path: "/sitemap.xml", expect: 200, contains: "https://warrantee.io/en" },
   { path: `/${indexNowKey}.txt`, expect: 200, contains: indexNowKey },
   { path: "/.well-known/agent-card.json", expect: 200 },
+  { path: "/.well-known/ai-catalog.json", expect: 200 },
   { path: "/.well-known/api-catalog", expect: 200 },
+  { path: "/.well-known/oauth-protected-resource/api", expect: 200 },
   { path: "/.well-known/mcp.json", expect: 200 },
   { path: "/.well-known/mcp/server-cards.json", expect: 200 },
   { path: "/.well-known/agent-skills/index.json", expect: 200 },
@@ -170,6 +172,16 @@ async function checkProtectedApi({ path, method, expect, body }) {
   const expected = Array.isArray(expect) ? expect : [expect];
   if (!expected.includes(response.status)) {
     throw new Error(`${path} returned ${response.status}; expected ${expected.join(" or ")}`);
+  }
+
+  if (
+    path.startsWith("/api/v1/") &&
+    response.status === 401 &&
+    !response.headers
+      .get("www-authenticate")
+      ?.includes("/.well-known/oauth-protected-resource/api")
+  ) {
+    throw new Error(`${path} did not advertise OAuth protected-resource metadata`);
   }
 
   return { path, method, status: response.status };

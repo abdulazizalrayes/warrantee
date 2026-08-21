@@ -53,6 +53,11 @@ export function GET() {
           ],
           describedby: [
             {
+              href: `${BASE_URL}/.well-known/ai-catalog.json`,
+              type: "application/ai-catalog+json",
+              title: "Agentic resource catalog",
+            },
+            {
               href: `${BASE_URL}/llms.txt`,
               type: "text/plain",
               title: "LLM summary",

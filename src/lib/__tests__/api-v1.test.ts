@@ -3,6 +3,7 @@ import {
   buildIdempotencyReference,
   createApiIntegrationToken,
   hashApiToken,
+  apiV1Json,
   normalizeApiRateLimit,
   normalizeApiScopes,
   timingSafeStringEqual,
@@ -55,6 +56,14 @@ describe("api v1 helpers", () => {
     expect(normalizeApiRateLimit(0)).toBe(1);
     expect(normalizeApiRateLimit(999)).toBe(300);
     expect(normalizeApiRateLimit("not-a-number")).toBe(100);
+  });
+
+  it("advertises protected-resource metadata on API authentication failures", () => {
+    const response = apiV1Json({ error: "Unauthorized" }, { status: 401 });
+
+    expect(response.headers.get("www-authenticate")).toBe(
+      'Bearer resource_metadata="https://warrantee.io/.well-known/oauth-protected-resource/api"',
+    );
   });
 
   it("does not allow the retired static integration token path", () => {

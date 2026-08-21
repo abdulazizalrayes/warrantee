@@ -166,6 +166,7 @@ export function buildDiscoveryLinkHeader(
     page
       ? `<https://warrantee.io${toDirectSidecarPath(page.path)}>; rel="alternate"; type="text/markdown"`
       : null,
+    `</.well-known/ai-catalog.json>; rel="ai-catalog"; type="application/ai-catalog+json"`,
     `</.well-known/api-catalog>; rel="api-catalog"`,
     `</en/api-docs>; rel="service-doc"`,
     `</.well-known/agent-card.json>; rel="agent-card"`,

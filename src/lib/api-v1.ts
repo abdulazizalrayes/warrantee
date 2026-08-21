@@ -18,6 +18,8 @@ const DEFAULT_API_RATE_LIMIT_PER_MINUTE = 100;
 const MAX_API_RATE_LIMIT_PER_MINUTE = 300;
 const API_V1_IP_RATE_LIMIT = 300;
 const API_TOKEN_PATTERN = /^wrt_([A-Za-z0-9]{8,32})_[A-Za-z0-9_-]{32,}$/;
+export const API_V1_PROTECTED_RESOURCE_METADATA_URL =
+  "https://warrantee.io/.well-known/oauth-protected-resource/api";
 
 type Credential =
   | { kind: "bearer"; token: string }
@@ -92,6 +94,12 @@ export function hasApiScope(requester: ApiRequester, requiredScope: ApiV1Scope) 
 export function apiV1Json(body: unknown, init: ResponseInit = {}) {
   const headers = new Headers(init.headers);
   headers.set("Vary", "Authorization, x-api-key");
+  if (init.status === 401 && !headers.has("WWW-Authenticate")) {
+    headers.set(
+      "WWW-Authenticate",
+      `Bearer resource_metadata="${API_V1_PROTECTED_RESOURCE_METADATA_URL}"`,
+    );
+  }
   return apiJson(body, { ...init, headers });
 }
 
