@@ -41,6 +41,16 @@ describe("operational hardening", () => {
     expect(middleware).toContain("return buildNoIndexAuthRedirect(request, locale);");
   });
 
+  it("ships the complete Tesseract worker dependency chain in serverless OCR routes", () => {
+    const nextConfig = readProjectFile("next.config.ts");
+
+    expect(nextConfig.match(/\.\/node_modules\/tesseract\.js\/src\/worker-script\/node\/index\.js/g)).toHaveLength(2);
+    expect(nextConfig.match(/\.\/node_modules\/node-fetch\/\*\*\/\*/g)).toHaveLength(2);
+    expect(nextConfig.match(/\.\/node_modules\/whatwg-url\/\*\*\/\*/g)).toHaveLength(2);
+    expect(nextConfig.match(/\.\/node_modules\/tr46\/\*\*\/\*/g)).toHaveLength(2);
+    expect(nextConfig.match(/\.\/node_modules\/webidl-conversions\/\*\*\/\*/g)).toHaveLength(2);
+  });
+
   it("keeps dashboard browser counts aligned with production schema", () => {
     const dashboard = readProjectFile("src/app/[locale]/dashboard/page.tsx");
 
