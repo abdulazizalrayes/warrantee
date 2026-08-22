@@ -27,6 +27,8 @@ const env = {
 const token = env.SENTRY_ISSUES_READ_TOKEN || env.SENTRY_AUTH_TOKEN;
 const org = env.SENTRY_ORG;
 const project = env.SENTRY_PROJECT;
+const summaryOnly = process.argv.includes("--summary-only");
+const failOnUnresolved = process.argv.includes("--fail-on-unresolved");
 
 if (!token || !org || !project) {
   console.error(JSON.stringify({
@@ -85,4 +87,14 @@ const sanitized = Array.isArray(issues) ? issues.map((issue) => ({
   permalink: issue.permalink,
 })) : [];
 
-console.log(JSON.stringify({ ok: true, unresolvedCount: sanitized.length, issues: sanitized }, null, 2));
+console.log(JSON.stringify(
+  summaryOnly
+    ? { ok: true, unresolvedCount: sanitized.length }
+    : { ok: true, unresolvedCount: sanitized.length, issues: sanitized },
+  null,
+  2,
+));
+
+if (failOnUnresolved && sanitized.length > 0) {
+  process.exitCode = 1;
+}
