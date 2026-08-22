@@ -51,6 +51,14 @@ describe("operational hardening", () => {
     expect(nextConfig.match(/\.\/node_modules\/webidl-conversions\/\*\*\/\*/g)).toHaveLength(2);
   });
 
+  it("keeps optional Google Vision credentials out of observable request URLs", () => {
+    const ocrRoute = readProjectFile("src/app/api/ocr/route.ts");
+
+    expect(ocrRoute).toContain('"x-goog-api-key": apiKey');
+    expect(ocrRoute).toContain('fetch("https://vision.googleapis.com/v1/images:annotate"');
+    expect(ocrRoute).not.toContain("images:annotate?key=");
+  });
+
   it("automates Sentry inventory with a separate read-only secret and safe CI output", () => {
     const inventory = readProjectFile("scripts/sentry-issue-readiness.mjs");
     const productionSecurity = readProjectFile(".github/workflows/production-security.yml");

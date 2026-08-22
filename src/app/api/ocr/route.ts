@@ -226,9 +226,12 @@ async function extractTextFromDocument(dataUri: string): Promise<OCRDocumentExtr
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), VISION_TIMEOUT_MS);
-    const response = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${apiKey}`, {
+    const response = await fetch("https://vision.googleapis.com/v1/images:annotate", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": apiKey,
+      },
       signal: controller.signal,
       body: JSON.stringify({
         requests: [
