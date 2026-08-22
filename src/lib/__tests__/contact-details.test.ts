@@ -15,6 +15,13 @@ describe("Warrantee public contact details", () => {
   });
 
   it("attributes WhatsApp conversations to Warrantee", () => {
+    expect(getWarranteeWhatsAppMessage("en")).toBe(
+      "Hello Warrantee, i need an inquiry?",
+    );
+    expect(getWarranteeWhatsAppMessage("ar")).toBe(
+      "مرحبًا Warrantee، لدي استفسار",
+    );
+
     for (const locale of ["en", "ar"] as const) {
       const message = getWarranteeWhatsAppMessage(locale);
       const url = new URL(getWarranteeWhatsAppUrl(locale));
@@ -23,7 +30,6 @@ describe("Warrantee public contact details", () => {
       expect(url.pathname).toBe("/966500067865");
       expect(url.searchParams.get("text")).toBe(message);
       expect(message).toContain("Warrantee");
-      expect(message).toContain("warrantee.io");
       expect(message.toLowerCase()).not.toContain("eijarat");
     }
   });
