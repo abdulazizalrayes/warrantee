@@ -63,6 +63,25 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Generate agent Markdown artifact for contact release
+        run: |
+          npm run start > /tmp/warrantee-next.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in {1..120}; do
+            if curl --fail --silent http://127.0.0.1:3000/api/health > /dev/null; then
+              break
+            fi
+            sleep 1
+          done
+          AGENT_MARKDOWN_BASE_URL=http://127.0.0.1:3000 npm run agent-markdown:generate
+
+      - name: Upload generated agent Markdown artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: agent-markdown-contact-release
+          path: src/generated/agent-markdown-pages.json
+
       - name: Agent Markdown release gate
         run: npm run qa:agent-markdown:local
 
