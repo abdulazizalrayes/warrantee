@@ -64,6 +64,37 @@ describe("Warrantee CLI and MCP", () => {
     }
   });
 
+  it("runs the MCP server through an npm-style binary symlink", () => {
+    const directory = mkdtempSync(join(tmpdir(), "warrantee-mcp-"));
+    const executable = join(directory, "warrantee-mcp");
+
+    try {
+      symlinkSync(join(process.cwd(), "tools/warrantee/mcp-server.mjs"), executable);
+      const request = `${JSON.stringify({
+        jsonrpc: "2.0",
+        id: 1,
+        method: "initialize",
+        params: {
+          protocolVersion: "2025-06-18",
+          capabilities: {},
+          clientInfo: { name: "release-test", version: "1.0.0" },
+        },
+      })}\n`;
+      const result = spawnSync(process.execPath, [executable], {
+        input: request,
+        encoding: "utf8",
+      });
+
+      expect(result.status).toBe(0);
+      expect(result.stderr).toBe("");
+      const response = JSON.parse(result.stdout.trim());
+      expect(response.result.serverInfo.name).toBe("warrantee-mcp");
+      expect(response.result.protocolVersion).toBe("2025-06-18");
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  });
+
   it("runs read-only operational status with a scoped integration token", async () => {
     const calls: FetchCall[] = [];
     const stdout: string[] = [];
