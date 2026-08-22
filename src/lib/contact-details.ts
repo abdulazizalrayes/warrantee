@@ -6,8 +6,8 @@ export const WARRANTEE_PHONE_TEL_URL = `tel:${WARRANTEE_PHONE_E164}`;
 export const WARRANTEE_WHATSAPP_NUMBER = "966500067865";
 
 const WHATSAPP_MESSAGES = {
-  en: "Hello Warrantee, I'm contacting you through warrantee.io.",
-  ar: "مرحبًا Warrantee، أتواصل معكم عبر موقع warrantee.io.",
+  en: "Hello Warrantee, i need an inquiry?",
+  ar: "مرحبًا Warrantee، لدي استفسار",
 } as const;
 
 export function getWarranteeWhatsAppMessage(locale: Locale) {
