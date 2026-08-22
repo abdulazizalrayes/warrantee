@@ -34,6 +34,8 @@ const serverTrackedEvents = new Set([
   "onboarding_completed",
 ]);
 
+const gtmForwardedEvents = new Set(["whatsapp_click"]);
+
 export const campaignParamKeys = [
   "utm_source",
   "utm_medium",
@@ -130,7 +132,7 @@ function emitEvent(event: string, payload: Record<string, unknown>) {
 
   if (process.env.NEXT_PUBLIC_GTM_ID) {
     pushDataLayer(event, classifiedPayload);
-    if (event !== "page_view") {
+    if (event !== "page_view" && !gtmForwardedEvents.has(event)) {
       gtag("event", event, classifiedPayload);
     }
   } else if (process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID) {

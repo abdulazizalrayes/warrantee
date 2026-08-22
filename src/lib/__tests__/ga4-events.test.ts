@@ -134,22 +134,15 @@ describe("browser analytics dispatch", () => {
 
     trackWhatsappClick("footer", { locale: "en" });
 
-    expect(gtag).toHaveBeenCalledWith(
-      "event",
-      "whatsapp_click",
+    expect(gtag).not.toHaveBeenCalled();
+    expect(dataLayer).toContainEqual(
       expect.objectContaining({
+        event: "whatsapp_click",
         event_category: "contact",
         event_label: "warrantee_whatsapp",
         location: "footer",
         locale: "en",
         traffic_class: "human",
-      })
-    );
-    expect(dataLayer).toContainEqual(
-      expect.objectContaining({
-        event: "whatsapp_click",
-        location: "footer",
-        locale: "en",
       })
     );
     expect(sendBeacon).toHaveBeenCalledOnce();
