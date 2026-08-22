@@ -1,5 +1,12 @@
 import Link from 'next/link';
+import { MessageCircle, Phone } from 'lucide-react';
 import { Dictionary, Locale, DIRECTION } from '@/lib/i18n';
+import {
+  WARRANTEE_PHONE_DISPLAY,
+  WARRANTEE_PHONE_TEL_URL,
+  getWarranteeWhatsAppUrl,
+} from '@/lib/contact-details';
+import { ContactActionLink } from './ContactActionLink';
 import { LanguageToggle } from './LanguageToggle';
 
 interface FooterProps {
@@ -65,6 +72,31 @@ export function Footer({ locale, dictionary }: FooterProps) {
                 ? 'ثق بالشروط™. تتبع كل ضمان بثقة.'
                 : 'Trust the Terms™. Track every warranty with confidence.'}
             </p>
+            <div className="mb-4 space-y-2">
+              <ContactActionLink
+                href={WARRANTEE_PHONE_TEL_URL}
+                channel="phone"
+                locale={locale}
+                location="footer"
+                dir="ltr"
+                className={`flex w-fit items-center gap-2 text-sm text-[#6e6e73] transition-colors hover:text-[#0071e3] ${isRTL ? 'ml-auto' : ''}`}
+              >
+                <Phone className="h-4 w-4" aria-hidden="true" />
+                <span>{WARRANTEE_PHONE_DISPLAY}</span>
+              </ContactActionLink>
+              <ContactActionLink
+                href={getWarranteeWhatsAppUrl(locale)}
+                channel="whatsapp"
+                locale={locale}
+                location="footer"
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`flex w-fit items-center gap-2 text-sm text-[#6e6e73] transition-colors hover:text-[#0071e3] ${isRTL ? 'ml-auto' : ''}`}
+              >
+                <MessageCircle className="h-4 w-4" aria-hidden="true" />
+                <span>{isArabic ? 'واتساب' : 'WhatsApp'}</span>
+              </ContactActionLink>
+            </div>
             <div className="flex gap-3 items-center">
               <LanguageToggle
                 currentLocale={locale}

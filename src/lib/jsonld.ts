@@ -1,3 +1,5 @@
+import { WARRANTEE_PHONE_E164 } from "@/lib/contact-details";
+
 const BASE_URL = "https://warrantee.io";
 
 export function getOrganizationJsonLd() {
@@ -15,6 +17,7 @@ export function getOrganizationJsonLd() {
           "https://www.crunchbase.com/organization/warrantee-io",
         ],
         email: "hello@warrantee.io",
+        telephone: WARRANTEE_PHONE_E164,
         logo: `${BASE_URL}/icon`,
         image: `${BASE_URL}/opengraph-image`,
         slogan: "Trust the Terms",
@@ -34,6 +37,7 @@ export function getOrganizationJsonLd() {
             "@type": "ContactPoint",
             contactType: "customer support",
             email: "hello@warrantee.io",
+            telephone: WARRANTEE_PHONE_E164,
             availableLanguage: ["English", "Arabic"],
             areaServed: ["Saudi Arabia", "GCC", "Middle East"],
           },

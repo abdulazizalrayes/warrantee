@@ -2,8 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { Mail, MessageCircle, Send } from 'lucide-react';
+import { Mail, MessageCircle, Phone, Send } from 'lucide-react';
 import { trackContactForm } from '@/lib/ga4-events';
+import {
+  WARRANTEE_PHONE_DISPLAY,
+  WARRANTEE_PHONE_TEL_URL,
+  getWarranteeWhatsAppUrl,
+} from '@/lib/contact-details';
+import { ContactActionLink } from '@/components/ContactActionLink';
 import { PageViewTracker } from '@/components/PageViewTracker';
 import { Footer } from '@/components/Footer';
 import { Navbar } from '@/components/Navbar';
@@ -24,9 +30,11 @@ export default function ContactPage() {
         subtitle: 'لديك سؤال أو تحتاج مساعدة أو ترغب بمعرفة المزيد؟ يسعدنا التواصل معك.',
         email: 'البريد الإلكتروني',
         emailHint: 'للاستفسارات العامة والدعم',
-        chat: 'المحادثة المباشرة',
-        chatHint: 'متاحة خلال ساعات العمل',
-        comingSoon: 'قريبًا',
+        phone: 'الهاتف',
+        phoneHint: 'للاستفسارات العامة والدعم',
+        whatsapp: 'واتساب',
+        whatsappHint: 'ابدأ محادثة مع توضيح أنها من Warrantee',
+        whatsappAction: 'تواصل عبر واتساب',
         formTitle: 'أرسل لنا رسالة',
         name: 'الاسم الكامل *',
         namePlaceholder: 'اسمك',
@@ -55,9 +63,11 @@ export default function ContactPage() {
         subtitle: "Have a question, need help, or want to learn more? We'd love to hear from you.",
         email: 'Email',
         emailHint: 'General inquiries and support',
-        chat: 'Live Chat',
-        chatHint: 'Available during business hours',
-        comingSoon: 'Coming soon',
+        phone: 'Phone',
+        phoneHint: 'General inquiries and support',
+        whatsapp: 'WhatsApp',
+        whatsappHint: 'Start a chat identified as coming from Warrantee',
+        whatsappAction: 'Message on WhatsApp',
         formTitle: 'Send Us a Message',
         name: 'Full Name *',
         namePlaceholder: 'Your name',
@@ -173,7 +183,7 @@ export default function ContactPage() {
       </section>
 
       <section className="px-4 sm:px-6 lg:px-8 pb-8">
-        <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-6">
+        <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-6">
           <div className="bg-white rounded-2xl border-2 border-[#0071e3]/20 p-8 text-center hover:border-[#0071e3]/40 transition-colors">
             <Mail className="w-10 h-10 text-[#0071e3] mx-auto mb-4" />
             <h3 className="font-bold text-lg text-navy mb-2">{copy.email}</h3>
@@ -182,11 +192,36 @@ export default function ContactPage() {
               hello@warrantee.io
             </a>
           </div>
+          <div className="bg-white rounded-2xl border-2 border-[#0071e3]/20 p-8 text-center hover:border-[#0071e3]/40 transition-colors">
+            <Phone className="w-10 h-10 text-[#0071e3] mx-auto mb-4" />
+            <h3 className="font-bold text-lg text-navy mb-2">{copy.phone}</h3>
+            <p className="text-navy/60 text-sm mb-3">{copy.phoneHint}</p>
+            <ContactActionLink
+              href={WARRANTEE_PHONE_TEL_URL}
+              channel="phone"
+              locale={locale}
+              location="contact_page"
+              dir="ltr"
+              className="text-[#0071e3] font-semibold hover:underline"
+            >
+              {WARRANTEE_PHONE_DISPLAY}
+            </ContactActionLink>
+          </div>
           <div className="bg-white rounded-2xl border-2 border-navy/10 p-8 text-center hover:border-navy/20 transition-colors">
-            <MessageCircle className="w-10 h-10 text-navy/40 mx-auto mb-4" />
-            <h3 className="font-bold text-lg text-navy mb-2">{copy.chat}</h3>
-            <p className="text-navy/60 text-sm mb-3">{copy.chatHint}</p>
-            <span className="text-navy/40 font-semibold text-sm">{copy.comingSoon}</span>
+            <MessageCircle className="w-10 h-10 text-[#0071e3] mx-auto mb-4" />
+            <h3 className="font-bold text-lg text-navy mb-2">{copy.whatsapp}</h3>
+            <p className="text-navy/60 text-sm mb-3">{copy.whatsappHint}</p>
+            <ContactActionLink
+              href={getWarranteeWhatsAppUrl(locale)}
+              channel="whatsapp"
+              locale={locale}
+              location="contact_page"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[#0071e3] font-semibold hover:underline"
+            >
+              {copy.whatsappAction}
+            </ContactActionLink>
           </div>
         </div>
       </section>

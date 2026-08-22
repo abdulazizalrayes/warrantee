@@ -15,6 +15,7 @@ type SchemaNode = {
   contactPoint?: Array<Record<string, unknown>>;
   offers?: Array<{ name: string; description?: string }>;
   sameAs?: string[];
+  telephone?: string;
 };
 
 describe("SEO and AI-search readiness metadata", () => {
@@ -30,6 +31,7 @@ describe("SEO and AI-search readiness metadata", () => {
     expect(organization).toMatchObject({
       name: "Warrantee.io",
       email: "hello@warrantee.io",
+      telephone: "+966500067865",
       url: "https://warrantee.io",
     });
     expect(organization.disambiguatingDescription).toContain("warrantee.io");
@@ -44,6 +46,7 @@ describe("SEO and AI-search readiness metadata", () => {
     expect(organization.contactPoint[0]).toMatchObject({
       contactType: "customer support",
       email: "hello@warrantee.io",
+      telephone: "+966500067865",
     });
 
     const software = graph.find((node) => node["@type"] === "SoftwareApplication");
