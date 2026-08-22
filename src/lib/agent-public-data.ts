@@ -1,3 +1,8 @@
+import {
+  WARRANTEE_PHONE_E164,
+  getWarranteeWhatsAppUrl,
+} from "@/lib/contact-details";
+
 const BASE_URL = "https://warrantee.io";
 
 export const PUBLIC_DATA_PATHS = [
@@ -15,6 +20,8 @@ export const companyData = {
   url: BASE_URL,
   domain: "warrantee.io",
   contactEmail: "hello@warrantee.io",
+  contactPhone: WARRANTEE_PHONE_E164,
+  whatsapp: getWarranteeWhatsAppUrl("en"),
   category: "Warranty management software with an asset lifecycle intelligence product direction",
   shortDescription:
     "Warrantee.io is a bilingual SaaS platform for warranty management, claims workflows, seller onboarding, public verification, certificates, and API / CLI / MCP integrations. Asset lifecycle intelligence is a long-term product direction, not a current full asset-management product.",
