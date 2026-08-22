@@ -41,6 +41,27 @@ describe("operational hardening", () => {
     expect(middleware).toContain("return buildNoIndexAuthRedirect(request, locale);");
   });
 
+  it("ships the complete Tesseract worker dependency chain in serverless OCR routes", () => {
+    const nextConfig = readProjectFile("next.config.ts");
+
+    expect(nextConfig.match(/\.\/node_modules\/tesseract\.js\/src\/worker-script\/node\/index\.js/g)).toHaveLength(2);
+    expect(nextConfig.match(/\.\/node_modules\/node-fetch\/\*\*\/\*/g)).toHaveLength(2);
+    expect(nextConfig.match(/\.\/node_modules\/whatwg-url\/\*\*\/\*/g)).toHaveLength(2);
+    expect(nextConfig.match(/\.\/node_modules\/tr46\/\*\*\/\*/g)).toHaveLength(2);
+    expect(nextConfig.match(/\.\/node_modules\/webidl-conversions\/\*\*\/\*/g)).toHaveLength(2);
+  });
+
+  it("automates Sentry inventory with a separate read-only secret and safe CI output", () => {
+    const inventory = readProjectFile("scripts/sentry-issue-readiness.mjs");
+    const productionSecurity = readProjectFile(".github/workflows/production-security.yml");
+
+    expect(inventory).toContain('process.argv.includes("--summary-only")');
+    expect(inventory).toContain('process.argv.includes("--fail-on-unresolved")');
+    expect(inventory).toContain("SENTRY_ISSUES_READ_TOKEN || env.SENTRY_AUTH_TOKEN");
+    expect(productionSecurity).toContain("SENTRY_ISSUES_READ_TOKEN: ${{ secrets.SENTRY_ISSUES_READ_TOKEN }}");
+    expect(productionSecurity).toContain("--summary-only --fail-on-unresolved");
+  });
+
   it("keeps dashboard browser counts aligned with production schema", () => {
     const dashboard = readProjectFile("src/app/[locale]/dashboard/page.tsx");
 

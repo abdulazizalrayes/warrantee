@@ -34,6 +34,9 @@ jobs:
       RATE_LIMIT_REQUIRE_REDIS: "1"
       TWENTY_API_KEY: ${{ secrets.TWENTY_API_KEY }}
       TWENTY_API_BASE_URL: ${{ secrets.TWENTY_API_BASE_URL }}
+      SENTRY_ISSUES_READ_TOKEN: ${{ secrets.SENTRY_ISSUES_READ_TOKEN }}
+      SENTRY_ORG: abdulazizalrayes
+      SENTRY_PROJECT: warrantee
       STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
       NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
       OPERATIONAL_TIMEOUT_MS: "30000"
@@ -62,6 +65,9 @@ jobs:
         env:
           AGENT_MARKDOWN_BASE_URL: https://warrantee.io
         run: npm run qa:agent-markdown
+
+      - name: Sentry unresolved issue inventory
+        run: npm run observability:sentry-issues -- --summary-only --fail-on-unresolved
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
