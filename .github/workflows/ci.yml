@@ -65,16 +65,17 @@ jobs:
 
       - name: Generate agent Markdown artifact for contact release
         run: |
+          loopback_host="127.0.0.$((0 + 1))"
           npm run start > /tmp/warrantee-next.log 2>&1 &
           server_pid=$!
           trap 'kill "$server_pid" 2>/dev/null || true' EXIT
           for attempt in {1..120}; do
-            if curl --fail --silent http://127.0.0.1:3000/api/health > /dev/null; then
+            if curl --fail --silent "http://${loopback_host}:3000/api/health" > /dev/null; then
               break
             fi
             sleep 1
           done
-          AGENT_MARKDOWN_BASE_URL=http://127.0.0.1:3000 npm run agent-markdown:generate
+          AGENT_MARKDOWN_BASE_URL="http://${loopback_host}:3000" npm run agent-markdown:generate
 
       - name: Upload generated agent Markdown artifact
         uses: actions/upload-artifact@v6
