@@ -26,6 +26,7 @@ const serverTrackedEvents = new Set([
   "page_view",
   "auth_intent",
   "funnel_cta_click",
+  "whatsapp_click",
   "signup_submit",
   "sign_up",
   "contact_form_submit",
@@ -169,6 +170,18 @@ export function trackFunnelCtaClick(
     destination,
     event_category: "conversion_path",
     event_label: cta,
+    ...metadata,
+  });
+}
+
+export function trackWhatsappClick(
+  location: string,
+  metadata: Record<string, unknown> = {}
+) {
+  emitEvent("whatsapp_click", {
+    event_category: "contact",
+    event_label: "warrantee_whatsapp",
+    location,
     ...metadata,
   });
 }

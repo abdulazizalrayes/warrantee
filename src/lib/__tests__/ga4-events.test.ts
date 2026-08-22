@@ -126,4 +126,32 @@ describe("browser analytics dispatch", () => {
       })
     );
   });
+
+  it("emits a dedicated privacy-safe WhatsApp click event", async () => {
+    process.env.NEXT_PUBLIC_GTM_ID = "GTM-TEST";
+    const { dataLayer, gtag, sendBeacon } = stubAnalyticsGlobals();
+    const { trackWhatsappClick } = await import("../ga4-events");
+
+    trackWhatsappClick("footer", { locale: "en" });
+
+    expect(gtag).toHaveBeenCalledWith(
+      "event",
+      "whatsapp_click",
+      expect.objectContaining({
+        event_category: "contact",
+        event_label: "warrantee_whatsapp",
+        location: "footer",
+        locale: "en",
+        traffic_class: "human",
+      })
+    );
+    expect(dataLayer).toContainEqual(
+      expect.objectContaining({
+        event: "whatsapp_click",
+        location: "footer",
+        locale: "en",
+      })
+    );
+    expect(sendBeacon).toHaveBeenCalledOnce();
+  });
 });

@@ -1,7 +1,7 @@
 "use client";
 
 import type { AnchorHTMLAttributes, ReactNode } from "react";
-import { trackFunnelCtaClick } from "@/lib/ga4-events";
+import { trackFunnelCtaClick, trackWhatsappClick } from "@/lib/ga4-events";
 
 interface ContactActionLinkProps
   extends Omit<AnchorHTMLAttributes<HTMLAnchorElement>, "href" | "children"> {
@@ -24,12 +24,15 @@ export function ContactActionLink({
     <a
       {...anchorProps}
       href={href}
-      onClick={() =>
+      onClick={() => {
         trackFunnelCtaClick(`contact_${channel}`, channel, {
           locale,
           location,
-        })
-      }
+        });
+        if (channel === "whatsapp") {
+          trackWhatsappClick(location, { locale });
+        }
+      }}
     >
       {children}
     </a>
