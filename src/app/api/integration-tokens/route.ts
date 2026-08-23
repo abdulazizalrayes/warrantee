@@ -2,13 +2,14 @@ import { NextRequest } from "next/server";
 import { createApiIntegrationToken, normalizeApiRateLimit, normalizeApiScopes } from "@/lib/api-v1";
 import { apiJson } from "@/lib/api-response";
 import { getClientIp, getRateLimitHeaders, rateLimit } from "@/lib/rate-limit";
+import { isTrustedSameOriginRequest } from "@/lib/request-origin";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { isStringInRange, sanitizeString } from "@/lib/validation";
 import type { Json } from "@/types/database";
 
 const TOKEN_SELECT =
-  "id, name, token_prefix, scopes, rate_limit_per_minute, last_used_at, expires_at, revoked_at, created_at, updated_at";
+  "id, client_id, company_id, name, token_prefix, scopes, rate_limit_per_minute, last_used_at, expires_at, revoked_at, created_at, updated_at";
 
 const MAX_ACTIVE_INTEGRATION_TOKENS = 20;
 
@@ -35,6 +36,8 @@ async function recordTokenManagementEvent(
   input: {
     userId: string;
     tokenId?: string | null;
+    clientId?: string | null;
+    companyId?: string | null;
     statusCode: number;
     action: string;
     metadata?: Record<string, Json | undefined>;
@@ -43,6 +46,8 @@ async function recordTokenManagementEvent(
   const { error } = await supabase.from("api_usage_events").insert({
     user_id: input.userId,
     token_id: input.tokenId || null,
+    client_id: input.clientId || null,
+    company_id: input.companyId || null,
     credential_kind: "user",
     method: request.method,
     path: new URL(request.url).pathname,
@@ -121,6 +126,10 @@ export async function POST(request: NextRequest) {
   const rateLimitResponse = await enforceTokenManagementLimit(request, user.id);
   if (rateLimitResponse) return rateLimitResponse;
 
+  if (!isTrustedSameOriginRequest(request, request.nextUrl.origin)) {
+    return json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const body = await request.json().catch(() => ({}));
   if (!isStringInRange(body.name, 2, 120)) {
     return json({ error: "name must be between 2 and 120 characters" }, { status: 400 });
@@ -159,10 +168,40 @@ export async function POST(request: NextRequest) {
   }
 
   const generated = createApiIntegrationToken();
+  const { data: membership, error: membershipError } = await supabase
+    .from("company_members")
+    .select("company_id")
+    .eq("user_id", user.id)
+    .eq("is_active", true)
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (membershipError) {
+    return json({ error: "Could not resolve API client ownership" }, { status: 500 });
+  }
+  const companyId = membership?.company_id || null;
+
+  const { data: client, error: clientError } = await supabase
+    .from("api_clients")
+    .insert({
+      owner_user_id: user.id,
+      company_id: companyId,
+      name: sanitizeString(body.name, 120),
+      environment: "live",
+      status: "active",
+    })
+    .select("id")
+    .single();
+  if (clientError || !client) {
+    return json({ error: "Could not create API client" }, { status: 500 });
+  }
+
   const { data, error } = await supabase
     .from("api_integration_tokens")
     .insert({
       user_id: user.id,
+      client_id: client.id,
+      company_id: companyId,
       name: sanitizeString(body.name, 120),
       token_prefix: generated.prefix,
       token_hash: generated.hash,
@@ -174,8 +213,11 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (error || !data) {
+    await supabase.from("api_clients").delete().eq("id", client.id);
     await recordTokenManagementEvent(supabase, request, {
       userId: user.id,
+      clientId: client.id,
+      companyId,
       statusCode: 500,
       action: "api_token_create_failed",
     });
@@ -185,6 +227,8 @@ export async function POST(request: NextRequest) {
   await recordTokenManagementEvent(supabase, request, {
     userId: user.id,
     tokenId: data.id,
+    clientId: client.id,
+    companyId,
     statusCode: 201,
     action: "api_token_created",
     metadata: {

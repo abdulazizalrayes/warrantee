@@ -1,14 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, ArrowRight, Upload, X, FileText, CheckCircle, ScanLine, Sparkles, Camera } from "lucide-react";
 import { SubpageHeroHeader } from "@/components/dashboard/SubpageHeroHeader";
 import { getDictionary, DIRECTION } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth-context";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
-import { trackWarrantyCreated, trackWarrantyScan } from "@/lib/ga4-events";
+import { trackActivationMilestone, trackWarrantyCreated, trackWarrantyScan } from "@/lib/ga4-events";
+import { addMonthsToIsoDate, getWarrantyTemplate } from "@/lib/warranty-templates";
 
 type Step = 1 | 2 | 3 | 4;
 const PROVISIONAL_REVIEW_CONFIDENCE_THRESHOLD = 0.85;
@@ -29,6 +30,7 @@ const CATEGORIES = [
 export default function NewWarrantyPage() {
   const params = useParams() ?? {};
   const router = useRouter();
+  const searchParams = useSearchParams();
   const locale = (params.locale as string) || "en";
   const dict = getDictionary(locale);
   const isRTL = locale === "ar";
@@ -72,6 +74,13 @@ export default function NewWarrantyPage() {
       router.replace(`/${locale}/auth?redirect=${encodeURIComponent(`/${locale}/warranties/new`)}`);
     }
   }, [authLoading, locale, router, user]);
+
+  useEffect(() => {
+    const template = getWarrantyTemplate(searchParams.get("template"));
+    if (!template) return;
+    setCategory(template.category);
+    setEndDate((current) => current || addMonthsToIsoDate(startDate, template.defaultDurationMonths));
+  }, [searchParams, startDate]);
 
   if (authLoading || !user) {
     return (
@@ -286,6 +295,13 @@ export default function NewWarrantyPage() {
 
     const warranty = createPayload.data;
     trackWarrantyCreated(asDraft ? "manual_draft" : files.length > 0 ? "manual_with_documents" : "manual");
+    if (searchParams.get("activation") === "1") {
+      trackActivationMilestone("first_warranty_created", {
+        locale,
+        template: searchParams.get("template") || "none",
+        source: "onboarding",
+      });
+    }
     const issues: string[] = [];
     if (files.length > 0 && warranty) {
       setUploading(true);

@@ -6,6 +6,8 @@ import type { Locale } from "@/lib/i18n";
 
 type IntegrationToken = {
   id: string;
+  client_id: string | null;
+  company_id: string | null;
   name: string;
   token_prefix: string;
   scopes: string[];
@@ -45,6 +47,7 @@ export function IntegrationTokensPanel({ locale }: Props) {
   const [error, setError] = useState("");
   const [createdSecret, setCreatedSecret] = useState("");
   const [copied, setCopied] = useState(false);
+  const [usage, setUsage] = useState({ requests_24h: 0, requests_30d: 0, errors_30d: 0 });
 
   const copySecret = async (value: string) => {
     await navigator.clipboard.writeText(value);
@@ -70,6 +73,14 @@ export function IntegrationTokensPanel({ locale }: Props) {
     }
 
     setTokens(Array.isArray(body.data) ? body.data : []);
+    const usageResponse = await fetch("/api/integration-tokens/usage?limit=10", {
+      credentials: "same-origin",
+      headers: { Accept: "application/json" },
+    });
+    const usageBody = await usageResponse.json().catch(() => ({}));
+    if (usageResponse.ok && usageBody.summary) {
+      setUsage(usageBody.summary);
+    }
     setLoading(false);
   };
 
@@ -278,6 +289,19 @@ export function IntegrationTokensPanel({ locale }: Props) {
             </div>
           </div>
         )}
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-3">
+        {[
+          { value: usage.requests_24h, en: "Requests (24h)", ar: "الطلبات (24 ساعة)" },
+          { value: usage.requests_30d, en: "Requests (30d)", ar: "الطلبات (30 يوماً)" },
+          { value: usage.errors_30d, en: "Errors (30d)", ar: "الأخطاء (30 يوماً)" },
+        ].map((metric) => (
+          <div key={metric.en} className="rounded-2xl bg-white p-5 ring-1 ring-[#d2d2d7]/40 shadow-sm">
+            <p className="text-2xl font-semibold text-[#1d1d1f]">{metric.value}</p>
+            <p className="mt-1 text-sm text-[#6e6e73]">{isRTL ? metric.ar : metric.en}</p>
+          </div>
+        ))}
       </div>
 
       <div className="bg-white rounded-2xl p-8 ring-1 ring-[#d2d2d7]/40 shadow-sm">

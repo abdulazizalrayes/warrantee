@@ -3,6 +3,7 @@ import { expectProtectedRedirect, watchForPageErrors } from "./helpers";
 
 const protectedRoutes = [
   "/en/dashboard",
+  "/en/onboarding",
   "/en/warranties",
   "/en/warranties/new",
   "/en/warranties/import",

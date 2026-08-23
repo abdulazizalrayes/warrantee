@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import {
   ArrowRight,
@@ -125,6 +125,17 @@ export default function VerifyPage() {
   const [warranty, setWarranty] = useState<PublicWarranty | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const trackedViewRef = useRef<string | null>(null);
+
+  const recordPassportEvent = useCallback((eventType: string, warrantyId = warranty?.id) => {
+    if (!warrantyId) return;
+    void fetch("/api/passport/events", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ warrantyId, eventType, locale, source: "passport_page" }),
+      keepalive: true,
+    }).catch(() => undefined);
+  }, [locale, warranty?.id]);
 
   useEffect(() => {
     let cancelled = false;
@@ -152,6 +163,12 @@ export default function VerifyPage() {
       cancelled = true;
     };
   }, [id]);
+
+  useEffect(() => {
+    if (!warranty?.id || trackedViewRef.current === warranty.id) return;
+    trackedViewRef.current = warranty.id;
+    recordPassportEvent("view", warranty.id);
+  }, [recordPassportEvent, warranty?.id]);
 
   const computed = useMemo(() => {
     const endDate = warranty?.end_date ? new Date(warranty.end_date) : null;
@@ -322,6 +339,7 @@ export default function VerifyPage() {
               </a>
               <Link
                 href={claimHref}
+                onClick={() => recordPassportEvent("claim_intent")}
                 className="inline-flex items-center justify-center gap-2 rounded-full border border-[#d2d2d7] px-5 py-3 text-sm font-semibold text-[#1d1d1f] transition hover:bg-[#f5f5f7]"
               >
                 <ShieldCheck className="h-4 w-4" aria-hidden="true" />
@@ -329,6 +347,7 @@ export default function VerifyPage() {
               </Link>
               <Link
                 href={extensionHref}
+                onClick={() => recordPassportEvent("extension_intent")}
                 className="inline-flex items-center justify-center gap-2 rounded-full border border-[#d2d2d7] px-5 py-3 text-sm font-semibold text-[#1d1d1f] transition hover:bg-[#f5f5f7]"
               >
                 <Clock3 className="h-4 w-4" aria-hidden="true" />
@@ -336,6 +355,7 @@ export default function VerifyPage() {
               </Link>
               <Link
                 href={`/${locale}/seller/register`}
+                onClick={() => recordPassportEvent("issuer_invite_intent")}
                 className="inline-flex items-center justify-center gap-2 text-sm font-semibold text-[#0071e3] hover:text-[#0077ed]"
               >
                 {l.sellerCta}
@@ -344,7 +364,15 @@ export default function VerifyPage() {
             </div>
           </aside>
         </section>
-        <p className="mt-8 text-center text-xs text-[#6e6e73]">{l.issuedBy}</p>
+        <p className="mt-8 text-center text-xs text-[#6e6e73]">
+          <Link
+            href={`/${locale}`}
+            onClick={() => recordPassportEvent("powered_by_click")}
+            className="transition hover:text-[#0071e3]"
+          >
+            {l.issuedBy}
+          </Link>
+        </p>
       </main>
       <Footer locale={locale} dictionary={dictionary} />
     </div>

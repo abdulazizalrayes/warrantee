@@ -1,6 +1,15 @@
 # Warrantee Operational Status
 
-Last updated: 2026-08-22
+Last updated: 2026-08-23
+
+## 2026-08-23 Approved Growth And Lifecycle Uplift
+
+- Owner-approved roadmap items `3, 4, 7, 8, 9, 10, 11, 14, 15, 16, 17, 18, 19, 20, 22, 23, 24, 26, 27, 28, 29, 30` were implemented or revalidated. Items `1, 2, 6, 12, 13, 21, 25` remain postponed.
+- Supabase production now has additive lifecycle, recall-candidate, extension-interest, passport-attribution, structured-feedback, API-client, idempotency, audit, recoverable-job, daily-rollup, and reconciliation foundations. Four indexed SimHash bands replaced unbounded near-duplicate attachment scans.
+- Claim service targets, import preview/rollback, bilingual onboarding templates, factual lifecycle timelines, evidence-gated intelligence, public-passport attribution, API usage visibility, and marketplace fail-closed controls are included in the candidate application release.
+- All six production migrations are applied and recorded; the linked dry run reports the database is up to date. The last two migrations replace the 10,000-warranty bulk-import duplicate scan ceiling with tenant-scoped indexed matching and keep malformed calendar dates in the preview-validation path instead of producing a server error. Post-change advisors show zero security findings and no new missing foreign-key index from the rollout.
+- Release-candidate verification passes type-check, lint, 203 unit tests, the 249-page production build, and desktop/mobile authenticated lifecycle E2E. That E2E proves duplicate/invalid import preview, atomic import commit, hostile-origin rollback rejection, authorized rollback, and API token create/use/meter/revoke/deny behavior through the hardened service-only tables. Disposable QA cleanup reports zero persistent QA users.
+- Full implementation, boundary, evidence, and rollback details are recorded in `docs/APPROVED_GROWTH_LIFECYCLE_UPLIFT_2026-08-23.md`.
 
 ## 2026-08-22 OCR Credential, Sentry, Indexing, And Release Closure
 

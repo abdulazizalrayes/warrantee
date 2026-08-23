@@ -32,6 +32,9 @@ const serverTrackedEvents = new Set([
   "contact_form_submit",
   "seller_application_submit",
   "onboarding_completed",
+  "activation_started",
+  "activation_milestone",
+  "onboarding_template_selected",
 ]);
 
 const gtmForwardedEvents = new Set(["whatsapp_click"]);
@@ -209,6 +212,35 @@ export function trackOnboardingCompleted(metadata: Record<string, unknown> = {})
   emitEvent("onboarding_completed", {
     event_category: "activation",
     event_label: "first_run_onboarding_completed",
+    ...metadata,
+  });
+}
+
+export function trackActivationStarted(metadata: Record<string, unknown> = {}) {
+  emitEvent("activation_started", {
+    event_category: "activation",
+    event_label: "first_warranty_path_started",
+    ...metadata,
+  });
+}
+
+export function trackActivationMilestone(
+  milestone: "template_selected" | "first_warranty_created" | "certificate_opened" | "passport_opened",
+  metadata: Record<string, unknown> = {}
+) {
+  emitEvent("activation_milestone", {
+    milestone,
+    event_category: "activation",
+    event_label: milestone,
+    ...metadata,
+  });
+}
+
+export function trackOnboardingTemplateSelected(template: string, metadata: Record<string, unknown> = {}) {
+  emitEvent("onboarding_template_selected", {
+    template,
+    event_category: "activation",
+    event_label: "industry_template_selected",
     ...metadata,
   });
 }

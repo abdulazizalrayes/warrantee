@@ -111,6 +111,7 @@ export async function middleware(request: NextRequest) {
     pathname.replace(new RegExp(`^/(${LOCALE_PREFIX_PATTERN})(?=/|$)`), "") || "/";
   const protectedAppPrefixes = [
     "/dashboard",
+    "/onboarding",
     "/seller",
     "/warranties",
     "/claims",

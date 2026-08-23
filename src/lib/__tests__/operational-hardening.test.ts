@@ -144,6 +144,18 @@ describe("operational hardening", () => {
     expect(pricingPage).toContain("Request Professional access");
   });
 
+  it("keeps first-run onboarding behind the authenticated application boundary", () => {
+    const middleware = readProjectFile("src/middleware.ts");
+
+    expect(middleware).toMatch(
+      /const protectedAppPrefixes = \[[\s\S]*["']\/onboarding["'][\s\S]*\]/,
+    );
+    expect(middleware).toContain(
+      "if (isProtectedAppArea && !isAdminArea && !isApprovalArea)",
+    );
+    expect(middleware).toContain("return buildNoIndexAuthRedirect(request, locale);");
+  });
+
   it("keeps static public content pages server-rendered unless they need browser state", () => {
     const staticPublicPages = [
       "src/app/[locale]/features/page.tsx",
@@ -237,6 +249,19 @@ describe("operational hardening", () => {
     expect(uploadComponent).toContain("computeSha256Hex");
   });
 
+  it("bounds OCR near-duplicate detection with indexed SimHash candidates", () => {
+    const fraudDetection = readProjectFile("src/lib/ingestion/fraud-detection.ts");
+    const migration = readProjectFile(
+      "supabase/migrations/20260823132449_index_simhash_duplicate_candidates.sql"
+    );
+
+    expect(fraudDetection).toContain("getSimHashBuckets");
+    expect(fraudDetection).toContain("sim_hash_bucket_1.eq.");
+    expect(fraudDetection).toContain(".limit(500)");
+    expect(migration.match(/generated always/g)).toHaveLength(4);
+    expect(migration.match(/sim_hash_bucket_[1-4]_idx/g)).toHaveLength(4);
+  });
+
   it("keeps Stripe extension fulfillment verified against stored offer values", () => {
     const webhook = readProjectFile("src/app/api/stripe/webhook/route.ts");
     const billingMigration = readProjectFile(
@@ -274,8 +299,13 @@ describe("operational hardening", () => {
     expect(tokenScopeMigration).toContain("'claims:read'");
     expect(tokenScopeMigration).toContain("'documents:read'");
     expect(tokenCreate).toContain("api_token_created");
+    expect(tokenCreate).toContain("createSupabaseAdminClient()");
+    expect(tokenCreate).toContain('.eq("user_id", user.id)');
     expect(tokenDelete).toContain("api_token_revoked");
+    expect(tokenDelete).toContain("createSupabaseAdminClient()");
+    expect(tokenDelete).toContain('.eq("user_id", user.id)');
     expect(tokenUsage).toContain(".eq(\"user_id\", user.id)");
+    expect(tokenUsage).toContain("createSupabaseAdminClient()");
     expect(tokenUsage).toContain("api_usage_events");
   });
 
@@ -480,5 +510,39 @@ describe("operational hardening", () => {
     expect(envExample).toContain("DATA_RETENTION_INGESTION_PAYLOAD_DAYS=90");
     expect(envExample).toContain("DATA_RETENTION_API_USAGE_DAYS=400");
     expect(envExample).toContain("DATA_RETENTION_WEBHOOK_EVENT_DAYS=400");
+  });
+
+  it("keeps growth telemetry private and extension checkout explicitly gated", () => {
+    const passportRoute = readProjectFile("src/app/api/passport/events/route.ts");
+    const extensionRoute = readProjectFile("src/app/api/warranties/[id]/extension-interest/route.ts");
+    const paymentRoute = readProjectFile("src/app/api/payments/create/route.ts");
+    const maintenance = readProjectFile("src/lib/server/operational-maintenance.ts");
+
+    expect(passportRoute).toContain("allowedEventTypes");
+    expect(passportRoute).toContain("isTrustedSameOriginRequest");
+    expect(passportRoute).toContain("PUBLIC_WARRANTY_STATUSES");
+    expect(passportRoute).toContain('.in("status", [...PUBLIC_WARRANTY_STATUSES])');
+    expect(passportRoute).toContain("classifyTrafficUserAgent");
+    expect(passportRoute).not.toContain("email");
+    expect(passportRoute).not.toContain("phone");
+    expect(extensionRoute).toContain("warranty_extension_requests");
+    expect(extensionRoute).toContain("canViewWarrantyForUser");
+    expect(paymentRoute).toContain("WARRANTY_EXTENSION_MARKETPLACE_ENABLED !== 'true'");
+    expect(maintenance).toContain("refresh_analytics_daily_rollups");
+    expect(maintenance).toContain("reconcile_internal_payment_ledger");
+    expect(maintenance).toContain("recover_stale_async_jobs");
+  });
+
+  it("keeps bulk import commits and rollbacks behind explicit same-origin checks", () => {
+    const importRoute = readProjectFile("src/app/api/warranties/bulk-import/route.ts");
+    const rollbackRoute = readProjectFile(
+      "src/app/api/warranties/bulk-import/[batchId]/rollback/route.ts"
+    );
+
+    expect(importRoute).toContain("isTrustedSameOriginRequest");
+    expect(importRoute).toContain('return NextResponse.json({ error: "Forbidden" }, { status: 403 })');
+    expect(rollbackRoute).toContain("isTrustedSameOriginRequest");
+    expect(rollbackRoute).toContain('return NextResponse.json({ error: "Forbidden" }, { status: 403 })');
+    expect(rollbackRoute).toContain("resolveWarrantyAccessOrClause");
   });
 });

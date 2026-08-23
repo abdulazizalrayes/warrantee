@@ -14,6 +14,9 @@ const allowedEvents = new Set([
   "contact_form_submit",
   "seller_application_submit",
   "onboarding_completed",
+  "activation_started",
+  "activation_milestone",
+  "onboarding_template_selected",
 ]);
 
 const allowedMetadataKeys = new Set([
@@ -28,6 +31,7 @@ const allowedMetadataKeys = new Set([
   "has_company_name",
   "locale",
   "location",
+  "milestone",
   "method",
   "page_name",
   "page_type",
@@ -35,6 +39,7 @@ const allowedMetadataKeys = new Set([
   "source",
   "subject",
   "tab",
+  "template",
   "utm_campaign",
   "utm_content",
   "utm_medium",

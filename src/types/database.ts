@@ -223,8 +223,163 @@ export type Database = {
           },
         ]
       }
+      analytics_daily_rollups: {
+        Row: {
+          api_requests: number
+          claims_created: number
+          company_id: string | null
+          company_scope_key: string | null
+          created_at: string
+          day: string
+          extension_requests: number
+          id: number
+          owner_user_id: string
+          passport_views: number
+          updated_at: string
+          warranties_created: number
+        }
+        Insert: {
+          api_requests?: number
+          claims_created?: number
+          company_id?: string | null
+          company_scope_key?: string | null
+          created_at?: string
+          day: string
+          extension_requests?: number
+          id?: never
+          owner_user_id: string
+          passport_views?: number
+          updated_at?: string
+          warranties_created?: number
+        }
+        Update: {
+          api_requests?: number
+          claims_created?: number
+          company_id?: string | null
+          company_scope_key?: string | null
+          created_at?: string
+          day?: string
+          extension_requests?: number
+          id?: never
+          owner_user_id?: string
+          passport_views?: number
+          updated_at?: string
+          warranties_created?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "analytics_daily_rollups_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      api_clients: {
+        Row: {
+          company_id: string | null
+          created_at: string
+          environment: string
+          id: string
+          name: string
+          owner_user_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string
+          environment?: string
+          id?: string
+          name: string
+          owner_user_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string
+          environment?: string
+          id?: string
+          name?: string
+          owner_user_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_clients_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      api_idempotency_records: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          idempotency_key: string
+          method: string
+          path: string
+          request_hash: string
+          resource_id: string | null
+          resource_type: string | null
+          response_status: number | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          idempotency_key: string
+          method: string
+          path: string
+          request_hash: string
+          resource_id?: string | null
+          resource_type?: string | null
+          response_status?: number | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          idempotency_key?: string
+          method?: string
+          path?: string
+          request_hash?: string
+          resource_id?: string | null
+          resource_type?: string | null
+          response_status?: number | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_idempotency_records_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "api_clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       api_integration_tokens: {
         Row: {
+          client_id: string | null
+          company_id: string | null
           created_at: string
           expires_at: string
           id: string
@@ -239,6 +394,8 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          client_id?: string | null
+          company_id?: string | null
           created_at?: string
           expires_at?: string
           id?: string
@@ -253,6 +410,8 @@ export type Database = {
           user_id: string
         }
         Update: {
+          client_id?: string | null
+          company_id?: string | null
           created_at?: string
           expires_at?: string
           id?: string
@@ -266,10 +425,27 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "api_integration_tokens_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "api_clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "api_integration_tokens_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       api_usage_events: {
         Row: {
+          client_id: string | null
+          company_id: string | null
           created_at: string
           credential_kind: string
           id: string
@@ -284,6 +460,8 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          client_id?: string | null
+          company_id?: string | null
           created_at?: string
           credential_kind: string
           id?: string
@@ -298,6 +476,8 @@ export type Database = {
           user_id: string
         }
         Update: {
+          client_id?: string | null
+          company_id?: string | null
           created_at?: string
           credential_kind?: string
           id?: string
@@ -313,10 +493,185 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "api_usage_events_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "api_clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "api_usage_events_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "api_usage_events_token_id_fkey"
             columns: ["token_id"]
             isOneToOne: false
             referencedRelation: "api_integration_tokens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      asset_lifecycle_events: {
+        Row: {
+          actor_id: string | null
+          claim_id: string | null
+          company_id: string | null
+          confidence: number | null
+          created_at: string
+          event_type: string
+          evidence_type: string
+          id: string
+          metadata: Json
+          occurred_at: string
+          provenance: string
+          warranty_id: string
+        }
+        Insert: {
+          actor_id?: string | null
+          claim_id?: string | null
+          company_id?: string | null
+          confidence?: number | null
+          created_at?: string
+          event_type: string
+          evidence_type?: string
+          id?: string
+          metadata?: Json
+          occurred_at?: string
+          provenance?: string
+          warranty_id: string
+        }
+        Update: {
+          actor_id?: string | null
+          claim_id?: string | null
+          company_id?: string | null
+          confidence?: number | null
+          created_at?: string
+          event_type?: string
+          evidence_type?: string
+          id?: string
+          metadata?: Json
+          occurred_at?: string
+          provenance?: string
+          warranty_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asset_lifecycle_events_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asset_lifecycle_events_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "claims"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asset_lifecycle_events_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "warranty_claims"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asset_lifecycle_events_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asset_lifecycle_events_warranty_id_fkey"
+            columns: ["warranty_id"]
+            isOneToOne: false
+            referencedRelation: "warranties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      async_jobs: {
+        Row: {
+          attempts: number
+          available_at: string
+          company_id: string | null
+          completed_at: string | null
+          created_at: string
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          idempotency_key: string | null
+          job_type: string
+          last_error_at: string | null
+          last_error_code: string | null
+          locked_at: string | null
+          locked_by: string | null
+          max_attempts: number
+          owner_user_id: string | null
+          payload: Json
+          priority: number
+          result: Json | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          available_at?: string
+          company_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          idempotency_key?: string | null
+          job_type: string
+          last_error_at?: string | null
+          last_error_code?: string | null
+          locked_at?: string | null
+          locked_by?: string | null
+          max_attempts?: number
+          owner_user_id?: string | null
+          payload?: Json
+          priority?: number
+          result?: Json | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          available_at?: string
+          company_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          idempotency_key?: string | null
+          job_type?: string
+          last_error_at?: string | null
+          last_error_code?: string | null
+          locked_at?: string | null
+          locked_by?: string | null
+          max_attempts?: number
+          owner_user_id?: string | null
+          payload?: Json
+          priority?: number
+          result?: Json | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "async_jobs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
         ]
@@ -676,6 +1031,50 @@ export type Database = {
         }
         Relationships: []
       }
+      customer_feedback_events: {
+        Row: {
+          actor_id: string | null
+          comment: string | null
+          created_at: string
+          id: string
+          locale: string
+          metadata: Json
+          reason_code: string
+          stage: string
+          traffic_class: string
+        }
+        Insert: {
+          actor_id?: string | null
+          comment?: string | null
+          created_at?: string
+          id?: string
+          locale?: string
+          metadata?: Json
+          reason_code: string
+          stage: string
+          traffic_class?: string
+        }
+        Update: {
+          actor_id?: string | null
+          comment?: string | null
+          created_at?: string
+          id?: string
+          locale?: string
+          metadata?: Json
+          reason_code?: string
+          stage?: string
+          traffic_class?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_feedback_events_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_ingestion: {
         Row: {
           buyer_email: string | null
@@ -858,6 +1257,10 @@ export type Database = {
           processed_at: string | null
           sensitive_ocr_redacted_at: string | null
           sim_hash: string | null
+          sim_hash_bucket_1: string | null
+          sim_hash_bucket_2: string | null
+          sim_hash_bucket_3: string | null
+          sim_hash_bucket_4: string | null
           storage_path: string
           warranty_id: string | null
         }
@@ -878,6 +1281,10 @@ export type Database = {
           processed_at?: string | null
           sensitive_ocr_redacted_at?: string | null
           sim_hash?: string | null
+          sim_hash_bucket_1?: string | null
+          sim_hash_bucket_2?: string | null
+          sim_hash_bucket_3?: string | null
+          sim_hash_bucket_4?: string | null
           storage_path: string
           warranty_id?: string | null
         }
@@ -898,6 +1305,10 @@ export type Database = {
           processed_at?: string | null
           sensitive_ocr_redacted_at?: string | null
           sim_hash?: string | null
+          sim_hash_bucket_1?: string | null
+          sim_hash_bucket_2?: string | null
+          sim_hash_bucket_3?: string | null
+          sim_hash_bucket_4?: string | null
           storage_path?: string
           warranty_id?: string | null
         }
@@ -1139,6 +1550,85 @@ export type Database = {
           },
         ]
       }
+      payment_reconciliation_findings: {
+        Row: {
+          evidence: Json
+          extension_id: string | null
+          finding_type: string
+          first_detected_at: string
+          id: string
+          last_detected_at: string
+          resolved_at: string | null
+          status: string
+        }
+        Insert: {
+          evidence?: Json
+          extension_id?: string | null
+          finding_type: string
+          first_detected_at?: string
+          id?: string
+          last_detected_at?: string
+          resolved_at?: string | null
+          status?: string
+        }
+        Update: {
+          evidence?: Json
+          extension_id?: string | null
+          finding_type?: string
+          first_detected_at?: string
+          id?: string
+          last_detected_at?: string
+          resolved_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_reconciliation_findings_extension_id_fkey"
+            columns: ["extension_id"]
+            isOneToOne: false
+            referencedRelation: "warranty_extensions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      platform_audit_events: {
+        Row: {
+          action: string
+          actor_id: string | null
+          company_id: string | null
+          id: number
+          occurred_at: string
+          record_id: string | null
+          table_name: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          company_id?: string | null
+          id?: never
+          occurred_at?: string
+          record_id?: string | null
+          table_name: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          company_id?: string | null
+          id?: never
+          occurred_at?: string
+          record_id?: string | null
+          table_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_audit_events_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           account_type: Database["public"]["Enums"]["account_type"]
@@ -1318,6 +1808,145 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      recall_matches: {
+        Row: {
+          confidence: number
+          created_at: string
+          id: string
+          match_basis: string
+          recall_id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          warranty_id: string
+        }
+        Insert: {
+          confidence: number
+          created_at?: string
+          id?: string
+          match_basis: string
+          recall_id: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          warranty_id: string
+        }
+        Update: {
+          confidence?: number
+          created_at?: string
+          id?: string
+          match_basis?: string
+          recall_id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          warranty_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recall_matches_recall_id_fkey"
+            columns: ["recall_id"]
+            isOneToOne: false
+            referencedRelation: "recall_notices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recall_matches_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recall_matches_warranty_id_fkey"
+            columns: ["warranty_id"]
+            isOneToOne: false
+            referencedRelation: "warranties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recall_notices: {
+        Row: {
+          affected_countries: string[]
+          company_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          manufacturer: string
+          model_number: string | null
+          published_at: string | null
+          recommended_action: string
+          recommended_action_ar: string | null
+          serial_prefix: string | null
+          severity: string
+          source_reference: string
+          source_url: string | null
+          source_verified_at: string | null
+          status: string
+          title: string
+          title_ar: string | null
+          updated_at: string
+        }
+        Insert: {
+          affected_countries?: string[]
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          manufacturer: string
+          model_number?: string | null
+          published_at?: string | null
+          recommended_action: string
+          recommended_action_ar?: string | null
+          serial_prefix?: string | null
+          severity: string
+          source_reference: string
+          source_url?: string | null
+          source_verified_at?: string | null
+          status?: string
+          title: string
+          title_ar?: string | null
+          updated_at?: string
+        }
+        Update: {
+          affected_countries?: string[]
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          manufacturer?: string
+          model_number?: string | null
+          published_at?: string | null
+          recommended_action?: string
+          recommended_action_ar?: string | null
+          serial_prefix?: string | null
+          severity?: string
+          source_reference?: string
+          source_url?: string | null
+          source_verified_at?: string | null
+          status?: string
+          title?: string
+          title_ar?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recall_notices_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recall_notices_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       revenue_events: {
         Row: {
@@ -1783,6 +2412,7 @@ export type Database = {
           archive_reason: string | null
           archived_at: string | null
           archived_by: string | null
+          asset_category_code: string | null
           buyer_id: string | null
           category: string | null
           certificate_hash: string | null
@@ -1809,6 +2439,8 @@ export type Database = {
           language: string
           legal_hold: boolean | null
           legal_hold_reason: string | null
+          manufacturer: string | null
+          model_number: string | null
           parent_warranty_id: string | null
           po_reference: string | null
           product_name: string
@@ -1827,6 +2459,7 @@ export type Database = {
           start_date: string
           status: Database["public"]["Enums"]["warranty_status"]
           supplier: string | null
+          taxonomy_version: string
           terms_and_conditions: string | null
           updated_at: string
           user_id: string | null
@@ -1837,6 +2470,7 @@ export type Database = {
           archive_reason?: string | null
           archived_at?: string | null
           archived_by?: string | null
+          asset_category_code?: string | null
           buyer_id?: string | null
           category?: string | null
           certificate_hash?: string | null
@@ -1863,6 +2497,8 @@ export type Database = {
           language?: string
           legal_hold?: boolean | null
           legal_hold_reason?: string | null
+          manufacturer?: string | null
+          model_number?: string | null
           parent_warranty_id?: string | null
           po_reference?: string | null
           product_name: string
@@ -1881,6 +2517,7 @@ export type Database = {
           start_date: string
           status?: Database["public"]["Enums"]["warranty_status"]
           supplier?: string | null
+          taxonomy_version?: string
           terms_and_conditions?: string | null
           updated_at?: string
           user_id?: string | null
@@ -1891,6 +2528,7 @@ export type Database = {
           archive_reason?: string | null
           archived_at?: string | null
           archived_by?: string | null
+          asset_category_code?: string | null
           buyer_id?: string | null
           category?: string | null
           certificate_hash?: string | null
@@ -1917,6 +2555,8 @@ export type Database = {
           language?: string
           legal_hold?: boolean | null
           legal_hold_reason?: string | null
+          manufacturer?: string | null
+          model_number?: string | null
           parent_warranty_id?: string | null
           po_reference?: string | null
           product_name?: string
@@ -1935,6 +2575,7 @@ export type Database = {
           start_date?: string
           status?: Database["public"]["Enums"]["warranty_status"]
           supplier?: string | null
+          taxonomy_version?: string
           terms_and_conditions?: string | null
           updated_at?: string
           user_id?: string | null
@@ -2141,8 +2782,11 @@ export type Database = {
           contact_method: string | null
           created_at: string
           currency: string | null
+          decision_reason_code: string | null
           deleted_at: string | null
           description: string
+          evidence_requirements: Json
+          failure_mode_code: string | null
           filed_at: string
           filed_by: string
           id: string
@@ -2153,6 +2797,8 @@ export type Database = {
           responded_at: string | null
           severity: string | null
           status: Database["public"]["Enums"]["claim_status"]
+          target_resolution_at: string | null
+          target_response_at: string | null
           title: string
           updated_at: string
           warranty_id: string
@@ -2167,8 +2813,11 @@ export type Database = {
           contact_method?: string | null
           created_at?: string
           currency?: string | null
+          decision_reason_code?: string | null
           deleted_at?: string | null
           description: string
+          evidence_requirements?: Json
+          failure_mode_code?: string | null
           filed_at?: string
           filed_by: string
           id?: string
@@ -2179,6 +2828,8 @@ export type Database = {
           responded_at?: string | null
           severity?: string | null
           status?: Database["public"]["Enums"]["claim_status"]
+          target_resolution_at?: string | null
+          target_response_at?: string | null
           title: string
           updated_at?: string
           warranty_id: string
@@ -2193,8 +2844,11 @@ export type Database = {
           contact_method?: string | null
           created_at?: string
           currency?: string | null
+          decision_reason_code?: string | null
           deleted_at?: string | null
           description?: string
+          evidence_requirements?: Json
+          failure_mode_code?: string | null
           filed_at?: string
           filed_by?: string
           id?: string
@@ -2205,6 +2859,8 @@ export type Database = {
           responded_at?: string | null
           severity?: string | null
           status?: Database["public"]["Enums"]["claim_status"]
+          target_resolution_at?: string | null
+          target_response_at?: string | null
           title?: string
           updated_at?: string
           warranty_id?: string
@@ -2389,6 +3045,79 @@ export type Database = {
           },
         ]
       }
+      warranty_extension_requests: {
+        Row: {
+          created_at: string
+          currency: string | null
+          id: string
+          proposed_end_date: string | null
+          quote_expires_at: string | null
+          quote_terms: string | null
+          quoted_price: number | null
+          requested_months: number | null
+          requester_id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+          warranty_id: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string | null
+          id?: string
+          proposed_end_date?: string | null
+          quote_expires_at?: string | null
+          quote_terms?: string | null
+          quoted_price?: number | null
+          requested_months?: number | null
+          requester_id: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+          warranty_id: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string | null
+          id?: string
+          proposed_end_date?: string | null
+          quote_expires_at?: string | null
+          quote_terms?: string | null
+          quoted_price?: number | null
+          requested_months?: number | null
+          requester_id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+          warranty_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "warranty_extension_requests_requester_id_fkey"
+            columns: ["requester_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "warranty_extension_requests_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "warranty_extension_requests_warranty_id_fkey"
+            columns: ["warranty_id"]
+            isOneToOne: false
+            referencedRelation: "warranties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       warranty_extensions: {
         Row: {
           commission_amount: number | null
@@ -2483,6 +3212,113 @@ export type Database = {
             columns: ["warranty_id"]
             isOneToOne: false
             referencedRelation: "warranties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      warranty_passport_events: {
+        Row: {
+          created_at: string
+          event_day: string
+          event_type: string
+          id: string
+          locale: string
+          source: string | null
+          traffic_class: string
+          warranty_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_day?: string
+          event_type: string
+          id?: string
+          locale?: string
+          source?: string | null
+          traffic_class?: string
+          warranty_id: string
+        }
+        Update: {
+          created_at?: string
+          event_day?: string
+          event_type?: string
+          id?: string
+          locale?: string
+          source?: string | null
+          traffic_class?: string
+          warranty_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "warranty_passport_events_warranty_id_fkey"
+            columns: ["warranty_id"]
+            isOneToOne: false
+            referencedRelation: "warranties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      warranty_policy_templates: {
+        Row: {
+          category: string | null
+          company_id: string | null
+          coverage_type: string | null
+          created_at: string
+          duration_months: number
+          id: string
+          is_active: boolean
+          name: string
+          name_ar: string | null
+          owner_user_id: string
+          suggested_fields: Json
+          terms: string | null
+          terms_ar: string | null
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          company_id?: string | null
+          coverage_type?: string | null
+          created_at?: string
+          duration_months?: number
+          id?: string
+          is_active?: boolean
+          name: string
+          name_ar?: string | null
+          owner_user_id: string
+          suggested_fields?: Json
+          terms?: string | null
+          terms_ar?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          company_id?: string | null
+          coverage_type?: string | null
+          created_at?: string
+          duration_months?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+          name_ar?: string | null
+          owner_user_id?: string
+          suggested_fields?: Json
+          terms?: string | null
+          terms_ar?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "warranty_policy_templates_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "warranty_policy_templates_owner_user_id_fkey"
+            columns: ["owner_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -2717,6 +3553,38 @@ export type Database = {
         Returns: boolean
       }
       check_warranty_expiry: { Args: never; Returns: undefined }
+      claim_async_jobs: {
+        Args: { p_limit?: number; p_worker: string }
+        Returns: {
+          attempts: number
+          available_at: string
+          company_id: string | null
+          completed_at: string | null
+          created_at: string
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          idempotency_key: string | null
+          job_type: string
+          last_error_at: string | null
+          last_error_code: string | null
+          locked_at: string | null
+          locked_by: string | null
+          max_attempts: number
+          owner_user_id: string | null
+          payload: Json
+          priority: number
+          result: Json | null
+          status: string
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "async_jobs"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       claim_stripe_webhook_event: {
         Args: { p_event_id: string }
         Returns: boolean
@@ -2764,6 +3632,7 @@ export type Database = {
           archive_reason: string | null
           archived_at: string | null
           archived_by: string | null
+          asset_category_code: string | null
           buyer_id: string | null
           category: string | null
           certificate_hash: string | null
@@ -2790,6 +3659,8 @@ export type Database = {
           language: string
           legal_hold: boolean | null
           legal_hold_reason: string | null
+          manufacturer: string | null
+          model_number: string | null
           parent_warranty_id: string | null
           po_reference: string | null
           product_name: string
@@ -2808,6 +3679,7 @@ export type Database = {
           start_date: string
           status: Database["public"]["Enums"]["warranty_status"]
           supplier: string | null
+          taxonomy_version: string
           terms_and_conditions: string | null
           updated_at: string
           user_id: string | null
@@ -2837,9 +3709,22 @@ export type Database = {
         | { Args: never; Returns: boolean }
         | { Args: { user_id: string }; Returns: boolean }
       is_company_admin: { Args: { p_company_id: string }; Returns: boolean }
+      match_verified_recall: { Args: { p_recall_id: string }; Returns: number }
+      match_warranty_import_duplicate_keys: {
+        Args: { p_rows: Json }
+        Returns: {
+          duplicate_key: string
+        }[]
+      }
+      reconcile_internal_payment_ledger: { Args: never; Returns: number }
       record_warranty_extension_payment_exception: {
         Args: { p_event_id: string; p_extension_id: string; p_status: string }
         Returns: boolean
+      }
+      recover_stale_async_jobs: { Args: never; Returns: number }
+      refresh_analytics_daily_rollups: {
+        Args: { p_day?: string }
+        Returns: number
       }
       transition_warranty_claim: {
         Args: {
@@ -2858,8 +3743,11 @@ export type Database = {
           contact_method: string | null
           created_at: string
           currency: string | null
+          decision_reason_code: string | null
           deleted_at: string | null
           description: string
+          evidence_requirements: Json
+          failure_mode_code: string | null
           filed_at: string
           filed_by: string
           id: string
@@ -2870,6 +3758,8 @@ export type Database = {
           responded_at: string | null
           severity: string | null
           status: Database["public"]["Enums"]["claim_status"]
+          target_resolution_at: string | null
+          target_response_at: string | null
           title: string
           updated_at: string
           warranty_id: string

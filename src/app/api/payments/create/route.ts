@@ -4,6 +4,7 @@ import { resolveWarrantyAccessOrClause } from '@/lib/warranty-access';
 import { getExtensionEligibility } from '@/lib/extension-eligibility';
 import { getLatestExtensionPolicy } from '@/lib/extension-policy';
 import { getClientIp, getRateLimitHeaders, paymentRateLimit } from '@/lib/rate-limit';
+import { isTrustedSameOriginRequest } from '@/lib/request-origin';
 
 type PaymentWarranty = {
   id: string;
@@ -101,6 +102,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Too many payment attempts. Please wait before trying again.' },
         { status: 429, headers: getRateLimitHeaders(rateLimitResult) }
+      );
+    }
+
+    if (!isTrustedSameOriginRequest(request, request.nextUrl.origin)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    if (process.env.WARRANTY_EXTENSION_MARKETPLACE_ENABLED !== 'true') {
+      return NextResponse.json(
+        { error: 'Warranty extension checkout is not available yet. Your interest can still be recorded.' },
+        { status: 503 },
       );
     }
 

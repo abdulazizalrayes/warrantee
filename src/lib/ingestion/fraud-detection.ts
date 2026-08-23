@@ -223,6 +223,19 @@ export function computeSimHash(text: string): string {
   return result.toString(16).padStart(16, '0');
 }
 
+export function getSimHashBuckets(simHash: string): [string, string, string, string] {
+  const normalized = simHash.trim().toLowerCase();
+  if (!/^[0-9a-f]{16}$/.test(normalized)) {
+    throw new Error('Invalid SimHash');
+  }
+  return [
+    normalized.slice(0, 4),
+    normalized.slice(4, 8),
+    normalized.slice(8, 12),
+    normalized.slice(12, 16),
+  ];
+}
+
 function fnv1a64(str: string): bigint {
   let hash = 14695981039346656037n;
   for (let i = 0; i < str.length; i++) {
@@ -236,11 +249,19 @@ export async function checkSimHashDuplicate(
   simHash: string, currentAttachmentId: string
 ): Promise<boolean> {
   const supabaseAdmin = getSupabaseAdmin();
+  const buckets = getSimHashBuckets(simHash);
   const { data: existing } = await supabaseAdmin
     .from('ingestion_attachments')
     .select('sim_hash')
     .neq('id', currentAttachmentId)
-    .not('sim_hash', 'is', null);
+    .not('sim_hash', 'is', null)
+    .or([
+      `sim_hash_bucket_1.eq.${buckets[0]}`,
+      `sim_hash_bucket_2.eq.${buckets[1]}`,
+      `sim_hash_bucket_3.eq.${buckets[2]}`,
+      `sim_hash_bucket_4.eq.${buckets[3]}`,
+    ].join(','))
+    .limit(500);
 
   if (!existing) return false;
 

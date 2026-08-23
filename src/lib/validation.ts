@@ -31,6 +31,13 @@ export function sanitizeString(value: string, maxLength = 5000): string {
   return value.trim().slice(0, maxLength);
 }
 
+export function sanitizePostgrestSearch(value: string, maxLength = 80): string {
+  return sanitizeString(value, maxLength)
+    .replace(/[(),.%_*\\]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 export function isValidEmail(value: unknown): value is string {
   if (typeof value !== "string") return false;
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) && value.length <= 254;

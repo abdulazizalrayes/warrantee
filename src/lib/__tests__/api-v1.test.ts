@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildIdempotencyReference,
   createApiIntegrationToken,
+  hashApiRequestBody,
   hashApiToken,
   apiV1Json,
   normalizeApiRateLimit,
@@ -22,6 +23,16 @@ describe("api v1 helpers", () => {
     expect(buildIdempotencyReference("request-1")).toMatch(/^API-[a-f0-9]{24}$/);
     expect(buildIdempotencyReference("request-1")).toBe(buildIdempotencyReference("request-1"));
     expect(buildIdempotencyReference("request-1")).not.toBe(buildIdempotencyReference("request-2"));
+    expect(buildIdempotencyReference("request-1", "client-a")).not.toBe(
+      buildIdempotencyReference("request-1", "client-b"),
+    );
+  });
+
+  it("hashes equivalent idempotent request bodies deterministically", () => {
+    expect(hashApiRequestBody({ product: "A", dates: { start: "2026-01-01" } })).toBe(
+      hashApiRequestBody({ dates: { start: "2026-01-01" }, product: "A" }),
+    );
+    expect(hashApiRequestBody({ product: "A" })).not.toBe(hashApiRequestBody({ product: "B" }));
   });
 
   it("creates one-time API integration tokens with stored hashes", () => {

@@ -59,3 +59,32 @@ describe(`OCR warranty field parser corpus: ${path.dirname(manifestPath)}`, () =
     });
   }
 });
+
+describe("sentence-separated OCR fields", () => {
+  it("extracts English supplier and product labels between sentences", () => {
+    const fields = extractWarrantyFields(
+      "Invoice DEMO-001. Seller: Riyadh Equipment. Product: Industrial Pump. Warranty: 24 months.",
+    );
+
+    expect(fields.supplier).toBe("Riyadh Equipment");
+    expect(fields.product_name).toBe("Industrial Pump");
+  });
+
+  it("extracts Arabic supplier and product labels between sentences", () => {
+    const fields = extractWarrantyFields(
+      "فاتورة DEMO-AR-001. المورد: شركة المعدات. المنتج: مضخة صناعية. الضمان: 24 شهر.",
+    );
+
+    expect(fields.supplier).toBe("شركة المعدات");
+    expect(fields.product_name).toBe("مضخة صناعية");
+  });
+
+  it("prefers noisy labelled product text over an invoice-heading fallback", () => {
+    const fields = extractWarrantyFields(
+      "INV0ICE DEMO-BLUR-001. S0LD BY Demo Appliances. PR0DUCT Demo Washer. WARRANTY 24 M0NTHS.",
+    );
+
+    expect(fields.supplier).toBe("Demo Appliances");
+    expect(fields.product_name).toBe("Demo Washer");
+  });
+});

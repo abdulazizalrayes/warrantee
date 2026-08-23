@@ -37,6 +37,14 @@ const actionBtnCfg: Record<string,{bg:string;hover:string}> = {
   in_progress:{bg:'bg-yellow-500',hover:'hover:bg-yellow-600'},
 };
 
+function toLocalDateTime(value?: string | null) {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  const offset = date.getTimezoneOffset() * 60000;
+  return new Date(date.getTime() - offset).toISOString().slice(0, 16);
+}
+
 export default function ClaimDetailPage() {
   const pathname = usePathname();
   const params = useParams() ?? {};
@@ -51,9 +59,17 @@ export default function ClaimDetailPage() {
   const [error, setError] = useState('');
   const [comment, setComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [canManage, setCanManage] = useState(false);
   const [statusNote, setStatusNote] = useState('');
   const [changingStatus, setChangingStatus] = useState(false);
+  const [savingServiceLevel, setSavingServiceLevel] = useState(false);
+  const [serviceLevel, setServiceLevel] = useState({
+    target_response_at: '',
+    target_resolution_at: '',
+    decision_reason_code: '',
+    failure_mode_code: '',
+    evidence_requirements: '',
+  });
 
   const t = isRTL ? {
     back:'العودة للمطالبات',summary:'ملخص المطالبة',warranty:'الضمان المرتبط',
@@ -63,7 +79,9 @@ export default function ClaimDetailPage() {
     send:'إرسال',err:'حدث خطأ',retry:'إعادة',notFound:'لم يتم العثور على المطالبة',
     product:'المنتج',ref:'المرجع',resolution:'ملاحظات الحل',
     adminPanel:'إدارة الحالة',changeStatus:'تغيير الحالة',noteOptional:'ملاحظة (اختياري)',
-    noTransitions:'لا توجد إجراءات متاحة',filedBy:'مقدم من'
+    noTransitions:'لا توجد إجراءات متاحة',filedBy:'مقدم من',serviceLevel:'وضوح الخدمة',
+    responseTarget:'موعد الرد المستهدف',resolutionTarget:'موعد الحل المستهدف',decisionReason:'سبب القرار',
+    failureMode:'نوع العطل',evidenceNeeded:'الأدلة المطلوبة',saveTargets:'حفظ الأهداف',notConfigured:'غير محدد'
   } : {
     back:'Back to Claims',summary:'Claim Summary',warranty:'Linked Warranty',
     timeline:'Timeline',evidence:'Evidence & Attachments',status:'Status',severity:'Severity',
@@ -72,7 +90,9 @@ export default function ClaimDetailPage() {
     send:'Send',err:'Something went wrong',retry:'Retry',notFound:'Claim not found',
     product:'Product',ref:'Reference',resolution:'Resolution Notes',
     adminPanel:'Status Management',changeStatus:'Change Status',noteOptional:'Note (optional)',
-    noTransitions:'No actions available',filedBy:'Filed By'
+    noTransitions:'No actions available',filedBy:'Filed By',serviceLevel:'Service transparency',
+    responseTarget:'Response target',resolutionTarget:'Resolution target',decisionReason:'Decision reason',
+    failureMode:'Failure mode',evidenceNeeded:'Required evidence',saveTargets:'Save targets',notConfigured:'Not configured'
   };
 
   const loadClaim = useCallback(async () => {
@@ -80,16 +100,7 @@ export default function ClaimDetailPage() {
     setError('');
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', user.id)
-          .single();
-        setIsAdmin(['admin', 'super_admin', 'platform_admin'].includes(profile?.role || ''));
-      } else {
-        setIsAdmin(false);
-      }
+      if (!user) setCanManage(false);
 
       const { data: c, error: e1 } = await supabase
         .from('warranty_claims')
@@ -98,6 +109,20 @@ export default function ClaimDetailPage() {
         .single();
       if (e1) throw e1;
       setClaim(c);
+
+      const serviceResponse = await fetch(`/api/claims/${claimId}/service-level`, { cache: 'no-store' });
+      if (serviceResponse.ok) {
+        const servicePayload = await serviceResponse.json();
+        const service = servicePayload.data || {};
+        setCanManage(Boolean(servicePayload.canManage));
+        setServiceLevel({
+          target_response_at: toLocalDateTime(service.target_response_at),
+          target_resolution_at: toLocalDateTime(service.target_resolution_at),
+          decision_reason_code: service.decision_reason_code || '',
+          failure_mode_code: service.failure_mode_code || '',
+          evidence_requirements: Array.isArray(service.evidence_requirements) ? service.evidence_requirements.join(', ') : '',
+        });
+      }
 
       const { data: ev } = await supabase
         .from('claim_events')
@@ -137,6 +162,32 @@ export default function ClaimDetailPage() {
       setError(e.message);
     }
     setChangingStatus(false);
+  };
+
+  const saveServiceLevel = async () => {
+    if (!canManage || savingServiceLevel) return;
+    setSavingServiceLevel(true);
+    setError('');
+    try {
+      const response = await fetch(`/api/claims/${claimId}/service-level`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          target_response_at: serviceLevel.target_response_at ? new Date(serviceLevel.target_response_at).toISOString() : null,
+          target_resolution_at: serviceLevel.target_resolution_at ? new Date(serviceLevel.target_resolution_at).toISOString() : null,
+          decision_reason_code: serviceLevel.decision_reason_code || null,
+          failure_mode_code: serviceLevel.failure_mode_code || null,
+          evidence_requirements: serviceLevel.evidence_requirements.split(',').map((item) => item.trim()).filter(Boolean),
+        }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload.error || t.err);
+      await loadClaim();
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setSavingServiceLevel(false);
+    }
   };
 
   const addComment = async () => {
@@ -226,7 +277,7 @@ export default function ClaimDetailPage() {
         <Badge s={claim.status} />
       </div>
 
-      {isAdmin && availableTransitions.length > 0 && (
+      {canManage && availableTransitions.length > 0 && (
         <section className="bg-gradient-to-r from-indigo-50 to-blue-50 rounded-2xl border border-indigo-200 p-5 mb-6">
           <h3 className="font-semibold text-[#1A1A2E] mb-3 flex items-center gap-2">
             <svg className="w-5 h-5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -378,6 +429,38 @@ export default function ClaimDetailPage() {
                 ))}
               </div>
             )}
+          </section>
+
+          <section className="bg-white rounded-2xl border border-gray-100 p-5">
+            <h3 className="font-semibold text-[#1A1A2E] mb-3 text-sm">{t.serviceLevel}</h3>
+            <div className="space-y-3 text-sm">
+              <label className="block">
+                <span className="mb-1 block text-xs text-gray-500">{t.responseTarget}</span>
+                {canManage ? <input type="datetime-local" value={serviceLevel.target_response_at} onChange={(event) => setServiceLevel({ ...serviceLevel, target_response_at: event.target.value })} className="w-full rounded-lg border border-gray-200 px-3 py-2" /> : <span>{claim.target_response_at ? fmtD(claim.target_response_at) : t.notConfigured}</span>}
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-xs text-gray-500">{t.resolutionTarget}</span>
+                {canManage ? <input type="datetime-local" value={serviceLevel.target_resolution_at} onChange={(event) => setServiceLevel({ ...serviceLevel, target_resolution_at: event.target.value })} className="w-full rounded-lg border border-gray-200 px-3 py-2" /> : <span>{claim.target_resolution_at ? fmtD(claim.target_resolution_at) : t.notConfigured}</span>}
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-xs text-gray-500">{t.decisionReason}</span>
+                {canManage ? (
+                  <select value={serviceLevel.decision_reason_code} onChange={(event) => setServiceLevel({ ...serviceLevel, decision_reason_code: event.target.value })} className="w-full rounded-lg border border-gray-200 px-3 py-2">
+                    <option value="">{t.notConfigured}</option>
+                    {['coverage_confirmed','coverage_excluded','insufficient_evidence','duplicate_claim','repair_authorized','replacement_authorized','customer_withdrew','other'].map((reason) => <option key={reason} value={reason}>{reason.replace(/_/g, ' ')}</option>)}
+                  </select>
+                ) : <span>{claim.decision_reason_code?.replace(/_/g, ' ') || t.notConfigured}</span>}
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-xs text-gray-500">{t.failureMode}</span>
+                {canManage ? <input value={serviceLevel.failure_mode_code} onChange={(event) => setServiceLevel({ ...serviceLevel, failure_mode_code: event.target.value })} className="w-full rounded-lg border border-gray-200 px-3 py-2" placeholder="component_failure" /> : <span>{claim.failure_mode_code || t.notConfigured}</span>}
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-xs text-gray-500">{t.evidenceNeeded}</span>
+                {canManage ? <input value={serviceLevel.evidence_requirements} onChange={(event) => setServiceLevel({ ...serviceLevel, evidence_requirements: event.target.value })} className="w-full rounded-lg border border-gray-200 px-3 py-2" placeholder={isRTL ? 'فاتورة، صورة، تقرير فني' : 'Invoice, photo, service report'} /> : <span>{Array.isArray(claim.evidence_requirements) && claim.evidence_requirements.length ? claim.evidence_requirements.join(', ') : t.notConfigured}</span>}
+              </label>
+              {canManage && <button onClick={saveServiceLevel} disabled={savingServiceLevel} className="w-full rounded-lg bg-[#4169E1] px-4 py-2 font-medium text-white disabled:opacity-50">{savingServiceLevel ? '...' : t.saveTargets}</button>}
+            </div>
           </section>
 
           <section className="bg-white rounded-2xl border border-gray-100 p-5">
