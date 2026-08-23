@@ -9,6 +9,16 @@ function readProjectFile(relativePath: string) {
 }
 
 describe("operational hardening", () => {
+  it("serializes workflows that use the shared disposable production QA identity", () => {
+    const ci = readProjectFile(".github/workflows/ci.yml");
+    const productionSecurity = readProjectFile(".github/workflows/production-security.yml");
+
+    for (const workflow of [ci, productionSecurity]) {
+      expect(workflow).toContain("group: warrantee-production-qa-identity");
+      expect(workflow).toContain("cancel-in-progress: false");
+    }
+  });
+
   it("keeps dashboard, seller, billing, and email ingestion off broken summary RPCs", () => {
     const checkedFiles = [
       "src/app/[locale]/dashboard/page.tsx",

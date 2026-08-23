@@ -9,6 +9,11 @@ on:
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
+concurrency:
+  # Both production-backed workflows use the same disposable QA identity.
+  group: warrantee-production-qa-identity
+  cancel-in-progress: false
+
 jobs:
   build:
     name: Type-check, lint, test, and build
