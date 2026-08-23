@@ -557,6 +557,7 @@ async function checkRemoteStripeCheckout() {
     seed = await seedStripeCheckoutData();
     const result = await withAuthenticatedPage(async (page) => {
       const response = await page.request.post(`${baseUrl}/api/payments/create`, {
+        headers: { Origin: baseUrl },
         data: {
           warrantyId: seed.warrantyId,
           extensionId: seed.extensionId,
@@ -570,6 +571,14 @@ async function checkRemoteStripeCheckout() {
       const payload = await response.json().catch(() => ({}));
       return { status: response.status(), payload };
     });
+
+    if (
+      result.status === 503 &&
+      result.payload?.error ===
+        "Warranty extension checkout is not available yet. Your interest can still be recorded."
+    ) {
+      return { name: "stripe", status: "ok", mode: "disabled-by-policy" };
+    }
 
     if (result.status !== 200) {
       const details = result.payload?.error ? `: ${result.payload.error}` : "";

@@ -533,6 +533,17 @@ describe("operational hardening", () => {
     expect(maintenance).toContain("recover_stale_async_jobs");
   });
 
+  it("keeps readiness aligned with the fail-closed extension marketplace", () => {
+    const readiness = readProjectFile("scripts/operational-readiness-check.mjs");
+
+    expect(readiness).toContain("headers: { Origin: baseUrl }");
+    expect(readiness).toContain("result.status === 503");
+    expect(readiness).toContain(
+      "Warranty extension checkout is not available yet. Your interest can still be recorded."
+    );
+    expect(readiness).toContain('mode: "disabled-by-policy"');
+  });
+
   it("keeps bulk import commits and rollbacks behind explicit same-origin checks", () => {
     const importRoute = readProjectFile("src/app/api/warranties/bulk-import/route.ts");
     const rollbackRoute = readProjectFile(
