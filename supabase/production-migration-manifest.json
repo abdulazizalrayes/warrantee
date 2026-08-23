@@ -1,6 +1,6 @@
 {
   "projectRef": "erptubrslnfmkuouczgn",
-  "verifiedAt": "2026-07-24",
+  "verifiedAt": "2026-08-23",
   "migrations": [
     {
       "file": "20260324094041_create_contact_submissions.sql",
@@ -290,6 +290,36 @@
     {
       "file": "20260724214735_require_extension_purchase_actor.sql",
       "sha256": "aeca72c0a2fb11d1848feda1817f3ea5cad9f8d1b1ab21ce5d970b7f7e9dae78",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260823131754_growth_lifecycle_foundations.sql",
+      "sha256": "4e86a00872515c229fcb2b8100814a6e2ae43f5240d83eddc057081439c5873d",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260823131801_operational_scale_foundations.sql",
+      "sha256": "3686078bb6409cbec770b7700e9e1c3c0651619061b31d33c2d426ebecd7d7e9",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260823132007_post_advisor_hardening.sql",
+      "sha256": "4782df4a617444bde0815f449107f7acae7a103ae8232c28b6fa3cd4a29662d9",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260823132449_index_simhash_duplicate_candidates.sql",
+      "sha256": "1c706f06a43366c87933fc212c8343429a4a4df1fbf7c7cbb175ab8bfbc3adea",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260823170000_scale_bulk_import_duplicate_matching.sql",
+      "sha256": "2e18b4817eb069ca013225ae0520669da897a33782368ac1b3cb7fe22d47ed53",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260823171500_harden_bulk_import_duplicate_date_parsing.sql",
+      "sha256": "5b991b2878a89f879216c0624a16942d374359f830d0e5e0318ca4a8df753898",
       "productionState": "applied"
     }
   ]

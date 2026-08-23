@@ -1,39 +1,44 @@
 "use client";
 import { useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { useAuth } from "@/lib/auth-context";
-import { Shield, Phone, Bell, ChevronRight, ChevronLeft, Check, Sparkles } from "lucide-react";
+import { Shield, Phone, Bell, ChevronRight, ChevronLeft, Check, Sparkles, BriefcaseBusiness } from "lucide-react";
 import Link from "next/link";
-import { trackOnboardingCompleted } from "@/lib/ga4-events";
+import { trackActivationStarted, trackOnboardingCompleted, trackOnboardingTemplateSelected } from "@/lib/ga4-events";
+import { WARRANTY_TEMPLATES } from "@/lib/warranty-templates";
 
 export default function OnboardingPage() {
   const { locale } = useParams() ?? {};
-  const router = useRouter();
   const supabase = createSupabaseBrowserClient();
   const { user, refreshProfile } = useAuth();
   const isAr = locale === "ar";
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [feedbackSent, setFeedbackSent] = useState(false);
   const [form, setForm] = useState({
     phone: "",
     notify_expiry: true,
     notify_claims: true,
     notify_newsletter: false,
     language: locale as string,
+    template: "equipment_service",
   });
 
   const userName = user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split("@")[0] || "";
 
   const steps = [
     { icon: Phone, title: isAr ? "\u0631\u0642\u0645 \u0627\u0644\u0647\u0627\u062a\u0641" : "Phone Number", sub: isAr ? "\u0623\u0636\u0641 \u0631\u0642\u0645 \u0647\u0627\u062a\u0641\u0643" : "Add your mobile number" },
-    { icon: Bell, title: isAr ? "\u0627\u0644\u0625\u0634\u0639\u0627\u0631\u0627\u062a" : "Notifications", sub: isAr ? "\u0627\u062e\u062a\u0632 \u062a\u0646\u0628\u064a\u0647\u0627\u062a\u0643" : "Choose your alerts" },
+    { icon: BriefcaseBusiness, title: isAr ? "\u0646\u0642\u0637\u0629 \u0627\u0644\u0628\u062f\u0627\u064a\u0629" : "Starting point", sub: isAr ? "\u0627\u062e\u062a\u0631 \u0627\u0644\u0646\u0645\u0648\u0630\u062c \u0627\u0644\u0623\u0642\u0631\u0628 \u0644\u0639\u0645\u0644\u0643" : "Choose the closest workflow template" },
+    { icon: Bell, title: isAr ? "\u0627\u0644\u0625\u0634\u0639\u0627\u0631\u0627\u062a" : "Notifications", sub: isAr ? "\u0627\u062e\u062a\u0631 \u062a\u0646\u0628\u064a\u0647\u0627\u062a\u0643" : "Choose your alerts" },
     { icon: Sparkles, title: isAr ? "\u062c\u0627\u0647\u0632!" : "All Set!", sub: isAr ? "\u0627\u0628\u062f\u0623 \u0627\u0644\u0622\u0646" : "Start exploring" },
   ];
 
   const handleSubmit = async () => {
     if (!user) return;
     setLoading(true);
+    setError("");
     try {
       const { error } = await supabase.from("profiles").update({
         full_name: userName,
@@ -47,15 +52,27 @@ export default function OnboardingPage() {
       if (error) throw error;
       trackOnboardingCompleted({
         locale,
+        template: form.template,
         notifications_enabled: form.notify_expiry || form.notify_claims || form.notify_newsletter,
       });
       await refreshProfile();
-      router.push("/" + locale + "/dashboard");
+      setStep(3);
     } catch (e) {
       console.error(e);
+      setError(isAr ? "\u062a\u0639\u0630\u0651\u0631 \u062d\u0641\u0638 \u0627\u0644\u0625\u0639\u062f\u0627\u062f\u0627\u062a. \u062d\u0627\u0648\u0644 \u0645\u0631\u0629 \u0623\u062e\u0631\u0649." : "We could not save your setup. Please try again.");
     } finally {
       setLoading(false);
     }
+  };
+
+  const submitFeedback = async (reasonCode: "easy" | "unclear" | "missing_workflow") => {
+    if (feedbackSent) return;
+    const response = await fetch("/api/feedback", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ stage: "onboarding", reasonCode, locale }),
+    });
+    if (response.ok) setFeedbackSent(true);
   };
 
   return (
@@ -159,6 +176,28 @@ export default function OnboardingPage() {
           )}
 
           {step === 1 && (
+            <div className="grid gap-3 sm:grid-cols-2">
+              {WARRANTY_TEMPLATES.map((template) => {
+                const selected = form.template === template.id;
+                return (
+                  <button
+                    key={template.id}
+                    type="button"
+                    onClick={() => {
+                      setForm({ ...form, template: template.id });
+                      trackOnboardingTemplateSelected(template.id, { locale });
+                    }}
+                    className={"min-h-[132px] rounded-xl border p-4 text-start transition " + (selected ? "border-[#007aff] bg-[#007aff]/5 ring-2 ring-[#007aff]/15" : "border-[#d2d2d7]/70 bg-[#f5f5f7] hover:bg-[#eeeeF0]")}
+                  >
+                    <span className="block text-[15px] font-semibold text-[#1d1d1f]">{template.label[isAr ? "ar" : "en"]}</span>
+                    <span className="mt-2 block text-[13px] leading-relaxed text-[#86868b]">{template.description[isAr ? "ar" : "en"]}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {step === 2 && (
             <div className="space-y-4">
               {[
                 { key: "notify_expiry", title: isAr ? "\u062a\u0646\u0628\u064a\u0647\u0627\u062a \u0627\u0646\u062a\u0647\u0627\u0621 \u0627\u0644\u0636\u0645\u0627\u0646" : "Warranty Expiry Alerts", desc: isAr ? "\u0625\u0634\u0639\u0627\u0631 \u0642\u0628\u0644 30 \u064a\u0648\u0645 \u0645\u0646 \u0627\u0646\u062a\u0647\u0627\u0621 \u0627\u0644\u0636\u0645\u0627\u0646" : "Get notified 30 days before expiry", recommended: true },
@@ -187,7 +226,7 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {step === 2 && (
+          {step === 3 && (
             <div className="text-center py-8">
               <div className="w-20 h-20 rounded-full bg-[#30d158]/10 flex items-center justify-center mx-auto mb-6">
                 <Check className="w-10 h-10 text-[#30d158]" />
@@ -200,7 +239,8 @@ export default function OnboardingPage() {
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Link
-                  href={"/" + locale + "/warranties/new"}
+                  href={"/" + locale + "/warranties/new?template=" + encodeURIComponent(form.template) + "&activation=1"}
+                  onClick={() => trackActivationStarted({ locale, template: form.template, source: "onboarding" })}
                   className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-[#1A1A2E] text-white text-[15px] font-medium hover:opacity-90 transition-opacity"
                 >
                   {isAr ? "\u0623\u0636\u0641 \u0636\u0645\u0627\u0646" : "Add Warranty"}
@@ -219,12 +259,39 @@ export default function OnboardingPage() {
                   {isAr ? "\u0644\u0648\u062d\u0629 \u0627\u0644\u062a\u062d\u0643\u0645" : "Go to Dashboard"}
                 </Link>
               </div>
+              <div className="mt-8 border-t border-[#d2d2d7]/50 pt-6">
+                <p className="text-[13px] font-medium text-[#86868b]">
+                  {feedbackSent
+                    ? isAr ? "شكرًا لملاحظتك." : "Thanks for the feedback."
+                    : isAr ? "كيف كانت عملية الإعداد؟" : "How was account setup?"}
+                </p>
+                {!feedbackSent ? (
+                  <div className="mt-3 flex flex-wrap justify-center gap-2">
+                    {[
+                      { reason: "easy" as const, en: "Clear", ar: "واضحة" },
+                      { reason: "unclear" as const, en: "Unclear", ar: "غير واضحة" },
+                      { reason: "missing_workflow" as const, en: "Missing my workflow", ar: "مسار عملي غير موجود" },
+                    ].map((item) => (
+                      <button
+                        key={item.reason}
+                        type="button"
+                        onClick={() => void submitFeedback(item.reason)}
+                        className="rounded-full border border-[#d2d2d7] px-4 py-2 text-[12px] font-medium text-[#1d1d1f] transition hover:bg-[#f5f5f7]"
+                      >
+                        {isAr ? item.ar : item.en}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
             </div>
           )}
         </div>
 
         {/* Navigation */}
-        {step < 2 && (
+        {error && <p role="alert" className="mb-4 text-center text-sm text-red-600">{error}</p>}
+
+        {step < 3 && (
           <div className="flex items-center justify-between">
             <button
               onClick={() => setStep(Math.max(0, step - 1))}
@@ -235,9 +302,9 @@ export default function OnboardingPage() {
               {isAr ? "\u0627\u0644\u0633\u0627\u0628\u0642" : "Back"}
             </button>
 
-            {step === 0 ? (
+            {step < 2 ? (
               <button
-                onClick={() => setStep(1)}
+                onClick={() => setStep(step + 1)}
                 className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#1A1A2E] text-white text-[15px] font-medium hover:opacity-90 transition-all"
               >
                 {isAr ? "\u0627\u0644\u062a\u0627\u0644\u064a" : "Next"}
@@ -263,7 +330,7 @@ export default function OnboardingPage() {
         )}
 
         {/* Skip link */}
-        {step < 2 && (
+        {step < 3 && (
           <div className="text-center mt-6">
             <Link
               href={"/" + locale + "/dashboard"}

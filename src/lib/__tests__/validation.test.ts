@@ -5,6 +5,7 @@ import {
   isStringInRange,
   isOneOf,
   sanitizeString,
+  sanitizePostgrestSearch,
   isValidEmail,
   isValidDate,
   isPositiveNumber,
@@ -69,6 +70,14 @@ describe("sanitizeString", () => {
 
   it("handles short strings", () => {
     expect(sanitizeString("hi", 200)).toBe("hi");
+  });
+});
+
+describe("sanitizePostgrestSearch", () => {
+  it("removes filter syntax and wildcard control characters", () => {
+    expect(sanitizePostgrestSearch("  motor),(user_id.eq.other)%_*  ")).toBe(
+      "motor user id eq other",
+    );
   });
 });
 

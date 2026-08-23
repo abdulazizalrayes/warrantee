@@ -40,9 +40,11 @@ interface AnalyticsData {
   coverageValue: number;
   extensionOpportunity: number;
   supplierConcentration: number;
-  assetRiskScore: number;
+  lifecycleHealthScore: number | null;
+  evidenceStatus: 'insufficient_evidence' | 'eligible';
+  minimumPortfolioSize: number;
   unpricedAssets: number;
-  supplierRiskSignals: { supplier: string; warranties: number; claims: number; expiring: number; riskScore: number }[];
+  supplierRiskSignals: { supplier: string; warranties: number; claims: number; expiring: number; riskScore: number | null; minimumSampleSize: number }[];
 }
 
 interface AnalyticsWarranty {
@@ -82,8 +84,9 @@ const translations = {
     extensionOpportunityDesc: 'Active warranties expiring in the next 90 days.',
     supplierConcentration: 'Supplier Concentration',
     supplierConcentrationDesc: 'Share of records held by the top supplier.',
-    assetRiskScore: 'Asset Risk Score',
-    assetRiskScoreDesc: 'Weighted view of expiry exposure and unresolved claims.',
+    assetRiskScore: 'Lifecycle Health',
+    assetRiskScoreDesc: 'Evidence-gated view of expiry, open claims, and data quality. A score appears after enough records exist.',
+    moreDataNeeded: 'More data needed',
     unpricedAssets: 'Unpriced Assets',
     unpricedAssetsDesc: 'Records missing purchase value for portfolio exposure.',
     categoryBreakdown: 'Categories',
@@ -122,8 +125,9 @@ const translations = {
     extensionOpportunityDesc: '\u0636\u0645\u0627\u0646\u0627\u062a \u0646\u0634\u0637\u0629 \u062a\u0646\u062a\u0647\u064a \u062e\u0644\u0627\u0644 \u0669\u0660 \u064a\u0648\u0645\u0627\u064b.',
     supplierConcentration: '\u062a\u0631\u0643\u0632 \u0627\u0644\u0645\u0648\u0631\u062f\u064a\u0646',
     supplierConcentrationDesc: '\u062d\u0635\u0629 \u0627\u0644\u0633\u062c\u0644\u0627\u062a \u0644\u0623\u0639\u0644\u0649 \u0645\u0648\u0631\u062f.',
-    assetRiskScore: '\u0645\u0624\u0634\u0631 \u0645\u062e\u0627\u0637\u0631 \u0627\u0644\u0623\u0635\u0648\u0644',
-    assetRiskScoreDesc: '\u0646\u0638\u0631\u0629 \u0645\u0648\u0632\u0648\u0646\u0629 \u0644\u0645\u062e\u0627\u0637\u0631 \u0627\u0644\u0627\u0646\u062a\u0647\u0627\u0621 \u0648\u0627\u0644\u0645\u0637\u0627\u0644\u0628\u0627\u062a.',
+    assetRiskScore: '\u0635\u062d\u0629 \u062f\u0648\u0631\u0629 \u0627\u0644\u062d\u064a\u0627\u0629',
+    assetRiskScoreDesc: '\u0645\u0624\u0634\u0631 \u064a\u0639\u062a\u0645\u062f \u0639\u0644\u0649 \u0628\u064a\u0627\u0646\u0627\u062a \u0627\u0644\u0627\u0646\u062a\u0647\u0627\u0621 \u0648\u0627\u0644\u0645\u0637\u0627\u0644\u0628\u0627\u062a \u0648\u062c\u0648\u062f\u0629 \u0627\u0644\u0628\u064a\u0627\u0646\u0627\u062a\u060c \u0648\u064a\u0638\u0647\u0631 \u0628\u0639\u062f \u062a\u0648\u0641\u0631 \u0639\u064a\u0646\u0629 \u0643\u0627\u0641\u064a\u0629.',
+    moreDataNeeded: '\u0646\u062d\u062a\u0627\u062c \u0625\u0644\u0649 \u0628\u064a\u0627\u0646\u0627\u062a \u0623\u0643\u062b\u0631',
     unpricedAssets: '\u0623\u0635\u0648\u0644 \u0628\u0644\u0627 \u0642\u064a\u0645\u0629',
     unpricedAssetsDesc: '\u0633\u062c\u0644\u0627\u062a \u062a\u0646\u0642\u0635\u0647\u0627 \u0642\u064a\u0645\u0629 \u0627\u0644\u0634\u0631\u0627\u0621 \u0644\u0642\u064a\u0627\u0633 \u0627\u0644\u062a\u0639\u0631\u0636.',
     categoryBreakdown: '\u0627\u0644\u0641\u0626\u0627\u062a',
@@ -171,7 +175,9 @@ const emptyAnalyticsData: AnalyticsData = {
   coverageValue: 0,
   extensionOpportunity: 0,
   supplierConcentration: 0,
-  assetRiskScore: 100,
+  lifecycleHealthScore: null,
+  evidenceStatus: 'insufficient_evidence',
+  minimumPortfolioSize: 10,
   unpricedAssets: 0,
   supplierRiskSignals: [],
 };
@@ -309,7 +315,9 @@ export default function AnalyticsPage() {
         categoryBreakdown, monthlyTrend, statusBreakdown, topSuppliers, coverageValue,
         extensionOpportunity: intelligence.extensionOpportunity,
         supplierConcentration: intelligence.supplierConcentration,
-        assetRiskScore: intelligence.lifecycleHealthScore,
+        lifecycleHealthScore: intelligence.lifecycleHealthScore,
+        evidenceStatus: intelligence.evidenceStatus,
+        minimumPortfolioSize: intelligence.minimumPortfolioSize,
         unpricedAssets: intelligence.unpricedAssets,
         supplierRiskSignals: intelligence.supplierRiskSignals.slice(0, 6),
       });
@@ -364,10 +372,10 @@ export default function AnalyticsPage() {
     {
       icon: Activity,
       label: t.assetRiskScore,
-      value: `${data.assetRiskScore}/100`,
+      value: data.lifecycleHealthScore === null ? t.moreDataNeeded : `${data.lifecycleHealthScore}/100`,
       description: t.assetRiskScoreDesc,
-      tone: data.assetRiskScore >= 80 ? 'text-[#1d7a34]' : data.assetRiskScore >= 55 ? 'text-[#c93400]' : 'text-[#7a1d1d]',
-      iconBg: data.assetRiskScore >= 80 ? 'bg-[#e8f9ed]' : data.assetRiskScore >= 55 ? 'bg-[#fff6e5]' : 'bg-[#feeeed]',
+      tone: data.lifecycleHealthScore === null ? 'text-[#6e6e73]' : data.lifecycleHealthScore >= 80 ? 'text-[#1d7a34]' : data.lifecycleHealthScore >= 55 ? 'text-[#c93400]' : 'text-[#7a1d1d]',
+      iconBg: data.lifecycleHealthScore === null ? 'bg-[#f5f5f7]' : data.lifecycleHealthScore >= 80 ? 'bg-[#e8f9ed]' : data.lifecycleHealthScore >= 55 ? 'bg-[#fff6e5]' : 'bg-[#feeeed]',
     },
     {
       icon: AlertTriangle,
@@ -532,12 +540,16 @@ export default function AnalyticsPage() {
                         <td className="py-3">
                           <div className="flex items-center gap-3">
                             <div className="h-2 w-24 overflow-hidden rounded-full bg-[#f5f5f7]">
-                              <div
+                              {supplier.riskScore !== null && <div
                                 className={`h-full rounded-full ${supplier.riskScore >= 60 ? 'bg-[#ff3b30]' : supplier.riskScore >= 30 ? 'bg-[#ff9f0a]' : 'bg-[#30d158]'}`}
                                 style={{ width: `${supplier.riskScore}%` }}
-                              />
+                              />}
                             </div>
-                            <span className="text-[13px] font-semibold text-[#1d1d1f]">{supplier.riskScore}/100</span>
+                            <span className="text-[13px] font-semibold text-[#1d1d1f]">
+                              {supplier.riskScore === null
+                                ? `${t.moreDataNeeded} (${supplier.warranties}/${supplier.minimumSampleSize})`
+                                : `${supplier.riskScore}/100`}
+                            </span>
                           </div>
                         </td>
                       </tr>

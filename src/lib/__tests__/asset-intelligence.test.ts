@@ -45,9 +45,11 @@ describe("asset intelligence", () => {
     expect(result.coverageValue).toBe(1900);
     expect(result.unpricedAssets).toBe(1);
     expect(result.supplierConcentration).toBe(67);
-    expect(result.lifecycleHealthScore).toBeLessThan(80);
-    expect(result.supplierRiskSignals[0]?.supplier).toBe("Supplier B");
-    expect(result.supplierRiskSignals[0]?.expired).toBe(1);
+    expect(result.lifecycleHealthScore).toBeNull();
+    expect(result.evidenceStatus).toBe("insufficient_evidence");
+    expect(result.supplierRiskSignals[0]?.riskScore).toBeNull();
+    const supplierB = result.supplierRiskSignals.find((signal) => signal.supplier === "Supplier B");
+    expect(supplierB?.expired).toBe(1);
     expect(result.nextActions.map((action) => action.id)).toContain("review_renewal_window");
     expect(result.nextActions.map((action) => action.id)).toContain("resolve_open_claims");
   });
@@ -55,7 +57,7 @@ describe("asset intelligence", () => {
   it("prioritizes first-value activation when the account has no warranties", () => {
     const result = computeAssetIntelligence([], [], now);
 
-    expect(result.lifecycleHealthScore).toBe(100);
+    expect(result.lifecycleHealthScore).toBeNull();
     expect(result.nextActions).toEqual([
       expect.objectContaining({
         id: "add_first_warranty",
@@ -63,5 +65,22 @@ describe("asset intelligence", () => {
         category: "activation",
       }),
     ]);
+  });
+
+  it("only publishes scored intelligence after the evidence threshold is met", () => {
+    const warranties = Array.from({ length: 10 }, (_, index) => ({
+      id: `w${index}`,
+      status: "active",
+      end_date: index < 2 ? "2026-07-10" : "2027-07-10",
+      seller_name: index < 5 ? "Supplier A" : "Supplier B",
+      purchase_price: 1000,
+    }));
+
+    const result = computeAssetIntelligence(warranties, [], now);
+
+    expect(result.evidenceStatus).toBe("eligible");
+    expect(result.lifecycleHealthScore).toEqual(expect.any(Number));
+    expect(result.assetRiskScore).toBe(100 - (result.lifecycleHealthScore ?? 0));
+    expect(result.supplierRiskSignals.every((signal) => signal.riskScore !== null)).toBe(true);
   });
 });

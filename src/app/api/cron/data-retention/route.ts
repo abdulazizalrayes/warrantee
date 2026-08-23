@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireInternalBearer } from "@/lib/internal-auth";
 import { runOperationalDataRetention } from "@/lib/server/data-retention";
+import { runDailyOperationalMaintenance } from "@/lib/server/operational-maintenance";
 
 async function handler(request: NextRequest) {
   const authError = requireInternalBearer(request, process.env.CRON_SECRET);
   if (authError) return authError;
 
   try {
-    return NextResponse.json(await runOperationalDataRetention());
+    const retention = await runOperationalDataRetention();
+    const maintenance = await runDailyOperationalMaintenance();
+    return NextResponse.json({ ...retention, maintenance });
   } catch (error) {
     console.warn("Operational data retention failed:", error);
     return NextResponse.json({ error: "Operational data retention failed" }, { status: 500 });

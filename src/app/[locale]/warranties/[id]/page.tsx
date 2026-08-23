@@ -32,6 +32,7 @@ export default function WarrantyDetailPage() {
   const [warranty, setWarranty] = useState<any>(null);
   const [documents, setDocuments] = useState<any[]>([]);
   const [claims, setClaims] = useState<any[]>([]);
+  const [lifecycleEvents, setLifecycleEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [feedback, setFeedback] = useState<string | null>(null);
@@ -68,6 +69,14 @@ export default function WarrantyDetailPage() {
         setDocuments(Array.isArray(payload.data.warranty_documents) ? payload.data.warranty_documents : []);
         setClaims(Array.isArray(payload.data.warranty_claims) ? payload.data.warranty_claims : []);
 
+        const lifecycleResponse = await fetch(`/api/warranties/${warrantyId}/lifecycle`, { cache: "no-store" });
+        if (lifecycleResponse.ok) {
+          const lifecyclePayload = await lifecycleResponse.json();
+          setLifecycleEvents(Array.isArray(lifecyclePayload.data) ? lifecyclePayload.data : []);
+        } else {
+          setLifecycleEvents([]);
+        }
+
         const eligibilityResponse = await fetch(`/api/warranties/${warrantyId}/extension-eligibility`, { cache: "no-store" });
         if (eligibilityResponse.ok) {
           const eligibilityPayload = await eligibilityResponse.json();
@@ -78,6 +87,7 @@ export default function WarrantyDetailPage() {
         setWarranty(null);
         setDocuments([]);
         setClaims([]);
+        setLifecycleEvents([]);
         setServerEligibility(null);
         setLoadError(error instanceof Error ? error.message : "Warranty could not load");
       } finally {
@@ -280,6 +290,57 @@ export default function WarrantyDetailPage() {
                 <p className="mt-1 font-medium text-[#1A1A2E]">{formatDate(warranty.end_date, locale)}</p>
               </div>
             </div>
+          </div>
+
+          <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+            <h2 className="text-lg font-semibold text-[#1A1A2E]">
+              {isRTL ? "سجل دورة حياة الأصل" : "Asset Lifecycle Timeline"}
+            </h2>
+            <p className="mt-1 text-sm text-gray-500">
+              {isRTL ? "أحداث مثبتة من سجلات الضمان والمستندات والمطالبات." : "Evidence-backed events from warranty, document, and claim records."}
+            </p>
+            {lifecycleEvents.length === 0 ? (
+              <p className="mt-4 text-sm text-gray-500">
+                {isRTL ? "لا توجد أحداث مثبتة حتى الآن." : "No evidence-backed events yet."}
+              </p>
+            ) : (
+              <ol className="mt-5 space-y-4">
+                {lifecycleEvents.map((event) => {
+                  const labels: Record<string, { en: string; ar: string }> = {
+                    registered: { en: "Warranty registered", ar: "تم تسجيل الضمان" },
+                    issued: { en: "Warranty issued", ar: "تم إصدار الضمان" },
+                    activated: { en: "Coverage activated", ar: "تم تفعيل التغطية" },
+                    document_added: { en: "Document added", ar: "تمت إضافة مستند" },
+                    claim_filed: { en: "Claim filed", ar: "تم تقديم مطالبة" },
+                    claim_decided: { en: "Claim decision recorded", ar: "تم تسجيل قرار المطالبة" },
+                    inspected: { en: "Inspection recorded", ar: "تم تسجيل الفحص" },
+                    repaired: { en: "Repair recorded", ar: "تم تسجيل الإصلاح" },
+                    replaced: { en: "Replacement recorded", ar: "تم تسجيل الاستبدال" },
+                    transferred: { en: "Ownership transfer recorded", ar: "تم تسجيل نقل الملكية" },
+                    extended: { en: "Coverage extended", ar: "تم تمديد التغطية" },
+                    recall_matched: { en: "Verified recall match", ar: "تمت مطابقة استدعاء موثّق" },
+                    retired: { en: "Asset retired", ar: "تم إنهاء استخدام الأصل" },
+                  };
+                  const label = labels[event.eventType] || {
+                    en: String(event.eventType).replace(/_/g, " "),
+                    ar: String(event.eventType).replace(/_/g, " "),
+                  };
+                  return (
+                    <li key={event.id} className="flex gap-3">
+                      <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#f5f5f7]">
+                        <Clock3 size={15} className="text-[#0071e3]" />
+                      </div>
+                      <div className="min-w-0 flex-1 border-b border-gray-100 pb-4 last:border-0">
+                        <p className="font-medium text-[#1A1A2E]">{isRTL ? label.ar : label.en}</p>
+                        <p className="mt-1 text-xs text-gray-500">
+                          {formatDate(event.occurredAt, locale)} · {isRTL ? "مصدر موثق" : "Recorded evidence"}
+                        </p>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ol>
+            )}
           </div>
 
           <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">

@@ -65,6 +65,6 @@ export async function GET(request: NextRequest) {
   return apiV1Json({
     data: intelligence,
     generated_at: new Date().toISOString(),
-    model: "warrantee_asset_intelligence_v1",
+    model: "warrantee_asset_intelligence_v2_evidence_gated",
   });
 }

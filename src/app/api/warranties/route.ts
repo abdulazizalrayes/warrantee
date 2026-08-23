@@ -1,6 +1,6 @@
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
-import { validateWarrantyInput, isValidDate, sanitizeString, isOneOf, VALID_WARRANTY_STATUSES } from "@/lib/validation";
+import { validateWarrantyInput, isValidDate, sanitizePostgrestSearch, sanitizeString, isOneOf, VALID_WARRANTY_STATUSES } from "@/lib/validation";
 import { apiRateLimit, getClientIp, getRateLimitHeaders } from "@/lib/rate-limit";
 import {
   resolveWarrantyAccessOrClause,
@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const status = searchParams?.get("status");
     const view = searchParams?.get("view");
-    const search = sanitizeString(searchParams?.get("q") || "", 80);
+    const search = sanitizePostgrestSearch(searchParams?.get("q") || "", 80);
     const limitParam = parseInt(searchParams?.get("limit") || "50");
     const offsetParam = parseInt(searchParams?.get("offset") || "0");
 

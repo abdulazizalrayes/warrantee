@@ -4,7 +4,10 @@ import { isOneOf, isValidDate, sanitizeString, VALID_WARRANTY_STATUSES } from '@
 import {
   apiV1Json,
   authorizeApiV1Request,
+  beginApiIdempotency,
   buildIdempotencyReference,
+  completeApiIdempotency,
+  failApiIdempotency,
   parsePositiveInt,
   recordApiV1Usage,
 } from '@/lib/api-v1';
@@ -92,6 +95,7 @@ export async function POST(request: NextRequest) {
   if (auth.response) return auth.response;
   const { requester } = auth;
   const supabase = createSupabaseAdminClient();
+  let idempotencyRecordId: string | null = null;
 
   try {
     const body = await request.json();
@@ -155,8 +159,43 @@ export async function POST(request: NextRequest) {
       return apiV1Json({ error: 'purchase_price must be a positive number' }, { status: 400 });
     }
 
+    const idempotency = await beginApiIdempotency(supabase, request, requester, body);
+    if (idempotency.state === 'invalid_key') {
+      return apiV1Json({ error: 'Idempotency-Key must be 8 to 200 characters' }, { status: 400 });
+    }
+    if (idempotency.state === 'body_mismatch') {
+      return apiV1Json({ error: 'Idempotency-Key was already used with a different request body' }, { status: 409 });
+    }
+    if (idempotency.state === 'processing') {
+      return apiV1Json(
+        { error: 'A request with this Idempotency-Key is still processing' },
+        { status: 409, headers: { 'Retry-After': '5' } },
+      );
+    }
+    if (idempotency.state === 'replay') {
+      const { data: replayedWarranty } = await supabase
+        .from('warranties')
+        .select('*')
+        .eq('id', idempotency.resourceId)
+        .is('deleted_at', null)
+        .or(await resolveWarrantyAccessOrClause(supabase, requester.userId))
+        .maybeSingle();
+      if (!replayedWarranty) {
+        return apiV1Json({ error: 'The original idempotent resource is no longer available' }, { status: 409 });
+      }
+      await recordApiV1Usage(supabase, request, requester, {
+        statusCode: 200,
+        scope: 'warranties:write',
+        metadata: { idempotent_replay: true },
+      });
+      return apiV1Json({ data: replayedWarranty, idempotent_replay: true }, { status: 200 });
+    }
+    if (idempotency.state === 'started') idempotencyRecordId = idempotency.recordId;
+
     const idempotencyKey = request.headers.get('idempotency-key')?.trim();
-    const derivedReferenceNumber = idempotencyKey ? buildIdempotencyReference(idempotencyKey) : null;
+    const derivedReferenceNumber = idempotencyKey
+      ? buildIdempotencyReference(idempotencyKey, requester.clientId || requester.userId)
+      : null;
     const referenceNumber = cleanOptionalString(body.reference_number, 80) || derivedReferenceNumber || `WR-${Date.now()}`;
 
     if (idempotencyKey) {
@@ -169,6 +208,7 @@ export async function POST(request: NextRequest) {
         .maybeSingle();
 
       if (existingWarranty) {
+        await completeApiIdempotency(supabase, idempotencyRecordId, 'warranty', existingWarranty.id, 200);
         await recordApiV1Usage(supabase, request, requester, {
           statusCode: 200,
           scope: 'warranties:write',
@@ -198,6 +238,7 @@ export async function POST(request: NextRequest) {
 
     const { data, error } = await supabase.from('warranties').insert(warrantyData).select().single();
     if (error) {
+      await failApiIdempotency(supabase, idempotencyRecordId, 500);
       await recordApiV1Usage(supabase, request, requester, {
         statusCode: 500,
         scope: 'warranties:write',
@@ -206,18 +247,25 @@ export async function POST(request: NextRequest) {
       return apiV1Json({ error: error.message }, { status: 500 });
     }
 
+    await completeApiIdempotency(supabase, idempotencyRecordId, 'warranty', data.id, 201);
+
     await recordApiV1Usage(supabase, request, requester, {
       statusCode: 201,
       scope: 'warranties:write',
       metadata: { warranty_id: data.id },
     });
     return apiV1Json({ data }, { status: 201 });
-  } catch {
+  } catch (error) {
+    const statusCode = error instanceof SyntaxError ? 400 : 500;
+    await failApiIdempotency(supabase, idempotencyRecordId, statusCode);
     await recordApiV1Usage(supabase, request, requester, {
-      statusCode: 400,
+      statusCode,
       scope: 'warranties:write',
-      metadata: { reason: 'invalid_body' },
+      metadata: { reason: error instanceof SyntaxError ? 'invalid_body' : 'idempotency_or_insert_failure' },
     });
-    return apiV1Json({ error: 'Invalid request body' }, { status: 400 });
+    if (error instanceof SyntaxError) {
+      return apiV1Json({ error: 'Invalid request body' }, { status: 400 });
+    }
+    return apiV1Json({ error: 'Request could not be completed safely' }, { status: 500 });
   }
 }

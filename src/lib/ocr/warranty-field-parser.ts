@@ -5,9 +5,10 @@ export type ExtractedWarrantyFields = {
 };
 
 const FIELD_END = String.raw`(?=\.\s+(?:[A-Z\u0600-\u06FF%]|$)|\n|\r|$)`;
+const FIELD_START = String.raw`(?:^|[\r\n]+|[.!?\u061F]\s+)`;
 
 function lineFieldPattern(prefix: string, flags = "im") {
-  return new RegExp(`(?:^|[\\r\\n])\\s*${prefix}\\s*[:;؛\\-]?\\s*(.+?)${FIELD_END}`, flags);
+  return new RegExp(`${FIELD_START}\\s*${prefix}\\s*[:;؛\\-]?\\s*(.+?)${FIELD_END}`, flags);
 }
 
 function firstMatch(text: string, patterns: RegExp[], maxLength = 100) {

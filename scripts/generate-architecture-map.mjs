@@ -70,7 +70,9 @@ function collectAppRoutes(leafName) {
 
 function currentDatabaseTables() {
   const generatedTypes = readFileSync(join(repoRoot, "src", "types", "database.ts"), "utf8")
-  const tablesStart = generatedTypes.indexOf("    Tables: {")
+  const publicSchemaStart = generatedTypes.indexOf("  public: {")
+  assert(publicSchemaStart >= 0, "Cannot locate public schema in generated database types")
+  const tablesStart = generatedTypes.indexOf("    Tables: {", publicSchemaStart)
   const tablesEnd = generatedTypes.indexOf("    Views: {", tablesStart)
   assert(tablesStart >= 0 && tablesEnd > tablesStart, "Cannot locate Tables in generated database types")
   const tableSection = generatedTypes.slice(tablesStart, tablesEnd)

@@ -7,8 +7,8 @@
     "domain": "https://warrantee.io",
     "repository": "https://github.com/abdulazizalrayes/warrantee",
     "branch": "main",
-    "mapped_from_commit": "7946e2f34d101c03e09b2c573a3b97696e6c4391",
-    "generated_at": "2026-07-26",
+    "mapped_from_commit": "df7284cf1035b280ff6721917a420da841b20d3b",
+    "generated_at": "2026-08-23",
     "classification": "internal engineering documentation; no secrets or customer records",
     "human_view": "docs/WARRANTEE_ARCHITECTURE_MAP.html",
     "agent_view": "docs/warrantee-architecture-map.json",
@@ -69,10 +69,10 @@
     },
     "inventory_counts": {
       "page_files": 59,
-      "route_handlers": 102,
+      "route_handlers": 107,
       "layouts": 30,
-      "database_tables": 36,
-      "migration_files": 58,
+      "database_tables": 49,
+      "migration_files": 64,
       "scheduled_jobs": 3,
       "github_workflows": 3,
       "e2e_spec_files": 7
@@ -1544,6 +1544,9 @@
         "warranty_chain_assignments",
         "warranty_coverage_items",
         "warranty_documents",
+        "asset_lifecycle_events",
+        "recall_notices",
+        "recall_matches",
         "provisional_warranties"
       ],
       "owner": "Personal owner or issuer/recipient company",
@@ -1556,7 +1559,9 @@
         "warranty_claims",
         "claim_events",
         "claim_attachments",
-        "warranty_extensions"
+        "warranty_extensions",
+        "warranty_extension_requests",
+        "warranty_policy_templates"
       ],
       "owner": "Warranty owner/company and authorized workflow actor",
       "sensitivity": "confidential"
@@ -1581,7 +1586,8 @@
       "tables": [
         "subscriptions",
         "revenue_events",
-        "webhook_events"
+        "webhook_events",
+        "payment_reconciliation_findings"
       ],
       "owner": "Signed Stripe webhook and server workflow",
       "sensitivity": "restricted"
@@ -1592,6 +1598,11 @@
       "tables": [
         "activity_log",
         "admin_audit_log",
+        "platform_audit_events",
+        "async_jobs",
+        "analytics_daily_rollups",
+        "customer_feedback_events",
+        "warranty_passport_events",
         "notifications",
         "push_subscriptions",
         "seller_invitations",
@@ -1607,6 +1618,8 @@
       "id": "machine_access",
       "name": "Machine access and usage",
       "tables": [
+        "api_clients",
+        "api_idempotency_records",
         "api_integration_tokens",
         "api_usage_events"
       ],
@@ -1697,8 +1710,10 @@
           "/api/warranties/[id]/extensions",
           "/api/warranties/[id]/extension-eligibility",
           "/api/warranties/[id]/extension-interest",
+          "/api/warranties/[id]/lifecycle",
           "/api/warranties/archive",
           "/api/warranties/bulk-import",
+          "/api/warranties/bulk-import/[batchId]/rollback",
           "/api/warranties/handoff",
           "/api/warranties/provisional",
           "/api/warranties/provisional/[id]",
@@ -1711,6 +1726,7 @@
         "access": "authenticated plus warranty/claim authorization",
         "paths": [
           "/api/claims",
+          "/api/claims/[id]/service-level",
           "/api/claims/[id]/transition",
           "/api/documents",
           "/api/documents/[id]",
@@ -1771,7 +1787,9 @@
           "/api/cron/data-retention",
           "/api/health",
           "/api/export",
+          "/api/feedback",
           "/api/funnel/events",
+          "/api/passport/events",
           "/api/certificates/generate"
         ]
       }

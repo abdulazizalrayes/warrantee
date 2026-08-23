@@ -24,7 +24,9 @@ export type SupplierRiskSignal = {
   expiring: number;
   expired: number;
   unpriced: number;
-  riskScore: number;
+  riskScore: number | null;
+  evidenceStatus: "insufficient_evidence" | "eligible";
+  minimumSampleSize: number;
 };
 
 export type AssetIntelligenceAction = {
@@ -47,14 +49,18 @@ export type AssetIntelligenceSummary = {
   coverageValue: number;
   unpricedAssets: number;
   supplierConcentration: number;
-  lifecycleHealthScore: number;
-  assetRiskScore: number;
+  lifecycleHealthScore: number | null;
+  assetRiskScore: number | null;
+  evidenceStatus: "insufficient_evidence" | "eligible";
+  minimumPortfolioSize: number;
   extensionOpportunity: number;
   supplierRiskSignals: SupplierRiskSignal[];
   nextActions: AssetIntelligenceAction[];
 };
 
 const unresolvedClaimStatuses = new Set(["pending", "filed", "submitted", "under_review", "open"]);
+export const MIN_PORTFOLIO_SAMPLE_SIZE = 10;
+export const MIN_SUPPLIER_SAMPLE_SIZE = 5;
 
 function parseDate(value: string | null | undefined) {
   if (!value) return null;
@@ -81,7 +87,7 @@ function buildNextActions(input: {
   unresolvedClaims: number;
   unpricedAssets: number;
   supplierRiskSignals: SupplierRiskSignal[];
-  lifecycleHealthScore: number;
+  lifecycleHealthScore: number | null;
 }): AssetIntelligenceAction[] {
   const actions: AssetIntelligenceAction[] = [];
 
@@ -131,7 +137,7 @@ function buildNextActions(input: {
   }
 
   const riskiestSupplier = input.supplierRiskSignals[0];
-  if (riskiestSupplier && riskiestSupplier.riskScore >= 45) {
+  if (riskiestSupplier?.riskScore !== null && riskiestSupplier?.riskScore !== undefined && riskiestSupplier.riskScore >= 45) {
     actions.push({
       id: "review_supplier_reliability",
       severity: riskiestSupplier.riskScore >= 70 ? "high" : "medium",
@@ -142,7 +148,7 @@ function buildNextActions(input: {
     });
   }
 
-  if (input.lifecycleHealthScore < 70) {
+  if (input.lifecycleHealthScore !== null && input.lifecycleHealthScore < 70) {
     actions.push({
       id: "improve_lifecycle_health",
       severity: input.lifecycleHealthScore < 50 ? "high" : "medium",
@@ -199,7 +205,17 @@ export function computeAssetIntelligence(
     const supplier = getSupplierName(warranty);
     const end = parseDate(warranty.end_date);
     if (!supplierMap[supplier]) {
-      supplierMap[supplier] = { supplier, warranties: 0, claims: 0, expiring: 0, expired: 0, unpriced: 0, riskScore: 0 };
+      supplierMap[supplier] = {
+        supplier,
+        warranties: 0,
+        claims: 0,
+        expiring: 0,
+        expired: 0,
+        unpriced: 0,
+        riskScore: null,
+        evidenceStatus: "insufficient_evidence",
+        minimumSampleSize: MIN_SUPPLIER_SAMPLE_SIZE,
+      };
     }
     supplierMap[supplier].warranties += 1;
     supplierMap[supplier].claims += claimsByWarranty[warranty.id] || 0;
@@ -214,12 +230,16 @@ export function computeAssetIntelligence(
       const expiryRate = supplier.warranties > 0 ? supplier.expiring / supplier.warranties : 0;
       const expiredRate = supplier.warranties > 0 ? supplier.expired / supplier.warranties : 0;
       const dataGapRate = supplier.warranties > 0 ? supplier.unpriced / supplier.warranties : 0;
+      const isEligible = supplier.warranties >= MIN_SUPPLIER_SAMPLE_SIZE;
       return {
         ...supplier,
-        riskScore: clampScore(claimRate * 45 + expiryRate * 25 + expiredRate * 20 + dataGapRate * 10),
+        riskScore: isEligible
+          ? clampScore(claimRate * 45 + expiryRate * 25 + expiredRate * 20 + dataGapRate * 10)
+          : null,
+        evidenceStatus: isEligible ? "eligible" as const : "insufficient_evidence" as const,
       };
     })
-    .sort((a, b) => b.riskScore - a.riskScore || b.warranties - a.warranties)
+    .sort((a, b) => (b.riskScore ?? -1) - (a.riskScore ?? -1) || b.warranties - a.warranties)
     .slice(0, 10);
 
   const topSupplierCount = Math.max(0, ...Object.values(supplierMap).map((supplier) => supplier.warranties));
@@ -229,10 +249,11 @@ export function computeAssetIntelligence(
   const expiredPressure = totalWarranties > 0 ? (expiredWarranties / totalWarranties) * 20 : 0;
   const claimPressure = totalWarranties > 0 ? (unresolvedClaims / totalWarranties) * 30 : 0;
   const dataQualityPressure = totalWarranties > 0 ? (unpricedAssets / totalWarranties) * 15 : 0;
-  const supplierPressure = supplierRiskSignals[0] ? supplierRiskSignals[0].riskScore * 0.1 : 0;
-  const lifecycleHealthScore = clampScore(
-    100 - expiryPressure - expiredPressure - claimPressure - dataQualityPressure - supplierPressure
-  );
+  const supplierPressure = supplierRiskSignals.find((signal) => signal.riskScore !== null)?.riskScore ?? 0;
+  const evidenceStatus = totalWarranties >= MIN_PORTFOLIO_SAMPLE_SIZE ? "eligible" as const : "insufficient_evidence" as const;
+  const lifecycleHealthScore = evidenceStatus === "eligible"
+    ? clampScore(100 - expiryPressure - expiredPressure - claimPressure - dataQualityPressure - supplierPressure * 0.1)
+    : null;
 
   const summary = {
     totalWarranties,
@@ -246,7 +267,9 @@ export function computeAssetIntelligence(
     unpricedAssets,
     supplierConcentration,
     lifecycleHealthScore,
-    assetRiskScore: lifecycleHealthScore,
+    assetRiskScore: lifecycleHealthScore === null ? null : 100 - lifecycleHealthScore,
+    evidenceStatus,
+    minimumPortfolioSize: MIN_PORTFOLIO_SAMPLE_SIZE,
     extensionOpportunity: expiring90Days,
     supplierRiskSignals,
     nextActions: [] as AssetIntelligenceAction[],

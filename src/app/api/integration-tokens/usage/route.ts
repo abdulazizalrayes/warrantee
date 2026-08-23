@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
   const supabase = createSupabaseAdminClient();
   let query = supabase
     .from("api_usage_events")
-    .select("id, token_id, credential_kind, method, path, status_code, scope, user_agent, metadata, created_at")
+    .select("id, token_id, client_id, company_id, credential_kind, method, path, status_code, scope, user_agent, metadata, created_at")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
     .limit(limit);
@@ -77,5 +77,32 @@ export async function GET(request: NextRequest) {
     return json({ error: "Could not load API usage events" }, { status: 500 });
   }
 
-  return json({ data: data || [] });
+  const since30Days = new Date(Date.now() - 30 * 86400000).toISOString();
+  const since24Hours = new Date(Date.now() - 86400000).toISOString();
+  const baseCount = () => supabase
+    .from("api_usage_events")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", user.id);
+  let thirtyDayQuery = baseCount().gte("created_at", since30Days);
+  let lastDayQuery = baseCount().gte("created_at", since24Hours);
+  let errorQuery = baseCount().gte("created_at", since30Days).gte("status_code", 400);
+  if (tokenId) {
+    thirtyDayQuery = thirtyDayQuery.eq("token_id", tokenId);
+    lastDayQuery = lastDayQuery.eq("token_id", tokenId);
+    errorQuery = errorQuery.eq("token_id", tokenId);
+  }
+  const [thirtyDayResult, lastDayResult, errorResult] = await Promise.all([
+    thirtyDayQuery,
+    lastDayQuery,
+    errorQuery,
+  ]);
+
+  return json({
+    data: data || [],
+    summary: {
+      requests_24h: lastDayResult.count || 0,
+      requests_30d: thirtyDayResult.count || 0,
+      errors_30d: errorResult.count || 0,
+    },
+  });
 }

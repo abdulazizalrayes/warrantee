@@ -43,8 +43,8 @@ const dictionaries: Record<IndexedLocale, Dictionary> = {
   en: {
     nav: { home: "Home", features: "Features", pricing: "Pricing", login: "Log In", signup: "Sign Up", dashboard: "Dashboard", warranties: "Warranties", contact: "Contact" },
     hero: {
-      title: "Trust the Terms.\nTrack Every Warranty.",
-      subtitle: "Warrantee is the warranty management platform built for businesses. Approve, track, and claim warranties with confidence.",
+      title: "Issue, track, and verify\nevery warranty.",
+      subtitle: "Create trusted warranty records, bilingual certificates, expiry reminders, and claim workflows in one platform for businesses and buyers.",
       cta_demo: "Request a Demo",
       cta_start: "Get Started Free",
     },
@@ -132,8 +132,8 @@ const dictionaries: Record<IndexedLocale, Dictionary> = {
   ar: {
     nav: { home: "\u0627\u0644\u0631\u0626\u064a\u0633\u064a\u0629", features: "\u0627\u0644\u0645\u0632\u0627\u064a\u0627", pricing: "\u0627\u0644\u0623\u0633\u0639\u0627\u0631", login: "\u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062f\u062e\u0648\u0644", signup: "\u0625\u0646\u0634\u0627\u0621 \u062d\u0633\u0627\u0628", dashboard: "\u0644\u0648\u062d\u0629 \u0627\u0644\u062a\u062d\u0643\u0645", warranties: "\u0627\u0644\u0636\u0645\u0627\u0646\u0627\u062a", contact: "\u0627\u062a\u0635\u0644 \u0628\u0646\u0627" },
     hero: {
-      title: "\u062b\u0642 \u0628\u0627\u0644\u0634\u0631\u0648\u0637.\n\u062a\u062a\u0628\u0639 \u0643\u0644 \u0636\u0645\u0627\u0646.",
-      subtitle: "Warrantee \u0647\u0648 \u0645\u0646\u0635\u0629 \u0625\u062f\u0627\u0631\u0629 \u0627\u0644\u0636\u0645\u0627\u0646\u0627\u062a \u0627\u0644\u0645\u0628\u0646\u064a\u0629 \u0644\u0644\u0634\u0631\u0643\u0627\u062a. \u0648\u0627\u0641\u0642 \u0639\u0644\u0649 \u0627\u0644\u0636\u0645\u0627\u0646\u0627\u062a \u0648\u062a\u0627\u0628\u0639\u0647\u0627 \u0648\u0627\u0637\u0627\u0644\u0628 \u0628\u0647\u0627 \u0628\u062b\u0642\u0629.",
+      title: "\u0623\u0635\u062f\u0631 \u0643\u0644 \u0636\u0645\u0627\u0646\n\u0648\u062a\u062a\u0628\u0639\u0647 \u0648\u062a\u062d\u0642\u0642 \u0645\u0646\u0647.",
+      subtitle: "\u0623\u0646\u0634\u0626 \u0633\u062c\u0644\u0627\u062a \u0636\u0645\u0627\u0646 \u0645\u0648\u062b\u0642\u0629 \u0648\u0634\u0647\u0627\u062f\u0627\u062a \u062b\u0646\u0627\u0626\u064a\u0629 \u0627\u0644\u0644\u063a\u0629 \u0648\u062a\u0646\u0628\u064a\u0647\u0627\u062a \u0627\u0646\u062a\u0647\u0627\u0621 \u0648\u0645\u0633\u0627\u0631\u0627\u062a \u0645\u0637\u0627\u0644\u0628\u0627\u062a \u0641\u064a \u0645\u0646\u0635\u0629 \u0648\u0627\u062d\u062f\u0629 \u0644\u0644\u0634\u0631\u0643\u0627\u062a \u0648\u0627\u0644\u0645\u0634\u062a\u0631\u064a\u0646.",
       cta_demo: "\u0637\u0644\u0628 \u0639\u0631\u0636 \u062a\u0648\u0636\u064a\u062d\u064a",
       cta_start: "\u0627\u0628\u062f\u0623 \u0645\u062c\u0627\u0646\u0627\u064b",
     },

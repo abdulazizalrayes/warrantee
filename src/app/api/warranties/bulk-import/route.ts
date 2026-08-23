@@ -1,19 +1,20 @@
-import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
-import { apiRateLimit, bulkImportRateLimit, getClientIp, getRateLimitHeaders } from "@/lib/rate-limit";
-import { sanitizeString } from "@/lib/validation";
-import { buildWarrantyOwnershipInsert } from "@/lib/warranty-access";
 import Papa from "papaparse";
 import { readSheet } from "read-excel-file/browser";
+import { apiRateLimit, bulkImportRateLimit, getClientIp, getRateLimitHeaders } from "@/lib/rate-limit";
+import { isTrustedSameOriginRequest } from "@/lib/request-origin";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
+import {
+  buildImportWarrantyInsert,
+  getImportDuplicateKey,
+  mapImportRows,
+  normalizeImportHeader,
+  parseImportMapping,
+  reviewImportRows,
+} from "@/lib/warranty-import";
 
-const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+const MAX_FILE_SIZE = 2 * 1024 * 1024;
 const MAX_ROWS = 500;
-
-function generateReferenceNumber(rowIndex: number) {
-  const timestamp = Date.now().toString(36).toUpperCase();
-  const suffix = Math.random().toString(36).slice(2, 6).toUpperCase();
-  return `WR-IMP-${timestamp}-${rowIndex + 1}-${suffix}`;
-}
 
 function normalizeSpreadsheetValue(value: unknown) {
   if (value == null) return "";
@@ -23,176 +24,129 @@ function normalizeSpreadsheetValue(value: unknown) {
 
 function rowsFromSheet(sheetRows: unknown[][]) {
   const [rawHeaders, ...dataRows] = sheetRows;
-  if (!rawHeaders) return [];
+  if (!rawHeaders) return { headers: [] as string[], rows: [] as Record<string, string>[] };
+  const headers = rawHeaders.map((header) => normalizeSpreadsheetValue(header));
+  return {
+    headers,
+    rows: dataRows
+      .filter((row) => row.some((cell) => normalizeSpreadsheetValue(cell) !== ""))
+      .map((row) => Object.fromEntries(headers.map((header, index) => [header, normalizeSpreadsheetValue(row[index])]))),
+  };
+}
 
-  const headers = rawHeaders.map((header) =>
-    normalizeSpreadsheetValue(header).toLowerCase()
-  );
-
-  return dataRows
-    .filter((row) => row.some((cell) => normalizeSpreadsheetValue(cell) !== ""))
-    .map((row) =>
-      Object.fromEntries(
-        headers.map((header, index) => [header, normalizeSpreadsheetValue(row[index])])
-      )
-    );
+async function parseFile(file: File) {
+  const fileName = file.name.toLowerCase();
+  if (fileName.endsWith(".xlsx")) return rowsFromSheet(await readSheet(await file.arrayBuffer()));
+  if (!fileName.endsWith(".csv")) throw new Error("Only CSV and .xlsx files are supported");
+  const parsed = Papa.parse<Record<string, string>>(await file.text(), {
+    header: true,
+    skipEmptyLines: true,
+    transformHeader: (header) => header.trim(),
+  });
+  if (parsed.errors.length > 0) throw new Error(`CSV parse error: ${parsed.errors[0].message}`);
+  return { headers: parsed.meta.fields || Object.keys(parsed.data[0] || {}), rows: parsed.data };
 }
 
 export async function POST(request: NextRequest) {
   try {
-    // Rate limiting
+    if (!isTrustedSameOriginRequest(request, request.nextUrl.origin)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     const ip = getClientIp(request);
-    const rateLimitResult = await apiRateLimit(ip);
-    if (!rateLimitResult.success) {
-      return NextResponse.json(
-        { error: "Too many requests" },
-        { status: 429, headers: getRateLimitHeaders(rateLimitResult) }
-      );
+    const globalLimit = await apiRateLimit(ip);
+    if (!globalLimit.success) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429, headers: getRateLimitHeaders(globalLimit) });
     }
 
-    // Authentication
     const supabase = await createServerSupabaseClient();
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    if (authError || !user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const importLimit = await bulkImportRateLimit(`${user.id}:${ip}`);
+    if (!importLimit.success) {
+      return NextResponse.json({ error: "Too many import attempts. Please wait before uploading another file." }, { status: 429, headers: getRateLimitHeaders(importLimit) });
     }
 
-    const importLimitResult = await bulkImportRateLimit(`${user.id}:${ip}`);
-    if (!importLimitResult.success) {
-      return NextResponse.json(
-        { error: "Too many import attempts. Please wait before uploading another file." },
-        { status: 429, headers: getRateLimitHeaders(importLimitResult) }
-      );
-    }
-
-    // Parse form data
     const formData = await request.formData();
-    const file = formData.get("file") as File;
-    if (!file) {
-      return NextResponse.json({ error: "No file provided" }, { status: 400 });
-    }
+    const file = formData.get("file");
+    const mode = formData.get("mode") === "commit" ? "commit" : "preview";
+    if (!(file instanceof File)) return NextResponse.json({ error: "No file provided" }, { status: 400 });
+    if (file.size > MAX_FILE_SIZE) return NextResponse.json({ error: "File too large. Maximum size is 2MB" }, { status: 400 });
 
-    // File size check
-    if (file.size > MAX_FILE_SIZE) {
-      return NextResponse.json(
-        { error: `File too large. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB` },
-        { status: 400 }
-      );
-    }
+    const { headers, rows } = await parseFile(file);
+    if (rows.length === 0) return NextResponse.json({ error: "File is empty or has no data rows" }, { status: 400 });
+    if (rows.length > MAX_ROWS) return NextResponse.json({ error: `Too many rows. Maximum is ${MAX_ROWS} rows per import` }, { status: 400 });
 
-    // Parse CSV or XLSX
-    const fileName = file.name.toLowerCase();
-    const isXlsx = fileName.endsWith(".xlsx");
-    let rows: Record<string, string>[] = [];
-
-    if (isXlsx) {
-      const sheetRows = await readSheet(await file.arrayBuffer());
-      rows = rowsFromSheet(sheetRows);
-    } else if (fileName.endsWith(".xls")) {
-      return NextResponse.json(
-        { error: "Legacy .xls files are not supported. Please upload CSV or .xlsx." },
-        { status: 400 }
-      );
-    } else {
-      // Default: CSV
-      const text = await file.text();
-      const { data, errors: parseErrors } = Papa.parse<Record<string, string>>(text, {
-        header: true,
-        skipEmptyLines: true,
-      });
-      if (parseErrors.length > 0) {
-        return NextResponse.json(
-          { error: "CSV parse errors", details: parseErrors.slice(0, 10) },
-          { status: 400 }
-        );
-      }
-      rows = data;
-    }
-
-    // Row count check
-    if (rows.length > MAX_ROWS) {
-      return NextResponse.json(
-        { error: `Too many rows. Maximum is ${MAX_ROWS} rows per import` },
-        { status: 400 }
-      );
-    }
-
-    if (rows.length === 0) {
-      return NextResponse.json(
-        { error: "File is empty or has no data rows" },
-        { status: 400 }
-      );
-    }
-
-    const results = { imported: 0, errors: [] as { row: number; message: string }[] };
-
-    for (let i = 0; i < rows.length; i++) {
-      const row = rows[i];
-
-      // Validate required fields
-      if (!row.product_name || !row.start_date || !row.end_date) {
-        results.errors.push({
-          row: i + 2,
-          message: "Missing required fields: product_name, start_date, end_date",
-        });
-        continue;
-      }
-
-      // Validate dates
-      const startDate = new Date(row.start_date);
-      const endDate = new Date(row.end_date);
-      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-        results.errors.push({
-          row: i + 2,
-          message: "Invalid date format for start_date or end_date",
-        });
-        continue;
-      }
-
-      if (endDate <= startDate) {
-        results.errors.push({
-          row: i + 2,
-          message: "end_date must be after start_date",
-        });
-        continue;
-      }
-
-      const parsedQuantity = Number.parseInt(String(row.quantity || "1"), 10);
-
-      const { error } = await supabase.from("warranties").insert({
-        ...buildWarrantyOwnershipInsert(user.id),
-        reference_number: generateReferenceNumber(i),
-        product_name: sanitizeString(row.product_name, 200),
-        product_name_ar: row.product_name_ar ? sanitizeString(row.product_name_ar, 200) : null,
-        serial_number: row.serial_number ? sanitizeString(row.serial_number, 100) : null,
-        sku: row.sku ? sanitizeString(row.sku, 100) : null,
-        quantity: Number.isFinite(parsedQuantity) && parsedQuantity > 0 ? parsedQuantity : 1,
-        category: row.category ? sanitizeString(row.category, 50) : null,
-        start_date: row.start_date,
-        end_date: row.end_date,
-        seller_name: row.seller_name ? sanitizeString(row.seller_name, 200) : null,
-        seller_email: row.seller_email ? sanitizeString(row.seller_email, 200) : null,
-        status: "active",
-        language: row.language === "ar" ? "ar" : "en",
-      });
-
-      if (error) {
-        results.errors.push({ row: i + 2, message: error.message });
-      } else {
-        results.imported++;
-      }
-    }
-
-    return NextResponse.json(results);
-  } catch (err) {
-    console.warn("Bulk import error:", err);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
+    const mapping = parseImportMapping(formData.get("mapping"), headers);
+    const normalizedRows = mapImportRows(rows, mapping);
+    const duplicateProbes = normalizedRows.map((row) => ({
+      key: getImportDuplicateKey(row),
+      serial_number: row.serial_number || null,
+      invoice_reference: row.invoice_reference || null,
+      product_name: row.product_name || null,
+      start_date: row.start_date || null,
+      end_date: row.end_date || null,
+    }));
+    const { data: duplicateMatches, error: duplicateMatchError } = await supabase.rpc(
+      "match_warranty_import_duplicate_keys",
+      { p_rows: duplicateProbes },
     );
+    if (duplicateMatchError) {
+      console.warn("Bulk import duplicate matching failed:", duplicateMatchError.message);
+      return NextResponse.json(
+        { error: "Could not safely check the import for duplicates" },
+        { status: 500 },
+      );
+    }
+    const existingKeys = new Set<string>(
+      ((duplicateMatches || []) as { duplicate_key: string }[]).map(
+        (row) => row.duplicate_key,
+      ),
+    );
+    const reviewed = reviewImportRows(normalizedRows, existingKeys);
+    const summary = {
+      total: reviewed.length,
+      valid: reviewed.filter((row) => row.valid).length,
+      invalid: reviewed.filter((row) => !row.valid).length,
+      duplicates: reviewed.filter((row) => row.duplicate).length,
+    };
+
+    if (mode === "preview") {
+      return NextResponse.json({
+        mode,
+        headers,
+        normalizedHeaders: headers.map(normalizeImportHeader),
+        mapping,
+        rows: reviewed.slice(0, 100),
+        summary,
+      });
+    }
+
+    if (summary.invalid > 0) {
+      return NextResponse.json({ error: "Resolve invalid or duplicate rows before committing", rows: reviewed.slice(0, 100), summary }, { status: 409 });
+    }
+
+    const batchId = crypto.randomUUID();
+    const inserts = reviewed.map((row) => buildImportWarrantyInsert(row, user.id, batchId));
+    const { data: imported, error: insertError } = await supabase.from("warranties").insert(inserts).select("id");
+    if (insertError) {
+      console.warn("Bulk import commit failed:", insertError.message);
+      return NextResponse.json({ error: "Import was not committed. No rows were added." }, { status: 500 });
+    }
+
+    await supabase.from("activity_log").insert({
+      actor_id: user.id,
+      entity_type: "warranty_import",
+      entity_id: batchId,
+      action: "bulk_import_committed",
+      metadata: { batch_id: batchId, imported: imported?.length || 0, file_type: file.name.toLowerCase().endsWith(".xlsx") ? "xlsx" : "csv" },
+    });
+    return NextResponse.json({ imported: imported?.length || 0, batchId, summary });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Internal server error";
+    const clientError = message.includes("supported") || message.includes("parse error");
+    if (!clientError) console.warn("Bulk import error:", message);
+    return NextResponse.json({ error: clientError ? message : "Internal server error" }, { status: clientError ? 400 : 500 });
   }
 }
