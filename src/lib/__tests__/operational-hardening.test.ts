@@ -544,6 +544,9 @@ describe("operational hardening", () => {
     );
     expect(readiness).toContain('mode: "disabled-by-policy"');
     expect(operationalE2E).toContain("headers: { Origin: trustedOrigin }");
+    expect(operationalE2E).toContain('mode: "commit"');
+    expect(operationalE2E).toContain('Origin: "https://attacker.invalid"');
+    expect(operationalE2E).toContain("rolledBack: 1");
     expect(operationalE2E).toContain("await expectResponseStatus(checkoutResponse, 503)");
     expect(operationalE2E).toContain(
       "Warranty extension checkout is not available yet. Your interest can still be recorded."

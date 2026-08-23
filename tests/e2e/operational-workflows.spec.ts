@@ -31,6 +31,7 @@ let qaUserId: string | null = null;
 let activeWarrantyId: string | null = null;
 let approveWarrantyId: string | null = null;
 let rejectWarrantyId: string | null = null;
+let importBatchId: string | null = null;
 const createdDocumentStoragePaths = new Set<string>();
 
 function adminClient() {
@@ -175,7 +176,16 @@ async function cleanupOperationalData() {
     .ilike("product_name", `${runId}%`);
   const importedIds = (imported || []).map((warranty) => warranty.id).filter(Boolean);
   if (importedIds.length > 0) {
+    await supabase.from("notifications").delete().in("warranty_id", importedIds);
+    await supabase.from("activity_log").delete().eq("entity_type", "warranty").in("entity_id", importedIds);
     await supabase.from("warranties").delete().in("id", importedIds);
+  }
+  if (importBatchId) {
+    await supabase
+      .from("activity_log")
+      .delete()
+      .eq("entity_type", "warranty_import")
+      .eq("entity_id", importBatchId);
   }
 }
 
@@ -243,8 +253,9 @@ test.describe("fully operational production workflows", () => {
       `${runId} Imported Warranty,2026-02-01,2027-02-01,${runId}-IMPORT-SN,${runId}-IMPORT,QA Seller,qa-seller@warrantee.io`,
     ].join("\n");
     const importResponse = await page.request.post("/api/warranties/bulk-import", {
-      headers: { Origin: trustedOrigin },
+      headers: { Origin: trustedOrigin, Referer: `${trustedOrigin}/en/warranties/import` },
       multipart: {
+        mode: "commit",
         file: {
           name: `${runId}-bulk.csv`,
           mimeType: "text/csv",
@@ -255,6 +266,21 @@ test.describe("fully operational production workflows", () => {
     expect(importResponse.status()).toBe(200);
     const importPayload = await importResponse.json();
     expect(importPayload.imported).toBe(1);
+    expect(importPayload.batchId).toMatch(/^[0-9a-f-]{36}$/i);
+    importBatchId = importPayload.batchId;
+
+    const crossOriginRollbackResponse = await page.request.post(
+      `/api/warranties/bulk-import/${importBatchId}/rollback`,
+      { headers: { Origin: "https://attacker.invalid", Referer: "https://attacker.invalid/" } },
+    );
+    expect(crossOriginRollbackResponse.status()).toBe(403);
+
+    const rollbackResponse = await page.request.post(
+      `/api/warranties/bulk-import/${importBatchId}/rollback`,
+      { headers: { Origin: trustedOrigin, Referer: `${trustedOrigin}/en/warranties/import` } },
+    );
+    expect(rollbackResponse.status()).toBe(200);
+    await expect(rollbackResponse.json()).resolves.toMatchObject({ rolledBack: 1 });
 
     const approveResponse = await page.request.post(`/api/warranties/${approveWarrantyId}/approve`);
     expect(approveResponse.status()).toBe(200);
