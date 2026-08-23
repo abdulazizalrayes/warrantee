@@ -228,7 +228,7 @@ test.describe("fully operational production workflows", () => {
     await signInWithPassword(page);
   });
 
-  test("bulk import, approval, rejection, document upload, payment checkout, OCR, and team guardrails work", async ({
+  test("bulk import, approval, rejection, document upload, payment guardrail, OCR, and team guardrails work", async ({
     page,
   }, testInfo) => {
     test.setTimeout(120_000);
@@ -236,12 +236,14 @@ test.describe("fully operational production workflows", () => {
     expect(activeWarrantyId).toBeTruthy();
     expect(approveWarrantyId).toBeTruthy();
     expect(rejectWarrantyId).toBeTruthy();
+    const trustedOrigin = new URL(page.url()).origin;
 
     const csv = [
       "product_name,start_date,end_date,serial_number,sku,seller_name,seller_email",
       `${runId} Imported Warranty,2026-02-01,2027-02-01,${runId}-IMPORT-SN,${runId}-IMPORT,QA Seller,qa-seller@warrantee.io`,
     ].join("\n");
     const importResponse = await page.request.post("/api/warranties/bulk-import", {
+      headers: { Origin: trustedOrigin },
       multipart: {
         file: {
           name: `${runId}-bulk.csv`,
@@ -410,6 +412,7 @@ test.describe("fully operational production workflows", () => {
     const extensionId = extension!.id;
 
     const checkoutResponse = await page.request.post("/api/payments/create", {
+      headers: { Origin: trustedOrigin },
       data: {
         warrantyId: activeWarrantyId,
         extensionId,
@@ -419,11 +422,11 @@ test.describe("fully operational production workflows", () => {
         returnUrl: "https://warrantee.io",
       },
     });
-    await expectResponseStatus(checkoutResponse, 200);
+    await expectResponseStatus(checkoutResponse, 503);
     const checkoutPayload = await checkoutResponse.json();
-    expect(checkoutPayload.provider).toBe("stripe");
-    expect(checkoutPayload.sessionId).toBeTruthy();
-    expect(checkoutPayload.url).toMatch(/^https:\/\/checkout\.stripe\.com\//);
+    expect(checkoutPayload.error).toBe(
+      "Warranty extension checkout is not available yet. Your interest can still be recorded.",
+    );
 
     await errors.assertClean();
   });

@@ -535,6 +535,7 @@ describe("operational hardening", () => {
 
   it("keeps readiness aligned with the fail-closed extension marketplace", () => {
     const readiness = readProjectFile("scripts/operational-readiness-check.mjs");
+    const operationalE2E = readProjectFile("tests/e2e/operational-workflows.spec.ts");
 
     expect(readiness).toContain("headers: { Origin: baseUrl }");
     expect(readiness).toContain("result.status === 503");
@@ -542,6 +543,11 @@ describe("operational hardening", () => {
       "Warranty extension checkout is not available yet. Your interest can still be recorded."
     );
     expect(readiness).toContain('mode: "disabled-by-policy"');
+    expect(operationalE2E).toContain("headers: { Origin: trustedOrigin }");
+    expect(operationalE2E).toContain("await expectResponseStatus(checkoutResponse, 503)");
+    expect(operationalE2E).toContain(
+      "Warranty extension checkout is not available yet. Your interest can still be recorded."
+    );
   });
 
   it("keeps bulk import commits and rollbacks behind explicit same-origin checks", () => {
