@@ -1,6 +1,13 @@
 # Warrantee Operational Status
 
-Last updated: 2026-08-23
+Last updated: 2026-08-24
+
+## 2026-08-24 Google OAuth Credential Cleanup
+
+- Verified the Google Cloud identity lock as `abdulaziz.alrayes@gmail.com` / `Warrantee` / `warrantee-491217` before making changes.
+- Deleted the obsolete OAuth client named `Warrantee`. Google reported it had not been used since March 24, 2026 and flagged it for inactivity; it is recoverable from Google Cloud deleted credentials for 30 days.
+- Preserved the active `Warrantee2` OAuth client used by the live Supabase Google sign-in redirect and preserved the actively used `CRM Email Intelligence` client.
+- Post-deletion verification confirmed the obsolete client is absent from the credential inventory and the live Supabase authorization flow still selects `Warrantee2`.
 
 ## 2026-08-23 Approved Growth And Lifecycle Uplift
 
