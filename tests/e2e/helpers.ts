@@ -54,7 +54,7 @@ export async function expectProtectedRedirect(page: Page, path: string) {
   const response = await page.goto(path, { waitUntil: "domcontentloaded" });
   expect(response?.status(), `${path} should resolve after auth redirect`).toBeLessThan(400);
   await expect(page).toHaveURL(/\/en\/auth/);
-  await expect(page.getByRole("heading", { name: /Warrantee/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Access your warranty workspace/i })).toBeVisible();
 }
 
 export async function signInWithPassword(page: Page) {

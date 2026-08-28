@@ -52,7 +52,7 @@ test.describe("public experience", () => {
 
   test("Professional access request opens the contact journey", async ({ page }) => {
     await expectHealthyPage(page, "/en/pricing");
-    await page.getByRole("button", { name: "Request Professional access" }).click();
+    await page.getByRole("button", { name: "Request pilot access" }).click();
     await expect(page).toHaveURL(/\/en\/contact\?intent=professional-access$/);
   });
 });
