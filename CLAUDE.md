@@ -99,15 +99,17 @@ If verification cannot be run, explain why and state the remaining risk.
 
 Use this section only when the user explicitly asks about cloud Paperclip (`ai.eijarat.com`) or Paperclip agents. Do not mix Paperclip work, accounts, models, or assumptions into Warrantee product work.
 
-- The user reports cloud Paperclip at `ai.eijarat.com` was upgraded to `v2026.722.0`.
+- Current shared-cloud baseline, verified on 2026-08-28: Paperclip at `ai.eijarat.com` is running stable `v2026.824.1`. The authenticated regular-browser UI exposed release branch `deployment/v2026.824.1-cloud-models-20260828` and commit `9a8d0d6`, and the Warrantee workspace remained available under company prefix `WAR`.
+- The 2026-08-28 owner operational notice records 21 preserved company workspaces, healthy post-cutover logs and backups, 56 GB free disk space, and no database migration or configuration change in this patch. Treat those shared-service facts as owner-supplied operational evidence; independently refresh live state before any Paperclip-dependent operation.
 - Before acting on Paperclip, verify the live app state through `/api/health`, a visible running version endpoint, or an authenticated browser/session. Do not assume the release is active just because the user mentioned it.
 - Confirm Paperclip is active and healthy before using it for important work.
 - Confirm the available OpenCode models before assigning agents.
-- Prefer `opencode/big-pickle` for important/main agent work when available.
-- Prefer `opencode/deepseek-v4-flash-free` for cheaper/helper work when available.
+- Use `opencode/big-pickle` for important/main agent work. It was present in the live OpenCode catalog and configured on the Warrantee CEO agent on 2026-08-28.
+- The approved cheap/helper default remains `opencode/deepseek-v4-flash-free`, but the live seven-model OpenCode catalog did not advertise it on 2026-08-28 even though existing agent configuration still displayed it as the adapter fallback. Do not treat that stale-looking fallback label as proof that the model can run. Do not silently substitute another helper model; surface the catalog mismatch and obtain owner approval before changing the helper model.
 - Kimi is not configured or approved. Do not assign it unless the owner explicitly approves it later.
 - Watch for older agents that may still carry old model configs; clean or migrate those configs before relying on them.
 - Cloudflare Access may protect Paperclip endpoints. If unauthenticated shell checks return an Access login page, record that the app is access-protected and verify health through an authenticated regular browser/session instead.
+- No session-local Paperclip installation or restart is needed after this shared-cloud upgrade. New Paperclip agent processes use the upgraded service automatically.
 - Use the release's improved attention/Decisions queue, Skill Studio, search, run recovery, cost telemetry, secret-access controls, and Office attachments when relevant.
 - Do not enable experimental features without owner approval.
 - Do not change existing agents or model assignments without first reviewing their current configuration and purpose.
