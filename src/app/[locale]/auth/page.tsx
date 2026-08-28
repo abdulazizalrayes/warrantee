@@ -124,12 +124,12 @@ export default function AuthPage() {
     ? [
         { icon: ShieldCheck, label: "الوصول الآمن إلى الضمانات والمطالبات" },
         { icon: BadgeCheck, label: "تجربة ثنائية اللغة للأفراد والشركات" },
-        { icon: Sparkles, label: "رحلات موافقات ووثائق ومتابعة مصممة باحتراف" },
+        { icon: Sparkles, label: "أنشئ أول ضمان وشهادة ضمن مسار موجّه واحد" },
       ]
     : [
         { icon: ShieldCheck, label: "Secure access to warranties, claims, and approvals" },
         { icon: BadgeCheck, label: "Bilingual experience for consumers and businesses" },
-        { icon: Sparkles, label: "A premium operations flow for certificates, approvals, and support" },
+        { icon: Sparkles, label: "Create the first warranty and certificate in one guided flow" },
       ];
 
   return (
@@ -142,9 +142,8 @@ export default function AuthPage() {
       />
       <div className="mx-auto flex min-h-screen max-w-7xl items-center px-4 py-10 sm:px-6 lg:px-8">
         <div className="grid w-full gap-6 lg:grid-cols-[1.05fr_0.95fr]">
-          <section className="relative overflow-hidden rounded-[36px] bg-[#1A1A2E] px-7 py-8 text-white shadow-[0_30px_80px_rgba(15,23,42,0.18)] sm:px-10 sm:py-10">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(0,113,227,0.18),transparent_32%),radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.08),transparent_28%)]" />
-            <div className="relative z-10">
+          <section className="overflow-hidden rounded-[28px] bg-[#1d1d1f] px-7 py-8 text-white shadow-[0_24px_70px_rgba(29,29,31,0.16)] sm:px-10 sm:py-10">
+            <div>
               <Link
                 href={`/${locale}`}
                 className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-[12px] font-medium text-white/90 transition hover:bg-white/15"
@@ -161,19 +160,19 @@ export default function AuthPage() {
                   {isRTL ? "بوابة الدخول" : "Access portal"}
                 </p>
                 <h1 className="text-[34px] font-semibold tracking-tight sm:text-[48px]">
-                  {isRTL ? "ادخل إلى تجربة ضمان تبدو مكتملة فعلًا" : "Access your warranty workspace"}
+                  {isRTL ? "ادخل إلى مساحة عمل الضمانات" : "Access your warranty workspace"}
                 </h1>
                 <p className="mt-4 max-w-xl text-[16px] leading-7 text-white/70 sm:text-[18px]">
                   {isRTL
-                    ? "يجب أن تكون بوابة الدخول بنفس جودة المنتج نفسه: واضحة، مطمئنة، راقية، وسهلة للأفراد والشركات على حد سواء."
-                    : "Sign in to upload receipts, manage warranty records, approve business requests, file claims, and keep proof ready when you need it."}
+                    ? "أنشئ الضمانات وأرفق الفواتير وراجع الموافقات والمطالبات واحتفظ بالإثبات جاهزًا عند الحاجة."
+                    : "Sign in to create warranties, attach receipts, review approvals and claims, and keep proof ready when it is needed."}
                 </p>
               </div>
 
-              <div className="mt-10 grid gap-3">
+              <div className="mt-10 divide-y divide-white/10 border-y border-white/10">
                 {trustPoints.map(({ icon: Icon, label }) => (
-                  <div key={label} className="flex items-center gap-3 rounded-2xl bg-white/8 px-4 py-4 backdrop-blur-sm">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10">
+                  <div key={label} className="flex items-center gap-3 py-4">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10">
                       <Icon className="h-5 w-5 text-[#0071e3]" />
                     </div>
                     <p className="text-[14px] text-white/88">{label}</p>
@@ -183,15 +182,19 @@ export default function AuthPage() {
             </div>
           </section>
 
-          <section className="rounded-[36px] bg-white p-5 shadow-[0_24px_60px_rgba(15,23,42,0.08)] ring-1 ring-[#d2d2d7]/40 sm:p-7">
+          <section className="rounded-[28px] bg-white p-5 shadow-[0_20px_50px_rgba(29,29,31,0.08)] ring-1 ring-[#d2d2d7]/40 sm:p-7">
             <div className="mx-auto w-full max-w-md">
               <div className="mb-8 text-center">
-                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#f5f5f7] text-[#1A1A2E]">
-                  <span className="text-lg font-semibold">W</span>
-                </div>
-                <h2 className="text-[30px] font-semibold tracking-tight text-[#1d1d1f]">Warrantee</h2>
+                <Link href={`/${locale}`} dir="ltr" className="mb-4 inline-flex items-center gap-1 text-[21px] font-semibold tracking-tight text-[#1d1d1f]">
+                  Warrantee<span className="text-[#0071e3]">.</span>
+                </Link>
+                <h2 className="text-[28px] font-semibold tracking-tight text-[#1d1d1f]">
+                  {activeTab === "signup" ? (isRTL ? "أنشئ حسابك" : "Create your account") : (isRTL ? "مرحبًا بعودتك" : "Welcome back")}
+                </h2>
                 <p className="mt-2 text-[15px] text-[#6e6e73]">
-                  {isRTL ? "\u0645\u0631\u062d\u0628\u0627 \u0628\u0643 \u0641\u064a Warrantee" : "Welcome back to Warrantee"}
+                  {activeTab === "signup"
+                    ? (isRTL ? "ابدأ مجانًا دون بطاقة ائتمانية." : "Start free without a credit card.")
+                    : (isRTL ? "ادخل إلى سجلاتك ومهامك." : "Open your records and tasks.")}
                 </p>
               </div>
 
@@ -262,7 +265,21 @@ export default function AuthPage() {
                       <div><label htmlFor="signup-full-name" className="mb-2 block text-sm font-medium text-[#1A1A2E]">{isRTL ? "\u0627\u0644\u0627\u0633\u0645 \u0627\u0644\u0643\u0627\u0645\u0644" : "Full Name"}</label><input id="signup-full-name" name="fullName" type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} className="w-full rounded-2xl border border-[#d2d2d7] px-4 py-3 text-[#1d1d1f] outline-none transition focus:border-[#0071e3] focus:ring-2 focus:ring-[#0071e3]/20" required /></div>
                       <div><label htmlFor="signup-email" className="mb-2 block text-sm font-medium text-[#1A1A2E]">{dict.auth.email}</label><input id="signup-email" name="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" className="w-full rounded-2xl border border-[#d2d2d7] px-4 py-3 text-[#1d1d1f] outline-none transition focus:border-[#0071e3] focus:ring-2 focus:ring-[#0071e3]/20" required dir="ltr" /></div>
                       <div><label htmlFor="signup-password" className="mb-2 block text-sm font-medium text-[#1A1A2E]">{dict.auth.password}</label><div className="relative"><input id="signup-password" name="password" type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} className="w-full rounded-2xl border border-[#d2d2d7] px-4 py-3 text-[#1d1d1f] outline-none transition focus:border-[#0071e3] focus:ring-2 focus:ring-[#0071e3]/20" required minLength={8} dir="ltr" /><button type="button" aria-label={showPassword ? "Hide password" : "Show password"} onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 transition hover:text-gray-600">{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button></div><p className="mt-1 text-xs text-[#86868b]">{isRTL ? "8 \u0623\u062d\u0631\u0641 \u0639\u0644\u0649 \u0627\u0644\u0623\u0642\u0644" : "Minimum 8 characters"}</p></div>
-                      <div><label className="mb-2 block text-sm font-medium text-[#1A1A2E]">{isRTL ? "\u0646\u0648\u0639 \u0627\u0644\u062d\u0633\u0627\u0628" : "Account Type"}</label><div className="grid grid-cols-2 gap-3"><label className={`cursor-pointer rounded-2xl border px-4 py-3 transition ${accountType === "consumer" ? "border-[#0071e3] bg-[#0071e3]/8" : "border-[#d2d2d7] bg-white"}`}><input type="radio" name="accountType" value="consumer" checked={accountType === "consumer"} onChange={(e) => setAccountType(e.target.value as "consumer" | "business")} className="sr-only" /><span className="text-sm font-medium text-[#1A1A2E]">{isRTL ? "\u0645\u0633\u062a\u0647\u0644\u0643" : "Consumer"}</span></label><label className={`cursor-pointer rounded-2xl border px-4 py-3 transition ${accountType === "business" ? "border-[#0071e3] bg-[#0071e3]/8" : "border-[#d2d2d7] bg-white"}`}><input type="radio" name="accountType" value="business" checked={accountType === "business"} onChange={(e) => setAccountType(e.target.value as "consumer" | "business")} className="sr-only" /><span className="text-sm font-medium text-[#1A1A2E]">{isRTL ? "\u0634\u0631\u0643\u0629" : "Business"}</span></label></div></div>
+                      <div>
+                        <label className="mb-2 block text-sm font-medium text-[#1A1A2E]">{isRTL ? "نوع الحساب" : "Account Type"}</label>
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                          <label className={`cursor-pointer rounded-2xl border px-4 py-3 transition ${accountType === "consumer" ? "border-[#0071e3] bg-[#0071e3]/8" : "border-[#d2d2d7] bg-white"}`}>
+                            <input type="radio" name="accountType" value="consumer" checked={accountType === "consumer"} onChange={(e) => setAccountType(e.target.value as "consumer" | "business")} className="sr-only" />
+                            <span className="block text-sm font-semibold text-[#1A1A2E]">{isRTL ? "فرد" : "Individual"}</span>
+                            <span className="mt-1 block text-[11px] leading-4 text-[#6e6e73]">{isRTL ? "حفظ الضمانات والفواتير الشخصية." : "Keep personal warranties and receipts."}</span>
+                          </label>
+                          <label className={`cursor-pointer rounded-2xl border px-4 py-3 transition ${accountType === "business" ? "border-[#0071e3] bg-[#0071e3]/8" : "border-[#d2d2d7] bg-white"}`}>
+                            <input type="radio" name="accountType" value="business" checked={accountType === "business"} onChange={(e) => setAccountType(e.target.value as "consumer" | "business")} className="sr-only" />
+                            <span className="block text-sm font-semibold text-[#1A1A2E]">{isRTL ? "شركة" : "Business"}</span>
+                            <span className="mt-1 block text-[11px] leading-4 text-[#6e6e73]">{isRTL ? "إصدار الضمانات وإدارة الفريق والعملاء." : "Issue warranties for customers and teams."}</span>
+                          </label>
+                        </div>
+                      </div>
                       {accountType === "business" && (<div><label htmlFor="signup-company-name" className="mb-2 block text-sm font-medium text-[#1A1A2E]">{isRTL ? "\u0627\u0633\u0645 \u0627\u0644\u0634\u0631\u0643\u0629" : "Company Name"}</label><input id="signup-company-name" name="companyName" type="text" value={companyName} onChange={(e) => setCompanyName(e.target.value)} className="w-full rounded-2xl border border-[#d2d2d7] px-4 py-3 text-[#1d1d1f] outline-none transition focus:border-[#0071e3] focus:ring-2 focus:ring-[#0071e3]/20" required={accountType === "business"} /></div>)}
                       <button type="submit" disabled={isFormLoading} className="w-full rounded-full bg-[#0071e3] py-3 text-sm font-semibold text-white transition hover:bg-[#0077ED] disabled:cursor-not-allowed disabled:opacity-50">{isFormLoading ? dict.common.loading : dict.auth.create_account}</button>
                       {message && (<div className="rounded-2xl border border-green-200 bg-green-50 p-3 text-sm text-green-800">{message}</div>)}

@@ -151,7 +151,7 @@ describe("operational hardening", () => {
     expect(pricingPage).not.toContain('from "@/lib/auth-context"');
     expect(pricingPage).not.toContain('fetch("/api/stripe/checkout"');
     expect(pricingPage).toContain("professional-access");
-    expect(pricingPage).toContain("Request Professional access");
+    expect(pricingPage).toContain("Request pilot access");
   });
 
   it("keeps first-run onboarding behind the authenticated application boundary", () => {

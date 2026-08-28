@@ -65,12 +65,20 @@ export function Navbar({ locale, dictionary }: NavbarProps) {
             </Link>
           </div>
 
-          <div className="md:hidden flex items-center gap-2">
+          <div className="md:hidden flex items-center gap-1.5">
+            <Link
+              href={`/${locale}/auth?tab=signup`}
+              prefetch={false}
+              className="rounded-full bg-[#0071e3] px-3 py-2 text-[12px] font-semibold text-white transition-colors hover:bg-[#0077ED]"
+            >
+              {isRTL ? "ابدأ" : "Start"}
+            </Link>
             <LanguageToggle currentLocale={locale} variant="icon" />
             <button
               onClick={() => setIsOpen(!isOpen)}
               className="rounded-lg p-2 text-[#1d1d1f] transition-colors hover:bg-[#f5f5f7]"
-              aria-label="Toggle menu"
+              aria-label={isRTL ? "فتح قائمة التنقل" : "Toggle navigation"}
+              aria-expanded={isOpen}
             >
               {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>

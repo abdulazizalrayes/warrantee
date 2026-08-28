@@ -1,15 +1,16 @@
 "use client";
 import { useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { useAuth } from "@/lib/auth-context";
-import { Shield, Phone, Bell, ChevronRight, ChevronLeft, Check, Sparkles, BriefcaseBusiness } from "lucide-react";
+import { Shield, Phone, ChevronRight, ChevronLeft, Check, Sparkles, BriefcaseBusiness } from "lucide-react";
 import Link from "next/link";
 import { trackActivationStarted, trackOnboardingCompleted, trackOnboardingTemplateSelected } from "@/lib/ga4-events";
 import { WARRANTY_TEMPLATES } from "@/lib/warranty-templates";
 
 export default function OnboardingPage() {
   const { locale } = useParams() ?? {};
+  const router = useRouter();
   const supabase = createSupabaseBrowserClient();
   const { user, refreshProfile } = useAuth();
   const isAr = locale === "ar";
@@ -29,10 +30,9 @@ export default function OnboardingPage() {
   const userName = user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split("@")[0] || "";
 
   const steps = [
-    { icon: Phone, title: isAr ? "\u0631\u0642\u0645 \u0627\u0644\u0647\u0627\u062a\u0641" : "Phone Number", sub: isAr ? "\u0623\u0636\u0641 \u0631\u0642\u0645 \u0647\u0627\u062a\u0641\u0643" : "Add your mobile number" },
     { icon: BriefcaseBusiness, title: isAr ? "\u0646\u0642\u0637\u0629 \u0627\u0644\u0628\u062f\u0627\u064a\u0629" : "Starting point", sub: isAr ? "\u0627\u062e\u062a\u0631 \u0627\u0644\u0646\u0645\u0648\u0630\u062c \u0627\u0644\u0623\u0642\u0631\u0628 \u0644\u0639\u0645\u0644\u0643" : "Choose the closest workflow template" },
-    { icon: Bell, title: isAr ? "\u0627\u0644\u0625\u0634\u0639\u0627\u0631\u0627\u062a" : "Notifications", sub: isAr ? "\u0627\u062e\u062a\u0631 \u062a\u0646\u0628\u064a\u0647\u0627\u062a\u0643" : "Choose your alerts" },
-    { icon: Sparkles, title: isAr ? "\u062c\u0627\u0647\u0632!" : "All Set!", sub: isAr ? "\u0627\u0628\u062f\u0623 \u0627\u0644\u0622\u0646" : "Start exploring" },
+    { icon: Phone, title: isAr ? "بيانات التواصل" : "Contact details", sub: isAr ? "أضف رقمك واختر اللغة المفضلة" : "Add your number and preferred language" },
+    { icon: Sparkles, title: isAr ? "جاهز!" : "All set!", sub: isAr ? "أنشئ أول ضمان" : "Create your first warranty" },
   ];
 
   const handleSubmit = async () => {
@@ -56,10 +56,37 @@ export default function OnboardingPage() {
         notifications_enabled: form.notify_expiry || form.notify_claims || form.notify_newsletter,
       });
       await refreshProfile();
-      setStep(3);
+      setStep(2);
     } catch (e) {
       console.error(e);
       setError(isAr ? "\u062a\u0639\u0630\u0651\u0631 \u062d\u0641\u0638 \u0627\u0644\u0625\u0639\u062f\u0627\u062f\u0627\u062a. \u062d\u0627\u0648\u0644 \u0645\u0631\u0629 \u0623\u062e\u0631\u0649." : "We could not save your setup. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSkip = async () => {
+    if (!user || loading) return;
+    setLoading(true);
+    setError("");
+    try {
+      const { error } = await supabase.from("profiles").update({
+        onboarding_completed: true,
+        preferred_locale: form.language,
+        preferred_language: form.language,
+      }).eq("id", user.id);
+      if (error) throw error;
+      trackOnboardingCompleted({
+        locale,
+        template: form.template,
+        notifications_enabled: false,
+      });
+      await refreshProfile();
+      router.push(`/${locale}/dashboard`);
+      router.refresh();
+    } catch (e) {
+      console.error(e);
+      setError(isAr ? "تعذّر تخطي الإعداد. حاول مرة أخرى." : "We could not skip setup. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -91,7 +118,7 @@ export default function OnboardingPage() {
       </div>
 
       <div className="max-w-3xl mx-auto px-6 py-10">
-        <div className="mb-8 rounded-3xl bg-gradient-to-br from-[#1A1A2E] via-[#242446] to-[#2f2f5f] px-6 py-7 text-white shadow-lg">
+        <div className="mb-8 rounded-[28px] bg-[#1d1d1f] px-6 py-7 text-white shadow-lg">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div className="max-w-xl">
               <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[12px] font-medium text-white/85">
@@ -103,8 +130,8 @@ export default function OnboardingPage() {
               </h1>
               <p className="mt-3 text-[15px] text-white/70">
                 {isAr
-                  ? "أكمل بيانات الاتصال والتنبيهات الأساسية حتى تصبح تجربة الضمانات جاهزة للاستخدام اليومي."
-                  : "Complete your core contact and notification preferences so the warranty experience is ready for daily use."}
+                  ? "اختر نقطة البداية وأضف بيانات التواصل الاختيارية، ثم أنشئ أول ضمان مباشرة."
+                  : "Choose a starting point, add optional contact details, then create your first warranty."}
               </p>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-[13px] text-white/75">
@@ -144,7 +171,7 @@ export default function OnboardingPage() {
 
         {/* Step Content Card */}
         <div className="bg-white rounded-2xl ring-1 ring-[#d2d2d7]/40 shadow-sm p-8 mb-8">
-          {step === 0 && (
+          {step === 1 && (
             <div className="space-y-6">
               <div>
                 <label className="block text-[13px] font-medium text-[#86868b] mb-2">{isAr ? "\u0631\u0642\u0645 \u0627\u0644\u062c\u0648\u0627\u0644" : "Mobile Number"}</label>
@@ -156,7 +183,7 @@ export default function OnboardingPage() {
                   className="w-full px-4 py-3 rounded-xl bg-[#f5f5f7] border-0 text-[15px] text-[#1d1d1f] placeholder:text-[#86868b]/60 focus:outline-none focus:ring-2 focus:ring-[#007aff] transition-all"
                   dir="ltr"
                 />
-                <p className="text-[12px] text-[#86868b] mt-2">{isAr ? "\u0627\u062e\u062a\u064a\u0627\u0631\u064a \u2014 \u0644\u0625\u0631\u0633\u0627\u0644 \u062a\u0646\u0628\u064a\u0647\u0627\u062a \u0627\u0644\u0636\u0645\u0627\u0646" : "Optional \u2014 for warranty expiry alerts via SMS"}</p>
+                <p className="text-[12px] text-[#86868b] mt-2">{isAr ? "اختياري — لإكمال بيانات الحساب والتواصل." : "Optional — used for account and service contact details."}</p>
               </div>
               <div>
                 <label className="block text-[13px] font-medium text-[#86868b] mb-2">{isAr ? "\u0627\u0644\u0644\u063a\u0629 \u0627\u0644\u0645\u0641\u0636\u0644\u0629" : "Preferred Language"}</label>
@@ -175,7 +202,7 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {step === 1 && (
+          {step === 0 && (
             <div className="grid gap-3 sm:grid-cols-2">
               {WARRANTY_TEMPLATES.map((template) => {
                 const selected = form.template === template.id;
@@ -198,35 +225,6 @@ export default function OnboardingPage() {
           )}
 
           {step === 2 && (
-            <div className="space-y-4">
-              {[
-                { key: "notify_expiry", title: isAr ? "\u062a\u0646\u0628\u064a\u0647\u0627\u062a \u0627\u0646\u062a\u0647\u0627\u0621 \u0627\u0644\u0636\u0645\u0627\u0646" : "Warranty Expiry Alerts", desc: isAr ? "\u0625\u0634\u0639\u0627\u0631 \u0642\u0628\u0644 30 \u064a\u0648\u0645 \u0645\u0646 \u0627\u0646\u062a\u0647\u0627\u0621 \u0627\u0644\u0636\u0645\u0627\u0646" : "Get notified 30 days before expiry", recommended: true },
-                { key: "notify_claims", title: isAr ? "\u062a\u062d\u062f\u064a\u062b\u0627\u062a \u0627\u0644\u0645\u0637\u0627\u0644\u0628\u0627\u062a" : "Claim Status Updates", desc: isAr ? "\u062a\u062d\u062f\u064a\u062b\u0627\u062a \u0641\u0648\u0631\u064a\u0629 \u0639\u0646 \u062d\u0627\u0644\u0629 \u0645\u0637\u0627\u0644\u0628\u0627\u062a\u0643" : "Real-time updates on your claims", recommended: true },
-                { key: "notify_newsletter", title: isAr ? "\u0627\u0644\u0646\u0634\u0631\u0629 \u0627\u0644\u0625\u062e\u0628\u0627\u0631\u064a\u0629" : "Product Newsletter", desc: isAr ? "\u0646\u0635\u0627\u0626\u062d \u0648\u062a\u062d\u062f\u064a\u062b\u0627\u062a \u0634\u0647\u0631\u064a\u0629" : "Monthly tips and product updates", recommended: false },
-              ].map((item) => (
-                <button
-                  key={item.key}
-                  onClick={() => setForm({ ...form, [item.key]: !form[item.key as keyof typeof form] })}
-                  className="w-full flex items-center justify-between p-4 rounded-xl bg-[#f5f5f7] hover:bg-[#e8e8ed] transition-all duration-200"
-                >
-                  <div className="flex-1 text-start">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[15px] font-medium text-[#1d1d1f]">{item.title}</span>
-                      {item.recommended && (
-                        <span className="text-[11px] font-medium text-[#007aff] bg-[#007aff]/10 px-2 py-0.5 rounded-full">{isAr ? "\u0645\u0648\u0635\u0649 \u0628\u0647" : "Recommended"}</span>
-                      )}
-                    </div>
-                    <p className="text-[13px] text-[#86868b] mt-0.5">{item.desc}</p>
-                  </div>
-                  <div className={"w-12 h-7 rounded-full transition-all duration-300 flex items-center " + (form[item.key as keyof typeof form] ? "bg-[#30d158] justify-end" : "bg-[#d2d2d7] justify-start")}>
-                    <div className="w-5.5 h-5.5 mx-0.5 bg-white rounded-full shadow-sm" style={{ width: 22, height: 22, margin: 2 }} />
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
-
-          {step === 3 && (
             <div className="text-center py-8">
               <div className="w-20 h-20 rounded-full bg-[#30d158]/10 flex items-center justify-center mx-auto mb-6">
                 <Check className="w-10 h-10 text-[#30d158]" />
@@ -291,7 +289,7 @@ export default function OnboardingPage() {
         {/* Navigation */}
         {error && <p role="alert" className="mb-4 text-center text-sm text-red-600">{error}</p>}
 
-        {step < 3 && (
+        {step < 2 && (
           <div className="flex items-center justify-between">
             <button
               onClick={() => setStep(Math.max(0, step - 1))}
@@ -302,7 +300,7 @@ export default function OnboardingPage() {
               {isAr ? "\u0627\u0644\u0633\u0627\u0628\u0642" : "Back"}
             </button>
 
-            {step < 2 ? (
+            {step < 1 ? (
               <button
                 onClick={() => setStep(step + 1)}
                 className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#1A1A2E] text-white text-[15px] font-medium hover:opacity-90 transition-all"
@@ -330,14 +328,16 @@ export default function OnboardingPage() {
         )}
 
         {/* Skip link */}
-        {step < 3 && (
+        {step < 2 && (
           <div className="text-center mt-6">
-            <Link
-              href={"/" + locale + "/dashboard"}
+            <button
+              type="button"
+              onClick={() => void handleSkip()}
+              disabled={loading}
               className="text-[13px] text-[#86868b] hover:text-[#1d1d1f] transition-colors"
             >
               {isAr ? "\u062a\u062e\u0637\u064a \u0627\u0644\u0625\u0639\u062f\u0627\u062d" : "Skip for now"}
-            </Link>
+            </button>
           </div>
         )}
       </div>

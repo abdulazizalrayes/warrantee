@@ -1,15 +1,25 @@
-import type { Metadata } from 'next';
-import { getDictionary, Locale, DIRECTION } from '@/lib/i18n';
-import { Navbar } from '@/components/Navbar';
-import { Footer } from '@/components/Footer';
-import { TrackedLink } from '@/components/TrackedLink';
-import { PageViewTracker } from '@/components/PageViewTracker';
-import { buildPageMetadata } from '@/lib/page-metadata';
+import type { Metadata } from "next";
 import {
-  Shield, Bell, FileCheck, BarChart3, Mail, Link2,
-  Clock, CheckCircle, ArrowRight, Globe, ChevronRight,
-  BadgeCheck, KeyRound, QrCode, TrendingUp, Workflow,
-} from 'lucide-react';
+  BadgeCheck,
+  Bell,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  FileCheck2,
+  KeyRound,
+  Mail,
+  QrCode,
+  ScanLine,
+  ShieldCheck,
+  Workflow,
+} from "lucide-react";
+import { Footer } from "@/components/Footer";
+import { Navbar } from "@/components/Navbar";
+import { PageViewTracker } from "@/components/PageViewTracker";
+import { TrackedLink } from "@/components/TrackedLink";
+import { WarrantyProofPreview } from "@/components/marketing/WarrantyProofPreview";
+import { DIRECTION, getDictionary, type Locale } from "@/lib/i18n";
+import { buildPageMetadata } from "@/lib/page-metadata";
 
 interface HomePageProps {
   params: Promise<{ locale: string }>;
@@ -17,479 +27,301 @@ interface HomePageProps {
 
 export async function generateMetadata({ params }: HomePageProps): Promise<Metadata> {
   const { locale } = await params;
-  return buildPageMetadata('home', locale);
+  return buildPageMetadata("home", locale);
 }
 
 export default async function HomePage({ params }: HomePageProps) {
   const { locale: localeParam } = await params;
   const locale = localeParam as Locale;
   const dictionary = getDictionary(locale);
-  const isRTL = DIRECTION[locale] === 'rtl';
+  const isRTL = DIRECTION[locale] === "rtl";
+  const ForwardIcon = isRTL ? ChevronLeft : ChevronRight;
 
-  const featureIcons: Record<string, React.ReactNode> = {
-    approval_workflow: <FileCheck className="w-7 h-7" />,
-    expiry_reminders: <Bell className="w-7 h-7" />,
-    bilingual_certs: <Globe className="w-7 h-7" />,
-    dashboard: <BarChart3 className="w-7 h-7" />,
-    email_to_warranty: <Mail className="w-7 h-7" />,
-    chain_tracking: <Link2 className="w-7 h-7" />,
-  };
+  const proofPoints = isRTL
+    ? ["خطة مجانية دون بطاقة", "شهادات عربية وإنجليزية", "تحقق مباشر عبر QR"]
+    : ["Free plan, no card", "Arabic and English certificates", "Live QR verification"];
+
+  const workflowSteps = isRTL
+    ? [
+        {
+          icon: FileCheck2,
+          eyebrow: "01 — الإصدار",
+          title: "أنشئ سجل الضمان مرة واحدة.",
+          body: "أضف المنتج والمدة والشروط والمستندات في سجل منظم يملكه الشخص أو الشركة الصحيحة.",
+          detail: "إدخال يدوي، استيراد جماعي، أو بريد إلى ضمان.",
+        },
+        {
+          icon: Workflow,
+          eyebrow: "02 — القرار",
+          title: "وجّه الموافقات والمطالبات بسياق كامل.",
+          body: "تبقى الأدلة والشروط وسجل القرارات مرتبطة بالضمان، بدل البحث بين الرسائل والجداول.",
+          detail: "صلاحيات شركة، موافقات، مطالبات، وسجل تدقيق.",
+        },
+        {
+          icon: QrCode,
+          eyebrow: "03 — الإثبات",
+          title: "شارك شهادة وجواز منتج يمكن التحقق منهما.",
+          body: "يمسح المشتري رمز QR للتحقق من الحالة وفتح الشهادة وبدء المطالبة من نفس السجل.",
+          detail: "تجربة ثنائية اللغة جاهزة للجوال.",
+        },
+      ]
+    : [
+        {
+          icon: FileCheck2,
+          eyebrow: "01 — Issue",
+          title: "Create the warranty record once.",
+          body: "Capture the product, coverage, terms, and evidence in a structured record owned by the right person or company.",
+          detail: "Manual entry, bulk import, or email-to-warranty.",
+        },
+        {
+          icon: Workflow,
+          eyebrow: "02 — Decide",
+          title: "Route approvals and claims with full context.",
+          body: "Evidence, terms, and decisions stay connected to the warranty instead of being scattered across email and spreadsheets.",
+          detail: "Company permissions, approvals, claims, and audit history.",
+        },
+        {
+          icon: QrCode,
+          eyebrow: "03 — Prove",
+          title: "Share a certificate and verifiable product passport.",
+          body: "The buyer scans a QR code to verify status, open the certificate, and start a claim from the same record.",
+          detail: "Bilingual and ready for mobile use.",
+        },
+      ];
+
+  const trustItems = isRTL
+    ? [
+        { icon: ShieldCheck, title: "حدود وصول واضحة", body: "الوصول للحساب والتكاملات مصادق ومقيد بالشركة والصلاحية." },
+        { icon: FileCheck2, title: "أدلة مرتبطة بالسجل", body: "تبقى الشهادات والمستندات والمطالبات مع الضمان نفسه." },
+        { icon: ScanLine, title: "تحقق عام آمن", body: "تعرض صفحة التحقق ما يلزم لإثبات الضمان دون كشف بيانات خاصة." },
+        { icon: KeyRound, title: "تكاملات محددة الصلاحيات", body: "API / CLI / MCP تستخدم رموزًا قابلة للإلغاء، وليس كلمات مرور المستخدمين." },
+      ]
+    : [
+        { icon: ShieldCheck, title: "Clear access boundaries", body: "Account and integration access is authenticated, company-aware, and scoped." },
+        { icon: FileCheck2, title: "Evidence stays attached", body: "Certificates, documents, and claims remain connected to the warranty record." },
+        { icon: ScanLine, title: "Privacy-aware verification", body: "Public verification shows what proves coverage without exposing private account data." },
+        { icon: KeyRound, title: "Scoped integrations", body: "API / CLI / MCP use revocable tokens, never a customer username or password." },
+      ];
+
+  const pricing = isRTL
+    ? [
+        { name: "مجاني", price: "0 ر.س", body: "حتى 10 ضمانات مع الاحتفاظ بالسجل الكامل.", cta: "أنشئ أول ضمان", href: `/${locale}/auth?tab=signup`, id: "free" },
+        { name: "برنامج الاحترافي التجريبي", price: "149 ر.س / شهر", body: "سعر الإطلاق المقترح للفرق المبكرة. يُؤكد التفعيل والشروط قبل أي دفع.", cta: "اطلب الانضمام للبرنامج", href: `/${locale}/contact?intent=professional-access`, id: "pilot" },
+        { name: "المؤسسات", price: "حسب الاتفاق", body: "تهيئة وتكاملات وحدود فريق ومستوى خدمة حسب النطاق.", cta: "ناقش احتياج المؤسسة", href: `/${locale}/contact?intent=enterprise`, id: "enterprise" },
+      ]
+    : [
+        { name: "Free", price: "SAR 0", body: "Up to 10 warranties with the complete record retained.", cta: "Create your first warranty", href: `/${locale}/auth?tab=signup`, id: "free" },
+        { name: "Professional pilot", price: "SAR 149 / month", body: "Proposed launch pricing for early teams. Activation and terms are confirmed before any payment.", cta: "Request pilot access", href: `/${locale}/contact?intent=professional-access`, id: "pilot" },
+        { name: "Enterprise", price: "By agreement", body: "Onboarding, integrations, team limits, and service levels based on scope.", cta: "Discuss enterprise needs", href: `/${locale}/contact?intent=enterprise`, id: "enterprise" },
+      ];
 
   return (
     <>
       <PageViewTracker pageName="home" pageType="marketing" locale={locale} />
       <Navbar locale={locale} dictionary={dictionary} />
 
-        {/* Hero Section - Apple style: centered, clean, massive typography */}
-        <section className="relative overflow-hidden pt-24 pb-20 px-4 sm:px-6">
-          <div className="max-w-[980px] mx-auto text-center">
-            <h1 className="text-[40px] sm:text-[56px] md:text-[64px] font-semibold leading-[1.05] tracking-tight mb-6 text-[#1d1d1f]">
-              {dictionary.hero.title}
-            </h1>
-            <p className="text-[19px] sm:text-[21px] text-[#86868b] max-w-[680px] mx-auto mb-10 leading-relaxed">
-              {dictionary.hero.subtitle}
-            </p>
-            <div className="flex flex-col sm:flex-row justify-center gap-4">
-              <TrackedLink
-                href={`/${locale}/auth?tab=signup`}
-                cta="hero_start"
-                locale={locale}
-                location="home_hero"
-                className="inline-flex items-center justify-center px-7 py-3 bg-[#0071e3] hover:bg-[#0077ED] text-white font-normal text-[17px] rounded-full transition-colors"
-              >
-                {dictionary.hero.cta_start}
-                <ChevronRight className="w-4 h-4 ml-1.5" />
-              </TrackedLink>
-              <TrackedLink
-                href="#contact"
-                cta="hero_demo"
-                locale={locale}
-                location="home_hero"
-                className="inline-flex items-center justify-center px-7 py-3 text-[#0071e3] hover:text-[#0077ED] font-normal text-[17px] transition-colors"
-              >
-                {dictionary.hero.cta_demo}
-                <ChevronRight className="w-4 h-4 ml-1.5" />
-              </TrackedLink>
-            </div>
-            <p className="mt-8 text-[13px] text-[#86868b]">
-              {!isRTL
-                ? 'No credit card required. Free plan available.'
-                : '\u0644\u0627 \u062a\u0648\u062c\u062f \u062d\u0627\u062c\u0629 \u0644\u0628\u0637\u0627\u0642\u0629 \u0627\u0626\u062a\u0645\u0627\u0646. \u062e\u0637\u0629 \u0645\u062c\u0627\u0646\u064a\u0629 \u0645\u062a\u0627\u062d\u0629.'}
-            </p>
-          </div>
-        </section>
-        {/* Problem Section - Apple editorial style */}
-        <section id="problem" className="py-20 px-4 sm:px-6 bg-[#f5f5f7]">
-          <div className="max-w-[980px] mx-auto">
-            <div className="max-w-[680px] mx-auto text-center mb-16">
-              <h2 className="text-[32px] sm:text-[40px] font-semibold leading-tight tracking-tight mb-4 text-[#1d1d1f]">
-                {!isRTL
-                  ? 'Warranties shouldn\u2019t be this hard.'
-                  : '\u0627\u0644\u0636\u0645\u0627\u0646\u0627\u062a \u0644\u0627 \u064a\u062c\u0628 \u0623\u0646 \u062a\u0643\u0648\u0646 \u0628\u0647\u0630\u0647 \u0627\u0644\u0635\u0639\u0648\u0628\u0629.'}
-              </h2>
-              <p className="text-[17px] text-[#86868b] leading-relaxed">
-                {!isRTL
-                  ? 'Managing warranties across your organization is complex. Track them with clarity and confidence.'
-                  : '\u0625\u062f\u0627\u0631\u0629 \u0627\u0644\u0636\u0645\u0627\u0646\u0627\u062a \u0639\u0628\u0631 \u0645\u0624\u0633\u0633\u062a\u0643 \u0645\u0639\u0642\u062f\u0629. \u062a\u062a\u0628\u0639\u0647\u0627 \u0628\u0648\u0636\u0648\u062d \u0648\u062b\u0642\u0629.'}
+      <main>
+        <section className="overflow-hidden px-4 pb-16 pt-16 sm:px-6 sm:pb-20 sm:pt-20">
+          <div className="mx-auto max-w-[1160px]">
+            <div className="mx-auto max-w-[850px] text-center">
+              <p className="brand-eyebrow">
+                {isRTL ? "منصة تشغيل الضمانات للشركات والمشترين" : "Warranty operations for businesses and buyers"}
               </p>
-            </div>
-            <div className="grid sm:grid-cols-2 gap-5">
-              {[
-                { icon: Clock,
-                  title: !isRTL ? 'Missing Deadlines' : '\u0641\u0642\u062f\u0627\u0646 \u0627\u0644\u0645\u0648\u0627\u0639\u064a\u062f',
-                  desc: !isRTL ? 'Forget expiration dates and lose coverage when you need it most.' : '\u0646\u0633\u064a\u0627\u0646 \u062a\u0648\u0627\u0631\u064a\u062e \u0627\u0646\u062a\u0647\u0627\u0621 \u0627\u0644\u0635\u0644\u0627\u062d\u064a\u0629 \u0648\u0641\u0642\u062f\u0627\u0646 \u0627\u0644\u062a\u063a\u0637\u064a\u0629 \u0639\u0646\u062f\u0645\u0627 \u062a\u062d\u062a\u0627\u062c\u0647\u0627 \u0623\u0643\u062b\u0631.' },
-                { icon: FileCheck,
-                  title: !isRTL ? 'Manual Approvals' : '\u0627\u0644\u0645\u0648\u0627\u0641\u0642\u0627\u062a \u0627\u0644\u064a\u062f\u0648\u064a\u0629',
-                  desc: !isRTL ? 'Back-and-forth emails and spreadsheets slow down your team.' : '\u0631\u0633\u0627\u0626\u0644 \u0627\u0644\u0628\u0631\u064a\u062f \u0627\u0644\u0625\u0644\u0643\u062a\u0631\u0648\u0646\u064a \u0648\u0627\u0644\u062c\u062f\u0627\u0648\u0644 \u062a\u0628\u0637\u0626 \u0641\u0631\u064a\u0642\u0643.' },
-                { icon: Shield,
-                  title: !isRTL ? 'Unverified Claims' : '\u0627\u062f\u0639\u0627\u0621\u0627\u062a \u063a\u064a\u0631 \u0645\u062d\u0642\u0642\u0629',
-                  desc: !isRTL ? 'Lack of audit trails and documentation lead to disputes.' : '\u063a\u064a\u0627\u0628 \u0645\u0633\u0627\u0631\u0627\u062a \u0627\u0644\u062a\u062f\u0642\u064a\u0642 \u0648\u0627\u0644\u062a\u0648\u062b\u064a\u0642 \u064a\u0624\u062f\u064a \u0625\u0644\u0649 \u0646\u0632\u0627\u0639\u0627\u062a.' },
-                { icon: Globe,
-                  title: !isRTL ? 'Language Barriers' : '\u062d\u0648\u0627\u062c\u0632 \u0627\u0644\u0644\u063a\u0629',
-                  desc: !isRTL ? 'Managing warranties across Arabic and English adds translation overhead.' : '\u0625\u062f\u0627\u0631\u0629 \u0627\u0644\u0636\u0645\u0627\u0646\u0627\u062a \u0628\u0627\u0644\u0639\u0631\u0628\u064a\u0629 \u0648\u0627\u0644\u0625\u0646\u062c\u0644\u064a\u0632\u064a\u0629 \u062a\u062a\u0637\u0644\u0628 \u062a\u0643\u0627\u0644\u064a\u0641 \u062a\u0631\u062c\u0645\u0629.' },
-              ].map((pain, idx) => (
-                <div key={idx} className="bg-white rounded-2xl p-6 hover:shadow-md transition-shadow">
-                  <pain.icon className="w-6 h-6 text-[#0071e3] mb-3" />
-                  <h3 className="font-semibold text-[17px] text-[#1d1d1f] mb-2">{pain.title}</h3>
-                  <p className="text-[15px] text-[#86868b] leading-relaxed">{pain.desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Features Section */}
-        <section id="features" className="py-20 px-4 sm:px-6">
-          <div className="max-w-[980px] mx-auto">
-            <div className="max-w-[680px] mx-auto text-center mb-16">
-              <h2 className="text-[32px] sm:text-[40px] font-semibold leading-tight tracking-tight mb-4 text-[#1d1d1f]">
-                {dictionary.features.title}
-              </h2>
-              <p className="text-[17px] text-[#86868b] leading-relaxed">
-                {!isRTL
-                  ? 'All the tools you need to manage warranties at scale.'
-                  : '\u062c\u0645\u064a\u0639 \u0627\u0644\u0623\u062f\u0648\u0627\u062a \u0627\u0644\u062a\u064a \u062a\u062d\u062a\u0627\u062c\u0647\u0627 \u0644\u0625\u062f\u0627\u0631\u0629 \u0627\u0644\u0636\u0645\u0627\u0646\u0627\u062a \u0628\u062d\u062c\u0645 \u0643\u0628\u064a\u0631.'}
+              <h1 className="mt-5 text-[40px] font-semibold leading-[1.04] tracking-tight text-[#1d1d1f] sm:text-[58px] lg:text-[68px]">
+                {isRTL ? "أصدر كل ضمان. واجعل كل التزام قابلًا للتحقق." : "Issue every warranty. Keep every promise verifiable."}
+              </h1>
+              <p className="mx-auto mt-6 max-w-[720px] text-[18px] leading-relaxed text-[#6e6e73] sm:text-[21px]">
+                {isRTL
+                  ? "أنشئ سجل الضمان والشهادة الثنائية ومسار المطالبة وجواز المنتج في منصة واحدة، ثم شارك إثباتًا يمكن للمشتري التحقق منه فورًا."
+                  : "Create the warranty record, bilingual certificate, claim path, and product passport in one platform, then give every buyer proof they can verify instantly."}
               </p>
-            </div>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {dictionary.features.items.map((feature) => (
-                <div
-                  key={feature.id}
-                  className="group p-6 bg-[#f5f5f7] rounded-2xl hover:bg-white hover:shadow-lg transition-all duration-300"
-                >
-                  <div className="mb-4 text-[#0071e3]">
-                    {featureIcons[feature.id as keyof typeof featureIcons] || <Shield className="w-7 h-7" />}
-                  </div>
-                  <h3 className="font-semibold text-[17px] text-[#1d1d1f] mb-2">{feature.title}</h3>
-                  <p className="text-[15px] text-[#86868b] leading-relaxed">{feature.description}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Product Passport Loop */}
-        <section className="py-20 px-4 sm:px-6">
-          <div className="max-w-[980px] mx-auto">
-            <div className="grid gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
-              <div>
-                <p className="text-[13px] font-semibold uppercase tracking-[0.18em] text-[#0071e3]">
-                  {!isRTL ? 'Post-purchase trust loop' : 'حلقة الثقة بعد الشراء'}
-                </p>
-                <h2 className="mt-3 text-[32px] sm:text-[40px] font-semibold leading-tight tracking-tight text-[#1d1d1f]">
-                  {!isRTL
-                    ? 'Turn every warranty into a verified product passport.'
-                    : 'حوّل كل ضمان إلى جواز منتج موثق.'}
-                </h2>
-                <p className="mt-4 text-[17px] leading-relaxed text-[#86868b]">
-                  {!isRTL
-                    ? 'Buyers scan once to confirm authenticity, open the certificate, file a claim, or request extension. Sellers keep the relationship alive after the sale.'
-                    : 'يمسح العميل مرة واحدة للتحقق من الأصالة، فتح الشهادة، تقديم مطالبة، أو طلب تمديد. ويبقى البائع متصلاً بالعميل بعد البيع.'}
-                </p>
-                <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                  <TrackedLink
-                    href={`/${locale}/seller/register`}
-                    cta="seller_start"
-                    locale={locale}
-                    location="product_passport"
-                    className="inline-flex items-center justify-center rounded-full bg-[#0071e3] px-6 py-3 text-[15px] font-medium text-white transition-colors hover:bg-[#0077ED]"
-                  >
-                    {!isRTL ? 'Start issuing warranties' : 'ابدأ إصدار الضمانات'}
-                    <ChevronRight className="w-4 h-4 ml-1.5" />
-                  </TrackedLink>
-                  <TrackedLink
-                    href={`/${locale}/api-docs`}
-                    cta="api_docs"
-                    locale={locale}
-                    location="product_passport"
-                    className="inline-flex items-center justify-center rounded-full border border-[#d2d2d7] px-6 py-3 text-[15px] font-medium text-[#1d1d1f] transition-colors hover:bg-[#f5f5f7]"
-                  >
-                    {!isRTL ? 'View API / CLI / MCP' : 'عرض API / CLI / MCP'}
-                  </TrackedLink>
-                  <TrackedLink
-                    href={`/${locale}/demo/product-passport`}
-                    cta="sample_product_passport"
-                    locale={locale}
-                    location="product_passport"
-                    className="inline-flex items-center justify-center rounded-full border border-[#d2d2d7] px-6 py-3 text-[15px] font-medium text-[#1d1d1f] transition-colors hover:bg-[#f5f5f7]"
-                  >
-                    {!isRTL ? 'View sample passport' : 'عرض نموذج جواز المنتج'}
-                  </TrackedLink>
-                </div>
+              <div className="mt-9 flex flex-col justify-center gap-3 sm:flex-row">
+                <TrackedLink href={`/${locale}/auth?tab=signup`} cta="hero_create_first_warranty" locale={locale} location="home_hero" className="brand-action-primary">
+                  {isRTL ? "أنشئ أول ضمان" : "Create your first warranty"}
+                  <ForwardIcon className="h-4 w-4" aria-hidden="true" />
+                </TrackedLink>
+                <TrackedLink href={`/${locale}/demo/product-passport`} cta="hero_live_passport" locale={locale} location="home_hero" className="brand-action-secondary">
+                  {isRTL ? "شاهد جواز منتج مباشر" : "View a live product passport"}
+                  <ForwardIcon className="h-4 w-4" aria-hidden="true" />
+                </TrackedLink>
               </div>
-
-              <div className="grid gap-4">
-                {[
-                  {
-                    icon: QrCode,
-                    title: !isRTL ? 'Scannable verification' : 'تحقق قابل للمسح',
-                    desc: !isRTL
-                      ? 'Each certificate and warranty page points to a live verification record instead of a static PDF.'
-                      : 'كل شهادة وصفحة ضمان تقود إلى سجل تحقق مباشر بدلاً من ملف ثابت.',
-                  },
-                  {
-                    icon: Workflow,
-                    title: !isRTL ? 'Claims and extension path' : 'مسار المطالبات والتمديد',
-                    desc: !isRTL
-                      ? 'The same passport routes buyers into claims and extension requests with the right context already attached.'
-                      : 'نفس جواز المنتج يوجّه العميل إلى المطالبات وطلبات التمديد مع السياق الصحيح.',
-                  },
-                  {
-                    icon: KeyRound,
-                    title: !isRTL ? 'API / CLI / MCP-ready for operations' : 'جاهز للتكامل عبر API / CLI / MCP',
-                    desc: !isRTL
-                      ? 'Registered users can connect ERP, ecommerce, support workflows, scripts, and agents through scoped, rate-limited integration tokens.'
-                      : 'يمكن للمستخدمين المسجلين ربط ERP والمتاجر والدعم والسكريبتات والوكلاء عبر رموز تكامل محددة الصلاحيات ومحدودة الطلبات.',
-                  },
-                ].map((item) => (
-                  <div key={item.title} className="rounded-2xl border border-black/[0.06] bg-white p-5 shadow-sm">
-                    <div className="flex items-start gap-4">
-                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#0071e3]/10">
-                        <item.icon className="h-5 w-5 text-[#0071e3]" aria-hidden="true" />
-                      </div>
-                      <div>
-                        <h3 className="text-[17px] font-semibold text-[#1d1d1f]">{item.title}</h3>
-                        <p className="mt-1 text-[15px] leading-relaxed text-[#86868b]">{item.desc}</p>
-                      </div>
-                    </div>
-                  </div>
+              <div className="mt-6 flex flex-wrap justify-center gap-x-6 gap-y-2 text-[12px] font-medium text-[#6e6e73] sm:text-[13px]">
+                {proofPoints.map((point) => (
+                  <span key={point} className="inline-flex items-center gap-1.5">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-[#248a3d]" aria-hidden="true" />
+                    {point}
+                  </span>
                 ))}
               </div>
             </div>
 
-            <div className="mt-10 grid gap-4 rounded-2xl bg-[#f5f5f7] p-5 sm:grid-cols-3">
-              {[
-                {
-                  icon: BadgeCheck,
-                  label: !isRTL ? 'Verified proof at point of service' : 'إثبات موثق وقت الخدمة',
-                },
-                {
-                  icon: TrendingUp,
-                  label: !isRTL ? 'Extension demand becomes revenue signal' : 'طلب التمديد يتحول إلى إشارة إيراد',
-                },
-                {
-                  icon: Shield,
-                  label: !isRTL ? 'Support teams see fewer blind disputes' : 'فرق الدعم تقلل النزاعات غير الواضحة',
-                },
-              ].map((proof) => (
-                <div key={proof.label} className="flex items-start gap-3">
-                  <proof.icon className="mt-0.5 h-5 w-5 shrink-0 text-[#0071e3]" aria-hidden="true" />
-                  <p className="text-[14px] font-medium leading-relaxed text-[#1d1d1f]">{proof.label}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-        {/* Trust Proof */}
-        <section className="py-20 px-4 sm:px-6 bg-[#f5f5f7]">
-          <div className="max-w-[980px] mx-auto">
-            <div className="max-w-[680px] mx-auto text-center mb-12">
-              <p className="text-[13px] font-semibold uppercase tracking-[0.18em] text-[#0071e3]">
-                {!isRTL ? 'Operational proof' : 'إثبات تشغيلي'}
-              </p>
-              <h2 className="mt-3 text-[32px] sm:text-[40px] font-semibold leading-tight tracking-tight text-[#1d1d1f]">
-                {!isRTL ? 'Built for proof, not just storage.' : 'مصمم للإثبات، وليس للتخزين فقط.'}
-              </h2>
-              <p className="mt-4 text-[17px] leading-relaxed text-[#86868b]">
-                {!isRTL
-                  ? 'Every warranty needs an owner, evidence, terms, and a verification path. Warrantee keeps those pieces connected from issue to claim.'
-                  : 'كل ضمان يحتاج إلى مالك وأدلة وشروط ومسار تحقق. يحافظ Warrantee على ترابط هذه العناصر من الإصدار إلى المطالبة.'}
-              </p>
-            </div>
-            <div className="grid gap-5 md:grid-cols-4">
-              {[
-                {
-                  icon: Shield,
-                  title: !isRTL ? 'Security boundaries' : 'حدود أمنية',
-                  desc: !isRTL
-                    ? 'Protected dashboards, authenticated API / CLI / MCP access, and company-aware permissions.'
-                    : 'لوحات محمية ووصول مصادق عبر API / CLI / MCP وصلاحيات تراعي الشركة.',
-                },
-                {
-                  icon: FileCheck,
-                  title: !isRTL ? 'Audit-ready records' : 'سجلات قابلة للتدقيق',
-                  desc: !isRTL
-                    ? 'Approvals, claims, documents, and status changes stay tied to the warranty.'
-                    : 'تبقى الموافقات والمطالبات والمستندات وتغيرات الحالة مرتبطة بالضمان.',
-                },
-                {
-                  icon: QrCode,
-                  title: !isRTL ? 'Certificate proof' : 'إثبات الشهادة',
-                  desc: !isRTL
-                    ? 'Bilingual certificates and QR verification help buyers and service teams trust the record.'
-                    : 'الشهادات الثنائية والتحقق عبر QR تساعد المشترين وفرق الخدمة على الثقة بالسجل.',
-                },
-                {
-                  icon: KeyRound,
-                  title: !isRTL ? 'API / CLI / MCP controls' : 'ضوابط API / CLI / MCP',
-                  desc: !isRTL
-                    ? 'Scoped tokens, rate limits, and ownership checks protect integration access.'
-                    : 'رموز محددة وحدود طلبات وفحوص ملكية تحمي وصول التكامل.',
-                },
-              ].map((item) => (
-                <div key={item.title} className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/[0.04]">
-                  <item.icon className="h-5 w-5 text-[#0071e3]" aria-hidden="true" />
-                  <h3 className="mt-4 text-[16px] font-semibold text-[#1d1d1f]">{item.title}</h3>
-                  <p className="mt-2 text-[14px] leading-6 text-[#86868b]">{item.desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-        {/* How It Works */}
-        <section id="how-it-works" className="py-20 px-4 sm:px-6 bg-[#f5f5f7]">
-          <div className="max-w-[980px] mx-auto">
-            <div className="max-w-[680px] mx-auto text-center mb-16">
-              <h2 className="text-[32px] sm:text-[40px] font-semibold leading-tight tracking-tight mb-4 text-[#1d1d1f]">
-                {dictionary.how_it_works.title}
-              </h2>
-              <p className="text-[17px] text-[#86868b] leading-relaxed">
-                {!isRTL
-                  ? 'Get started in minutes with our intuitive workflow.'
-                  : '\u0627\u0628\u062f\u0623 \u0641\u064a \u062f\u0642\u0627\u0626\u0642 \u0645\u0639 \u0633\u064a\u0631 \u0639\u0645\u0644\u0646\u0627 \u0627\u0644\u0628\u062f\u064a\u0647\u064a.'}
-              </p>
-            </div>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {dictionary.how_it_works.steps.map((step, idx) => (
-                <div key={step.id} className="text-center">
-                  <div className="mx-auto mb-5 w-12 h-12 bg-[#0071e3] text-white font-semibold text-[17px] rounded-full flex items-center justify-center">
-                    {idx + 1}
-                  </div>
-                  <h3 className="font-semibold text-[17px] text-[#1d1d1f] mb-2">{step.title}</h3>
-                  <p className="text-[15px] text-[#86868b] leading-relaxed">{step.description}</p>
-                </div>
-              ))}
+            <div className="mt-12 sm:mt-14">
+              <WarrantyProofPreview isRTL={isRTL} />
             </div>
           </div>
         </section>
 
-        {/* Warranty Extension */}
-        <section className="py-20 px-4 sm:px-6">
-          <div className="max-w-[980px] mx-auto">
-            <div className="grid md:grid-cols-2 gap-12 items-center">
-              <div className={isRTL ? 'md:order-2' : ''}>
-                <h2 className="text-[32px] sm:text-[40px] font-semibold leading-tight tracking-tight mb-4 text-[#1d1d1f]">
-                  {!isRTL ? 'Never Lose Coverage Again' : '\u0644\u0627 \u062a\u0641\u0642\u062f \u0627\u0644\u062a\u063a\u0637\u064a\u0629 \u0623\u0628\u062f\u0627\u064b \u0645\u0631\u0629 \u0623\u062e\u0631\u0649'}
+        <section id="features" className="bg-[#f5f5f7] px-4 py-20 sm:px-6 sm:py-24">
+          <div className="mx-auto max-w-[1080px]">
+            <div className="grid gap-8 lg:grid-cols-[0.75fr_1.25fr] lg:gap-16">
+              <div className="lg:sticky lg:top-28 lg:self-start">
+                <p className="brand-eyebrow">{isRTL ? "مسار واحد متصل" : "One connected record"}</p>
+                <h2 className="mt-4 text-[34px] font-semibold leading-tight tracking-tight text-[#1d1d1f] sm:text-[44px]">
+                  {isRTL ? "من الإصدار إلى المطالبة دون فجوات." : "From issue to claim, without the gaps."}
                 </h2>
-                <p className="text-[17px] text-[#86868b] mb-8 leading-relaxed">
-                  {!isRTL
-                    ? 'Prepare and manage extension offers before coverage expires. Sellers can define offers and buyers can review extension status from the warranty record.'
-                    : 'حضّر عروض التمديد وأدرها قبل انتهاء التغطية. يمكن للبائع تحديد العرض وللمشتري مراجعة حالة التمديد من سجل الضمان.'}
+                <p className="mt-5 text-[17px] leading-relaxed text-[#6e6e73]">
+                  {isRTL
+                    ? "يحل Warrantee محل الجداول والملفات المنفصلة بسجل واحد يحافظ على الملكية والأدلة والقرارات ومسار التحقق."
+                    : "Warrantee replaces disconnected spreadsheets and files with one record that keeps ownership, evidence, decisions, and verification together."}
                 </p>
-                <ul className="space-y-4">
-                  {[
-                    !isRTL ? 'Flexible extension terms' : '\u0634\u0631\u0648\u0637 \u062a\u0645\u062f\u064a\u062f \u0645\u0631\u0646\u0629',
-                    !isRTL ? 'Buyer request and seller review' : 'طلب المشتري ومراجعة البائع',
-                    !isRTL ? 'Clear offer status' : 'حالة عرض واضحة',
-                  ].map((item, idx) => (
-                    <li key={idx} className="flex items-center gap-3">
-                      <CheckCircle className="w-5 h-5 text-[#30d158] flex-shrink-0" />
-                      <span className="text-[15px] text-[#1d1d1f]">{item}</span>
-                    </li>
-                  ))}
-                </ul>
               </div>
-              <div className={isRTL ? 'md:order-1' : ''}>
-                <div className="bg-[#f5f5f7] rounded-3xl p-8 space-y-4">
-                  {[
-                    { label: !isRTL ? 'Seller' : '\u0627\u0644\u0628\u0627\u0626\u0639', color: 'bg-[#f5f5f7] border border-[#d2d2d7]' },
-                    { label: !isRTL ? 'Extension Offer' : '\u0639\u0631\u0636 \u0627\u0644\u062a\u0645\u062f\u064a\u062f', color: 'bg-[#0071e3]/10 border border-[#0071e3]/20' },
-                    { label: !isRTL ? 'Buyer' : '\u0627\u0644\u0645\u0634\u062a\u0631\u064a', color: 'bg-[#f5f5f7] border border-[#d2d2d7]' },
-                    { label: !isRTL ? 'Extended Coverage' : '\u062a\u063a\u0637\u064a\u0629 \u0645\u0645\u062f\u062f\u0629', color: 'bg-[#30d158]/10 border border-[#30d158]/20' },
-                  ].map((step, idx) => (
-                    <div key={idx} className="flex items-center gap-3">
-                      {idx > 0 && <ArrowRight className="w-4 h-4 text-[#86868b] flex-shrink-0" />}
-                      <div className={`flex-1 h-14 ${step.color} rounded-xl flex items-center justify-center text-[14px] font-medium text-[#1d1d1f]`}>
-                        {step.label}
-                      </div>
+
+              <div id="how-it-works" className="divide-y divide-black/[0.08] border-y border-black/[0.08]">
+                {workflowSteps.map(({ icon: Icon, eyebrow, title, body, detail }) => (
+                  <article key={eyebrow} className="grid gap-5 py-8 sm:grid-cols-[72px_1fr] sm:py-10">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-[#0071e3] shadow-sm ring-1 ring-black/[0.04]">
+                      <Icon className="h-6 w-6" aria-hidden="true" />
                     </div>
-                  ))}
-                </div>
+                    <div>
+                      <p className="brand-eyebrow">{eyebrow}</p>
+                      <h3 className="mt-3 text-[24px] font-semibold tracking-tight text-[#1d1d1f] sm:text-[28px]">{title}</h3>
+                      <p className="mt-3 text-[16px] leading-7 text-[#6e6e73]">{body}</p>
+                      <p className="mt-4 inline-flex items-center gap-2 text-[13px] font-semibold text-[#1d1d1f]">
+                        <BadgeCheck className="h-4 w-4 text-[#0071e3]" aria-hidden="true" />
+                        {detail}
+                      </p>
+                    </div>
+                  </article>
+                ))}
               </div>
             </div>
           </div>
         </section>
-        {/* Pricing Section */}
-        <section id="pricing" className="py-20 px-4 sm:px-6 bg-[#f5f5f7]">
-          <div className="max-w-[980px] mx-auto">
-            <div className="max-w-[680px] mx-auto text-center mb-16">
-              <h2 className="text-[32px] sm:text-[40px] font-semibold leading-tight tracking-tight mb-4 text-[#1d1d1f]">
-                {dictionary.pricing.title}
-              </h2>
-              <p className="text-[17px] text-[#86868b] leading-relaxed">{dictionary.pricing.subtitle}</p>
+
+        <section className="px-4 py-20 sm:px-6 sm:py-24">
+          <div className="mx-auto grid max-w-[1080px] gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
+            <div className="rounded-[28px] bg-[#1d1d1f] p-6 text-white sm:p-8">
+              <div className="flex items-start justify-between gap-6">
+                <div>
+                  <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-white/55">{isRTL ? "جواز المنتج" : "Product passport"}</p>
+                  <h3 className="mt-3 max-w-sm text-[28px] font-semibold leading-tight sm:text-[34px]">
+                    {isRTL ? "نقطة تحقق واحدة للمشتري وفريق الخدمة." : "One verification point for the buyer and service team."}
+                  </h3>
+                </div>
+                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-white text-[#1d1d1f]">
+                  <QrCode className="h-10 w-10" aria-hidden="true" />
+                </div>
+              </div>
+              <div className="mt-10 grid gap-3 border-t border-white/10 pt-6 sm:grid-cols-2">
+                {[isRTL ? "التحقق من الحالة" : "Verify coverage", isRTL ? "فتح الشهادة" : "Open certificate", isRTL ? "بدء المطالبة" : "Start a claim", isRTL ? "متابعة طلب التمديد" : "Track an extension request"].map((label) => (
+                  <p key={label} className="flex items-center gap-2 text-[13px] text-white/75">
+                    <CheckCircle2 className="h-4 w-4 text-[#5ac8fa]" aria-hidden="true" />
+                    {label}
+                  </p>
+                ))}
+              </div>
             </div>
-            <div className="grid md:grid-cols-3 gap-5">
-              {dictionary.pricing.plans.map((plan, idx) => (
-                <div
-                  key={plan.id}
-                  className={`relative bg-white rounded-2xl p-8 transition-all duration-300 ${
-                    idx === 1
-                      ? 'ring-2 ring-[#0071e3] shadow-lg md:scale-[1.02]'
-                      : 'ring-1 ring-[#d2d2d7]/60 hover:ring-[#d2d2d7]'
-                  }`}
-                >
-                  {idx === 1 && (
-                    <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-[#0071e3] text-white px-4 py-1 rounded-full text-[11px] font-medium">
-                      {!isRTL ? 'Planned launch price in SAR' : 'سعر إطلاق مخطط بالريال السعودي'}
-                    </div>
-                  )}
-                  <div className="mb-6">
-                    <h3 className="text-[21px] font-semibold text-[#1d1d1f] mb-1">{plan.name}</h3>
-                    <p className="text-[14px] text-[#86868b]">{plan.description}</p>
-                  </div>
-                  <div className="mb-6">
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-[40px] font-semibold tracking-tight text-[#1d1d1f]">{plan.price}</span>
-                      {plan.price !== 'Custom' && plan.price !== '\u0645\u062e\u0635\u0635' && (
-                        <span className="text-[14px] text-[#86868b]">
-                          / {!isRTL ? 'month' : '\u0634\u0647\u0631'}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <TrackedLink
-                    href={plan.id === 'free'
-                      ? `/${locale}/auth?tab=signup`
-                      : `/${locale}/contact?intent=${plan.id === 'pro' ? 'professional-access' : 'enterprise'}`}
-                    cta={`pricing_${plan.name.toLowerCase().replace(/\s+/g, '_')}`}
-                    locale={locale}
-                    location="home_pricing"
-                    className={`block text-center w-full py-2.5 rounded-full text-[15px] font-medium transition-colors mb-8 ${
-                      idx === 1
-                        ? 'bg-[#0071e3] hover:bg-[#0077ED] text-white'
-                        : 'bg-[#f5f5f7] hover:bg-[#e8e8ed] text-[#1d1d1f]'
-                    }`}
-                  >
-                    {plan.cta}
-                  </TrackedLink>
-                  <ul className="space-y-3">
-                    {plan.features.map((feature, featureIdx) => (
-                      <li key={featureIdx} className="flex items-start gap-2.5">
-                        <CheckCircle className="w-4 h-4 text-[#30d158] flex-shrink-0 mt-0.5" />
-                        <span className="text-[14px] text-[#86868b] leading-snug">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
+
+            <div>
+              <p className="brand-eyebrow">{isRTL ? "إثبات يراه العميل" : "Proof your customer can see"}</p>
+              <h2 className="mt-4 text-[34px] font-semibold leading-tight tracking-tight text-[#1d1d1f] sm:text-[44px]">
+                {isRTL ? "الشهادة ليست نهاية المسار. إنها بداية العلاقة." : "The certificate is not the end. It is the start of the relationship."}
+              </h2>
+              <p className="mt-5 text-[17px] leading-relaxed text-[#6e6e73]">
+                {isRTL
+                  ? "يبقى جواز المنتج متصلًا بسجل الضمان، فيعرف المشتري ما هو نشط وما هي الأدلة وما الخطوة التالية دون مراسلات إضافية."
+                  : "The product passport stays connected to the warranty record, so buyers can see what is active, what proves it, and what to do next without another email thread."}
+              </p>
+              <TrackedLink href={`/${locale}/demo/product-passport`} cta="passport_proof_demo" locale={locale} location="home_passport" className="brand-action-secondary mt-8">
+                {isRTL ? "افتح النموذج المباشر" : "Open the live sample"}
+                <ForwardIcon className="h-4 w-4" aria-hidden="true" />
+              </TrackedLink>
+            </div>
+          </div>
+        </section>
+
+        <section className="border-y border-black/[0.06] bg-[#fbfbfd] px-4 py-16 sm:px-6">
+          <div className="mx-auto max-w-[1080px]">
+            <div className="mx-auto max-w-[680px] text-center">
+              <p className="brand-eyebrow">{isRTL ? "ثقة قابلة للفحص" : "Inspectable trust"}</p>
+              <h2 className="mt-4 text-[32px] font-semibold tracking-tight text-[#1d1d1f] sm:text-[40px]">
+                {isRTL ? "الثقة تأتي من السجل، لا من الادعاء." : "Trust comes from the record, not the claim."}
+              </h2>
+            </div>
+            <div className="mt-12 grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
+              {trustItems.map(({ icon: Icon, title, body }) => (
+                <div key={title}>
+                  <Icon className="h-5 w-5 text-[#0071e3]" aria-hidden="true" />
+                  <h3 className="mt-4 text-[16px] font-semibold text-[#1d1d1f]">{title}</h3>
+                  <p className="mt-2 text-[14px] leading-6 text-[#6e6e73]">{body}</p>
                 </div>
               ))}
             </div>
           </div>
         </section>
 
-        {/* CTA Section */}
-        <section id="contact" className="py-24 px-4 sm:px-6">
-          <div className="max-w-[580px] mx-auto text-center">
-            <h2 className="text-[32px] sm:text-[40px] font-semibold leading-tight tracking-tight mb-4 text-[#1d1d1f]">
-              {!isRTL ? 'Ready to protect what matters?' : '\u0647\u0644 \u0623\u0646\u062a \u0645\u0633\u062a\u0639\u062f \u0644\u062d\u0645\u0627\u064a\u0629 \u0645\u0627 \u064a\u0647\u0645\u061f'}
-            </h2>
-            <p className="text-[17px] text-[#86868b] mb-8 leading-relaxed">
-              {!isRTL
-                ? 'Start your free account today. No credit card required.'
-                : '\u0627\u0628\u062f\u0623 \u062d\u0633\u0627\u0628\u0643 \u0627\u0644\u0645\u062c\u0627\u0646\u064a \u0627\u0644\u064a\u0648\u0645. \u0644\u0627 \u062a\u0648\u062c\u062f \u062d\u0627\u062c\u0629 \u0644\u0628\u0637\u0627\u0642\u0629 \u0627\u0626\u062a\u0645\u0627\u0646.'}
-            </p>
-            <div className="flex flex-col sm:flex-row justify-center gap-3">
-              <TrackedLink
-                href={`/${locale}/auth?tab=signup`}
-                cta="bottom_get_started"
-                locale={locale}
-                location="home_bottom_cta"
-                className="inline-flex items-center justify-center px-7 py-3 bg-[#0071e3] hover:bg-[#0077ED] text-white font-normal text-[17px] rounded-full transition-colors"
-              >
-                {!isRTL ? 'Get Started' : '\u0627\u0628\u062f\u0623 \u0627\u0644\u0622\u0646'}
-                <ChevronRight className="w-4 h-4 ml-1.5" />
+        <section id="pricing" className="px-4 py-20 sm:px-6 sm:py-24">
+          <div className="mx-auto max-w-[1080px]">
+            <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+              <div className="max-w-[680px]">
+                <p className="brand-eyebrow">{isRTL ? "تسعير واضح" : "Clear pricing"}</p>
+                <h2 className="mt-4 text-[34px] font-semibold tracking-tight text-[#1d1d1f] sm:text-[44px]">
+                  {isRTL ? "ابدأ مجانًا. انتقل عندما يحتاج فريقك." : "Start free. Move up when your team needs it."}
+                </h2>
+                <p className="mt-4 text-[16px] leading-7 text-[#6e6e73]">
+                  {isRTL
+                    ? "الدفع الإلكتروني للاحترافي والتمديدات ليس مفعّلًا للعامة بعد. نؤكد النطاق والشروط قبل أي دفع."
+                    : "Online Professional and extension payments are not generally active yet. We confirm scope and terms before any payment."}
+                </p>
+              </div>
+              <TrackedLink href={`/${locale}/pricing`} cta="home_pricing_details" locale={locale} location="home_pricing" className="brand-action-secondary">
+                {isRTL ? "تفاصيل الخطط" : "Compare plan details"}
+                <ForwardIcon className="h-4 w-4" aria-hidden="true" />
               </TrackedLink>
-              <a
-                href="mailto:hello@warrantee.io"
-                className="inline-flex items-center justify-center px-7 py-3 text-[#0071e3] hover:text-[#0077ED] font-normal text-[17px] transition-colors"
-              >
-                <Mail className="w-4 h-4 mr-1.5" />
+            </div>
+
+            <div className="mt-12 divide-y divide-black/[0.08] border-y border-black/[0.08] lg:grid lg:grid-cols-3 lg:divide-x lg:divide-y-0 rtl:lg:divide-x-reverse">
+              {pricing.map((plan) => (
+                <article key={plan.id} className="flex flex-col px-1 py-8 first:pt-0 last:pb-0 lg:px-8 lg:py-2 lg:first:ps-0 lg:last:pe-0">
+                  <h3 className="text-[19px] font-semibold text-[#1d1d1f]">{plan.name}</h3>
+                  <p className="mt-3 text-[24px] font-semibold tracking-tight text-[#1d1d1f]">{plan.price}</p>
+                  <p className="mt-3 flex-1 text-[14px] leading-6 text-[#6e6e73]">{plan.body}</p>
+                  <TrackedLink href={plan.href} cta={`home_pricing_${plan.id}`} locale={locale} location="home_pricing" className="mt-6 inline-flex items-center gap-1.5 text-[14px] font-semibold text-[#0071e3] hover:text-[#0077ed]">
+                    {plan.cta}
+                    <ForwardIcon className="h-4 w-4" aria-hidden="true" />
+                  </TrackedLink>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section id="contact" className="bg-[#1d1d1f] px-4 py-20 text-white sm:px-6 sm:py-24">
+          <div className="mx-auto max-w-[760px] text-center">
+            <Bell className="mx-auto h-7 w-7 text-[#5ac8fa]" aria-hidden="true" />
+            <h2 className="mt-5 text-[36px] font-semibold leading-tight tracking-tight sm:text-[48px]">
+              {isRTL ? "أنشئ أول سجل يمكن الاعتماد عليه." : "Create the first record you can rely on."}
+            </h2>
+            <p className="mx-auto mt-5 max-w-[620px] text-[17px] leading-relaxed text-white/65">
+              {isRTL
+                ? "ابدأ مجانًا دون بطاقة. أنشئ الضمان، أرفق الإثبات، وشارك جواز المنتج من نفس المسار."
+                : "Start free without a card. Create the warranty, attach the evidence, and share the product passport from the same flow."}
+            </p>
+            <div className="mt-9 flex flex-col justify-center gap-3 sm:flex-row">
+              <TrackedLink href={`/${locale}/auth?tab=signup`} cta="bottom_create_first_warranty" locale={locale} location="home_bottom_cta" className="brand-action-primary">
+                {isRTL ? "أنشئ أول ضمان" : "Create your first warranty"}
+                <ForwardIcon className="h-4 w-4" aria-hidden="true" />
+              </TrackedLink>
+              <a href="mailto:hello@warrantee.io" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-white/20 px-6 py-3 text-[15px] font-semibold text-white transition hover:bg-white/10">
+                <Mail className="h-4 w-4" aria-hidden="true" />
                 hello@warrantee.io
               </a>
             </div>
           </div>
         </section>
+      </main>
 
-        <Footer locale={locale} dictionary={dictionary} />
+      <Footer locale={locale} dictionary={dictionary} />
     </>
   );
 }

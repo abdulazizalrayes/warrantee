@@ -32,15 +32,15 @@ const plans = [
     price: 149,
     currency_en: "SAR",
     currency_ar: "ر.س",
-    pricePrefix_en: "Planned launch price",
-    pricePrefix_ar: "سعر إطلاق مخطط",
+    pricePrefix_en: "Proposed pilot price",
+    pricePrefix_ar: "سعر تجريبي مقترح",
     featured: true,
     features_en: ["Unlimited warranties", "Advanced analytics", "Priority support", "Up to 5 team members", "Full warranty history", "Custom workflows", "Bilingual certificates"],
     features_ar: ["ضمانات غير محدودة", "تحليلات متقدمة", "دعم أولوية", "حتى 5 أعضاء", "سجل ضمانات كامل", "سير عمل مخصص", "شهادات ثنائية"],
     name_en: "Professional",
     name_ar: "احترافي",
-    desc_en: "Planned launch offer for growing businesses",
-    desc_ar: "عرض إطلاق مخطط للشركات النامية",
+    desc_en: "Pilot access for early business teams",
+    desc_ar: "وصول تجريبي لفرق الأعمال المبكرة",
   },
   {
     id: "enterprise",
@@ -90,16 +90,16 @@ export default function PricingPage() {
       <PageViewTracker pageName="pricing" pageType="marketing" locale={locale} />
       <Navbar locale={locale} dictionary={dictionary} />
       <PublicBreadcrumbs locale={locale} includeJsonLd={false} />
-      <main className="mx-auto max-w-5xl px-6 py-20">
+      <main className="mx-auto max-w-5xl px-6 py-16 sm:py-20">
         {/* Header */}
         <div className="text-center mb-16">
           <h1 className="text-[40px] sm:text-[48px] font-semibold tracking-tight text-[#1d1d1f]">
-            {isRTL ? "اختر خطتك" : "Choose Your Plan"}
+            {isRTL ? "ابدأ مجانًا، ثم توسع عند الحاجة" : "Start free, then scale when needed"}
           </h1>
           <p className="text-[17px] text-[#6e6e73] mt-3 max-w-xl mx-auto">
             {isRTL
-              ? "ابدأ بالخطة المجانية دون بطاقة ائتمانية، أو اطلب تفعيل سعر الإطلاق المخطط للاحترافي بالريال السعودي"
-              : "Start with a Free plan, no card required, or request access to the planned Professional launch price in SAR"}
+              ? "أنشئ أول 10 ضمانات دون بطاقة، أو اطلب الانضمام إلى البرنامج التجريبي للاحترافي بالريال السعودي."
+              : "Create your first 10 warranties without a card, or request access to the SAR Professional pilot."}
           </p>
           <p className="mt-5 text-[13px] font-medium text-[#6e6e73]">
             {isRTL
@@ -127,7 +127,7 @@ export default function PricingPage() {
               >
                 {plan.featured && (
                   <div className="bg-[#0071e3] text-white text-[12px] font-semibold text-center py-1.5 tracking-wide uppercase">
-                    {isRTL ? "عرض مخطط" : "Planned offer"}
+                    {isRTL ? "وصول تجريبي" : "Pilot access"}
                   </div>
                 )}
                 <div className="p-6">
@@ -184,7 +184,7 @@ export default function PricingPage() {
                     {plan.price === -1
                       ? isRTL ? "تواصل معنا" : "Contact Sales"
                       : plan.id === "pro"
-                      ? isRTL ? "اطلب تفعيل الاحترافي" : "Request Professional access"
+                      ? isRTL ? "اطلب الانضمام للبرنامج" : "Request pilot access"
                       : isRTL ? "ابدأ الآن" : "Get Started"}
                   </button>
                 </div>
@@ -193,22 +193,22 @@ export default function PricingPage() {
           })}
         </div>
 
-        <section className="mt-10 rounded-3xl bg-white p-6 shadow-sm ring-1 ring-[#d2d2d7]/40 sm:p-8">
+        <section className="mt-12 border-y border-black/[0.08] py-8 sm:py-10">
           <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
-            <div>
+            <div className="max-w-xl">
               <p className="text-[13px] font-semibold uppercase tracking-[0.18em] text-[#0071e3]">
-                {isRTL ? "وضوح التسعير" : "Pricing clarity"}
+                {isRTL ? "ما الذي يعنيه البرنامج التجريبي؟" : "What pilot access means"}
               </p>
               <h2 className="mt-3 text-[28px] font-semibold tracking-tight text-[#1d1d1f]">
-                {isRTL ? "لماذا الخطة الاحترافية بالريال السعودي؟" : "Why a SAR Professional launch price?"}
+                {isRTL ? "تجربة واضحة قبل تفعيل الدفع." : "A clear pilot before billing goes live."}
               </h2>
               <p className="mt-4 text-[15px] leading-7 text-[#6e6e73]">
                 {isRTL
-                  ? "149 ريالًا هو سعر الإطلاق المخطط للعملاء الأوائل في السعودية والخليج. يُؤكد التفعيل قبل البدء، وتبقى حدود المجاني وشروط مدفوعات التمديد المستقبلية منفصلة وواضحة."
-                  : "SAR 149 is the planned early-customer launch price for Saudi and GCC customers. Access is confirmed before activation, while Free-plan limits and future extension-payment terms remain separate and explicit."}
+                  ? "149 ريالًا هو السعر الشهري المقترح للفرق المبكرة في السعودية والخليج. نؤكد النطاق والشروط والتفعيل قبل أي دفع، ولا تتم أي رسوم تلقائية."
+                  : "SAR 149 is the proposed monthly price for early Saudi and GCC teams. Scope, terms, and activation are confirmed before any payment, with no automatic charge."}
               </p>
             </div>
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-x-6 gap-y-7 sm:grid-cols-2">
               {[
                 {
                   icon: Shield,
@@ -231,7 +231,7 @@ export default function PricingPage() {
                   desc: isRTL ? "دليل API / CLI / MCP متاح للمستخدمين التجاريين." : "API / CLI / MCP guide is available for business users.",
                 },
               ].map((item) => (
-                <div key={item.title} className="rounded-2xl bg-[#f5f5f7] p-5">
+                <div key={item.title}>
                   <item.icon className="h-5 w-5 text-[#0071e3]" aria-hidden="true" />
                   <h3 className="mt-3 text-[15px] font-semibold text-[#1d1d1f]">{item.title}</h3>
                   <p className="mt-1 text-[13px] leading-6 text-[#6e6e73]">{item.desc}</p>
