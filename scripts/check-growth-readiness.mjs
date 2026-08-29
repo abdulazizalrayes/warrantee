@@ -78,6 +78,28 @@ const campaignCarryThrough = anyFileContains([
 ]);
 assertCheck("internal CTAs preserve campaign attribution into conversion paths", campaignCarryThrough.ok, campaignCarryThrough);
 
+const cleanFunnelReporting = anyFileContains([
+  "src/lib/growth-analytics.ts",
+  "src/app/[locale]/admin/page.tsx",
+], [
+  "filterRealFunnelEvents",
+  "traffic_class",
+  "visibleFunnelEvents",
+  "excludedFunnelEventCount",
+]);
+assertCheck("admin funnel separates real people from QA crawlers and monitoring", cleanFunnelReporting.ok, cleanFunnelReporting);
+
+const crmReconciliation = anyFileContains([
+  "scripts/reconcile-twenty-leads.mjs",
+  ".github/workflows/production-security.yml",
+], [
+  "read_only_privacy_safe",
+  "contact_form",
+  "seller_application",
+  "crm:reconcile",
+]);
+assertCheck("production gates reconcile legitimate Warrantee leads with Twenty", crmReconciliation.ok, crmReconciliation);
+
 const onboardingDocs = fileContains("docs/ONBOARDING_FUNNEL_ANALYTICS_2026-06-23.md", [
   "How To Read The Funnel",
   "If page views are low",

@@ -71,6 +71,9 @@ jobs:
           AGENT_MARKDOWN_BASE_URL: https://warrantee.io
         run: npm run qa:agent-markdown
 
+      - name: Reconcile legitimate lead intake with Twenty CRM
+        run: npm run crm:reconcile -- --strict
+
       - name: Sentry unresolved issue inventory
         run: npm run observability:sentry-issues -- --summary-only --fail-on-unresolved
 

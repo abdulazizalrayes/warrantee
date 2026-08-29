@@ -53,3 +53,7 @@ npm run readiness:operational
 ```
 
 After `TWENTY_API_KEY` is configured, `readiness:operational` should show the CRM check as `ok` with provider `twenty`.
+
+## Privacy-safe reconciliation
+
+`npm run crm:reconcile -- --strict` compares legitimate Warrantee signups, contact-form inquiries, and seller applications created since the Twenty migration with exact-email records in Twenty. It is read-only: it does not create contacts, send messages, or print names, email addresses, phone numbers, or message bodies. The scheduled Production Security Gates run this check and fail when a legitimate Warrantee lead is missing or the comparison cannot be completed.

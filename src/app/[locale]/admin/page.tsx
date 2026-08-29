@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
 import Link from 'next/link';
 import { getContentLocale, normalizeLocale } from '@/lib/i18n';
+import { filterRealFunnelEvents } from '@/lib/growth-analytics';
 
 const supabase = createSupabaseBrowserClient();
 
@@ -417,6 +418,7 @@ export default function AdminPage() {
   const [revenueEvents, setRevenueEvents] = useState<any[]>([]);
   const [subscriptions, setSubscriptions] = useState<any[]>([]);
   const [funnelEvents, setFunnelEvents] = useState<any[]>([]);
+  const [excludedUserIds, setExcludedUserIds] = useState<string[]>([]);
   const [systemConfig, setSystemConfig] = useState<any[]>([]);
   const [extensionPolicies, setExtensionPolicies] = useState<any[]>([]);
   const [extensionPoliciesLoading, setExtensionPoliciesLoading] = useState(false);
@@ -510,6 +512,7 @@ export default function AdminPage() {
         .map((user: { id?: string | null }) => String(user.id))
         .filter(Boolean)
     );
+    setExcludedUserIds(Array.from(excludedUsers));
     const realUsers = u.filter((user: UserAdminRow & { id?: string | null }) => !excludedUsers.has(String(user.id)));
     const realWarranties = w.filter((warranty: any) => !isLikelyQaWarranty(warranty, excludedUsers));
     const realWarrantyIds = new Set(realWarranties.map((warranty: any) => String(warranty.id)));
@@ -835,15 +838,19 @@ export default function AdminPage() {
       color: '#8B5CF6',
     },
   ];
+  const visibleFunnelEvents = growthLens === 'real'
+    ? filterRealFunnelEvents(funnelEvents, new Set(excludedUserIds))
+    : funnelEvents;
+  const excludedFunnelEventCount = Math.max(funnelEvents.length - visibleFunnelEvents.length, 0);
   const serverFunnelCounts = Object.entries(
-    funnelEvents.reduce((acc: Record<string, number>, event: any) => {
+    visibleFunnelEvents.reduce((acc: Record<string, number>, event: any) => {
       const action = event.action || 'unknown';
       acc[action] = (acc[action] || 0) + 1;
       return acc;
     }, {})
   ).sort((a, b) => b[1] - a[1]);
   const campaignFunnelCounts = Object.values(
-    funnelEvents.reduce((acc: Record<string, {
+    visibleFunnelEvents.reduce((acc: Record<string, {
       source: string;
       medium: string;
       campaign: string;
@@ -1172,9 +1179,26 @@ export default function AdminPage() {
                         : 'Server-recorded events without names, emails, or message bodies.'}
                     </p>
                   </div>
-                  <span className="rounded-full border border-[#2a2a4a] bg-[#12122a] px-3 py-1 text-xs text-gray-400">
-                    {funnelEvents.length.toLocaleString()} {locale === 'ar' ? 'حدث' : 'events'}
-                  </span>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="inline-flex rounded-full border border-[#2a2a4a] bg-[#12122a] p-1">
+                      {(['real', 'all'] as GrowthLens[]).map((lens) => (
+                        <button
+                          key={lens}
+                          type="button"
+                          onClick={() => setGrowthLens(lens)}
+                          className={`rounded-full px-3 py-1 text-xs font-semibold transition ${growthLens === lens ? 'bg-[#0071e3] text-white' : 'text-gray-400 hover:text-white'}`}
+                        >
+                          {lens === 'real' ? text.realCustomersOnly : text.allActivity}
+                        </button>
+                      ))}
+                    </div>
+                    <span className="rounded-full border border-[#2a2a4a] bg-[#12122a] px-3 py-1 text-xs text-gray-400">
+                      {visibleFunnelEvents.length.toLocaleString()} {locale === 'ar' ? 'حدث' : 'events'}
+                      {growthLens === 'real' && excludedFunnelEventCount > 0
+                        ? ` (${excludedFunnelEventCount.toLocaleString()} ${locale === 'ar' ? 'مستبعد' : 'excluded'})`
+                        : ''}
+                    </span>
+                  </div>
                 </div>
 
                 {serverFunnelCounts.length === 0 ? (
@@ -1250,11 +1274,11 @@ export default function AdminPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[#1a1a3a]">
-                      {funnelEvents.length === 0 ? (
+                      {visibleFunnelEvents.length === 0 ? (
                         <tr>
                           <td colSpan={5} className="px-4 py-8 text-center text-sm text-gray-500">{text.noFunnelEvents}</td>
                         </tr>
-                      ) : funnelEvents.map((event) => {
+                      ) : visibleFunnelEvents.map((event) => {
                         const metadata = (event.metadata || {}) as Record<string, any>;
                         const source = metadata.utm_source || metadata.ref || (event.actor_id ? (locale === 'ar' ? 'مستخدم مسجل' : 'Signed-in user') : (locale === 'ar' ? 'زائر' : 'Visitor'));
                         const campaign = metadata.utm_campaign || EM_DASH;
