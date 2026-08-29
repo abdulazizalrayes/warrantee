@@ -425,6 +425,16 @@ describe("operational hardening", () => {
     expect(resetPassword).not.toContain('router.push("/" + locale + "/login")');
   });
 
+  it("routes signup and OAuth through the CRM-enabled auth callback", () => {
+    const authContext = readProjectFile("src/lib/auth-context.tsx");
+    const callback = readProjectFile("src/app/auth/callback/route.ts");
+
+    expect(authContext).toContain('`${origin}/auth/callback?next=');
+    expect(authContext).not.toContain('`${origin}/${safeLocale}/auth/callback?next=');
+    expect(callback).toContain("upsertCrmContact");
+    expect(callback).toContain('source: "signup"');
+  });
+
   it("keeps admin ingestion management on service-role reads after admin authorization", () => {
     const ingestionList = readProjectFile("src/app/api/admin/ingestion/route.ts");
     const ingestionStats = readProjectFile("src/app/api/admin/ingestion/stats/route.ts");

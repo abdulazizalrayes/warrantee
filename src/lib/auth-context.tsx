@@ -151,7 +151,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       nextPath && nextPath.startsWith("/") && !nextPath.startsWith("//")
         ? nextPath
         : fallbackNext;
-    return `${origin}/${safeLocale}/auth/callback?next=${encodeURIComponent(safeNext)}`;
+    return `${origin}/auth/callback?next=${encodeURIComponent(safeNext)}`;
   };
 
   const signInWithGoogle = async (locale = "en", nextPath?: string) => {
