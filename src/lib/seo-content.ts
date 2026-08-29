@@ -32,12 +32,12 @@ export const RESOURCE_PAGES: SeoContentPage[] = [
     slug: "warranty-management-software",
     kind: "resource",
     title: {
-      en: "Warranty Management Software for Businesses",
-      ar: "برنامج إدارة الضمانات للشركات",
+      en: "Warranty Management Software for Saudi and GCC Businesses",
+      ar: "برنامج إدارة الضمانات للشركات في السعودية والخليج",
     },
     description: {
-      en: "Learn how warranty management software helps teams register warranties, track expiry, manage claims, issue certificates, and keep audit-ready records.",
-      ar: "تعرّف على كيف يساعد برنامج إدارة الضمانات الفرق على تسجيل الضمانات وتتبع الانتهاء وإدارة المطالبات وإصدار الشهادات وحفظ السجلات القابلة للتدقيق.",
+      en: "Warranty management software for Saudi and GCC teams to register warranties, track expiry, manage claims, issue bilingual certificates, and verify coverage.",
+      ar: "برنامج إدارة ضمانات لفرق العمل في السعودية والخليج لتسجيل الضمانات وتتبع الانتهاء وإدارة المطالبات وإصدار شهادات ثنائية اللغة والتحقق من التغطية.",
     },
     eyebrow: {
       en: "Warranty management software",
@@ -90,6 +90,44 @@ export const RESOURCE_PAGES: SeoContentPage[] = [
           ],
         },
       },
+      {
+        title: { en: "How a warranty management system works", ar: "كيف يعمل نظام إدارة الضمانات" },
+        body: {
+          en: "A useful system connects the complete operating journey instead of storing another isolated list. Teams register or import the warranty, review it, issue proof to the customer, and keep claims and expiry activity attached to the same record.",
+          ar: "يربط النظام المفيد رحلة التشغيل كاملة بدلًا من إنشاء قائمة منفصلة أخرى. تسجل الفرق الضمان أو تستورده ثم تراجعه وتصدر إثباتًا للعميل، مع إبقاء المطالبات والتنبيهات مرتبطة بالسجل نفسه.",
+        },
+        bullets: {
+          en: [
+            "Register a warranty manually, by import, or through an approved integration.",
+            "Route review and approval, then issue a bilingual certificate and QR verification path.",
+            "Track expiry, claims, status changes, and evidence without breaking the audit trail.",
+          ],
+          ar: [
+            "سجل الضمان يدويًا أو بالاستيراد أو من خلال تكامل معتمد.",
+            "مرر المراجعة والموافقة ثم أصدر شهادة ثنائية اللغة ومسار تحقق برمز QR.",
+            "تابع الانتهاء والمطالبات وتغييرات الحالة والأدلة دون قطع سجل التدقيق.",
+          ],
+        },
+      },
+      {
+        title: { en: "What Saudi and GCC teams should evaluate", ar: "ما الذي يجب أن تقيّمه فرق السعودية والخليج" },
+        body: {
+          en: "Regional teams should evaluate operational fit, not just the number of features. Arabic and English customer proof, controlled access, reliable history, and integration boundaries matter when warranty records move between sales, service, finance, and management.",
+          ar: "يجب على فرق المنطقة تقييم الملاءمة التشغيلية وليس عدد المزايا فقط. تهم الأدلة العربية والإنجليزية والصلاحيات المضبوطة والسجل الموثوق وحدود التكامل عندما تنتقل سجلات الضمان بين المبيعات والخدمة والمالية والإدارة.",
+        },
+        bullets: {
+          en: [
+            "Arabic and English customer journeys, certificates, and public verification.",
+            "Company roles, tenant isolation, approvals, evidence, and traceable status history.",
+            "API / CLI / MCP integrations that use scoped tokens instead of shared account passwords.",
+          ],
+          ar: [
+            "رحلات وشهادات وتحقق عام بالعربية والإنجليزية.",
+            "أدوار الشركات وعزل الحسابات والموافقات والأدلة وسجل الحالة القابل للتتبع.",
+            "تكاملات API / CLI / MCP تستخدم رموزًا محددة الصلاحيات بدل مشاركة كلمات مرور الحسابات.",
+          ],
+        },
+      },
     ],
     proof: {
       en: [
@@ -122,6 +160,26 @@ export const RESOURCE_PAGES: SeoContentPage[] = [
         answer: {
           en: "Warrantee.io is built for businesses, sellers, distributors, and service teams that need warranty records to stay reliable after the sale.",
           ar: "صُممت Warrantee.io للشركات والبائعين والموزعين وفرق الخدمة التي تحتاج إلى بقاء سجلات الضمان موثوقة بعد البيع.",
+        },
+      },
+      {
+        question: {
+          en: "Can individuals and businesses both create a Warrantee account?",
+          ar: "هل يمكن للأفراد والشركات إنشاء حساب في Warrantee؟",
+        },
+        answer: {
+          en: "Yes. Individuals can keep personal warranty records, while businesses can issue and manage warranties for customers and teams. Both choose their account type during the same secure signup flow.",
+          ar: "نعم. يمكن للأفراد حفظ سجلات ضماناتهم الشخصية، ويمكن للشركات إصدار الضمانات وإدارتها للعملاء والفرق. يختار كل مستخدم نوع حسابه ضمن مسار التسجيل الآمن نفسه.",
+        },
+      },
+      {
+        question: {
+          en: "How much does Warrantee cost?",
+          ar: "كم تبلغ تكلفة Warrantee؟",
+        },
+        answer: {
+          en: "The Free plan is SAR 0 for up to 10 warranties. A Professional pilot is proposed at SAR 149 per month but is not charged automatically while paid checkout remains inactive. Enterprise scope and pricing are agreed directly.",
+          ar: "الخطة المجانية بسعر 0 ريال وتشمل حتى 10 ضمانات. توجد خطة احترافية تجريبية مقترحة بسعر 149 ريالًا شهريًا، ولا يتم الخصم تلقائيًا ما دام الدفع الإلكتروني غير مفعّل. يتم الاتفاق مباشرة على نطاق وسعر خطة المؤسسات.",
         },
       },
     ],
@@ -328,8 +386,8 @@ export const RESOURCE_PAGES: SeoContentPage[] = [
     slug: "saudi-gcc-warranty-operations",
     kind: "resource",
     title: {
-      en: "Saudi and GCC Warranty Operations",
-      ar: "تشغيل الضمانات في السعودية والخليج",
+      en: "Warranty Management in Saudi Arabia and the GCC",
+      ar: "إدارة الضمانات في السعودية والخليج",
     },
     description: {
       en: "Warranty operations guidance for Saudi Arabia and GCC businesses that need Arabic and English records, seller workflows, proof, and customer trust.",
@@ -367,10 +425,29 @@ export const RESOURCE_PAGES: SeoContentPage[] = [
           ar: ["تسجيل البائع", "سجل الموافقات", "تحقق العميل والشهادات"],
         },
       },
+      {
+        title: { en: "A practical rollout for regional teams", ar: "إطلاق عملي لفرق المنطقة" },
+        body: {
+          en: "A business does not need to move every product line on day one. Start with one warranty category, define issuer and approver responsibilities, issue the first customer certificate, and measure verification and claim activity before expanding.",
+          ar: "لا تحتاج الشركة إلى نقل جميع خطوط المنتجات في اليوم الأول. ابدأ بفئة ضمان واحدة، وحدد مسؤوليات المُصدر والموافق، وأصدر أول شهادة للعميل، ثم قِس نشاط التحقق والمطالبات قبل التوسع.",
+        },
+        bullets: {
+          en: [
+            "Select one product line and define required warranty evidence.",
+            "Assign issuer, approver, and service responsibilities in Arabic and English.",
+            "Issue QR-backed proof, review customer usage, then expand the operating model.",
+          ],
+          ar: [
+            "اختر خط منتجات واحدًا وحدد أدلة الضمان المطلوبة.",
+            "عيّن مسؤوليات المُصدر والموافق والخدمة بالعربية والإنجليزية.",
+            "أصدر إثباتًا مدعومًا برمز QR وراجع استخدام العملاء ثم وسّع نموذج التشغيل.",
+          ],
+        },
+      },
     ],
     proof: {
-      en: ["Arabic is fully indexed.", "English remains the primary source.", "GCC-focused metadata and schema are in place."],
-      ar: ["العربية مفهرسة بالكامل.", "الإنجليزية تبقى المصدر الأساسي.", "بيانات وصفية وسكيما موجهة للخليج موجودة."],
+      en: ["Arabic and English public journeys.", "Bilingual certificates and customer verification.", "Saudi and GCC-focused metadata and structured content."],
+      ar: ["رحلات عامة بالعربية والإنجليزية.", "شهادات وتحقق للعملاء باللغتين.", "بيانات وصفية ومحتوى منظم موجه للسعودية والخليج."],
     },
     faq: [
       {
@@ -378,6 +455,13 @@ export const RESOURCE_PAGES: SeoContentPage[] = [
         answer: {
           en: "Warrantee.io is focused on Saudi Arabia and the GCC, with English and Arabic workflows designed for regional warranty operations.",
           ar: "تركز Warrantee.io على السعودية والخليج، مع مسارات عربية وإنجليزية مصممة لتشغيل الضمانات في المنطقة.",
+        },
+      },
+      {
+        question: { en: "Does Warrantee support Arabic warranty management?", ar: "هل تدعم Warrantee إدارة الضمانات بالعربية؟" },
+        answer: {
+          en: "Yes. Warrantee provides Arabic and English public pages, account journeys, certificates, verification, and warranty operations while preserving right-to-left behavior for Arabic users.",
+          ar: "نعم. توفر Warrantee صفحات عامة ومسارات حساب وشهادات وتحقق وعمليات ضمان بالعربية والإنجليزية، مع الحفاظ على اتجاه الواجهة من اليمين إلى اليسار للمستخدم العربي.",
         },
       },
     ],
