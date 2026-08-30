@@ -46,7 +46,8 @@ export default function AuthPage() {
     error: string | null;
     tab: string | null;
     redirect: string | null;
-  }>({ error: null, tab: null, redirect: null });
+    account: string | null;
+  }>({ error: null, tab: null, redirect: null, account: null });
   const errorFromUrl = urlState.error;
   const requestedTab = urlState.tab;
   const requestedRedirect = urlState.redirect;
@@ -57,7 +58,12 @@ export default function AuthPage() {
 
   useEffect(() => {
     setActiveTab(requestedTab === "signup" ? "signup" : "login");
-  }, [requestedTab]);
+    if (requestedTab === "signup" && urlState.account === "business") {
+      setAccountType("business");
+    } else if (requestedTab === "signup" && urlState.account === "consumer") {
+      setAccountType("consumer");
+    }
+  }, [requestedTab, urlState.account]);
 
   useEffect(() => {
     const currentSearchParams = new URLSearchParams(window.location.search);
@@ -65,6 +71,7 @@ export default function AuthPage() {
       error: currentSearchParams.get("error"),
       tab: currentSearchParams.get("tab"),
       redirect: currentSearchParams.get("redirect"),
+      account: currentSearchParams.get("account"),
     });
   }, []);
 
@@ -102,17 +109,40 @@ export default function AuthPage() {
     }
     setLoading(false);
   };
+  const prepareOAuthIntent = async () => {
+    const isSignup = activeTab === "signup";
+    if (isSignup && accountType === "business" && !companyName.trim()) {
+      return isRTL ? "أدخل اسم الشركة قبل المتابعة." : "Enter the company name before continuing.";
+    }
+
+    const response = await fetch("/api/auth/oauth-intent", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(
+        isSignup
+          ? { accountType, companyName: accountType === "business" ? companyName : null }
+          : { accountType: null }
+      ),
+    });
+    if (response.ok) return null;
+    const payload = await response.json().catch(() => null);
+    return payload?.error || (isRTL ? "تعذر تجهيز التسجيل." : "Could not prepare signup.");
+  };
   const handleGoogleAuth = async () => {
-    setMessage(""); setErrorMsg("");
-    trackAuthIntent("oauth_start", "google", { locale, tab: activeTab });
+    setLoading(true); setMessage(""); setErrorMsg("");
+    const intentError = await prepareOAuthIntent();
+    if (intentError) { setErrorMsg(intentError); setLoading(false); return; }
+    trackAuthIntent("oauth_start", "google", { locale, tab: activeTab, account_type: activeTab === "signup" ? accountType : undefined });
     const { error } = await signInWithGoogle(locale, nextPath);
-    if (error) setErrorMsg(error);
+    if (error) { setErrorMsg(error); setLoading(false); }
   };
   const handleAppleAuth = async () => {
-    setMessage(""); setErrorMsg("");
-    trackAuthIntent("oauth_start", "apple", { locale, tab: activeTab });
+    setLoading(true); setMessage(""); setErrorMsg("");
+    const intentError = await prepareOAuthIntent();
+    if (intentError) { setErrorMsg(intentError); setLoading(false); return; }
+    trackAuthIntent("oauth_start", "apple", { locale, tab: activeTab, account_type: activeTab === "signup" ? accountType : undefined });
     const { error } = await signInWithApple(locale, nextPath);
-    if (error) setErrorMsg(error);
+    if (error) { setErrorMsg(error); setLoading(false); }
   };
   const handleSignOutForSignup = async () => {
     setLoading(true); setMessage(""); setErrorMsg("");
@@ -201,7 +231,13 @@ export default function AuthPage() {
               {errorFromUrl && (
                 <div className="mb-4 flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">
                   <AlertCircle size={16} />
-                  {isRTL ? "\u062d\u062f\u062b \u062e\u0637\u0623 \u0623\u062b\u0646\u0627\u0621 \u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062f\u062e\u0648\u0644. \u0627\u0644\u0631\u062c\u0627\u0621 \u0627\u0644\u0645\u062d\u0627\u0648\u0644\u0629 \u0645\u0631\u0629 \u0623\u062e\u0631\u0649." : "An error occurred during sign in. Please try again."}
+                  {errorFromUrl === "business_setup_error"
+                    ? isRTL
+                      ? "تم تسجيل الدخول، لكن تعذر إعداد مساحة الشركة. أعد المحاولة أو تواصل معنا."
+                      : "You signed in, but the Business workspace could not be prepared. Try again or contact us."
+                    : isRTL
+                      ? "\u062d\u062f\u062b \u062e\u0637\u0623 \u0623\u062b\u0646\u0627\u0621 \u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062f\u062e\u0648\u0644. \u0627\u0644\u0631\u062c\u0627\u0621 \u0627\u0644\u0645\u062d\u0627\u0648\u0644\u0629 \u0645\u0631\u0629 \u0623\u062e\u0631\u0649."
+                      : "An error occurred during sign in. Please try again."}
                 </div>
               )}
 

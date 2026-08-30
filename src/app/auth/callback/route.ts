@@ -1,14 +1,19 @@
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { NextResponse } from "next/server";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { NextRequest, NextResponse } from "next/server";
 import { sendEmail, welcomeEmail } from "@/lib/email";
 import { upsertCrmContact } from "@/lib/crm";
 import { getContentLocale, normalizeLocale, type Locale } from "@/lib/i18n";
+import {
+  OAUTH_SIGNUP_INTENT_COOKIE,
+  parseOAuthSignupIntent,
+} from "@/lib/oauth-signup-intent";
 
 function getLocaleFromPath(path: string | null): Locale {
   return normalizeLocale(path?.split("/").filter(Boolean)[0]);
 }
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams?.get("code");
   const requestedNext = searchParams?.get("next");
@@ -22,12 +27,35 @@ export async function GET(request: Request) {
     const supabase = await createServerSupabaseClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
+      const signupIntent = parseOAuthSignupIntent(
+        request.cookies.get(OAUTH_SIGNUP_INTENT_COOKIE)?.value
+      );
+
       // Send welcome email to new users
       try {
         const {
           data: { user },
         } = await supabase.auth.getUser();
         if (user) {
+          if (signupIntent?.accountType === "business" && signupIntent.companyName) {
+            const supabaseAdmin = createSupabaseAdminClient();
+            const { error: onboardingError } = await supabaseAdmin.rpc(
+              "complete_business_onboarding",
+              {
+                p_user_id: user.id,
+                p_company_name: signupIntent.companyName,
+              }
+            );
+            if (onboardingError) {
+              console.error("Business OAuth onboarding error:", onboardingError.message);
+              const failedResponse = NextResponse.redirect(
+                new URL(`/${fallbackLocale}/auth?error=business_setup_error&tab=signup`, origin)
+              );
+              failedResponse.cookies.delete(OAUTH_SIGNUP_INTENT_COOKIE);
+              return failedResponse;
+            }
+          }
+
           const { data: profile } = await supabase
             .from("profiles")
             .select("created_at, email, full_name")
@@ -64,9 +92,13 @@ export async function GET(request: Request) {
         console.error("Welcome email error:", e);
       }
 
-      return NextResponse.redirect(new URL(next, origin));
+      const successResponse = NextResponse.redirect(new URL(next, origin));
+      successResponse.cookies.delete(OAUTH_SIGNUP_INTENT_COOKIE);
+      return successResponse;
     }
   }
 
-  return NextResponse.redirect(new URL(`/${fallbackLocale}/auth?error=auth_callback_error`, origin));
+  const errorResponse = NextResponse.redirect(new URL(`/${fallbackLocale}/auth?error=auth_callback_error`, origin));
+  errorResponse.cookies.delete(OAUTH_SIGNUP_INTENT_COOKIE);
+  return errorResponse;
 }

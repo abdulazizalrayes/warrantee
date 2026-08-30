@@ -12,6 +12,7 @@ import {
   parseImportMapping,
   reviewImportRows,
 } from "@/lib/warranty-import";
+import { isWarrantyLimitError, warrantyLimitResponseBody } from "@/lib/warranty-entitlements";
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024;
 const MAX_ROWS = 500;
@@ -131,6 +132,9 @@ export async function POST(request: NextRequest) {
     const inserts = reviewed.map((row) => buildImportWarrantyInsert(row, user.id, batchId));
     const { data: imported, error: insertError } = await supabase.from("warranties").insert(inserts).select("id");
     if (insertError) {
+      if (isWarrantyLimitError(insertError)) {
+        return NextResponse.json(warrantyLimitResponseBody(), { status: 409 });
+      }
       console.warn("Bulk import commit failed:", insertError.message);
       return NextResponse.json({ error: "Import was not committed. No rows were added." }, { status: 500 });
     }

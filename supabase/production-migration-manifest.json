@@ -321,6 +321,16 @@
       "file": "20260823171500_harden_bulk_import_duplicate_date_parsing.sql",
       "sha256": "5b991b2878a89f879216c0624a16942d374359f830d0e5e0318ca4a8df753898",
       "productionState": "applied"
+    },
+    {
+      "file": "20260830143000_account_aware_plans_and_warranty_quotas.sql",
+      "sha256": "a3608a9fa73579466ec6cd4da2127041b1191ecb4bea4a8dcb2f029b96098051",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260830151500_harden_business_onboarding_rpc.sql",
+      "sha256": "a1b0afb11a73432b5aafeb3c6d9dcbf0d3d5ea529b86992366445370d7edce28",
+      "productionState": "applied"
     }
   ]
 }

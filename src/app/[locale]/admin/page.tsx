@@ -639,7 +639,7 @@ export default function AdminPage() {
   const fmtMoney = (n: number, currency = 'SAR') => `${currency} ${(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   const estimatedSubscriptionMrr = subscriptions.reduce((sum: number, subscription: any) => {
     if (subscription.status !== 'active' && subscription.status !== 'trialing') return sum;
-    if (subscription.plan_id === 'pro') return sum + 149;
+    if (subscription.plan_id === 'pro') return sum + 14.9;
     return sum;
   }, 0);
   const userMetrics = (userId: string) => {

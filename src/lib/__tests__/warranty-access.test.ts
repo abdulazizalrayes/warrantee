@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildWarrantyAccessOrClause,
   buildWarrantyOwnershipInsert,
+  buildWarrantyQuotaOrClause,
 } from "@/lib/warranty-access";
 
 describe("warranty access helpers", () => {
@@ -16,6 +17,12 @@ describe("warranty access helpers", () => {
         "seller_id.eq.user-123",
         "issuer_user_id.eq.user-123",
       ].join(",")
+    );
+  });
+
+  it("builds quota ownership without counting warranties only received from another issuer", () => {
+    expect(buildWarrantyQuotaOrClause("user-123", ["company-1"])).toBe(
+      "user_id.eq.user-123,created_by.eq.user-123,issuer_user_id.eq.user-123,issuer_company_id.in.(company-1)"
     );
   });
 

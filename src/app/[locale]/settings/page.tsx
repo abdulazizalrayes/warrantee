@@ -461,7 +461,13 @@ export default function SettingsPage() {
                   </div>
                   <p className="text-[28px] font-semibold tracking-tight">{isRTL ? "\u0645\u062c\u0627\u0646\u064a" : "Free"}</p>
                   <p className="text-[15px] text-white/60 mt-1">
-                    {isRTL ? "الخطة المجانية تشمل حتى 10 ضمانات مع الاحتفاظ بالسجلات. الخطة الاحترافية عرض إطلاق بالريال السعودي." : "Free includes up to 10 warranties with records retained. Professional is a SAR launch offer."}
+                    {profile?.account_type === "business"
+                      ? isRTL
+                        ? "مجاني للأعمال يشمل أول 100 ضمان مُصدر مع الاحتفاظ بالسجلات. الاحترافية مخططة بسعر 14.90 ر.س شهريًا في الخليج."
+                        : "Business Free includes the first 100 issued warranties with records retained. Professional is planned at SAR 14.90/month in the GCC."
+                      : isRTL
+                        ? "مجاني للأفراد يشمل حتى 10 ضمانات شخصية مع الاحتفاظ بالسجلات."
+                        : "Personal Free includes up to 10 personal warranties with records retained."}
                   </p>
                 </div>
                 <Link href={`/${locale}/billing`}

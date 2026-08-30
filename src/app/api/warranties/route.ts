@@ -8,6 +8,7 @@ import {
   buildSellerWarrantyAccessOrClause,
   buildWarrantyOwnershipInsert,
 } from "@/lib/warranty-access";
+import { isWarrantyLimitError, warrantyLimitResponseBody } from "@/lib/warranty-entitlements";
 
 function generateReferenceNumber() {
   const timestamp = Date.now().toString(36).toUpperCase();
@@ -225,6 +226,9 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
+      if (isWarrantyLimitError(error)) {
+        return NextResponse.json(warrantyLimitResponseBody(), { status: 409 });
+      }
       console.warn("Warranty insert error:", error.message);
       return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }

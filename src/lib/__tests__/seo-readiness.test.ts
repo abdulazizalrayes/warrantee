@@ -56,19 +56,22 @@ describe("SEO and AI-search readiness metadata", () => {
     if (!software.offers) throw new Error("SoftwareApplication offers are missing");
 
     expect(software.offers.map((offer: { name: string }) => offer.name)).toEqual([
-      "Free",
-      "Professional",
+      "Personal Free",
+      "Business Free",
+      "Professional GCC",
+      "Professional International",
       "Enterprise",
     ]);
     expect(software.description).toContain("Warranty management software");
     expect(serialized).not.toContain("\"@type\":\"Product\"");
-    expect(serialized).toContain("Planned Professional launch price");
-    expect(serialized).toContain("SAR 149/month");
+    expect(serialized).toContain("Planned GCC Professional launch price");
+    expect(serialized).toContain("SAR 14.90/month");
+    expect(serialized).toContain("USD 3.99/month");
     expect(serialized).toContain("https://schema.org/PreOrder");
     expect(serialized).not.toContain("Warranty-extension transaction fees");
     expect(serialized).not.toContain("first month free");
     expect(serialized).not.toContain("first year free");
-    expect(serialized).not.toContain("Business plan");
+    expect(serialized).toContain("Business Free");
   });
 
   it("uses FAQ structured data that matches visible FAQ copy", () => {
@@ -77,15 +80,17 @@ describe("SEO and AI-search readiness metadata", () => {
       "Saudi Arabia and the GCC",
     );
     expect(englishFaq.mainEntity[1].acceptedAnswer.text).toContain(
-      "planned Professional launch price is SAR 149/month",
+      "Business Free for the first 100 issued warranties",
     );
+    expect(englishFaq.mainEntity[1].acceptedAnswer.text).toContain("SAR 14.90/month");
   });
 
   it("describes pricing with the current Professional plan", () => {
     const metadata = buildPageMetadata("pricing", "en");
     expect(metadata.description).toContain("Professional");
-    expect(metadata.description).toContain("launch pricing is planned");
-    expect(metadata.description).toContain("SAR 149/month");
+    expect(metadata.description).toContain("Business Free");
+    expect(metadata.description).toContain("SAR 14.90/month");
+    expect(metadata.description).toContain("USD 3.99");
     expect(metadata.description).not.toContain("first month free");
     expect(metadata.description).not.toContain("first year free");
   });
@@ -106,20 +111,24 @@ describe("SEO and AI-search readiness metadata", () => {
     const arabicPricing = JSON.stringify(getDictionary("ar").pricing);
 
     expect(englishPricing).toContain("Professional");
-    expect(englishPricing).toContain("Up to 10 warranties");
-    expect(englishPricing).toContain("SAR 149");
+    expect(englishPricing).toContain("Up to 10 personal warranties");
+    expect(englishPricing).toContain("First 100 issued warranties");
+    expect(englishPricing).toContain("SAR 14.90 / USD 3.99");
+    expect(englishPricing).toContain("Up to 1,000 issued warranties");
     expect(englishPricing).toContain("Full warranty history");
     expect(englishPricing).not.toContain("First month free");
     expect(englishPricing).not.toContain("30-day history");
     expect(englishPricing).not.toContain("12-month history");
     expect(englishPricing).not.toContain("8% commission on extensions");
-    expect(englishPricing).not.toContain("Business");
+    expect(englishPricing).toContain("Business Free");
     expect(englishPricing).not.toContain("first year free");
     expect(englishPricing).not.toContain("Up to 50 warranties");
 
     expect(arabicPricing).toContain("احترافي");
-    expect(arabicPricing).toContain("حتى 10 ضمانات");
-    expect(arabicPricing).toContain("149");
+    expect(arabicPricing).toContain("حتى 10 ضمانات شخصية");
+    expect(arabicPricing).toContain("أول 100 ضمان مُصدر");
+    expect(arabicPricing).toContain("14.90");
+    expect(arabicPricing).toContain("3.99");
     expect(arabicPricing).not.toContain("الشهر الأول مجاني");
   });
 

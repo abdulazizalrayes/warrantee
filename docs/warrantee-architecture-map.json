@@ -69,10 +69,10 @@
     },
     "inventory_counts": {
       "page_files": 59,
-      "route_handlers": 107,
+      "route_handlers": 108,
       "layouts": 30,
       "database_tables": 49,
-      "migration_files": 64,
+      "migration_files": 66,
       "scheduled_jobs": 3,
       "github_workflows": 3,
       "e2e_spec_files": 7
@@ -1887,6 +1887,10 @@
       {
         "path": "/auth/callback",
         "access": "Supabase root authentication callback"
+      },
+      {
+        "path": "/api/auth/oauth-intent",
+        "access": "same-origin signup intent cookie for OAuth onboarding"
       },
       {
         "path": "/robots.txt",

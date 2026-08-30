@@ -33,11 +33,15 @@ function assertUnique(values, label) {
   }
 }
 
+function isICloudDuplicateArtifact(name) {
+  return / [23](?:\.[^/]+)?$/.test(name)
+}
+
 function walk(path, predicate) {
   const ignored = new Set([".git", ".next", "node_modules", "playwright-report", "test-results"])
   let count = 0
   for (const entry of readdirSync(path, { withFileTypes: true })) {
-    if (ignored.has(entry.name)) continue
+    if (ignored.has(entry.name) || isICloudDuplicateArtifact(entry.name)) continue
     const entryPath = join(path, entry.name)
     if (entry.isDirectory()) count += walk(entryPath, predicate)
     else if (predicate(entryPath)) count += 1
@@ -59,6 +63,7 @@ function collectAppRoutes(leafName) {
   const routes = []
   function visit(path) {
     for (const entry of readdirSync(path, { withFileTypes: true })) {
+      if (isICloudDuplicateArtifact(entry.name)) continue
       const entryPath = join(path, entry.name)
       if (entry.isDirectory()) visit(entryPath)
       else if (entry.name === leafName) routes.push(appRouteForFile(entryPath, leafName))

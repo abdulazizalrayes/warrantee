@@ -18,6 +18,8 @@ const config = [
       "supabase/.temp/**",
       "supabase/migrations 2/**",
       "tests/e2e 2/**",
+      "**/* 2.*",
+      "**/* 3.*",
       "next-env.d.ts",
     ],
   },

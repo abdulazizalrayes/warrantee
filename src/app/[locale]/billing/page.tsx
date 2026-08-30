@@ -9,7 +9,14 @@ import type { Locale } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth-context";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { ProtectedRouteNotice } from "@/components/dashboard/ProtectedRouteNotice";
-import { resolveWarrantyAccessOrClause } from "@/lib/warranty-access";
+import { buildWarrantyQuotaOrClause, getWarrantyCompanyAccess } from "@/lib/warranty-access";
+import {
+  getFreeWarrantyLimit,
+  PROFESSIONAL_PRICE_SAR,
+  PROFESSIONAL_PRICE_USD,
+  PROFESSIONAL_TEAM_LIMIT,
+  PROFESSIONAL_WARRANTY_LIMIT,
+} from "@/lib/plan-config";
 
 interface SubscriptionInfo {
   plan_id: string;
@@ -19,39 +26,42 @@ interface SubscriptionInfo {
   trial_start: string | null;
   trial_end: string | null;
   cancel_at_period_end: boolean;
-  warranty_limit: number;
-  team_limit: number;
+  warranty_limit: number | null;
+  team_limit: number | null;
   warranties_used: number;
   team_members_used: number;
 }
 
-const plans = [
+const buildPlans = (isBusiness: boolean) => [
   {
     id: "free",
     icon: Shield,
     iconColor: "text-[#86868b]",
     iconBg: "bg-[#f5f5f7]",
     price: 0,
-    features_en: ["Up to 10 warranties", "Basic dashboard", "Email support", "Single user", "Full warranty history"],
-    features_ar: ["حتى 10 ضمانات", "لوحة أساسية", "دعم بريد", "مستخدم واحد", "سجل ضمانات كامل"],
-    name_en: "Free",
-    name_ar: "مجاني",
-    desc_en: "For individuals getting started",
-    desc_ar: "للأفراد الذين يبدأون"
+    features_en: isBusiness
+      ? ["First 100 issued warranties", "Certificates and QR passports", "Basic claims workflow", "Single business user", "Full history retained"]
+      : ["Up to 10 personal warranties", "Receipts and supporting documents", "Expiry reminders", "Single user", "Full history retained"],
+    features_ar: isBusiness
+      ? ["أول 100 ضمان مُصدر", "الشهادات وجوازات المنتج عبر QR", "مسار مطالبات أساسي", "مستخدم أعمال واحد", "الاحتفاظ بالسجل كاملًا"]
+      : ["حتى 10 ضمانات شخصية", "الفواتير والمستندات الداعمة", "تنبيهات انتهاء الضمان", "مستخدم واحد", "الاحتفاظ بالسجل كاملًا"],
+    name_en: isBusiness ? "Business Free" : "Personal Free",
+    name_ar: isBusiness ? "مجاني للأعمال" : "مجاني للأفراد",
+    desc_en: isBusiness ? "For issuing customer warranties" : "For protecting personal purchases",
+    desc_ar: isBusiness ? "لإصدار ضمانات العملاء" : "لحفظ ضمانات المشتريات الشخصية"
   },
   {
     id: "pro",
     icon: Zap,
     iconColor: "text-[#0071e3]",
     iconBg: "bg-[#0071e3]/10",
-    price: 149,
-    currency_en: "SAR",
-    currency_ar: "ر.س",
+    price: PROFESSIONAL_PRICE_SAR,
+    usdPrice: PROFESSIONAL_PRICE_USD,
     pricePrefix_en: "Planned launch price",
     pricePrefix_ar: "سعر إطلاق مخطط",
     featured: true,
-    features_en: ["Unlimited warranties", "Advanced analytics", "Priority support", "Up to 5 team members", "Full warranty history", "Custom workflows", "Bilingual certificates"],
-    features_ar: ["ضمانات غير محدودة", "تحليلات متقدمة", "دعم أولوية", "حتى 5 أعضاء", "سجل ضمانات كامل", "سير عمل مخصص", "شهادات ثنائية"],
+    features_en: [`Up to ${PROFESSIONAL_WARRANTY_LIMIT.toLocaleString("en-US")} issued warranties`, "Advanced analytics", "Priority email support", `Up to ${PROFESSIONAL_TEAM_LIMIT} team members`, "Custom workflows", "Bilingual certificates"],
+    features_ar: ["حتى 1,000 ضمان مُصدر", "تحليلات متقدمة", "دعم بريد إلكتروني بأولوية", "حتى 3 أعضاء فريق", "سير عمل مخصص", "شهادات ثنائية اللغة"],
     name_en: "Professional",
     name_ar: "احترافي",
     desc_en: "Planned launch offer for growing businesses",
@@ -63,8 +73,8 @@ const plans = [
     iconColor: "text-[#0071e3]",
     iconBg: "bg-[#0071e3]/10",
     price: -1,
-    features_en: ["Everything in Professional", "Team limits by agreement", "Enterprise onboarding by agreement", "Custom integrations by agreement", "Service levels by agreement"],
-    features_ar: ["كل ما في الاحترافي", "حدود الفريق حسب الاتفاق", "تهيئة المؤسسات حسب الاتفاق", "تكاملات مخصصة حسب الاتفاق", "مستويات الخدمة حسب الاتفاق"],
+    features_en: ["More than 1,000 issued warranties", "Team limits by agreement", "Enterprise onboarding by agreement", "Custom integrations by agreement", "Service levels by agreement"],
+    features_ar: ["أكثر من 1,000 ضمان مُصدر", "حدود الفريق حسب الاتفاق", "تهيئة المؤسسات حسب الاتفاق", "تكاملات مخصصة حسب الاتفاق", "مستويات الخدمة حسب الاتفاق"],
     name_en: "Enterprise",
     name_ar: "مؤسسي",
     desc_en: "For large organizations",
@@ -72,7 +82,7 @@ const plans = [
   },
 ];
 
-function buildFreeSubscription(warrantiesUsed = 0): SubscriptionInfo {
+function buildFreeSubscription(warrantiesUsed = 0, accountType?: string | null): SubscriptionInfo {
   return {
     plan_id: "free",
     status: "active",
@@ -81,7 +91,7 @@ function buildFreeSubscription(warrantiesUsed = 0): SubscriptionInfo {
     trial_start: null,
     trial_end: null,
     cancel_at_period_end: false,
-    warranty_limit: 10,
+    warranty_limit: getFreeWarrantyLimit(accountType),
     team_limit: 1,
     warranties_used: warrantiesUsed,
     team_members_used: 1,
@@ -95,7 +105,7 @@ export default function BillingPage() {
   const dict = getDictionary(locale);
   const isRTL = locale === "ar";
   const direction = DIRECTION[locale as Locale];
-  const { user, loading: authLoading } = useAuth();
+  const { user, profile, loading: authLoading } = useAuth();
   const supabase = createSupabaseBrowserClient();
 
   const [subscription, setSubscription] = useState<SubscriptionInfo | null>(null);
@@ -110,10 +120,12 @@ export default function BillingPage() {
     }
     const fetchSub = async () => {
       const safeWarrantyCount = async () => {
+        const companyAccess = await getWarrantyCompanyAccess(supabase, user.id);
         const { count, error } = await supabase
           .from("warranties")
           .select("id", { count: "exact", head: true })
-          .or(await resolveWarrantyAccessOrClause(supabase, user.id));
+          .is("deleted_at", null)
+          .or(buildWarrantyQuotaOrClause(user.id, companyAccess.viewCompanyIds));
         if (error) {
           console.warn("[Billing] Warranty usage unavailable:", error.message);
           return 0;
@@ -130,7 +142,7 @@ export default function BillingPage() {
 
       if (error) {
         console.warn("[Billing] Subscription state unavailable:", error.message);
-        setSubscription(buildFreeSubscription(warrantiesUsed));
+        setSubscription(buildFreeSubscription(warrantiesUsed, profile?.account_type));
       } else if (data) {
         setSubscription({
           ...(data as Omit<SubscriptionInfo, "warranties_used" | "team_members_used">),
@@ -138,12 +150,12 @@ export default function BillingPage() {
           team_members_used: 1,
         });
       } else {
-        setSubscription(buildFreeSubscription(warrantiesUsed));
+        setSubscription(buildFreeSubscription(warrantiesUsed, profile?.account_type));
       }
       setLoading(false);
     };
     fetchSub();
-  }, [user, authLoading, supabase]);
+  }, [user, profile?.account_type, authLoading, supabase]);
 
   const handlePlanRequest = (planId: string) => {
     const intent = planId === "enterprise" ? "enterprise" : "professional-access";
@@ -156,6 +168,7 @@ export default function BillingPage() {
   };
 
   const currentPlan = subscription?.plan_id || "free";
+  const plans = buildPlans(profile?.account_type === "business");
 
   const sections = [
     { id: "profile", label: isRTL ? "الملف الشخصي" : "Profile", icon: User, href: `/${locale}/settings` },
@@ -266,11 +279,11 @@ export default function BillingPage() {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 <div className="bg-white/5 rounded-xl p-4">
                   <p className="text-[12px] text-white/50 mb-1">{isRTL ? "الضمانات" : "Warranties"}</p>
-                  <p className="text-[20px] font-semibold">{subscription.warranties_used}{subscription.warranty_limit > 0 && <span className="text-[14px] font-normal text-white/40"> / {subscription.warranty_limit}</span>}</p>
+                  <p className="text-[20px] font-semibold">{subscription.warranties_used}{(subscription.warranty_limit ?? 0) > 0 && <span className="text-[14px] font-normal text-white/40"> / {subscription.warranty_limit}</span>}</p>
                 </div>
                 <div className="bg-white/5 rounded-xl p-4">
                   <p className="text-[12px] text-white/50 mb-1">{isRTL ? "الفريق" : "Team"}</p>
-                  <p className="text-[20px] font-semibold">{subscription.team_members_used}{subscription.team_limit > 0 && <span className="text-[14px] font-normal text-white/40"> / {subscription.team_limit}</span>}</p>
+                  <p className="text-[20px] font-semibold">{subscription.team_members_used}{(subscription.team_limit ?? 0) > 0 && <span className="text-[14px] font-normal text-white/40"> / {subscription.team_limit}</span>}</p>
                 </div>
                 {subscription.trial_end && (
                   <div className="bg-white/5 rounded-xl p-4">
@@ -334,10 +347,11 @@ export default function BillingPage() {
                         <p className="text-[17px] font-semibold text-[#1d1d1f]">{isRTL ? "تواصل معنا" : "Contact Us"}</p>
                       ) : (
                         <div>
-                          <span className="text-[28px] font-semibold tracking-tight text-[#1d1d1f]">{isRTL ? plan.currency_ar : plan.currency_en} {plan.price}</span>
+                          <span className="block text-[28px] font-semibold tracking-tight text-[#1d1d1f]">{isRTL ? `${plan.price.toFixed(2)} ر.س` : `SAR ${plan.price.toFixed(2)}`}</span>
                           <span className="text-[14px] text-[#86868b]"> /{isRTL ? "شهر" : "month"}</span>
                           {plan.id === "pro" && (
                             <>
+                              <p className="mt-1 text-[13px] font-medium text-[#1d1d1f]">{isRTL ? `${plan.usdPrice?.toFixed(2)} دولار خارج الخليج` : `USD ${plan.usdPrice?.toFixed(2)} outside the GCC`}</p>
                               <p className="text-[12px] text-[#0071e3] font-medium mt-1">{isRTL ? plan.pricePrefix_ar : plan.pricePrefix_en}</p>
                             </>
                           )}

@@ -51,6 +51,10 @@
     "test-results",
     "supabase/.temp",
     "supabase/migrations 2",
-    "tests/e2e 2"
+    "tests/e2e 2",
+    "**/* 2.ts",
+    "**/* 2.tsx",
+    "**/* 3.ts",
+    "**/* 3.tsx"
   ]
 }

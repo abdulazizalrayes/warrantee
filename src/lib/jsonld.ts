@@ -68,21 +68,39 @@ export function getOrganizationJsonLd() {
         offers: [
           {
             "@type": "Offer",
-            name: "Free",
+            name: "Personal Free",
             price: "0",
             priceCurrency: "SAR",
             availability: "https://schema.org/InStock",
             url: `${BASE_URL}/en/pricing`,
-            description: "Free plan available with no credit card required. Includes up to 10 warranties, a basic dashboard, email support, one user, and retained warranty history.",
+            description: "Free personal plan with no credit card required. Includes up to 10 personal warranty records, expiry reminders, one user, and retained warranty history.",
           },
           {
             "@type": "Offer",
-            name: "Professional",
-            price: "149",
+            name: "Business Free",
+            price: "0",
+            priceCurrency: "SAR",
+            availability: "https://schema.org/InStock",
+            url: `${BASE_URL}/en/pricing`,
+            description: "Free business plan with no credit card required. Includes the first 100 issued customer warranties, certificates, QR product passports, a basic claims workflow, one business user, and retained warranty history.",
+          },
+          {
+            "@type": "Offer",
+            name: "Professional GCC",
+            price: "14.90",
             priceCurrency: "SAR",
             availability: "https://schema.org/PreOrder",
             url: `${BASE_URL}/en/contact?intent=professional-access`,
-            description: "Planned Professional launch price: SAR 149/month. Self-serve checkout is not yet generally active, so access currently requires confirmation from Warrantee. Proposed plan terms include unlimited warranties, advanced analytics, priority email support, up to 5 team members, full warranty history, custom workflows, and bilingual certificates.",
+            description: "Planned GCC Professional launch price: SAR 14.90/month. Self-serve checkout is not yet generally active, so access currently requires confirmation from Warrantee. Proposed terms include up to 1,000 issued warranties, advanced analytics, priority email support, up to 3 team members, full warranty history, custom workflows, and bilingual certificates.",
+          },
+          {
+            "@type": "Offer",
+            name: "Professional International",
+            price: "3.99",
+            priceCurrency: "USD",
+            availability: "https://schema.org/PreOrder",
+            url: `${BASE_URL}/en/contact?intent=professional-access`,
+            description: "Planned Professional launch price outside the GCC: USD 3.99/month. Self-serve checkout is not yet generally active, and the proposed capacity is up to 1,000 issued warranties and 3 team members.",
           },
           {
             "@type": "Offer",
@@ -137,8 +155,8 @@ export function getFAQJsonLd(locale: string = "en") {
         acceptedAnswer: {
           "@type": "Answer",
           text: isAr
-            ? "يقدم Warrantee.io خطة مجانية دون بطاقة ائتمانية. سعر الإطلاق المخطط للخطة الاحترافية هو 149 ريالًا شهريًا، ويتطلب التفعيل حاليًا تأكيدًا من Warrantee. أسعار خطة المؤسسات مخصصة حسب الاتفاق."
-            : "Warrantee.io offers a Free plan with no credit card required. The planned Professional launch price is SAR 149/month and currently requires access confirmation from Warrantee. Enterprise pricing is custom by agreement.",
+            ? "يقدم Warrantee.io خطة مجانية للأفراد تشمل حتى 10 ضمانات شخصية، وخطة مجانية للأعمال تشمل أول 100 ضمان مُصدر، دون بطاقة ائتمانية. سعر الإطلاق المخطط للخطة الاحترافية هو 14.90 ريالًا شهريًا في دول الخليج أو 3.99 دولار شهريًا خارجها، ويتطلب التفعيل حاليًا تأكيدًا من Warrantee. أسعار المؤسسات مخصصة حسب الاتفاق."
+            : "Warrantee.io offers Personal Free for up to 10 personal warranties and Business Free for the first 100 issued warranties, with no credit card required. The planned Professional launch price is SAR 14.90/month in the GCC or USD 3.99/month elsewhere and currently requires access confirmation. Enterprise pricing is custom by agreement.",
         },
       },
     ],

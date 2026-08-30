@@ -12,6 +12,7 @@ import {
   recordApiV1Usage,
 } from '@/lib/api-v1';
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
+import { isWarrantyLimitError, warrantyLimitResponseBody } from '@/lib/warranty-entitlements';
 
 function cleanOptionalString(value: unknown, maxLength: number) {
   return typeof value === 'string' && value.trim()
@@ -238,13 +239,17 @@ export async function POST(request: NextRequest) {
 
     const { data, error } = await supabase.from('warranties').insert(warrantyData).select().single();
     if (error) {
-      await failApiIdempotency(supabase, idempotencyRecordId, 500);
+      const statusCode = isWarrantyLimitError(error) ? 409 : 500;
+      await failApiIdempotency(supabase, idempotencyRecordId, statusCode);
       await recordApiV1Usage(supabase, request, requester, {
-        statusCode: 500,
+        statusCode,
         scope: 'warranties:write',
-        metadata: { reason: 'insert_error' },
+        metadata: { reason: statusCode === 409 ? 'warranty_limit_reached' : 'insert_error' },
       });
-      return apiV1Json({ error: error.message }, { status: 500 });
+      return apiV1Json(
+        statusCode === 409 ? warrantyLimitResponseBody() : { error: error.message },
+        { status: statusCode }
+      );
     }
 
     await completeApiIdempotency(supabase, idempotencyRecordId, 'warranty', data.id, 201);

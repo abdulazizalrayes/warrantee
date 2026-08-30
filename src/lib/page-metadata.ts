@@ -103,12 +103,12 @@ const PAGE_META: Record<
     en: {
       title: "Warrantee Pricing — Simple and Transparent Plans",
       description:
-        "Start with a Free plan, no credit card required. Professional launch pricing is planned at SAR 149/month and currently requires an access request. Enterprise pricing is custom.",
+        "Personal Free includes 10 warranties and Business Free includes the first 100 issued warranties. Professional is planned at SAR 14.90/month in the GCC or USD 3.99 elsewhere. Enterprise pricing is custom.",
     },
     ar: {
       title: "أسعار وارنتي — خطط بسيطة وواضحة",
       description:
-        "ابدأ بالخطة المجانية دون بطاقة ائتمانية. سعر الإطلاق المخطط للخطة الاحترافية 149 ريالًا شهريًا ويتطلب حاليًا طلب تفعيل. أسعار المؤسسات مخصصة.",
+        "تشمل الخطة المجانية للأفراد 10 ضمانات، وتشمل المجانية للأعمال أول 100 ضمان مُصدر. سعر الاحترافية المخطط 14.90 ريالًا شهريًا في الخليج أو 3.99 دولار خارجه. أسعار المؤسسات مخصصة.",
     },
   },
   contact: {

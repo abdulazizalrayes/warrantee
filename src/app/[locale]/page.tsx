@@ -105,14 +105,16 @@ export default async function HomePage({ params }: HomePageProps) {
 
   const pricing = isRTL
     ? [
-        { name: "مجاني", price: "0 ر.س", body: "حتى 10 ضمانات مع الاحتفاظ بالسجل الكامل.", cta: "أنشئ أول ضمان", href: `/${locale}/auth?tab=signup`, id: "free" },
-        { name: "برنامج الاحترافي التجريبي", price: "149 ر.س / شهر", body: "سعر الإطلاق المقترح للفرق المبكرة. يُؤكد التفعيل والشروط قبل أي دفع.", cta: "اطلب الانضمام للبرنامج", href: `/${locale}/contact?intent=professional-access`, id: "pilot" },
-        { name: "المؤسسات", price: "حسب الاتفاق", body: "تهيئة وتكاملات وحدود فريق ومستوى خدمة حسب النطاق.", cta: "ناقش احتياج المؤسسة", href: `/${locale}/contact?intent=enterprise`, id: "enterprise" },
+        { name: "مجاني للأفراد", price: "0 ر.س", body: "حتى 10 ضمانات شخصية مع الفواتير والتنبيهات والاحتفاظ بالسجل.", cta: "أنشئ حسابًا شخصيًا", href: `/${locale}/auth?tab=signup&account=consumer`, id: "personal-free" },
+        { name: "مجاني للأعمال", price: "0 ر.س", body: "أول 100 ضمان مُصدر للعملاء مع الشهادات وجوازات المنتج.", cta: "أنشئ حساب أعمال", href: `/${locale}/auth?tab=signup&account=business`, id: "business-free" },
+        { name: "الاحترافي", price: "14.90 ر.س / شهر في الخليج", secondaryPrice: "3.99 دولار / شهر خارجه", body: "حتى 1,000 ضمان مُصدر و3 أعضاء فريق ومسارات موافقة مخصصة.", cta: "اطلب تفعيل الاحترافي", href: `/${locale}/contact?intent=professional-access`, id: "professional" },
+        { name: "المؤسسات", price: "حسب الاتفاق", body: "لأكثر من 1,000 ضمان مع تهيئة وتكاملات ومستوى خدمة حسب النطاق.", cta: "ناقش احتياج المؤسسة", href: `/${locale}/contact?intent=enterprise`, id: "enterprise" },
       ]
     : [
-        { name: "Free", price: "SAR 0", body: "Up to 10 warranties with the complete record retained.", cta: "Create your first warranty", href: `/${locale}/auth?tab=signup`, id: "free" },
-        { name: "Professional pilot", price: "SAR 149 / month", body: "Proposed launch pricing for early teams. Activation and terms are confirmed before any payment.", cta: "Request pilot access", href: `/${locale}/contact?intent=professional-access`, id: "pilot" },
-        { name: "Enterprise", price: "By agreement", body: "Onboarding, integrations, team limits, and service levels based on scope.", cta: "Discuss enterprise needs", href: `/${locale}/contact?intent=enterprise`, id: "enterprise" },
+        { name: "Personal Free", price: "SAR 0", body: "Up to 10 personal warranties with receipts, reminders, and the full record retained.", cta: "Create personal account", href: `/${locale}/auth?tab=signup&account=consumer`, id: "personal-free" },
+        { name: "Business Free", price: "SAR 0", body: "The first 100 issued customer warranties with certificates and QR product passports.", cta: "Create business account", href: `/${locale}/auth?tab=signup&account=business`, id: "business-free" },
+        { name: "Professional", price: "SAR 14.90 / month in GCC", secondaryPrice: "USD 3.99 / month elsewhere", body: "Up to 1,000 issued warranties, 3 team members, and custom approval workflows.", cta: "Request Professional access", href: `/${locale}/contact?intent=professional-access`, id: "professional" },
+        { name: "Enterprise", price: "By agreement", body: "More than 1,000 warranties with onboarding, integrations, and service levels based on scope.", cta: "Discuss enterprise needs", href: `/${locale}/contact?intent=enterprise`, id: "enterprise" },
       ];
 
   return (
@@ -280,11 +282,12 @@ export default async function HomePage({ params }: HomePageProps) {
               </TrackedLink>
             </div>
 
-            <div className="mt-12 divide-y divide-black/[0.08] border-y border-black/[0.08] lg:grid lg:grid-cols-3 lg:divide-x lg:divide-y-0 rtl:lg:divide-x-reverse">
+            <div className="mt-12 divide-y divide-black/[0.08] border-y border-black/[0.08] lg:grid lg:grid-cols-4 lg:divide-x lg:divide-y-0 rtl:lg:divide-x-reverse">
               {pricing.map((plan) => (
                 <article key={plan.id} className="flex flex-col px-1 py-8 first:pt-0 last:pb-0 lg:px-8 lg:py-2 lg:first:ps-0 lg:last:pe-0">
                   <h3 className="text-[19px] font-semibold text-[#1d1d1f]">{plan.name}</h3>
                   <p className="mt-3 text-[24px] font-semibold tracking-tight text-[#1d1d1f]">{plan.price}</p>
+                  {plan.secondaryPrice && <p className="mt-1 text-[12px] font-medium text-[#6e6e73]">{plan.secondaryPrice}</p>}
                   <p className="mt-3 flex-1 text-[14px] leading-6 text-[#6e6e73]">{plan.body}</p>
                   <TrackedLink href={plan.href} cta={`home_pricing_${plan.id}`} locale={locale} location="home_pricing" className="mt-6 inline-flex items-center gap-1.5 text-[14px] font-semibold text-[#0071e3] hover:text-[#0077ed]">
                     {plan.cta}

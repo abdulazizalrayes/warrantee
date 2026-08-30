@@ -110,7 +110,7 @@ describe("operational hardening", () => {
     const checkoutRoute = readProjectFile("src/app/api/stripe/checkout/route.ts");
     const adminPage = readProjectFile("src/app/[locale]/admin/page.tsx");
 
-    expect(stripePlans).toContain("price: 149");
+    expect(stripePlans).toContain("price: PROFESSIONAL_PRICE_SAR");
     expect(stripePlans).toContain('currency: "SAR"');
     expect(stripePlans).toContain("Full warranty history");
     expect(stripePlans).not.toContain("30-day history");
@@ -118,8 +118,23 @@ describe("operational hardening", () => {
     expect(stripePlans).not.toContain("8% commission on extensions");
     expect(checkoutRoute).not.toContain("trial_period_days");
     expect(adminPage).toContain("estimatedSubscriptionMrr");
-    expect(adminPage).toContain("return sum + 149");
+    expect(adminPage).toContain("return sum + 14.9");
     expect(adminPage).not.toContain("length * 1");
+  });
+
+  it("enforces account-aware warranty quotas at the database boundary", () => {
+    const migration = readProjectFile(
+      "supabase/migrations/20260830143000_account_aware_plans_and_warranty_quotas.sql"
+    );
+    const oauthCallback = readProjectFile("src/app/auth/callback/route.ts");
+
+    expect(migration).toContain("when new.account_type = 'business'::public.account_type then 100");
+    expect(migration).toContain("when 'pro' then");
+    expect(migration).toContain("plan_warranty_limit := 1000");
+    expect(migration).toContain("perform pg_advisory_xact_lock");
+    expect(migration).toContain("message = 'warranty_limit_reached'");
+    expect(migration).toContain("before insert on public.warranties");
+    expect(oauthCallback).toContain('"complete_business_onboarding"');
   });
 
   it("keeps the Supabase-backed health route on Node runtime without uptime leakage", () => {

@@ -2,7 +2,7 @@
 
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { Check, Shield, Zap, Building2 } from "lucide-react";
+import { Check, Shield, Zap, Building2, UserRound } from "lucide-react";
 import { DIRECTION, getDictionary, normalizeLocale } from "@/lib/i18n";
 import { appendCampaignParams, trackFunnelCtaClick } from "@/lib/ga4-events";
 import { PublicBreadcrumbs } from "@/components/PublicBreadcrumbs";
@@ -12,35 +12,49 @@ import { PageViewTracker } from "@/components/PageViewTracker";
 
 const plans = [
   {
-    id: "free",
-    icon: Shield,
+    id: "personal-free",
+    account: "consumer",
+    icon: UserRound,
     iconColor: "text-[#86868b]",
     iconBg: "bg-[#f5f5f7]",
     price: 0,
-    features_en: ["Up to 10 warranties", "Basic dashboard", "Email support", "Single user", "Full warranty history"],
-    features_ar: ["حتى 10 ضمانات", "لوحة أساسية", "دعم بريد", "مستخدم واحد", "سجل ضمانات كامل"],
-    name_en: "Free",
-    name_ar: "مجاني",
-    desc_en: "For individuals getting started",
-    desc_ar: "للأفراد الذين يبدأون",
+    features_en: ["Up to 10 personal warranties", "Receipts and supporting documents", "Expiry reminders", "Single user", "Full warranty history retained"],
+    features_ar: ["حتى 10 ضمانات شخصية", "الفواتير والمستندات الداعمة", "تنبيهات انتهاء الضمان", "مستخدم واحد", "الاحتفاظ بسجل الضمان كاملًا"],
+    name_en: "Personal Free",
+    name_ar: "مجاني للأفراد",
+    desc_en: "For people protecting their own purchases",
+    desc_ar: "للأفراد لحفظ ضمانات مشترياتهم",
+  },
+  {
+    id: "business-free",
+    account: "business",
+    icon: Shield,
+    iconColor: "text-[#0071e3]",
+    iconBg: "bg-[#0071e3]/10",
+    price: 0,
+    features_en: ["First 100 issued warranties", "Customer certificates and QR passports", "Basic claims workflow", "Single business user", "Full warranty history retained"],
+    features_ar: ["أول 100 ضمان مُصدر", "شهادات العملاء وجوازات المنتج عبر QR", "مسار مطالبات أساسي", "مستخدم أعمال واحد", "الاحتفاظ بسجل الضمان كاملًا"],
+    name_en: "Business Free",
+    name_ar: "مجاني للأعمال",
+    desc_en: "For businesses proving the customer workflow",
+    desc_ar: "للشركات لتجربة مسار ضمان العملاء",
   },
   {
     id: "pro",
     icon: Zap,
     iconColor: "text-[#0071e3]",
     iconBg: "bg-[#0071e3]/10",
-    price: 149,
-    currency_en: "SAR",
-    currency_ar: "ر.س",
-    pricePrefix_en: "Proposed pilot price",
-    pricePrefix_ar: "سعر تجريبي مقترح",
+    price: 14.9,
+    usdPrice: 3.99,
+    pricePrefix_en: "Founding-business launch price",
+    pricePrefix_ar: "سعر إطلاق للشركات المؤسسة",
     featured: true,
-    features_en: ["Unlimited warranties", "Advanced analytics", "Priority support", "Up to 5 team members", "Full warranty history", "Custom workflows", "Bilingual certificates"],
-    features_ar: ["ضمانات غير محدودة", "تحليلات متقدمة", "دعم أولوية", "حتى 5 أعضاء", "سجل ضمانات كامل", "سير عمل مخصص", "شهادات ثنائية"],
+    features_en: ["Up to 1,000 issued warranties", "Advanced analytics", "Priority email support", "Up to 3 team members", "Custom approval workflows", "Bilingual certificates and QR passports"],
+    features_ar: ["حتى 1,000 ضمان مُصدر", "تحليلات متقدمة", "دعم بريد إلكتروني بأولوية", "حتى 3 أعضاء فريق", "مسارات موافقة مخصصة", "شهادات وجوازات منتج ثنائية اللغة"],
     name_en: "Professional",
     name_ar: "احترافي",
-    desc_en: "Pilot access for early business teams",
-    desc_ar: "وصول تجريبي لفرق الأعمال المبكرة",
+    desc_en: "For growing warranty operations",
+    desc_ar: "لعمليات الضمان في الشركات النامية",
   },
   {
     id: "enterprise",
@@ -48,8 +62,8 @@ const plans = [
     iconColor: "text-[#1d1d1f]",
     iconBg: "bg-[#f5f5f7]",
     price: -1,
-    features_en: ["Everything in Professional", "Team limits by agreement", "Enterprise onboarding by agreement", "Custom integrations by agreement", "Service levels by agreement"],
-    features_ar: ["كل ما في الاحترافي", "حدود الفريق حسب الاتفاق", "تهيئة المؤسسات حسب الاتفاق", "تكاملات مخصصة حسب الاتفاق", "مستويات الخدمة حسب الاتفاق"],
+    features_en: ["More than 1,000 issued warranties", "Team limits by agreement", "Enterprise onboarding by agreement", "Custom integrations by agreement", "Service levels by agreement"],
+    features_ar: ["أكثر من 1,000 ضمان مُصدر", "حدود الفريق حسب الاتفاق", "تهيئة المؤسسات حسب الاتفاق", "تكاملات مخصصة حسب الاتفاق", "مستويات الخدمة حسب الاتفاق"],
     name_en: "Enterprise",
     name_ar: "مؤسسي",
     desc_en: "For large organizations",
@@ -66,8 +80,10 @@ export default function PricingPage() {
   const selectPlan = (planId: string) => {
     const rawDestination = planId === "enterprise"
       ? `/${locale}/contact?intent=enterprise`
-      : planId === "free"
-        ? `/${locale}/auth?tab=signup`
+      : planId === "personal-free"
+        ? `/${locale}/auth?tab=signup&account=consumer`
+      : planId === "business-free"
+        ? `/${locale}/auth?tab=signup&account=business`
         : `/${locale}/contact?intent=professional-access`;
     const trackedDestination = appendCampaignParams(rawDestination);
 
@@ -77,8 +93,8 @@ export default function PricingPage() {
       location: "pricing_plan_card",
     });
 
-    if (planId === "free") {
-      window.location.href = appendCampaignParams(`/${locale}/auth?tab=signup`);
+    if (planId === "personal-free" || planId === "business-free") {
+      window.location.href = trackedDestination;
       return;
     }
 
@@ -98,18 +114,18 @@ export default function PricingPage() {
           </h1>
           <p className="text-[17px] text-[#6e6e73] mt-3 max-w-xl mx-auto">
             {isRTL
-              ? "أنشئ أول 10 ضمانات دون بطاقة، أو اطلب الانضمام إلى البرنامج التجريبي للاحترافي بالريال السعودي."
-              : "Create your first 10 warranties without a card, or request access to the SAR Professional pilot."}
+              ? "اختر حسابًا شخصيًا لحفظ مشترياتك أو حساب أعمال لإصدار أول 100 ضمان للعملاء مجانًا."
+              : "Choose Personal to protect your purchases or Business to issue the first 100 customer warranties free."}
           </p>
           <p className="mt-5 text-[13px] font-medium text-[#6e6e73]">
             {isRTL
-              ? "الخطة المجانية تشمل حتى 10 ضمانات مع الاحتفاظ بالسجلات. الدفع الإلكتروني للاحترافي والتمديدات ليس مفعّلًا للعامة بعد."
-              : "Free includes up to 10 warranties with records retained. Online Professional and extension payments are not yet generally active."}
+              ? "الاحترافي بسعر إطلاق 14.90 ر.س شهريًا في الخليج أو 3.99 دولار خارجه. الدفع الإلكتروني ليس مفعّلًا للعامة بعد."
+              : "Professional launches at SAR 14.90/month in the GCC or USD 3.99/month elsewhere. Online checkout is not yet generally active."}
           </p>
         </div>
 
         {/* Plan Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
           {plans.map((plan) => {
             const Icon = plan.icon;
             const features = isRTL ? plan.features_ar : plan.features_en;
@@ -148,10 +164,13 @@ export default function PricingPage() {
                       </p>
                     ) : (
                       <div>
-                        <span className="text-[28px] font-semibold tracking-tight text-[#1d1d1f]">{isRTL ? plan.currency_ar : plan.currency_en} {plan.price}</span>
-                        <span className="text-[14px] text-[#6e6e73]"> /{isRTL ? "شهر" : "month"}</span>
-                        {plan.id === "pro" && (
-                          <>
+                          <span className="block text-[28px] font-semibold tracking-tight text-[#1d1d1f]">{isRTL ? `${plan.price.toFixed(2)} ر.س` : `SAR ${plan.price.toFixed(2)}`}</span>
+                          <span className="text-[14px] text-[#6e6e73]"> /{isRTL ? "شهر" : "month"}</span>
+                          {plan.id === "pro" && (
+                            <>
+                              <p className="mt-1 text-[13px] font-medium text-[#1d1d1f]">
+                                {isRTL ? `${plan.usdPrice?.toFixed(2)} دولار خارج الخليج` : `USD ${plan.usdPrice?.toFixed(2)} outside the GCC`}
+                              </p>
                             <p className="text-[12px] text-[#0071e3] font-medium mt-1">
                               {isRTL ? plan.pricePrefix_ar : plan.pricePrefix_en}
                             </p>
@@ -185,7 +204,7 @@ export default function PricingPage() {
                       ? isRTL ? "تواصل معنا" : "Contact Sales"
                       : plan.id === "pro"
                       ? isRTL ? "اطلب الانضمام للبرنامج" : "Request pilot access"
-                      : isRTL ? "ابدأ الآن" : "Get Started"}
+                      : isRTL ? "أنشئ الحساب المجاني" : "Create free account"}
                   </button>
                 </div>
               </div>
@@ -204,8 +223,8 @@ export default function PricingPage() {
               </h2>
               <p className="mt-4 text-[15px] leading-7 text-[#6e6e73]">
                 {isRTL
-                  ? "149 ريالًا هو السعر الشهري المقترح للفرق المبكرة في السعودية والخليج. نؤكد النطاق والشروط والتفعيل قبل أي دفع، ولا تتم أي رسوم تلقائية."
-                  : "SAR 149 is the proposed monthly price for early Saudi and GCC teams. Scope, terms, and activation are confirmed before any payment, with no automatic charge."}
+                  ? "سعر الاحترافي المقترح هو 14.90 ر.س شهريًا في دول الخليج و3.99 دولار شهريًا خارجها، حتى 1,000 ضمان مُصدر. نؤكد التفعيل قبل أي دفع ولا توجد رسوم تلقائية حاليًا."
+                  : "The proposed Professional launch price is SAR 14.90/month in the GCC and USD 3.99/month elsewhere for up to 1,000 issued warranties. Activation is confirmed before payment and there is currently no automatic charge."}
               </p>
             </div>
             <div className="grid gap-x-6 gap-y-7 sm:grid-cols-2">
@@ -213,12 +232,12 @@ export default function PricingPage() {
                 {
                   icon: Shield,
                   title: isRTL ? "بدون بطاقة للخطة المجانية" : "No card for Free",
-                  desc: isRTL ? "ابدأ حتى 10 ضمانات بدون إدخال بطاقة." : "Start with up to 10 warranties without entering a card.",
+                  desc: isRTL ? "10 ضمانات شخصية أو أول 100 ضمان للأعمال دون بطاقة." : "10 personal warranties or the first 100 Business warranties without a card.",
                 },
                 {
                   icon: Check,
-                  title: isRTL ? "سعر واضح بالريال" : "Clear SAR pricing",
-                  desc: isRTL ? "يُؤكد تفعيل الاحترافي وشروطه قبل أي دفع." : "Professional activation and terms are confirmed before any payment.",
+                  title: isRTL ? "تسعير إقليمي واضح" : "Clear regional pricing",
+                  desc: isRTL ? "14.90 ر.س في الخليج أو 3.99 دولار خارجه." : "SAR 14.90 in the GCC or USD 3.99 elsewhere.",
                 },
                 {
                   icon: Building2,

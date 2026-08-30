@@ -33,6 +33,12 @@ const WARRANTY_MUTATION_FIELDS = [
   "issuer_user_id",
 ] as const;
 
+const WARRANTY_QUOTA_FIELDS = [
+  "user_id",
+  "created_by",
+  "issuer_user_id",
+] as const;
+
 function uniqueIds(ids: readonly string[]) {
   return Array.from(new Set(ids.filter(Boolean)));
 }
@@ -122,6 +128,17 @@ export function buildWarrantyMutationOrClause(
   const companyIds = uniqueIds(issuerCompanyIds);
   return [
     ...WARRANTY_MUTATION_FIELDS.map((field) => `${field}.eq.${userId}`),
+    ...(companyIds.length ? [`issuer_company_id.in.(${companyIds.join(",")})`] : []),
+  ].join(",");
+}
+
+export function buildWarrantyQuotaOrClause(
+  userId: string,
+  issuerCompanyIds: readonly string[] = []
+) {
+  const companyIds = uniqueIds(issuerCompanyIds);
+  return [
+    ...WARRANTY_QUOTA_FIELDS.map((field) => `${field}.eq.${userId}`),
     ...(companyIds.length ? [`issuer_company_id.in.(${companyIds.join(",")})`] : []),
   ].join(",");
 }

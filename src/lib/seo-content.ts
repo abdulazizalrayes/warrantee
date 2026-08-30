@@ -178,8 +178,8 @@ export const RESOURCE_PAGES: SeoContentPage[] = [
           ar: "كم تبلغ تكلفة Warrantee؟",
         },
         answer: {
-          en: "The Free plan is SAR 0 for up to 10 warranties. A Professional pilot is proposed at SAR 149 per month but is not charged automatically while paid checkout remains inactive. Enterprise scope and pricing are agreed directly.",
-          ar: "الخطة المجانية بسعر 0 ريال وتشمل حتى 10 ضمانات. توجد خطة احترافية تجريبية مقترحة بسعر 149 ريالًا شهريًا، ولا يتم الخصم تلقائيًا ما دام الدفع الإلكتروني غير مفعّل. يتم الاتفاق مباشرة على نطاق وسعر خطة المؤسسات.",
+          en: "Personal Free includes up to 10 personal warranties. Business Free includes the first 100 issued customer warranties. The planned Professional launch price is SAR 14.90 per month in the GCC or USD 3.99 per month elsewhere, but it is not charged automatically while paid checkout remains inactive. Enterprise scope and pricing are agreed directly.",
+          ar: "تشمل الخطة المجانية للأفراد حتى 10 ضمانات شخصية، وتشمل الخطة المجانية للأعمال أول 100 ضمان مُصدر للعملاء. سعر الإطلاق المخطط للخطة الاحترافية هو 14.90 ريالًا شهريًا في دول الخليج أو 3.99 دولار شهريًا خارجها، ولا يتم الخصم تلقائيًا ما دام الدفع الإلكتروني غير مفعّل. يتم الاتفاق مباشرة على نطاق وسعر خطة المؤسسات.",
         },
       },
     ],
