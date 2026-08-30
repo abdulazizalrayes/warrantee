@@ -15,8 +15,8 @@ const plans = [
     id: "personal-free",
     account: "consumer",
     icon: UserRound,
-    iconColor: "text-[#86868b]",
-    iconBg: "bg-[#f5f5f7]",
+    iconColor: "text-[#0f766e]",
+    iconBg: "bg-[#ccfbf1]",
     price: 0,
     features_en: ["Up to 10 personal warranties", "Receipts and supporting documents", "Expiry reminders", "Single user", "Full warranty history retained"],
     features_ar: ["حتى 10 ضمانات شخصية", "الفواتير والمستندات الداعمة", "تنبيهات انتهاء الضمان", "مستخدم واحد", "الاحتفاظ بسجل الضمان كاملًا"],
@@ -41,6 +41,7 @@ const plans = [
   },
   {
     id: "pro",
+    account: "business",
     icon: Zap,
     iconColor: "text-[#0071e3]",
     iconBg: "bg-[#0071e3]/10",
@@ -58,6 +59,7 @@ const plans = [
   },
   {
     id: "enterprise",
+    account: "business",
     icon: Building2,
     iconColor: "text-[#1d1d1f]",
     iconBg: "bg-[#f5f5f7]",
@@ -101,6 +103,100 @@ export default function PricingPage() {
     window.location.href = trackedDestination;
   };
 
+  const renderPlanCard = (plan: (typeof plans)[number]) => {
+    const Icon = plan.icon;
+    const features = isRTL ? plan.features_ar : plan.features_en;
+    const name = isRTL ? plan.name_ar : plan.name_en;
+    const desc = isRTL ? plan.desc_ar : plan.desc_en;
+    const isPersonal = plan.account === "consumer";
+
+    return (
+      <div
+        key={plan.id}
+        className={`relative h-full overflow-hidden rounded-2xl ring-1 shadow-sm transition-all duration-200 hover:shadow-md ${
+          plan.featured
+            ? "bg-white ring-2 ring-[#0071e3]"
+            : isPersonal
+              ? "bg-[#f7fffd] ring-[#0f766e]/35"
+              : "bg-white ring-[#d2d2d7]/40"
+        }`}
+      >
+        {plan.featured && (
+          <div className="bg-[#0071e3] py-1.5 text-center text-[12px] font-semibold uppercase text-white">
+            {isRTL ? "وصول تجريبي" : "Pilot access"}
+          </div>
+        )}
+        <div className="p-6">
+          <div className={`mb-4 flex h-10 w-10 items-center justify-center rounded-xl ${plan.iconBg}`}>
+            <Icon className={`h-5 w-5 ${plan.iconColor}`} aria-hidden="true" />
+          </div>
+          <h3 className="text-[17px] font-semibold text-[#1d1d1f]">{name}</h3>
+          <p className="mt-0.5 text-[13px] text-[#6e6e73]">{desc}</p>
+
+          <div className="mb-5 mt-4">
+            {plan.price === 0 ? (
+              <p className="text-[28px] font-semibold tracking-tight text-[#1d1d1f]">
+                {isRTL ? "مجاني" : "Free"}
+              </p>
+            ) : plan.price === -1 ? (
+              <p className="text-[17px] font-semibold text-[#1d1d1f]">
+                {isRTL ? "تواصل معنا" : "Contact Us"}
+              </p>
+            ) : (
+              <div>
+                <span className="block text-[28px] font-semibold tracking-tight text-[#1d1d1f]">
+                  {isRTL ? `${plan.price.toFixed(2)} ر.س` : `SAR ${plan.price.toFixed(2)}`}
+                </span>
+                <span className="text-[14px] text-[#6e6e73]"> /{isRTL ? "شهر" : "month"}</span>
+                {plan.id === "pro" && (
+                  <>
+                    <p className="mt-1 text-[13px] font-medium text-[#1d1d1f]">
+                      {isRTL ? `${plan.usdPrice?.toFixed(2)} دولار خارج الخليج` : `USD ${plan.usdPrice?.toFixed(2)} outside the GCC`}
+                    </p>
+                    <p className="mt-1 text-[12px] font-medium text-[#0071e3]">
+                      {isRTL ? plan.pricePrefix_ar : plan.pricePrefix_en}
+                    </p>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+
+          <ul className="mb-6 space-y-2.5">
+            {features.map((feature: string) => (
+              <li key={feature} className="flex items-start gap-2.5 text-[14px] text-[#1d1d1f]">
+                <div className="mt-0.5 flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full bg-[#30d158]/10">
+                  <Check size={10} className="text-[#30d158]" aria-hidden="true" />
+                </div>
+                {feature}
+              </li>
+            ))}
+          </ul>
+
+          <button
+            type="button"
+            onClick={() => selectPlan(plan.id)}
+            className={`block w-full rounded-full py-2.5 text-center text-[14px] font-medium transition-all duration-200 ${
+              plan.featured
+                ? "bg-[#0071e3] text-white shadow-sm hover:bg-[#0077ED] hover:shadow-md"
+                : isPersonal
+                  ? "bg-[#0f766e] text-white hover:bg-[#115e59]"
+                  : "bg-[#f5f5f7] text-[#1d1d1f] hover:bg-[#e8e8ed]"
+            }`}
+          >
+            {plan.price === -1
+              ? isRTL ? "تواصل معنا" : "Contact Sales"
+              : plan.id === "pro"
+                ? isRTL ? "اطلب الانضمام للبرنامج" : "Request pilot access"
+                : plan.id === "personal-free"
+                  ? isRTL ? "أنشئ حسابًا شخصيًا" : "Create personal account"
+                  : isRTL ? "أنشئ حساب أعمال" : "Create business account"}
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div dir={direction} className="min-h-screen bg-[#fbfbfd]">
       <PageViewTracker pageName="pricing" pageType="marketing" locale={locale} />
@@ -124,92 +220,35 @@ export default function PricingPage() {
           </p>
         </div>
 
-        {/* Plan Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-          {plans.map((plan) => {
-            const Icon = plan.icon;
-            const features = isRTL ? plan.features_ar : plan.features_en;
-            const name = isRTL ? plan.name_ar : plan.name_en;
-            const desc = isRTL ? plan.desc_ar : plan.desc_en;
+        {/* Account families */}
+        <div className="grid gap-10 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,3fr)] xl:gap-8">
+          <section aria-labelledby="personal-plans-heading">
+            <div className="flex items-center gap-2 border-t-2 border-[#0f766e] pt-4 text-[#0f766e]">
+              <UserRound className="h-4 w-4" aria-hidden="true" />
+              <h2 id="personal-plans-heading" className="text-[13px] font-semibold uppercase">
+                {isRTL ? "خطط الأفراد" : "Personal plan"}
+              </h2>
+            </div>
+            <p className="mb-4 mt-2 text-[13px] leading-5 text-[#6e6e73]">
+              {isRTL ? "لحفظ ضمانات مشترياتك الشخصية." : "For warranties on purchases you own."}
+            </p>
+            {plans.filter((plan) => plan.account === "consumer").map(renderPlanCard)}
+          </section>
 
-            return (
-              <div
-                key={plan.id}
-                className={`relative overflow-hidden rounded-2xl bg-white ring-1 shadow-sm transition-all duration-200 hover:shadow-md ${
-                  plan.featured
-                    ? "ring-2 ring-[#0071e3]"
-                    : "ring-[#d2d2d7]/40"
-                }`}
-              >
-                {plan.featured && (
-                  <div className="bg-[#0071e3] text-white text-[12px] font-semibold text-center py-1.5 tracking-wide uppercase">
-                    {isRTL ? "وصول تجريبي" : "Pilot access"}
-                  </div>
-                )}
-                <div className="p-6">
-                  <div className={`w-10 h-10 rounded-xl ${plan.iconBg} flex items-center justify-center mb-4`}>
-                    <Icon className={`w-5 h-5 ${plan.iconColor}`} />
-                  </div>
-                  <h3 className="text-[17px] font-semibold text-[#1d1d1f]">{name}</h3>
-                  <p className="text-[13px] text-[#6e6e73] mt-0.5">{desc}</p>
-
-                  <div className="mt-4 mb-5">
-                    {plan.price === 0 ? (
-                      <p className="text-[28px] font-semibold tracking-tight text-[#1d1d1f]">
-                        {isRTL ? "مجاني" : "Free"}
-                      </p>
-                    ) : plan.price === -1 ? (
-                      <p className="text-[17px] font-semibold text-[#1d1d1f]">
-                        {isRTL ? "تواصل معنا" : "Contact Us"}
-                      </p>
-                    ) : (
-                      <div>
-                          <span className="block text-[28px] font-semibold tracking-tight text-[#1d1d1f]">{isRTL ? `${plan.price.toFixed(2)} ر.س` : `SAR ${plan.price.toFixed(2)}`}</span>
-                          <span className="text-[14px] text-[#6e6e73]"> /{isRTL ? "شهر" : "month"}</span>
-                          {plan.id === "pro" && (
-                            <>
-                              <p className="mt-1 text-[13px] font-medium text-[#1d1d1f]">
-                                {isRTL ? `${plan.usdPrice?.toFixed(2)} دولار خارج الخليج` : `USD ${plan.usdPrice?.toFixed(2)} outside the GCC`}
-                              </p>
-                            <p className="text-[12px] text-[#0071e3] font-medium mt-1">
-                              {isRTL ? plan.pricePrefix_ar : plan.pricePrefix_en}
-                            </p>
-                          </>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  <ul className="space-y-2.5 mb-6">
-                    {features.map((f: string, i: number) => (
-                      <li key={i} className="flex items-start gap-2.5 text-[14px] text-[#1d1d1f]">
-                        <div className="w-4 h-4 rounded-full bg-[#30d158]/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <Check size={10} className="text-[#30d158]" />
-                        </div>
-                        {f}
-                      </li>
-                    ))}
-                  </ul>
-
-                  <button
-                    type="button"
-                    onClick={() => selectPlan(plan.id)}
-                    className={`w-full py-2.5 rounded-full text-[14px] font-medium transition-all duration-200 text-center block ${
-                      plan.featured
-                        ? "bg-[#0071e3] hover:bg-[#0077ED] text-white shadow-sm hover:shadow-md"
-                        : "bg-[#f5f5f7] hover:bg-[#e8e8ed] text-[#1d1d1f]"
-                    }`}
-                  >
-                    {plan.price === -1
-                      ? isRTL ? "تواصل معنا" : "Contact Sales"
-                      : plan.id === "pro"
-                      ? isRTL ? "اطلب الانضمام للبرنامج" : "Request pilot access"
-                      : isRTL ? "أنشئ الحساب المجاني" : "Create free account"}
-                  </button>
-                </div>
-              </div>
-            );
-          })}
+          <section aria-labelledby="business-plans-heading">
+            <div className="flex items-center gap-2 border-t-2 border-[#0071e3] pt-4 text-[#0071e3]">
+              <Building2 className="h-4 w-4" aria-hidden="true" />
+              <h2 id="business-plans-heading" className="text-[13px] font-semibold uppercase">
+                {isRTL ? "خطط الأعمال" : "Business plans"}
+              </h2>
+            </div>
+            <p className="mb-4 mt-2 text-[13px] leading-5 text-[#6e6e73]">
+              {isRTL ? "لإصدار ضمانات العملاء وإدارة الفريق." : "For issuing customer warranties and managing a team."}
+            </p>
+            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+              {plans.filter((plan) => plan.account === "business").map(renderPlanCard)}
+            </div>
+          </section>
         </div>
 
         <section className="mt-12 border-y border-black/[0.08] py-8 sm:py-10">

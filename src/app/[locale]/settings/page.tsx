@@ -212,7 +212,11 @@ export default function SettingsPage() {
                       {fullName || (isRTL ? "\u0623\u0636\u0641 \u0627\u0633\u0645\u0643" : "Add your name")}
                     </h2>
                     <p className="text-[15px] text-[#86868b] truncate">{user?.email}</p>
-                    <span className="inline-block mt-2 text-[13px] font-medium px-3 py-1 rounded-full bg-[#f5f5f7] text-[#86868b]">
+                    <span className={`mt-2 inline-block rounded-full px-3 py-1 text-[13px] font-medium ${
+                      profile?.account_type === "business"
+                        ? "bg-[#0071e3]/10 text-[#005bb5]"
+                        : "bg-[#ccfbf1] text-[#0f766e]"
+                    }`}>
                       {profile?.account_type === "business"
                         ? isRTL ? "\u062d\u0633\u0627\u0628 \u0623\u0639\u0645\u0627\u0644" : "Business Account"
                         : isRTL ? "\u062d\u0633\u0627\u0628 \u0634\u062e\u0635\u064a" : "Personal Account"}
@@ -450,7 +454,11 @@ export default function SettingsPage() {
                 <p className="text-[15px] text-[#86868b] mb-8">
                   {isRTL ? "\u0625\u062f\u0627\u0631\u0629 \u0627\u0634\u062a\u0631\u0627\u0643\u0643 \u0648\u0641\u0648\u0627\u062a\u064a\u0631\u0643" : "Manage your subscription and billing"}
                 </p>
-                <div className="bg-gradient-to-br from-[#1A1A2E] to-[#2d2d5e] rounded-2xl p-6 text-white mb-6">
+                <div className={`mb-6 rounded-2xl bg-gradient-to-br p-6 text-white ${
+                  profile?.account_type === "business"
+                    ? "from-[#1A1A2E] to-[#2d2d5e]"
+                    : "from-[#115e59] to-[#0f766e]"
+                }`}>
                   <div className="flex items-center justify-between mb-4">
                     <span className="text-[13px] font-medium text-white/60 uppercase tracking-wide">
                       {isRTL ? "\u0627\u0644\u062e\u0637\u0629" : "Plan"}

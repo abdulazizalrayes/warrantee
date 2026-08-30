@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import {
   BadgeCheck,
   Bell,
+  Building2,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
@@ -11,6 +12,7 @@ import {
   QrCode,
   ScanLine,
   ShieldCheck,
+  UserRound,
   Workflow,
 } from "lucide-react";
 import { Footer } from "@/components/Footer";
@@ -105,17 +107,40 @@ export default async function HomePage({ params }: HomePageProps) {
 
   const pricing = isRTL
     ? [
-        { name: "مجاني للأفراد", price: "0 ر.س", body: "حتى 10 ضمانات شخصية مع الفواتير والتنبيهات والاحتفاظ بالسجل.", cta: "أنشئ حسابًا شخصيًا", href: `/${locale}/auth?tab=signup&account=consumer`, id: "personal-free" },
-        { name: "مجاني للأعمال", price: "0 ر.س", body: "أول 100 ضمان مُصدر للعملاء مع الشهادات وجوازات المنتج.", cta: "أنشئ حساب أعمال", href: `/${locale}/auth?tab=signup&account=business`, id: "business-free" },
-        { name: "الاحترافي", price: "14.90 ر.س / شهر في الخليج", secondaryPrice: "3.99 دولار / شهر خارجه", body: "حتى 1,000 ضمان مُصدر و3 أعضاء فريق ومسارات موافقة مخصصة.", cta: "اطلب تفعيل الاحترافي", href: `/${locale}/contact?intent=professional-access`, id: "professional" },
-        { name: "المؤسسات", price: "حسب الاتفاق", body: "لأكثر من 1,000 ضمان مع تهيئة وتكاملات ومستوى خدمة حسب النطاق.", cta: "ناقش احتياج المؤسسة", href: `/${locale}/contact?intent=enterprise`, id: "enterprise" },
+        { name: "مجاني للأفراد", price: "0 ر.س", body: "حتى 10 ضمانات شخصية مع الفواتير والتنبيهات والاحتفاظ بالسجل.", cta: "أنشئ حسابًا شخصيًا", href: `/${locale}/auth?tab=signup&account=consumer`, id: "personal-free", audience: "personal" },
+        { name: "مجاني للأعمال", price: "0 ر.س", body: "أول 100 ضمان مُصدر للعملاء مع الشهادات وجوازات المنتج.", cta: "أنشئ حساب أعمال", href: `/${locale}/auth?tab=signup&account=business`, id: "business-free", audience: "business" },
+        { name: "الاحترافي", price: "14.90 ر.س / شهر في الخليج", secondaryPrice: "3.99 دولار / شهر خارجه", body: "حتى 1,000 ضمان مُصدر و3 أعضاء فريق ومسارات موافقة مخصصة.", cta: "اطلب تفعيل الاحترافي", href: `/${locale}/contact?intent=professional-access`, id: "professional", audience: "business" },
+        { name: "المؤسسات", price: "حسب الاتفاق", body: "لأكثر من 1,000 ضمان مع تهيئة وتكاملات ومستوى خدمة حسب النطاق.", cta: "ناقش احتياج المؤسسة", href: `/${locale}/contact?intent=enterprise`, id: "enterprise", audience: "business" },
       ]
     : [
-        { name: "Personal Free", price: "SAR 0", body: "Up to 10 personal warranties with receipts, reminders, and the full record retained.", cta: "Create personal account", href: `/${locale}/auth?tab=signup&account=consumer`, id: "personal-free" },
-        { name: "Business Free", price: "SAR 0", body: "The first 100 issued customer warranties with certificates and QR product passports.", cta: "Create business account", href: `/${locale}/auth?tab=signup&account=business`, id: "business-free" },
-        { name: "Professional", price: "SAR 14.90 / month in GCC", secondaryPrice: "USD 3.99 / month elsewhere", body: "Up to 1,000 issued warranties, 3 team members, and custom approval workflows.", cta: "Request Professional access", href: `/${locale}/contact?intent=professional-access`, id: "professional" },
-        { name: "Enterprise", price: "By agreement", body: "More than 1,000 warranties with onboarding, integrations, and service levels based on scope.", cta: "Discuss enterprise needs", href: `/${locale}/contact?intent=enterprise`, id: "enterprise" },
+        { name: "Personal Free", price: "SAR 0", body: "Up to 10 personal warranties with receipts, reminders, and the full record retained.", cta: "Create personal account", href: `/${locale}/auth?tab=signup&account=consumer`, id: "personal-free", audience: "personal" },
+        { name: "Business Free", price: "SAR 0", body: "The first 100 issued customer warranties with certificates and QR product passports.", cta: "Create business account", href: `/${locale}/auth?tab=signup&account=business`, id: "business-free", audience: "business" },
+        { name: "Professional", price: "SAR 14.90 / month in GCC", secondaryPrice: "USD 3.99 / month elsewhere", body: "Up to 1,000 issued warranties, 3 team members, and custom approval workflows.", cta: "Request Professional access", href: `/${locale}/contact?intent=professional-access`, id: "professional", audience: "business" },
+        { name: "Enterprise", price: "By agreement", body: "More than 1,000 warranties with onboarding, integrations, and service levels based on scope.", cta: "Discuss enterprise needs", href: `/${locale}/contact?intent=enterprise`, id: "enterprise", audience: "business" },
       ];
+
+  const renderPricingPlan = (plan: (typeof pricing)[number]) => (
+    <article key={plan.id} className="flex h-full flex-col py-6 lg:px-7">
+      <h3 className="text-[19px] font-semibold text-[#1d1d1f]">{plan.name}</h3>
+      <p className="mt-3 text-[24px] font-semibold tracking-tight text-[#1d1d1f]">{plan.price}</p>
+      {plan.secondaryPrice && <p className="mt-1 text-[12px] font-medium text-[#6e6e73]">{plan.secondaryPrice}</p>}
+      <p className="mt-3 flex-1 text-[14px] leading-6 text-[#6e6e73]">{plan.body}</p>
+      <TrackedLink
+        href={plan.href}
+        cta={`home_pricing_${plan.id}`}
+        locale={locale}
+        location="home_pricing"
+        className={`mt-6 inline-flex items-center gap-1.5 text-[14px] font-semibold transition-colors ${
+          plan.audience === "personal"
+            ? "text-[#0f766e] hover:text-[#115e59]"
+            : "text-[#0071e3] hover:text-[#0077ed]"
+        }`}
+      >
+        {plan.cta}
+        <ForwardIcon className="h-4 w-4" aria-hidden="true" />
+      </TrackedLink>
+    </article>
+  );
 
   return (
     <>
@@ -282,19 +307,28 @@ export default async function HomePage({ params }: HomePageProps) {
               </TrackedLink>
             </div>
 
-            <div className="mt-12 divide-y divide-black/[0.08] border-y border-black/[0.08] lg:grid lg:grid-cols-4 lg:divide-x lg:divide-y-0 rtl:lg:divide-x-reverse">
-              {pricing.map((plan) => (
-                <article key={plan.id} className="flex flex-col px-1 py-8 first:pt-0 last:pb-0 lg:px-8 lg:py-2 lg:first:ps-0 lg:last:pe-0">
-                  <h3 className="text-[19px] font-semibold text-[#1d1d1f]">{plan.name}</h3>
-                  <p className="mt-3 text-[24px] font-semibold tracking-tight text-[#1d1d1f]">{plan.price}</p>
-                  {plan.secondaryPrice && <p className="mt-1 text-[12px] font-medium text-[#6e6e73]">{plan.secondaryPrice}</p>}
-                  <p className="mt-3 flex-1 text-[14px] leading-6 text-[#6e6e73]">{plan.body}</p>
-                  <TrackedLink href={plan.href} cta={`home_pricing_${plan.id}`} locale={locale} location="home_pricing" className="mt-6 inline-flex items-center gap-1.5 text-[14px] font-semibold text-[#0071e3] hover:text-[#0077ed]">
-                    {plan.cta}
-                    <ForwardIcon className="h-4 w-4" aria-hidden="true" />
-                  </TrackedLink>
-                </article>
-              ))}
+            <div className="mt-12 grid gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,3fr)] lg:gap-8">
+              <section aria-labelledby="home-personal-plans" className="border-t-2 border-[#0f766e] bg-[#f0fdfa] px-5">
+                <div className="flex items-center gap-2 pt-5 text-[#0f766e]">
+                  <UserRound className="h-4 w-4" aria-hidden="true" />
+                  <h3 id="home-personal-plans" className="text-[12px] font-semibold uppercase">
+                    {isRTL ? "للأفراد" : "Personal"}
+                  </h3>
+                </div>
+                {pricing.filter((plan) => plan.audience === "personal").map(renderPricingPlan)}
+              </section>
+
+              <section aria-labelledby="home-business-plans" className="border-t-2 border-[#0071e3]">
+                <div className="flex items-center gap-2 pt-5 text-[#0071e3]">
+                  <Building2 className="h-4 w-4" aria-hidden="true" />
+                  <h3 id="home-business-plans" className="text-[12px] font-semibold uppercase">
+                    {isRTL ? "للأعمال" : "Business"}
+                  </h3>
+                </div>
+                <div className="mt-1 divide-y divide-black/[0.08] lg:grid lg:grid-cols-3 lg:divide-x lg:divide-y-0 rtl:lg:divide-x-reverse">
+                  {pricing.filter((plan) => plan.audience === "business").map(renderPricingPlan)}
+                </div>
+              </section>
             </div>
           </div>
         </section>

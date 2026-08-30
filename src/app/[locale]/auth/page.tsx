@@ -8,6 +8,7 @@ import {
   ArrowUpRight,
   AlertCircle,
   BadgeCheck,
+  Building2,
   Chrome,
   Eye,
   EyeOff,
@@ -15,6 +16,7 @@ import {
   Mail,
   ShieldCheck,
   Sparkles,
+  UserRound,
 } from "lucide-react";
 import { DIRECTION, getDictionary, normalizeLocale } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth-context";
@@ -304,20 +306,20 @@ export default function AuthPage() {
                       <div>
                         <label className="mb-2 block text-sm font-medium text-[#1A1A2E]">{isRTL ? "نوع الحساب" : "Account Type"}</label>
                         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                          <label className={`cursor-pointer rounded-2xl border px-4 py-3 transition ${accountType === "consumer" ? "border-[#0071e3] bg-[#0071e3]/8" : "border-[#d2d2d7] bg-white"}`}>
+                          <label className={`cursor-pointer rounded-2xl border px-4 py-3 transition ${accountType === "consumer" ? "border-[#0f766e] bg-[#f0fdfa]" : "border-[#d2d2d7] bg-white hover:border-[#0f766e]/45"}`}>
                             <input type="radio" name="accountType" value="consumer" checked={accountType === "consumer"} onChange={(e) => setAccountType(e.target.value as "consumer" | "business")} className="sr-only" />
-                            <span className="block text-sm font-semibold text-[#1A1A2E]">{isRTL ? "فرد" : "Individual"}</span>
+                            <span className="flex items-center gap-2 text-sm font-semibold text-[#1A1A2E]"><UserRound size={16} className="text-[#0f766e]" aria-hidden="true" />{isRTL ? "فرد" : "Individual"}</span>
                             <span className="mt-1 block text-[11px] leading-4 text-[#6e6e73]">{isRTL ? "حفظ الضمانات والفواتير الشخصية." : "Keep personal warranties and receipts."}</span>
                           </label>
-                          <label className={`cursor-pointer rounded-2xl border px-4 py-3 transition ${accountType === "business" ? "border-[#0071e3] bg-[#0071e3]/8" : "border-[#d2d2d7] bg-white"}`}>
+                          <label className={`cursor-pointer rounded-2xl border px-4 py-3 transition ${accountType === "business" ? "border-[#0071e3] bg-[#0071e3]/8" : "border-[#d2d2d7] bg-white hover:border-[#0071e3]/45"}`}>
                             <input type="radio" name="accountType" value="business" checked={accountType === "business"} onChange={(e) => setAccountType(e.target.value as "consumer" | "business")} className="sr-only" />
-                            <span className="block text-sm font-semibold text-[#1A1A2E]">{isRTL ? "شركة" : "Business"}</span>
+                            <span className="flex items-center gap-2 text-sm font-semibold text-[#1A1A2E]"><Building2 size={16} className="text-[#0071e3]" aria-hidden="true" />{isRTL ? "شركة" : "Business"}</span>
                             <span className="mt-1 block text-[11px] leading-4 text-[#6e6e73]">{isRTL ? "إصدار الضمانات وإدارة الفريق والعملاء." : "Issue warranties for customers and teams."}</span>
                           </label>
                         </div>
                       </div>
                       {accountType === "business" && (<div><label htmlFor="signup-company-name" className="mb-2 block text-sm font-medium text-[#1A1A2E]">{isRTL ? "\u0627\u0633\u0645 \u0627\u0644\u0634\u0631\u0643\u0629" : "Company Name"}</label><input id="signup-company-name" name="companyName" type="text" value={companyName} onChange={(e) => setCompanyName(e.target.value)} className="w-full rounded-2xl border border-[#d2d2d7] px-4 py-3 text-[#1d1d1f] outline-none transition focus:border-[#0071e3] focus:ring-2 focus:ring-[#0071e3]/20" required={accountType === "business"} /></div>)}
-                      <button type="submit" disabled={isFormLoading} className="w-full rounded-full bg-[#0071e3] py-3 text-sm font-semibold text-white transition hover:bg-[#0077ED] disabled:cursor-not-allowed disabled:opacity-50">{isFormLoading ? dict.common.loading : dict.auth.create_account}</button>
+                      <button type="submit" disabled={isFormLoading} className={`w-full rounded-full py-3 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-50 ${accountType === "consumer" ? "bg-[#0f766e] hover:bg-[#115e59]" : "bg-[#0071e3] hover:bg-[#0077ED]"}`}>{isFormLoading ? dict.common.loading : dict.auth.create_account}</button>
                       {message && (<div className="rounded-2xl border border-green-200 bg-green-50 p-3 text-sm text-green-800">{message}</div>)}
                       {errorMsg && (<div className="flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-800"><AlertCircle size={16} className="shrink-0" />{errorMsg}</div>)}
                       <div className="relative"><div className="absolute inset-0 flex items-center"><div className="w-full border-t border-[#e5e5ea]"></div></div><div className="relative flex justify-center text-sm"><span className="bg-white px-2 text-[#86868b]">{isRTL ? "\u0623\u0648" : "OR"}</span></div></div>
