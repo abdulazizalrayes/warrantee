@@ -13,7 +13,7 @@ const faqs = {
     },
     {
       q: "How much does Warrantee cost?",
-      a: "Personal Free includes up to 10 personal warranties. Business Free includes the first 100 issued customer warranties. The planned Professional launch price is SAR 14.90 / USD 3.99 per month and currently requires access confirmation. Enterprise pricing is custom by agreement."
+      a: "Personal Free includes up to 10 personal warranties. Business Free includes the first 100 issued customer warranties. The planned Professional launch price is SAR 15 / USD 4 per month and currently requires access confirmation. Enterprise pricing is custom by agreement."
     },
     {
       q: "Is Warrantee available in Arabic?",
@@ -55,7 +55,7 @@ const faqs = {
     },
     {
       q: "\u0643\u0645 \u062A\u0643\u0644\u0641\u0629 Warrantee\u061F",
-      a: "تشمل الخطة المجانية للأفراد حتى 10 ضمانات شخصية، وتشمل المجانية للأعمال أول 100 ضمان مُصدر للعملاء. سعر الإطلاق المخطط للاحترافية هو 14.90 ريالًا / 3.99 دولار شهريًا، ويتطلب التفعيل حاليًا تأكيدًا من Warrantee. أسعار المؤسسات مخصصة حسب الاتفاق."
+      a: "تشمل الخطة المجانية للأفراد حتى 10 ضمانات شخصية، وتشمل المجانية للأعمال أول 100 ضمان مُصدر للعملاء. سعر الإطلاق المخطط للاحترافية هو 15 ريالًا / 4 دولارات شهريًا، ويتطلب التفعيل حاليًا تأكيدًا من Warrantee. أسعار المؤسسات مخصصة حسب الاتفاق."
     },
     {
       q: "\u0647\u0644 Warrantee \u0645\u062A\u0627\u062D \u0628\u0627\u0644\u0639\u0631\u0628\u064A\u0629\u061F",

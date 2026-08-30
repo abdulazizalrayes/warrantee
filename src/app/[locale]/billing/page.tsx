@@ -350,8 +350,8 @@ export default function BillingPage() {
                           <span className={`block font-semibold tracking-tight text-[#1d1d1f] ${plan.id === "pro" ? "text-[24px]" : "text-[28px]"}`}>
                             {plan.id === "pro"
                               ? isRTL
-                                ? `${plan.price.toFixed(2)} ر.س / ${plan.usdPrice?.toFixed(2)} دولار`
-                                : `SAR ${plan.price.toFixed(2)} / USD ${plan.usdPrice?.toFixed(2)}`
+                                ? `${plan.price.toFixed(0)} ر.س / ${plan.usdPrice?.toFixed(0)} دولارات`
+                                : `SAR ${plan.price.toFixed(0)} / USD ${plan.usdPrice?.toFixed(0)}`
                               : isRTL
                                 ? `${plan.price.toFixed(2)} ر.س`
                                 : `SAR ${plan.price.toFixed(2)}`}

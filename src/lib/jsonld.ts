@@ -1,4 +1,8 @@
 import { WARRANTEE_PHONE_E164 } from "@/lib/contact-details";
+import {
+  PROFESSIONAL_PRICE_SAR,
+  PROFESSIONAL_PRICE_USD,
+} from "@/lib/plan-config";
 
 const BASE_URL = "https://warrantee.io";
 
@@ -87,20 +91,20 @@ export function getOrganizationJsonLd() {
           {
             "@type": "Offer",
             name: "Professional SAR",
-            price: "14.90",
+            price: String(PROFESSIONAL_PRICE_SAR),
             priceCurrency: "SAR",
             availability: "https://schema.org/PreOrder",
             url: `${BASE_URL}/en/contact?intent=professional-access`,
-            description: "Planned Professional launch price in Saudi riyals: SAR 14.90/month. Self-serve checkout is not yet generally active, so access currently requires confirmation from Warrantee. Proposed terms include up to 1,000 issued warranties, advanced analytics, priority email support, up to 3 team members, full warranty history, custom workflows, and bilingual certificates.",
+            description: "Planned Professional launch price in Saudi riyals: SAR 15/month. Self-serve checkout is not yet generally active, so access currently requires confirmation from Warrantee. Proposed terms include up to 1,000 issued warranties, advanced analytics, priority email support, up to 3 team members, full warranty history, custom workflows, and bilingual certificates.",
           },
           {
             "@type": "Offer",
             name: "Professional USD",
-            price: "3.99",
+            price: String(PROFESSIONAL_PRICE_USD),
             priceCurrency: "USD",
             availability: "https://schema.org/PreOrder",
             url: `${BASE_URL}/en/contact?intent=professional-access`,
-            description: "Equivalent planned Professional launch price in US dollars: USD 3.99/month. Self-serve checkout is not yet generally active, and the proposed capacity is up to 1,000 issued warranties and 3 team members.",
+            description: "Equivalent planned Professional launch price in US dollars: USD 4/month. Self-serve checkout is not yet generally active, and the proposed capacity is up to 1,000 issued warranties and 3 team members.",
           },
           {
             "@type": "Offer",
@@ -155,8 +159,8 @@ export function getFAQJsonLd(locale: string = "en") {
         acceptedAnswer: {
           "@type": "Answer",
           text: isAr
-            ? "يقدم Warrantee.io خطة مجانية للأفراد تشمل حتى 10 ضمانات شخصية، وخطة مجانية للأعمال تشمل أول 100 ضمان مُصدر، دون بطاقة ائتمانية. سعر الإطلاق المخطط للخطة الاحترافية هو 14.90 ريالًا / 3.99 دولار شهريًا، ويتطلب التفعيل حاليًا تأكيدًا من Warrantee. أسعار المؤسسات مخصصة حسب الاتفاق."
-            : "Warrantee.io offers Personal Free for up to 10 personal warranties and Business Free for the first 100 issued warranties, with no credit card required. The planned Professional launch price is SAR 14.90 / USD 3.99 per month and currently requires access confirmation. Enterprise pricing is custom by agreement.",
+            ? "يقدم Warrantee.io خطة مجانية للأفراد تشمل حتى 10 ضمانات شخصية، وخطة مجانية للأعمال تشمل أول 100 ضمان مُصدر، دون بطاقة ائتمانية. سعر الإطلاق المخطط للخطة الاحترافية هو 15 ريالًا / 4 دولارات شهريًا، ويتطلب التفعيل حاليًا تأكيدًا من Warrantee. أسعار المؤسسات مخصصة حسب الاتفاق."
+            : "Warrantee.io offers Personal Free for up to 10 personal warranties and Business Free for the first 100 issued warranties, with no credit card required. The planned Professional launch price is SAR 15 / USD 4 per month and currently requires access confirmation. Enterprise pricing is custom by agreement.",
         },
       },
     ],

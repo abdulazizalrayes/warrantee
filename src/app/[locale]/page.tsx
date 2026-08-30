@@ -22,6 +22,10 @@ import { TrackedLink } from "@/components/TrackedLink";
 import { WarrantyProofPreview } from "@/components/marketing/WarrantyProofPreview";
 import { DIRECTION, getDictionary, type Locale } from "@/lib/i18n";
 import { buildPageMetadata } from "@/lib/page-metadata";
+import {
+  PROFESSIONAL_PRICE_SAR,
+  PROFESSIONAL_PRICE_USD,
+} from "@/lib/plan-config";
 
 interface HomePageProps {
   params: Promise<{ locale: string }>;
@@ -109,13 +113,13 @@ export default async function HomePage({ params }: HomePageProps) {
     ? [
         { name: "مجاني للأفراد", price: "0 ر.س", body: "حتى 10 ضمانات شخصية مع الفواتير والتنبيهات والاحتفاظ بالسجل.", cta: "أنشئ حسابًا شخصيًا", href: `/${locale}/auth?tab=signup&account=consumer`, id: "personal-free", audience: "personal" },
         { name: "مجاني للأعمال", price: "0 ر.س", body: "أول 100 ضمان مُصدر للعملاء مع الشهادات وجوازات المنتج.", cta: "أنشئ حساب أعمال", href: `/${locale}/auth?tab=signup&account=business`, id: "business-free", audience: "business" },
-        { name: "الاحترافي", price: "14.90 ر.س / 3.99 دولار", secondaryPrice: "شهريًا", body: "حتى 1,000 ضمان مُصدر و3 أعضاء فريق ومسارات موافقة مخصصة.", cta: "اطلب تفعيل الاحترافي", href: `/${locale}/contact?intent=professional-access`, id: "professional", audience: "business" },
+        { name: "الاحترافي", price: `${PROFESSIONAL_PRICE_SAR} ر.س / ${PROFESSIONAL_PRICE_USD} دولارات`, secondaryPrice: "شهريًا", body: "حتى 1,000 ضمان مُصدر و3 أعضاء فريق ومسارات موافقة مخصصة.", cta: "اطلب تفعيل الاحترافي", href: `/${locale}/contact?intent=professional-access`, id: "professional", audience: "business" },
         { name: "المؤسسات", price: "حسب الاتفاق", body: "لأكثر من 1,000 ضمان مع تهيئة وتكاملات ومستوى خدمة حسب النطاق.", cta: "ناقش احتياج المؤسسة", href: `/${locale}/contact?intent=enterprise`, id: "enterprise", audience: "business" },
       ]
     : [
         { name: "Personal Free", price: "SAR 0", body: "Up to 10 personal warranties with receipts, reminders, and the full record retained.", cta: "Create personal account", href: `/${locale}/auth?tab=signup&account=consumer`, id: "personal-free", audience: "personal" },
         { name: "Business Free", price: "SAR 0", body: "The first 100 issued customer warranties with certificates and QR product passports.", cta: "Create business account", href: `/${locale}/auth?tab=signup&account=business`, id: "business-free", audience: "business" },
-        { name: "Professional", price: "SAR 14.90 / USD 3.99", secondaryPrice: "per month", body: "Up to 1,000 issued warranties, 3 team members, and custom approval workflows.", cta: "Request Professional access", href: `/${locale}/contact?intent=professional-access`, id: "professional", audience: "business" },
+        { name: "Professional", price: `SAR ${PROFESSIONAL_PRICE_SAR} / USD ${PROFESSIONAL_PRICE_USD}`, secondaryPrice: "per month", body: "Up to 1,000 issued warranties, 3 team members, and custom approval workflows.", cta: "Request Professional access", href: `/${locale}/contact?intent=professional-access`, id: "professional", audience: "business" },
         { name: "Enterprise", price: "By agreement", body: "More than 1,000 warranties with onboarding, integrations, and service levels based on scope.", cta: "Discuss enterprise needs", href: `/${locale}/contact?intent=enterprise`, id: "enterprise", audience: "business" },
       ];
 

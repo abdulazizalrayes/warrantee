@@ -103,7 +103,7 @@ const dictionaries: Record<IndexedLocale, Dictionary> = {
         {
           id: "pro",
           name: "Professional",
-          price: "SAR 14.90 / USD 3.99",
+          price: "SAR 15 / USD 4",
           description: "Planned launch offer for growing businesses. Request access before activation.",
           features: [
             "Up to 1,000 issued warranties",
@@ -206,7 +206,7 @@ const dictionaries: Record<IndexedLocale, Dictionary> = {
         {
           id: "pro",
           name: "\u0627\u062d\u062a\u0631\u0627\u0641\u064a",
-          price: "14.90 ر.س / 3.99 دولار",
+          price: "15 ر.س / 4 دولارات",
           description: "عرض إطلاق مخطط للشركات النامية. اطلب التفعيل قبل الاشتراك.",
           features: [
             "حتى 1,000 ضمان مُصدر",

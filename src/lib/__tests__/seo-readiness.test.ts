@@ -65,8 +65,8 @@ describe("SEO and AI-search readiness metadata", () => {
     expect(software.description).toContain("Warranty management software");
     expect(serialized).not.toContain("\"@type\":\"Product\"");
     expect(serialized).toContain("Planned Professional launch price in Saudi riyals");
-    expect(serialized).toContain("SAR 14.90/month");
-    expect(serialized).toContain("USD 3.99/month");
+    expect(serialized).toContain("SAR 15/month");
+    expect(serialized).toContain("USD 4/month");
     expect(serialized).toContain("https://schema.org/PreOrder");
     expect(serialized).not.toContain("Warranty-extension transaction fees");
     expect(serialized).not.toContain("first month free");
@@ -82,15 +82,15 @@ describe("SEO and AI-search readiness metadata", () => {
     expect(englishFaq.mainEntity[1].acceptedAnswer.text).toContain(
       "Business Free for the first 100 issued warranties",
     );
-    expect(englishFaq.mainEntity[1].acceptedAnswer.text).toContain("SAR 14.90 / USD 3.99 per month");
+    expect(englishFaq.mainEntity[1].acceptedAnswer.text).toContain("SAR 15 / USD 4 per month");
   });
 
   it("describes pricing with the current Professional plan", () => {
     const metadata = buildPageMetadata("pricing", "en");
     expect(metadata.description).toContain("Professional");
     expect(metadata.description).toContain("Business Free");
-    expect(metadata.description).toContain("SAR 14.90 / USD 3.99 per month");
-    expect(metadata.description).toContain("USD 3.99");
+    expect(metadata.description).toContain("SAR 15 / USD 4 per month");
+    expect(metadata.description).toContain("USD 4");
     expect(metadata.description).not.toContain("first month free");
     expect(metadata.description).not.toContain("first year free");
   });
@@ -113,7 +113,7 @@ describe("SEO and AI-search readiness metadata", () => {
     expect(englishPricing).toContain("Professional");
     expect(englishPricing).toContain("Up to 10 personal warranties");
     expect(englishPricing).toContain("First 100 issued warranties");
-    expect(englishPricing).toContain("SAR 14.90 / USD 3.99");
+    expect(englishPricing).toContain("SAR 15 / USD 4");
     expect(englishPricing).toContain("Up to 1,000 issued warranties");
     expect(englishPricing).toContain("Full warranty history");
     expect(englishPricing).not.toContain("First month free");
@@ -127,8 +127,8 @@ describe("SEO and AI-search readiness metadata", () => {
     expect(arabicPricing).toContain("احترافي");
     expect(arabicPricing).toContain("حتى 10 ضمانات شخصية");
     expect(arabicPricing).toContain("أول 100 ضمان مُصدر");
-    expect(arabicPricing).toContain("14.90");
-    expect(arabicPricing).toContain("3.99");
+    expect(arabicPricing).toContain("15");
+    expect(arabicPricing).toContain("4");
     expect(arabicPricing).not.toContain("الشهر الأول مجاني");
   });
 

@@ -103,12 +103,12 @@ const PAGE_META: Record<
     en: {
       title: "Warrantee Pricing — Simple and Transparent Plans",
       description:
-        "Personal Free includes 10 warranties and Business Free includes the first 100 issued warranties. Professional is planned at SAR 14.90 / USD 3.99 per month. Enterprise pricing is custom.",
+        "Personal Free includes 10 warranties and Business Free includes the first 100 issued warranties. Professional is planned at SAR 15 / USD 4 per month. Enterprise pricing is custom.",
     },
     ar: {
       title: "أسعار وارنتي — خطط بسيطة وواضحة",
       description:
-        "تشمل الخطة المجانية للأفراد 10 ضمانات، وتشمل المجانية للأعمال أول 100 ضمان مُصدر. سعر الاحترافية المخطط 14.90 ريالًا / 3.99 دولار شهريًا. أسعار المؤسسات مخصصة.",
+        "تشمل الخطة المجانية للأفراد 10 ضمانات، وتشمل المجانية للأعمال أول 100 ضمان مُصدر. سعر الاحترافية المخطط 15 ريالًا / 4 دولارات شهريًا. أسعار المؤسسات مخصصة.",
     },
   },
   contact: {

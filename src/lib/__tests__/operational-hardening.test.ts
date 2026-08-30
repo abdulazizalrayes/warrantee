@@ -118,7 +118,7 @@ describe("operational hardening", () => {
     expect(stripePlans).not.toContain("8% commission on extensions");
     expect(checkoutRoute).not.toContain("trial_period_days");
     expect(adminPage).toContain("estimatedSubscriptionMrr");
-    expect(adminPage).toContain("return sum + 14.9");
+    expect(adminPage).toContain("return sum + PROFESSIONAL_PRICE_SAR");
     expect(adminPage).not.toContain("length * 1");
   });
 

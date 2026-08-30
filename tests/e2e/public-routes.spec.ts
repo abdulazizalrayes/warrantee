@@ -59,8 +59,8 @@ test.describe("public experience", () => {
   for (const locale of ["en", "ar"]) {
     test(`${locale} pricing uses wide displays without plan overlap`, async ({ page }) => {
       const dualCurrencyPrice = locale === "ar"
-        ? "14.90 ر.س / 3.99 دولار"
-        : "SAR 14.90 / USD 3.99";
+        ? "15 ر.س / 4 دولارات"
+        : "SAR 15 / USD 4";
 
       await page.setViewportSize({ width: 1920, height: 1080 });
 

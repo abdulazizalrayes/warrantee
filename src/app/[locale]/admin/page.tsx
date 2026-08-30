@@ -6,6 +6,7 @@ import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
 import Link from 'next/link';
 import { getContentLocale, normalizeLocale } from '@/lib/i18n';
 import { filterRealFunnelEvents } from '@/lib/growth-analytics';
+import { PROFESSIONAL_PRICE_SAR } from '@/lib/plan-config';
 
 const supabase = createSupabaseBrowserClient();
 
@@ -639,7 +640,7 @@ export default function AdminPage() {
   const fmtMoney = (n: number, currency = 'SAR') => `${currency} ${(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   const estimatedSubscriptionMrr = subscriptions.reduce((sum: number, subscription: any) => {
     if (subscription.status !== 'active' && subscription.status !== 'trialing') return sum;
-    if (subscription.plan_id === 'pro') return sum + 14.9;
+    if (subscription.plan_id === 'pro') return sum + PROFESSIONAL_PRICE_SAR;
     return sum;
   }, 0);
   const userMetrics = (userId: string) => {

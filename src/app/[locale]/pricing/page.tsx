@@ -9,6 +9,10 @@ import { PublicBreadcrumbs } from "@/components/PublicBreadcrumbs";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { PageViewTracker } from "@/components/PageViewTracker";
+import {
+  PROFESSIONAL_PRICE_SAR,
+  PROFESSIONAL_PRICE_USD,
+} from "@/lib/plan-config";
 
 const plans = [
   {
@@ -45,8 +49,8 @@ const plans = [
     icon: Zap,
     iconColor: "text-[#0071e3]",
     iconBg: "bg-[#0071e3]/10",
-    price: 14.9,
-    usdPrice: 3.99,
+    price: PROFESSIONAL_PRICE_SAR,
+    usdPrice: PROFESSIONAL_PRICE_USD,
     pricePrefix_en: "Founding-business launch price",
     pricePrefix_ar: "سعر إطلاق للشركات المؤسسة",
     featured: true,
@@ -148,8 +152,8 @@ export default function PricingPage() {
                 <span className={`block font-semibold tracking-tight text-[#1d1d1f] ${plan.id === "pro" ? "text-[24px]" : "text-[28px]"}`}>
                   {plan.id === "pro"
                     ? isRTL
-                      ? `${plan.price.toFixed(2)} ر.س / ${plan.usdPrice?.toFixed(2)} دولار`
-                      : `SAR ${plan.price.toFixed(2)} / USD ${plan.usdPrice?.toFixed(2)}`
+                      ? `${plan.price.toFixed(0)} ر.س / ${plan.usdPrice?.toFixed(0)} دولارات`
+                      : `SAR ${plan.price.toFixed(0)} / USD ${plan.usdPrice?.toFixed(0)}`
                     : isRTL
                       ? `${plan.price.toFixed(2)} ر.س`
                       : `SAR ${plan.price.toFixed(2)}`}
@@ -217,8 +221,8 @@ export default function PricingPage() {
           </p>
           <p className="mt-5 text-[13px] font-medium text-[#6e6e73]">
             {isRTL
-              ? "الاحترافي بسعر إطلاق 14.90 ر.س / 3.99 دولار شهريًا. الدفع الإلكتروني ليس مفعّلًا للعامة بعد."
-              : "Professional launches at SAR 14.90 / USD 3.99 per month. Online checkout is not yet generally active."}
+              ? "الاحترافي بسعر إطلاق 15 ر.س / 4 دولارات شهريًا. الدفع الإلكتروني ليس مفعّلًا للعامة بعد."
+              : "Professional launches at SAR 15 / USD 4 per month. Online checkout is not yet generally active."}
           </p>
         </div>
 
@@ -264,8 +268,8 @@ export default function PricingPage() {
               </h2>
               <p className="mt-4 text-[15px] leading-7 text-[#6e6e73]">
                 {isRTL
-                  ? "سعر الاحترافي المقترح هو 14.90 ر.س / 3.99 دولار شهريًا، حتى 1,000 ضمان مُصدر. نؤكد التفعيل قبل أي دفع ولا توجد رسوم تلقائية حاليًا."
-                  : "The proposed Professional launch price is SAR 14.90 / USD 3.99 per month for up to 1,000 issued warranties. Activation is confirmed before payment and there is currently no automatic charge."}
+                  ? "سعر الاحترافي المقترح هو 15 ر.س / 4 دولارات شهريًا، حتى 1,000 ضمان مُصدر. نؤكد التفعيل قبل أي دفع ولا توجد رسوم تلقائية حاليًا."
+                  : "The proposed Professional launch price is SAR 15 / USD 4 per month for up to 1,000 issued warranties. Activation is confirmed before payment and there is currently no automatic charge."}
               </p>
             </div>
             <div className="grid gap-x-6 gap-y-7 sm:grid-cols-2">
@@ -278,7 +282,7 @@ export default function PricingPage() {
                 {
                   icon: Check,
                   title: isRTL ? "سعر واضح بالريال والدولار" : "Clear dual-currency pricing",
-                  desc: isRTL ? "14.90 ر.س / 3.99 دولار شهريًا." : "SAR 14.90 / USD 3.99 per month.",
+                  desc: isRTL ? "15 ر.س / 4 دولارات شهريًا." : "SAR 15 / USD 4 per month.",
                 },
                 {
                   icon: Building2,
