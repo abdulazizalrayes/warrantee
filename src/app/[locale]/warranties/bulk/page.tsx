@@ -189,7 +189,7 @@ export default function BulkOperationsPage() {
           <div className={`mb-4 p-4 rounded-lg flex items-center gap-2 ${message.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
             {message.type === 'success' ? <Check className="w-5 h-5" /> : <AlertTriangle className="w-5 h-5" />}
             {message.text}
-            <button onClick={() => setMessage(null)} className="ml-auto"><X className="w-4 h-4" /></button>
+            <button type="button" aria-label={isRTL ? "إغلاق الرسالة" : "Dismiss message"} onClick={() => setMessage(null)} className="ml-auto"><X className="w-4 h-4" /></button>
           </div>
         )}
 
@@ -220,8 +220,8 @@ export default function BulkOperationsPage() {
           <div className="bg-white rounded-xl shadow-sm border border-[#4169E1]/30 p-6 mb-6">
             {action === 'status' && (
               <div className="flex items-center gap-4">
-                <label className="text-sm font-medium text-gray-700">{t.newStatus}</label>
-                <select value={newStatus} onChange={e => setNewStatus(e.target.value)}
+                <label htmlFor="bulk-status" className="text-sm font-medium text-gray-700">{t.newStatus}</label>
+                <select id="bulk-status" name="status" value={newStatus} onChange={e => setNewStatus(e.target.value)}
                   className="px-3 py-2 border border-gray-300 rounded-lg">
                   <option value="active">{t.active}</option>
                   <option value="expired">{t.expired}</option>
@@ -237,8 +237,8 @@ export default function BulkOperationsPage() {
             )}
             {action === 'extend' && (
               <div className="flex items-center gap-4">
-                <label className="text-sm font-medium text-gray-700">{t.extensionDays}</label>
-                <input type="number" value={extDays} onChange={e => setExtDays(parseInt(e.target.value) || 0)} min={1} max={365}
+                <label htmlFor="bulk-extension-days" className="text-sm font-medium text-gray-700">{t.extensionDays}</label>
+                <input id="bulk-extension-days" name="extensionDays" type="number" value={extDays} onChange={e => setExtDays(parseInt(e.target.value) || 0)} min={1} max={365}
                   className="w-24 px-3 py-2 border border-gray-300 rounded-lg" />
                 <button onClick={handleBulkExtend} disabled={processing}
                   className="px-4 py-2 bg-green-600 text-white rounded-lg disabled:opacity-50 flex items-center gap-2">

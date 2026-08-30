@@ -78,3 +78,13 @@ export async function signInWithPassword(page: Page) {
   await page.getByRole("button", { name: /^sign in$/i }).click();
   await page.waitForURL(/\/en\/dashboard/, { timeout: 20_000 });
 }
+
+export async function openDashboardNavigationOnMobile(page: Page) {
+  if ((page.viewportSize()?.width ?? 1024) >= 1024) return;
+
+  const toggle = page.locator('button[aria-controls="dashboard-navigation"]');
+  await expect(toggle).toBeVisible();
+  await toggle.click();
+  await expect(toggle).toHaveAttribute("aria-expanded", "true");
+  await expect(page.locator("#dashboard-navigation")).not.toHaveAttribute("inert", "");
+}

@@ -11,6 +11,9 @@ const arabicBrandFont = IBM_Plex_Sans_Arabic({
   weight: ["300", "400", "500", "600", "700"],
   variable: "--font-arabic-brand",
   display: "swap",
+  // English pages share this shell but never use the Arabic family. Let the
+  // browser fetch the font from CSS only when RTL content actually needs it.
+  preload: false,
 });
 
 const webMcpScript = `

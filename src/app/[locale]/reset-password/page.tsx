@@ -103,7 +103,7 @@ export default function ResetPasswordPage() {
   return (
     <div className="min-h-screen bg-[#fbfbfd] text-[#1d1d1f]" dir={direction}>
       <Navbar locale={locale} dictionary={dictionary} />
-      <main className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-7xl items-center justify-center px-4 py-16 sm:px-6 lg:px-8">
+      <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-7xl items-center justify-center px-4 py-16 sm:px-6 lg:px-8">
         <div className="w-full max-w-md">
           <div className="mb-8 text-center">
             <p className="mb-3 text-sm font-semibold uppercase tracking-wide text-[#0071e3]">
@@ -178,7 +178,7 @@ export default function ResetPasswordPage() {
             </form>
           </div>
         </div>
-      </main>
+      </div>
       <Footer locale={locale} dictionary={dictionary} />
     </div>
   );

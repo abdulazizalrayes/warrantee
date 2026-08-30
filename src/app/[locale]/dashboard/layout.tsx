@@ -60,12 +60,22 @@ export default function DashboardLayout({
   const { user, profile, signOut } = useAuth();
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [langMenuOpen, setLangMenuOpen] = useState(false);
   const [notificationMenuOpen, setNotificationMenuOpen] = useState(false);
   const [notifications, setNotifications] = useState<HeaderNotification[]>([]);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
   const [notificationsError, setNotificationsError] = useState("");
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(min-width: 1024px)");
+    const updateViewportMode = () => setIsDesktop(mediaQuery.matches);
+
+    updateViewportMode();
+    mediaQuery.addEventListener("change", updateViewportMode);
+    return () => mediaQuery.removeEventListener("change", updateViewportMode);
+  }, []);
 
   const isActive = (href: string) => {
     const basePath = `/${locale}/dashboard`;
@@ -185,7 +195,14 @@ export default function DashboardLayout({
       <header className="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm">
         <div className="px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <button onClick={() => setSidebarOpen(!sidebarOpen)} className="lg:hidden p-2 hover:bg-gray-100 rounded-lg transition text-navy">
+            <button
+              type="button"
+              aria-label={sidebarOpen ? (isRTL ? "إغلاق قائمة التنقل" : "Close navigation menu") : (isRTL ? "فتح قائمة التنقل" : "Open navigation menu")}
+              aria-expanded={sidebarOpen}
+              aria-controls="dashboard-navigation"
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="lg:hidden p-2 hover:bg-gray-100 rounded-lg transition text-navy"
+            >
               {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
             <Link href={`/${locale}`} className="flex items-center gap-2">
@@ -345,7 +362,12 @@ export default function DashboardLayout({
         </div>
       </header>
       <div className="flex">
-        <aside className={`fixed lg:sticky lg:top-[73px] inset-y-0 left-0 z-30 w-64 transform overflow-y-auto border-r border-gray-200 bg-white/95 pt-20 shadow-xl backdrop-blur-xl transition-transform duration-300 ease-in-out lg:h-[calc(100vh-73px)] lg:translate-x-0 lg:pt-4 lg:shadow-none ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
+        <aside
+          id="dashboard-navigation"
+          aria-hidden={!isDesktop && !sidebarOpen}
+          inert={!isDesktop && !sidebarOpen}
+          className={`fixed lg:sticky lg:top-[73px] inset-y-0 left-0 z-30 w-64 transform overflow-y-auto border-r border-gray-200 bg-white/95 pt-20 shadow-xl backdrop-blur-xl transition-transform duration-300 ease-in-out lg:h-[calc(100vh-73px)] lg:translate-x-0 lg:pt-4 lg:shadow-none ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
+        >
           <nav className="flex flex-col gap-1 px-3 pb-6">
             {navigationItems.map((item) => {
               const Icon = item.icon;
@@ -360,9 +382,9 @@ export default function DashboardLayout({
           </nav>
         </aside>
         {sidebarOpen && (<div className="fixed inset-0 z-20 bg-black/50 lg:hidden" onClick={() => setSidebarOpen(false)}></div>)}
-        <main className="flex-1 overflow-auto">
+        <div className="flex-1 overflow-auto">
           <div className="px-4 sm:px-6 lg:px-8 py-8">{children}</div>
-        </main>
+        </div>
       </div>
     </div>
   );

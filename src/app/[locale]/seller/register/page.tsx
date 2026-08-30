@@ -189,7 +189,7 @@ export default function SellerRegisterPage() {
 
   if (submitted) {
     return pageShell(
-      <main className="mx-auto flex min-h-[62vh] max-w-3xl items-center justify-center px-6 py-20">
+      <div className="mx-auto flex min-h-[62vh] max-w-3xl items-center justify-center px-6 py-20">
         <PageViewTracker pageName="seller_application_submitted" pageType="conversion" locale={locale} />
         <div className="text-center">
           <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-[#0071e3]/10">
@@ -206,12 +206,12 @@ export default function SellerRegisterPage() {
             {t.home}
           </Link>
         </div>
-      </main>
+      </div>
     );
   }
 
   return pageShell(
-    <main className="px-4 py-12 sm:px-6 lg:px-8">
+    <div className="px-4 py-12 sm:px-6 lg:px-8">
       <PageViewTracker pageName="seller_registration" pageType="seller_onboarding" locale={locale} extra={{ step }} />
       <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
         <section className={isRTL ? 'text-right' : ''}>
@@ -312,7 +312,7 @@ export default function SellerRegisterPage() {
           )}
         </section>
       </div>
-    </main>
+    </div>
   );
 }
 

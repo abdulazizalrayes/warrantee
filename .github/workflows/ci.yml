@@ -68,6 +68,9 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Frontend performance budget
+        run: npm run qa:frontend-budget
+
       - name: Agent Markdown release gate
         run: npm run qa:agent-markdown:local
 

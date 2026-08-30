@@ -141,7 +141,7 @@ export default function DocumentsPage() {
         <div className="p-4 sm:p-6">
           <div className="relative w-full sm:w-72">
             <Search className={`absolute top-1/2 -translate-y-1/2 w-4 h-4 text-[#86868b] ${isRTL ? 'right-3' : 'left-3'}`} />
-            <input type="text" value={search} onChange={(e) => setSearch(e.target.value)}
+            <input aria-label={isRTL ? 'ابحث عن مستند' : 'Search documents'} type="text" value={search} onChange={(e) => setSearch(e.target.value)}
               placeholder={isRTL ? '\u0627\u0628\u062d\u062b \u0639\u0646 \u0645\u0633\u062a\u0646\u062f...' : 'Search documents...'}
               className={`w-full bg-[#f5f5f7] border-0 rounded-xl py-2.5 text-[14px] text-[#1d1d1f] placeholder:text-[#86868b] focus:bg-white focus:ring-2 focus:ring-[#0071e3]/40 focus:outline-none transition-all ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'}`} />
           </div>

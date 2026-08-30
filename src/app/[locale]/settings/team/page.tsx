@@ -261,9 +261,12 @@ export default function TeamManagementPage() {
                 ) : null}
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-end">
                   <div className="flex-1">
-                    <label className="mb-1 block text-sm font-medium text-gray-700">{t.email}</label>
+                    <label htmlFor="team-invite-email" className="mb-1 block text-sm font-medium text-gray-700">{t.email}</label>
                     <input
+                      id="team-invite-email"
+                      name="email"
                       type="email"
+                      autoComplete="email"
                       value={inviteEmail}
                       onChange={(e) => setInviteEmail(e.target.value)}
                       className="w-full rounded-xl border border-gray-200 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#0a84ff]"
@@ -271,8 +274,10 @@ export default function TeamManagementPage() {
                     />
                   </div>
                   <div className="lg:w-48">
-                    <label className="mb-1 block text-sm font-medium text-gray-700">{t.role}</label>
+                    <label htmlFor="team-invite-role" className="mb-1 block text-sm font-medium text-gray-700">{t.role}</label>
                     <select
+                      id="team-invite-role"
+                      name="role"
                       value={inviteRole}
                       onChange={(e) => setInviteRole(e.target.value)}
                       className="w-full rounded-xl border border-gray-200 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#0a84ff]"
@@ -322,6 +327,7 @@ export default function TeamManagementPage() {
                         <td className="px-6 py-4 text-sm text-gray-600">{member.email}</td>
                         <td className="px-6 py-4">
                           <select
+                            aria-label={`${t.role}: ${member.full_name || member.email}`}
                             value={member.role || "viewer"}
                             onChange={(e) => handleRoleChange(member.id, e.target.value)}
                             className="rounded-lg border border-gray-200 px-3 py-1 text-sm"

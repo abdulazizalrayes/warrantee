@@ -208,7 +208,7 @@ export default function PricingPage() {
       <PageViewTracker pageName="pricing" pageType="marketing" locale={locale} />
       <Navbar locale={locale} dictionary={dictionary} />
       <PublicBreadcrumbs locale={locale} includeJsonLd={false} />
-      <main className="mx-auto w-full max-w-[1504px] px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
+      <div className="mx-auto w-full max-w-[1504px] px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
         {/* Header */}
         <div className="text-center mb-16">
           <h1 className="text-[40px] sm:text-[48px] font-semibold tracking-tight text-[#1d1d1f]">
@@ -314,7 +314,7 @@ export default function PricingPage() {
             </Link>
           </p>
         </div>
-      </main>
+      </div>
       <Footer locale={locale} dictionary={dictionary} />
     </div>
   );

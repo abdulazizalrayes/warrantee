@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { signInWithPassword, watchForPageErrors } from "./helpers";
+import { openDashboardNavigationOnMobile, signInWithPassword, watchForPageErrors } from "./helpers";
 
 const hasCredentials = Boolean(process.env.E2E_USER_EMAIL && process.env.E2E_USER_PASSWORD);
 
@@ -25,6 +25,7 @@ test.describe("authenticated operating shell", () => {
       const errors = watchForPageErrors(page, testInfo);
 
       await page.goto(route, { waitUntil: "domcontentloaded" });
+      await openDashboardNavigationOnMobile(page);
       await expect(page.getByRole("link", { name: /^Dashboard$/i }).first()).toBeVisible();
       await expect(page.getByRole("link", { name: /^Warranties$/i }).first()).toBeVisible();
       await expect(page.getByRole("link", { name: /^Notifications$/i }).first()).toBeVisible();

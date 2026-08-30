@@ -31,7 +31,7 @@ export default async function FeaturesPage({ params }: FeaturesPageProps) {
   return (
     <div dir={direction} className="min-h-screen bg-[#fbfbfd]">
       <Navbar locale={locale} dictionary={dictionary} />
-      <main className="max-w-5xl mx-auto px-6 py-20">
+      <div className="max-w-5xl mx-auto px-6 py-20">
         <div className="text-center mb-16">
           <h1 className="text-[40px] sm:text-[48px] font-semibold tracking-tight text-[#1d1d1f]">
             {isRTL ? "ميزات المنصة" : "Platform Features"}
@@ -64,7 +64,7 @@ export default async function FeaturesPage({ params }: FeaturesPageProps) {
             </Link>
           </div>
         </div>
-      </main>
+      </div>
       <Footer locale={locale} dictionary={dictionary} />
     </div>
   );

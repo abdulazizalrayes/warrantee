@@ -75,7 +75,7 @@ export default async function SecurityPage({ params }: SecurityPageProps) {
   return (
     <>
       <Navbar locale={locale} dictionary={dictionary} />
-      <main dir={isRTL ? "rtl" : "ltr"} className="bg-white text-[#1d1d1f]">
+      <div dir={isRTL ? "rtl" : "ltr"} className="bg-white text-[#1d1d1f]">
         <section className="px-4 py-20 sm:px-6">
           <div className="mx-auto max-w-[980px]">
             <div className="max-w-3xl">
@@ -144,7 +144,7 @@ export default async function SecurityPage({ params }: SecurityPageProps) {
             </div>
           </div>
         </section>
-      </main>
+      </div>
       <Footer locale={locale} dictionary={dictionary} />
     </>
   );

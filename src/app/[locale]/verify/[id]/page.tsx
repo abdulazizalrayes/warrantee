@@ -200,12 +200,12 @@ export default function VerifyPage() {
     return (
       <div dir={direction} className="min-h-screen bg-[#fbfbfd] text-[#1d1d1f]">
         <Navbar locale={locale} dictionary={dictionary} />
-        <main className="flex min-h-[68vh] items-center justify-center px-6">
+        <div className="flex min-h-[68vh] items-center justify-center px-6">
           <div className="text-center">
             <div className="mx-auto h-12 w-12 animate-spin rounded-full border-2 border-[#0071e3] border-t-transparent" />
             <p className="mt-4 text-sm text-[#6e6e73]">{l.loading}</p>
           </div>
-        </main>
+        </div>
         <Footer locale={locale} dictionary={dictionary} />
       </div>
     );
@@ -215,7 +215,7 @@ export default function VerifyPage() {
     return (
       <div dir={direction} className="min-h-screen bg-[#fbfbfd] text-[#1d1d1f]">
         <Navbar locale={locale} dictionary={dictionary} />
-        <main className="mx-auto flex min-h-[68vh] max-w-xl items-center justify-center px-6 py-16">
+        <div className="mx-auto flex min-h-[68vh] max-w-xl items-center justify-center px-6 py-16">
           <div className="text-center">
             <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-red-50">
               <XCircle className="h-9 w-9 text-red-500" aria-hidden="true" />
@@ -229,7 +229,7 @@ export default function VerifyPage() {
               {isRTL ? "البحث مرة أخرى" : "Search again"}
             </Link>
           </div>
-        </main>
+        </div>
         <Footer locale={locale} dictionary={dictionary} />
       </div>
     );
@@ -248,7 +248,7 @@ export default function VerifyPage() {
   return (
     <div dir={direction} className="min-h-screen bg-[#fbfbfd] text-[#1d1d1f]">
       <Navbar locale={locale} dictionary={dictionary} />
-      <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
         <section className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-start">
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-[#d9e7ff] bg-[#f5f9ff] px-3 py-1 text-xs font-semibold text-[#244b8a]">
@@ -373,7 +373,7 @@ export default function VerifyPage() {
             {l.issuedBy}
           </Link>
         </p>
-      </main>
+      </div>
       <Footer locale={locale} dictionary={dictionary} />
     </div>
   );

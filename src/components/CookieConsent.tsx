@@ -123,7 +123,11 @@ export default function CookieConsent() {
                   <p className="font-medium text-sm text-gray-900">{text.necessary}</p>
                   <p className="text-xs text-gray-600">{text.necessaryDesc}</p>
                 </div>
-                <div className="w-10 h-6 bg-[#0071e3] rounded-full relative">
+                <div
+                  role="status"
+                  aria-label={`${text.necessary}: ${isRTL ? 'مفعلة دائمًا' : 'Always on'}`}
+                  className="w-10 h-6 bg-[#0071e3] rounded-full relative"
+                >
                   <div className="absolute top-1 right-1 w-4 h-4 bg-white rounded-full" />
                 </div>
               </div>
@@ -132,7 +136,12 @@ export default function CookieConsent() {
                   <p className="font-medium text-sm text-gray-900">{text.analytics}</p>
                   <p className="text-xs text-gray-600">{text.analyticsDesc}</p>
                 </div>
-                <button onClick={() => setConsent(p => ({ ...p, analytics: !p.analytics }))}
+                <button
+                  type="button"
+                  role="switch"
+                  aria-label={text.analytics}
+                  aria-checked={consent.analytics}
+                  onClick={() => setConsent(p => ({ ...p, analytics: !p.analytics }))}
                   className={`w-10 h-6 rounded-full relative transition-colors ${consent.analytics ? 'bg-[#0071e3]' : 'bg-gray-300'}`}>
                   <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${consent.analytics ? (isRTL ? 'left-1' : 'right-1') : (isRTL ? 'right-1' : 'left-1')}`} />
                 </button>
@@ -142,7 +151,12 @@ export default function CookieConsent() {
                   <p className="font-medium text-sm text-gray-900">{text.marketing}</p>
                   <p className="text-xs text-gray-600">{text.marketingDesc}</p>
                 </div>
-                <button onClick={() => setConsent(p => ({ ...p, marketing: !p.marketing }))}
+                <button
+                  type="button"
+                  role="switch"
+                  aria-label={text.marketing}
+                  aria-checked={consent.marketing}
+                  onClick={() => setConsent(p => ({ ...p, marketing: !p.marketing }))}
                   className={`w-10 h-6 rounded-full relative transition-colors ${consent.marketing ? 'bg-[#0071e3]' : 'bg-gray-300'}`}>
                   <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${consent.marketing ? (isRTL ? 'left-1' : 'right-1') : (isRTL ? 'right-1' : 'left-1')}`} />
                 </button>

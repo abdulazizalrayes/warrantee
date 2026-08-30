@@ -231,9 +231,9 @@ export default function SettingsPage() {
                   {isRTL ? "\u0645\u0639\u0644\u0648\u0645\u0627\u062a \u0627\u0644\u062d\u0633\u0627\u0628" : "Account Information"}
                 </h3>
                 <div>
-                  <label className="block text-[15px] font-medium text-[#1d1d1f] mb-2">
+                  <p className="block text-[15px] font-medium text-[#1d1d1f] mb-2">
                     {isRTL ? "\u0627\u0644\u0628\u0631\u064a\u062f \u0627\u0644\u0625\u0644\u0643\u062a\u0631\u0648\u0646\u064a" : "Email Address"}
-                  </label>
+                  </p>
                   <div className="flex items-center gap-3 px-4 py-3 bg-[#f5f5f7] rounded-xl">
                     <Mail className="w-[18px] h-[18px] text-[#86868b]" />
                     <span className="text-[15px] text-[#86868b]">{user?.email}</span>
@@ -251,12 +251,15 @@ export default function SettingsPage() {
                 </h3>
                 <div className="space-y-5">
                   <div>
-                    <label className="block text-[15px] font-medium text-[#1d1d1f] mb-2">
+                    <label htmlFor="settings-full-name" className="block text-[15px] font-medium text-[#1d1d1f] mb-2">
                       {isRTL ? "\u0627\u0644\u0627\u0633\u0645 \u0627\u0644\u0643\u0627\u0645\u0644" : "Full Name"}
                     </label>
                     <div className="relative">
                       <User className="absolute top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-[#86868b] left-4 rtl:left-auto rtl:right-4" />
                       <input
+                        id="settings-full-name"
+                        name="fullName"
+                        autoComplete="name"
                         type="text"
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
@@ -266,12 +269,15 @@ export default function SettingsPage() {
                     </div>
                   </div>
                   <div>
-                    <label className="block text-[15px] font-medium text-[#1d1d1f] mb-2">
+                    <label htmlFor="settings-phone" className="block text-[15px] font-medium text-[#1d1d1f] mb-2">
                       {isRTL ? "\u0631\u0642\u0645 \u0627\u0644\u0647\u0627\u062a\u0641" : "Phone Number"}
                     </label>
                     <div className="relative">
                       <Phone className="absolute top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-[#86868b] left-4 rtl:left-auto rtl:right-4" />
                       <input
+                        id="settings-phone"
+                        name="phone"
+                        autoComplete="tel"
                         type="tel"
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
@@ -363,7 +369,11 @@ export default function SettingsPage() {
                       </div>
                     </div>
                     <button
+                      type="button"
                       onClick={() => setEmailNotifications(!emailNotifications)}
+                      role="switch"
+                      aria-checked={emailNotifications}
+                      aria-label={isRTL ? "إشعارات البريد الإلكتروني" : "Email notifications"}
                       className={`relative w-12 h-7 rounded-full transition-colors duration-200 ${emailNotifications ? "bg-[#30d158]" : "bg-[#d2d2d7]"}`}
                     >
                       <span className={`absolute top-0.5 w-6 h-6 rounded-full bg-white shadow-sm transition-transform duration-200 ${emailNotifications ? "translate-x-[22px] rtl:-translate-x-[22px]" : "translate-x-0.5 rtl:-translate-x-0.5"}`} />
@@ -384,7 +394,11 @@ export default function SettingsPage() {
                       </div>
                     </div>
                     <button
+                      type="button"
                       onClick={() => setPushNotifications(!pushNotifications)}
+                      role="switch"
+                      aria-checked={pushNotifications}
+                      aria-label={isRTL ? "الإشعارات الفورية" : "Push notifications"}
                       className={`relative w-12 h-7 rounded-full transition-colors duration-200 ${pushNotifications ? "bg-[#30d158]" : "bg-[#d2d2d7]"}`}
                     >
                       <span className={`absolute top-0.5 w-6 h-6 rounded-full bg-white shadow-sm transition-transform duration-200 ${pushNotifications ? "translate-x-[22px] rtl:-translate-x-[22px]" : "translate-x-0.5 rtl:-translate-x-0.5"}`} />

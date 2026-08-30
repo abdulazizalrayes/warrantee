@@ -165,7 +165,7 @@ export default function OnboardingPage() {
 
         {/* Step title */}
         <div className="text-center mb-8">
-          <h1 className="text-[28px] font-bold text-[#1d1d1f] tracking-tight">{steps[step].title}</h1>
+          <h2 className="text-[28px] font-bold text-[#1d1d1f] tracking-tight">{steps[step].title}</h2>
           <p className="text-[15px] text-[#86868b] mt-1">{steps[step].sub}</p>
         </div>
 
@@ -174,9 +174,12 @@ export default function OnboardingPage() {
           {step === 1 && (
             <div className="space-y-6">
               <div>
-                <label className="block text-[13px] font-medium text-[#86868b] mb-2">{isAr ? "\u0631\u0642\u0645 \u0627\u0644\u062c\u0648\u0627\u0644" : "Mobile Number"}</label>
+                <label htmlFor="onboarding-phone" className="block text-[13px] font-medium text-[#86868b] mb-2">{isAr ? "\u0631\u0642\u0645 \u0627\u0644\u062c\u0648\u0627\u0644" : "Mobile Number"}</label>
                 <input
+                  id="onboarding-phone"
+                  name="phone"
                   type="tel"
+                  autoComplete="tel"
                   value={form.phone}
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
                   placeholder={isAr ? "+966 5x xxx xxxx" : "+966 5x xxx xxxx"}
@@ -190,6 +193,9 @@ export default function OnboardingPage() {
                 <div className="flex gap-3">
                   {[{ val: "en", label: "English", icon: "\ud83c\uddec\ud83c\udde7" }, { val: "ar", label: "\u0627\u0644\u0639\u0631\u0628\u064a\u0629", icon: "\ud83c\uddf8\ud83c\udde6" }].map((lang) => (
                     <button
+                      type="button"
+                      role="radio"
+                      aria-checked={form.language === lang.val}
                       key={lang.val}
                       onClick={() => setForm({ ...form, language: lang.val })}
                       className={"flex-1 py-3 px-4 rounded-xl text-[15px] font-medium transition-all duration-200 " + (form.language === lang.val ? "bg-[#1A1A2E] text-white shadow-lg" : "bg-[#f5f5f7] text-[#1d1d1f] hover:bg-[#e8e8ed]")}

@@ -103,7 +103,7 @@ export function SeoContentTemplate({ locale: localeParam, page }: SeoContentTemp
         dangerouslySetInnerHTML={{ __html: JSON.stringify(buildBreadcrumbJsonLd(page, contentLocale)) }}
       />
       <Navbar locale={locale} dictionary={dictionary} />
-      <main>
+      <div>
         <section className="px-4 py-20 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-5xl">
             <div className="max-w-3xl">
@@ -212,7 +212,7 @@ export function SeoContentTemplate({ locale: localeParam, page }: SeoContentTemp
             </div>
           </div>
         </section>
-      </main>
+      </div>
       <Footer locale={locale} dictionary={dictionary} />
     </div>
   );

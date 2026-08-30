@@ -124,7 +124,7 @@ export default async function HomePage({ params }: HomePageProps) {
       ];
 
   const renderPricingPlan = (plan: (typeof pricing)[number]) => (
-    <article key={plan.id} className="flex h-full min-h-0 flex-col px-5 py-6 lg:px-6">
+    <article key={plan.id} className="flex min-h-0 flex-col px-5 py-6 lg:h-full lg:px-6">
       <h3 className="text-[19px] font-semibold text-[#1d1d1f]">{plan.name}</h3>
       <p className="mt-3 text-[24px] font-semibold tracking-tight text-[#1d1d1f]">{plan.price}</p>
       {plan.secondaryPrice && <p className="mt-1 text-[12px] font-medium text-[#6e6e73]">{plan.secondaryPrice}</p>}
@@ -151,7 +151,7 @@ export default async function HomePage({ params }: HomePageProps) {
       <PageViewTracker pageName="home" pageType="marketing" locale={locale} />
       <Navbar locale={locale} dictionary={dictionary} />
 
-      <main>
+      <div>
         <section className="overflow-hidden px-4 pb-16 pt-16 sm:px-6 sm:pb-20 sm:pt-20">
           <div className="mx-auto max-w-[1160px]">
             <div className="mx-auto max-w-[850px] text-center">
@@ -315,7 +315,7 @@ export default async function HomePage({ params }: HomePageProps) {
               <section
                 aria-labelledby="home-personal-plans"
                 data-testid="home-personal-plan-group"
-                className="grid h-full grid-rows-[auto_minmax(0,1fr)] border-t-2 border-[#0f766e] bg-[#f0fdfa]"
+                className="grid grid-rows-[auto_minmax(0,1fr)] border-t-2 border-[#0f766e] bg-[#f0fdfa] lg:h-full"
               >
                 <div className="flex items-center gap-2 px-5 pt-5 text-[#0f766e]">
                   <UserRound className="h-4 w-4" aria-hidden="true" />
@@ -329,7 +329,7 @@ export default async function HomePage({ params }: HomePageProps) {
               <section
                 aria-labelledby="home-business-plans"
                 data-testid="home-business-plan-group"
-                className="grid h-full grid-rows-[auto_minmax(0,1fr)] border-t-2 border-[#0071e3]"
+                className="grid grid-rows-[auto_minmax(0,1fr)] border-t-2 border-[#0071e3] lg:h-full"
               >
                 <div className="flex items-center gap-2 px-5 pt-5 text-[#0071e3]">
                   <Building2 className="h-4 w-4" aria-hidden="true" />
@@ -337,7 +337,7 @@ export default async function HomePage({ params }: HomePageProps) {
                     {isRTL ? "للأعمال" : "Business"}
                   </h3>
                 </div>
-                <div className="mt-1 h-full divide-y divide-black/[0.08] lg:grid lg:grid-cols-3 lg:divide-x lg:divide-y-0 rtl:lg:divide-x-reverse">
+                <div className="mt-1 divide-y divide-black/[0.08] lg:grid lg:h-full lg:grid-cols-3 lg:divide-x lg:divide-y-0 rtl:lg:divide-x-reverse">
                   {pricing.filter((plan) => plan.audience === "business").map(renderPricingPlan)}
                 </div>
               </section>
@@ -368,7 +368,7 @@ export default async function HomePage({ params }: HomePageProps) {
             </div>
           </div>
         </section>
-      </main>
+      </div>
 
       <Footer locale={locale} dictionary={dictionary} />
     </>

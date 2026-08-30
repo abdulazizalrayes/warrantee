@@ -155,6 +155,7 @@ export default function AdminIngestionPage() {
       {/* Filters */}
       <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
         <input
+          aria-label={isRtl ? 'بحث بالبريد أو الموضوع' : 'Search by email or subject'}
           type="text"
           placeholder={isRtl ? 'بحث بالبريد أو الموضوع...' : 'Search by email or subject...'}
           value={search}
@@ -165,6 +166,7 @@ export default function AdminIngestionPage() {
           }}
         />
         <select
+          aria-label={isRtl ? 'تصفية حسب الحالة' : 'Filter by status'}
           value={statusFilter}
           onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
           style={{ padding: '8px 14px', borderRadius: '8px', border: '1px solid #D1D5DB', fontSize: '14px' }}

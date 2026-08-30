@@ -108,7 +108,7 @@ export default function VerifyWarrantyPage() {
   return (
     <div className="min-h-screen bg-[#fbfbfd] text-[#1d1d1f]" dir={direction}>
       <Navbar locale={locale} dictionary={dictionary} />
-      <main className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
         <section className="text-center">
           <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#0071e3]/10">
             <ShieldCheck className="h-7 w-7 text-[#0071e3]" aria-hidden="true" />
@@ -188,7 +188,7 @@ export default function VerifyWarrantyPage() {
             </div>
           </section>
         ) : null}
-      </main>
+      </div>
       <Footer locale={locale} dictionary={dictionary} />
     </div>
   );

@@ -285,9 +285,9 @@ export default function ReportsPage() {
         {/* Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between mb-8">
           <div>
-            <h1 className="text-[28px] font-semibold text-[#1d1d1f] tracking-tight">
+            <h2 className="text-[28px] font-semibold text-[#1d1d1f] tracking-tight">
               {isRTL ? tr("التقارير") : "Reports"}
-            </h1>
+            </h2>
             <p className="text-[15px] text-[#86868b] mt-1">
               {isRTL ? tr("تحليلات ورؤى حول ضماناتك") : "Analytics and insights about your warranties"}
             </p>

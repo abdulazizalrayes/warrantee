@@ -82,7 +82,7 @@ export default async function BlogPage({ params }: BlogPageProps) {
   return (
     <div dir={isRTL ? 'rtl' : 'ltr'} className="min-h-screen bg-warm-white text-navy">
       <Navbar locale={locale} dictionary={dictionary} />
-      <main>
+      <div>
         <section className="px-4 py-20 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-5xl">
             <p className="mb-4 text-sm font-semibold uppercase tracking-[0.24em] text-[#0071e3]">
@@ -167,7 +167,7 @@ export default async function BlogPage({ params }: BlogPageProps) {
             </div>
           </div>
         </section>
-      </main>
+      </div>
       <Footer locale={locale} dictionary={dictionary} />
     </div>
   );

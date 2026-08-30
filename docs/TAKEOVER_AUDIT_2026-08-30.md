@@ -10,16 +10,31 @@ Scope: Warrantee only (`warrantee.io`, `abdulazizalrayes/warrantee`, Vercel proj
 
 No critical production outage, unresolved Sentry issue, known dependency vulnerability, failed production security gate, tenant-isolation failure, or migration drift was found. The core application, public pages, authenticated journeys, API / CLI / MCP discovery, OCR pipeline, Twenty CRM reconciliation, and production deployment are functioning.
 
-The principal risks are now quality depth and commercial readiness rather than a hidden backend outage:
+The principal risks are now commercial evidence and owner-postponed scope rather than a hidden backend or release-quality outage:
 
-1. Mobile LCP is too slow on the pages that start the funnel.
-2. The release suite does not yet enforce full visual geometry, hidden states, semantics, and accessibility across the entire EN/AR surface. This is why users could find defects after an audit had passed.
-3. Several public and portal controls are not programmatically labelled.
-4. The public language selector exposes 17 choices while only English and Arabic are production-grade and indexed.
-5. Real qualified traffic is effectively absent, so the onboarding funnel cannot yet be judged from statistically useful customer behavior.
-6. Self-serve paid billing is intentionally postponed and fails closed; Professional access is a request flow, not live checkout.
+1. The public language selector exposes 17 choices while only English and Arabic are production-grade and indexed.
+2. Real qualified traffic is effectively absent, so the onboarding funnel cannot yet be judged from statistically useful customer behavior.
+3. Self-serve paid billing is intentionally postponed and fails closed; Professional access is a request flow, not live checkout.
+4. Real-world OCR accuracy, independent penetration testing, and very-large-scale behavior remain unproved external evidence.
 
 The approved Professional price is now consistent at **SAR 15 / USD 4 per month**. Commit `8d566a75563bae206e37c6ccd47a389bb85d2223` is deployed and production gates are green.
+
+## Advanced regression re-audit update
+
+The release contract was expanded after the initial report. The current working tree now checks all 50 sitemap pages at 320, 390, 768, 1440, and 1920 pixels, plus 38 authenticated EN/AR route-and-width combinations. It verifies one main landmark and H1, unique IDs, labelled fields, named controls, locale/direction, horizontal overflow, interactive containment, hidden cookie-switch state, console errors, and failed requests.
+
+The deeper full-document screenshot and containment review found one additional release-blocking visual defect that the first-viewport geometry check missed. The owner approved the correction, and it is now fixed and verified:
+
+| Status | Finding | Evidence | Proposed fix |
+| --- | --- | --- | --- |
+| Fixed and verified | The homepage Business pricing summary had a cyclic `height: 100%` chain below the desktop breakpoint. At 390 px, its container was 691 px tall while its content was 2,007 px tall; Business Free created a large empty gap and Professional/Enterprise spilled into the following dark CTA section. The same defect occurred at 320, 390, and 768 px in EN and AR. | The equal-height rule is now desktop-only. At 320/390/768 px, measured overflow is 0 px in EN and AR. Updated full-page screenshots are `/tmp/warrantee-visual-audit/{en,ar}-home-fixed-{390,1920}.png`. All 52 public release contracts pass across five widths. | Completed in `src/app/[locale]/page.tsx`; permanent full-document data-testid containment is enforced by `tests/e2e/release-regression.spec.ts`. |
+
+The deeper review also completed two approved nonvisual tranches:
+
+- Accessibility and semantics: all 52 public contract cases and all 38 authenticated EN/AR route cases pass after repairing labels, accessible names, cookie switches, headings, duplicate IDs, nested landmarks, and the closed mobile sidebar focus boundary.
+- Performance: English pages no longer preload five unused Arabic font files (about 174 KiB). Under a repeatable mobile-throttled browser profile, measured LCP is about 0.9 s for EN home, 0.9 s for pricing, 2.5 s for auth, and 0.9 s for AR home. The CI build budget is 195 KiB shared, 215 KiB home, 220 KiB pricing, and 285 KiB auth; current measurements are 184.9, 197.7, 204.6, and 269.1 KiB respectively.
+
+The complete final local browser suite records 214 passes, 92 intentional skips, and 0 failures. The skips are duplicate-project coverage and the destructive operational scenario, which remains intentionally opt-in. One repeat run correctly returned HTTP 429 after exceeding the six-import/ten-minute guardrail, then passed with a fresh isolated QA identity. Final cleanup removed that identity and 26 related records, leaving zero persistent QA users.
 
 ## Why earlier audits missed visible defects
 
@@ -47,10 +62,10 @@ The new release standard should treat a page load as only the first test, never 
 | Production security | GitHub run `33309670363` | Passed all jobs, including smoke, RLS, authenticated operational E2E, load, Sentry inventory, and QA cleanup |
 | Dependencies | `npm audit --omit=dev --json` | 0 known vulnerabilities across 781 dependencies |
 | Security assurance | `npm run qa:security-assurance` | Passed; 66 migrations, 0 pending; 70 focused security tests passed |
-| Public UI | 50 sitemap URLs x 4 widths = 200 checks | 0 fatal errors, bad statuses, overflows, missing image alt text, or locale/direction failures |
-| Portal UI | 44 EN/AR routes x 2 widths = 88 checks | 0 fatal errors, redirects, overflows, missing image alt text, or clipping |
+| Public UI | 52 EN/AR release contracts; 50 sitemap URLs x 5 widths | 0 fatal errors, bad statuses, container overflows, clipped controls, unnamed controls, unlabelled fields, duplicate IDs, or locale/direction failures |
+| Portal UI | 38 authenticated EN/AR route-and-width contracts plus desktop/mobile workflow suites | 0 fatal errors, redirects, container overflows, clipped controls, missing landmarks/headings, or closed-sidebar focus leakage |
 | Internal links | 73 unique same-origin targets | 68 x 200, 4 expected auth redirects, 1 Cloudflare email-protection pseudo-link |
-| Agent Markdown | `npm run qa:agent-markdown` | All 50 canonical pages covered; Accept negotiation and sidecar rules passed; 87.38% response-size reduction |
+| Agent Markdown | `npm run qa:agent-markdown:local` | All 50 canonical pages covered; Accept negotiation and sidecar rules passed; 87.01% response-size reduction in the final local build |
 | AI discovery | `npm run qa:agent-readiness` | 19 JSON and 6 text endpoints passed |
 | OCR | `npm run qa:ocr-media`, `npm run qa:ocr-corpus` | 6/6 synthetic media checks passed; 14-entry corpus, 6 file-backed |
 | CRM | `npm run crm:reconcile -- --strict` | Twenty is active; no missing/error records; 0 qualified candidates since 2026-07-14 |
@@ -63,14 +78,14 @@ Detailed local artifacts from this audit are `/tmp/warrantee-full-public-ui-audi
 
 | # | Priority | Finding and evidence | User/business impact | Proposed fix | Approval |
 | ---: | --- | --- | --- | --- | --- |
-| 1 | High | **Mobile LCP is poor on conversion pages.** Lighthouse mobile: home 6.9 s, pricing 6.8 s, auth 7.9 s. Shared first-load JS is about 189 kB; unused JS is about 61-111 KiB. `src/app/[locale]/layout.tsx:96-104` mounts global client services and `src/components/RouteProviders.tsx:1-70` makes route-provider selection client-side. | Slow first impression, lower mobile conversion, and weaker search experience. | Split public and authenticated layouts/providers; keep auth context off public routes at the server boundary; delay nonessential consent/analytics UI; inspect bundle and fonts; add LCP budgets to CI. | Nonvisual implementation, but verify screenshots. |
-| 2 | High | **Release QA lacks a full visual contract.** Previous suite covered only a subset of routes/Arabic pages and generic overflow. | Layout defects can reach users even while CI is green. | Add sitemap-driven EN/AR screenshots at 320/390/768/1440/1920; assert card/button/text containment; open hidden states; compare baselines; fail deployment on new overlap, clipping, overflow, console errors, or unexplained visual diffs. | Baselines need one owner approval; test code is nonvisual. |
-| 3 | Medium | **Public forms have visible but unassociated labels.** Contact at `src/app/[locale]/contact/page.tsx:240-297`; Support at `src/app/[locale]/support/page.tsx:122-163`. | Screen-reader and voice-control users cannot reliably identify fields; weaker form usability. | Add stable `id`/`name`, matching `htmlFor`, autocomplete attributes, and field-specific error associations without changing layout. | No visual approval required. |
-| 4 | Medium | **Portal forms repeat the same label association problem.** Examples include warranty creation at `src/app/[locale]/warranties/new/page.tsx:353-443`, onboarding, transfer, team invite, settings, seller invite, and admin ingestion filters. | Accessibility debt on core operational workflows; poorer keyboard/assistive use. | Create a narrow form-control contract, then associate each existing label and control without restyling. Add a test that fails when a visible label lacks a programmatic control. | No visual approval required. |
-| 5 | Medium | **Icon-only controls lack accessible names.** API copy buttons at `src/app/[locale]/api-docs/page.tsx:242` and `:378`; dashboard mobile menu at `src/app/[locale]/dashboard/layout.tsx:188`; attachment remove at `src/app/[locale]/warranties/new/page.tsx:480`; bulk-message close at `src/app/[locale]/warranties/bulk/page.tsx:192`. | Actions are announced as unnamed buttons; users can trigger the wrong control. | Add localized `aria-label`/title and state-aware names such as Open menu/Close menu and Copy/Copied. Add an unnamed-button release assertion. | No visual approval required. |
-| 6 | Medium | **Cookie customization controls do not expose switch semantics.** `src/components/CookieConsent.tsx:119-148`. | Consent state is not clear to assistive technology; necessary status is only visual. | Add `role="switch"`, localized accessible names, `aria-checked`, and readable necessary-cookie status. Test both EN/AR hidden detail states. | No visual approval required. |
-| 7 | Medium | **About pages contain duplicate `main-content` IDs and nested main landmarks.** Layout `src/app/[locale]/layout.tsx:99`; page `src/app/[locale]/about/page.tsx:112`. | Skip-link destination is ambiguous and document landmarks are invalid. | Replace the page-level nested `main` with a `div`, preserving styles and content. Add duplicate-ID and single-main assertions. | No visual approval required. |
-| 8 | Medium | **Portal heading hierarchy is inconsistent.** Many portal routes have no H1; onboarding and reports can expose two H1s. | Page context is weak for screen readers and automated comprehension; inconsistent browser-reader navigation. | Define one page-title H1 per route; demote repeated brand/step headings to H2/div as appropriate. Preserve visible typography through classes. | No visual approval required if visual styles remain identical. |
+| 1 | Resolved | **Conversion-page LCP and bundle budgets.** English home/pricing/auth now measure about 0.9/0.9/2.5 s in the repeatable mobile-throttled local profile. | The conversion path is inside the current lab target. | Unused Arabic font preloads were removed from English routes; CI now enforces shared/home/pricing/auth budgets of 195/215/220/285 KiB. | Implemented and verified. |
+| 2 | Resolved | **Full release geometry contract.** The old suite covered only a subset of routes and generic overflow. | Prevents the class of pricing overlap that reached external reviewers. | Sitemap-driven EN/AR checks now cover 320/390/768/1440/1920, full-document test containers, clipped/outside controls, semantics, hidden consent state, and authenticated portal routes. | Implemented and verified. |
+| 3 | Resolved | **Public form associations.** Contact and support labels were not programmatically tied to fields. | Restores reliable screen-reader and voice-control identification. | Added stable IDs/names, `htmlFor`, autocomplete, and automated visible-field label checks without restyling. | Implemented and verified. |
+| 4 | Resolved | **Portal form associations.** Warranty, onboarding, transfer, team, settings, seller, and admin controls repeated the same problem. | Improves keyboard and assistive operation across core workflows. | Associated the existing labels and controls and added route-wide regression checks. | Implemented and verified. |
+| 5 | Resolved | **Icon-control names and mobile navigation state.** Copy, menu, remove, and close actions lacked complete names; the closed sidebar remained focusable off canvas. | Prevents ambiguous actions and keyboard focus escaping into invisible navigation. | Added localized/state-aware names plus mobile-only `inert` and `aria-hidden`; mobile tests open the menu before asserting navigation. | Implemented and verified. |
+| 6 | Resolved | **Cookie switch semantics.** Customization controls did not expose their state. | Consent state is now understandable to assistive technology. | Added localized switch names, `role="switch"`, `aria-checked`, readable necessary status, and EN/AR hidden-state tests. | Implemented and verified. |
+| 7 | Resolved | **Duplicate ID and nested main landmarks.** | Restores a unique skip-link target and valid page landmark structure. | Removed nested page mains while preserving styles; all public release contracts require one main and unique IDs. | Implemented and verified. |
+| 8 | Resolved | **Portal heading hierarchy.** Routes had missing or duplicate H1s. | Improves page context for readers and automated comprehension. | Enforced one meaningful H1 per audited route without changing visible typography. | Implemented and verified. |
 | 9 | Medium | **The public selector offers 17 languages but only EN/AR are indexed and production-grade.** `src/lib/locales.ts:3-23`; all choices render in `src/components/LanguageToggle.tsx:44-68`; beta routes fall back to English content. | Users may select a language and receive English, undermining trust and creating a product-claim contradiction. | Recommended: expose only EN/AR publicly until each beta locale reaches a translation/RTL/accessibility threshold. Keep beta route infrastructure private or explicitly labelled as English fallback. | Product/visual approval required. |
 | 10 | Medium | **Mobile contrast misses on trust surfaces.** Lighthouse flags the home sample badge/status/eyebrow and demo-passport labels around 3.96-4.31:1. | Reduced readability where the product is asking users to trust a warranty record. | Darken only the affected text tokens to at least 4.5:1 and add contrast checks. Do not redesign the sections. | Visual approval required. |
 | 11 | Medium | **Homepage signup link text is only “Start”.** Lighthouse reports a non-descriptive-link failure. | Ambiguous for screen-reader users and weaker CTA clarity. | Change visible copy to “Start free” / an equivalent Arabic action, or preserve visible text and add an accessible name. | Visible wording needs approval; accessible-only name does not. |
@@ -90,11 +105,11 @@ Detailed local artifacts from this audit are `/tmp/warrantee-full-public-ui-audi
 
 | Journey | Current state | Residual risk |
 | --- | --- | --- |
-| Visitor to EN/AR homepage/pricing/auth | Functional and responsive; exact pricing is consistent | Mobile LCP and small accessibility issues |
-| Personal signup/login/reset | Auth workflow and production E2E pass | No meaningful real-user cohort; auth LCP 7.9 s |
+| Visitor to EN/AR homepage/pricing/auth | Functional and responsive; exact pricing is consistent; release geometry and performance budgets pass | No meaningful real-user cohort |
+| Personal signup/login/reset | Auth workflow and production E2E pass; local mobile-throttled auth LCP is about 2.5 s | No meaningful real-user cohort |
 | Business onboarding | Flow is reachable and production E2E passes | 0 real companies; no market evidence of activation quality |
-| Create/import/bulk/transfer warranty | Authenticated routes and operational tests pass | Form semantics need repair; scale behavior needs real usage |
-| Certificate and public QR passport | Functional; mobile passport LCP 3.7 s; privacy/security gates pass | Contrast tokens and real buyer-loop evidence |
+| Create/import/bulk/transfer warranty | Authenticated routes, form semantics, rate limits, and operational tests pass | Scale behavior needs real usage |
+| Certificate and public QR passport | Functional; privacy/security gates pass | Contrast tokens and real buyer-loop evidence |
 | Claims/approval/extensions | Core flows covered and operational tests pass | No real end-user history; extension purchase is not live billing |
 | OCR/document scan | Synthetic corpus and corrupt-file behavior pass | No real-world corpus evidence |
 | API / CLI / MCP | Discovery, auth guidance, tokens, rate limits, and agent validation pass | 0 real API usage; npm publication intentionally postponed |
@@ -116,14 +131,14 @@ Detailed local artifacts from this audit are `/tmp/warrantee-full-public-ui-audi
 
 - 50 canonical EN/AR sitemap pages have valid companions and headers.
 - Sitemap, canonical, hreflang, robots, llms files, agent cards, OpenAPI, MCP discovery, structured data, and content negotiation pass current validators.
-- Agent Markdown responses reduce average response size by 87.38% and preserve canonical URLs/language.
+- Agent Markdown responses reduce average response size by 87.01% and preserve canonical URLs/language.
 - `ai-train=no` remains the approved Content-Signal policy.
 - Demo and auth Lighthouse SEO scores are intentionally lower because those pages are `noindex`; this is not an indexing defect.
 - Current limitation is authority and demand, not missing discovery plumbing. Indexing cannot manufacture qualified traffic.
 
 ## Performance interpretation
 
-The backend and edge path are healthy at current load: 2,016 requests completed with zero failures and p95 below 800 ms. The customer-visible weakness is first render on mobile, especially large text LCP. The evidence points to rendering/client JavaScript and provider boundaries more than raw API availability.
+The backend and edge path are healthy at current load: 2,016 requests completed with zero failures and p95 below 800 ms. The earlier mobile LCP regression was not reproduced after removing unused cross-language font preloads: the repeatable local mobile-throttled profile now measures roughly 0.9 s on EN home, 0.9 s on EN pricing, 2.5 s on auth, and 0.9 s on AR home. Field p75 data still requires real traffic.
 
 Performance acceptance targets for the next tranche:
 
@@ -135,17 +150,17 @@ Performance acceptance targets for the next tranche:
 
 ## Recommended implementation order
 
-### Tranche A: nonvisual quality repairs
+### Tranche A: nonvisual quality repairs - complete
 
-Fix findings 3-8 and 7 specifically: labels, accessible names, switch semantics, duplicate landmark/ID, and heading hierarchy. Add automated semantic contracts at the same time. These changes can preserve the exact appearance.
+Findings 3-8 are repaired and protected by semantic contracts.
 
-### Tranche B: release-quality system
+### Tranche B: release-quality system - complete
 
-Implement finding 2 before the next visual change: sitemap-driven screenshots, all five breakpoints, EN/AR, hidden states, geometry assertions, and reviewed baselines. This directly addresses the reason external users found defects after a passing audit.
+Finding 2 is implemented across all five public breakpoints and the authenticated EN/AR portal matrix. The homepage pricing regression is fixed and now has a permanent containment assertion.
 
-### Tranche C: performance
+### Tranche C: performance - complete for the current target
 
-Implement finding 1 in a focused branch. Split public and authenticated provider boundaries, measure bundle/LCP after each small change, and reject any functional or visual regression.
+Finding 1 is inside the current lab targets and protected by route-specific CI bundle budgets. Further provider splitting should be evidence-led rather than speculative.
 
 ### Tranche D: visually approved trust corrections
 
@@ -181,7 +196,6 @@ Any unexplained screenshot change, overlap, clipping, console error, failed labe
 - npm publication of the CLI: postponed; local/source CLI and MCP functionality remain testable.
 - Google indexing decisions: external and asynchronous.
 
-## Decision requested
+## Remaining decisions
 
-Recommended approval is to execute **Tranche A, then Tranche B, then Tranche C**. Tranche D should be shown with before/after screenshots for explicit visual approval. Tranche E should begin only when the owner approves the specific outreach audience/message; real sends remain approval-gated.
-
+Tranches A-C are complete locally. Tranche D remains visual/product work that requires a before/after preview and explicit approval. Tranche E should begin only when the owner approves the specific outreach audience/message; real sends remain approval-gated.

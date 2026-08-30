@@ -32,7 +32,7 @@ export default async function GuidePage({ params }: GuidePageProps) {
   return (
     <div dir={isRTL ? "rtl" : "ltr"} className="min-h-screen bg-[#fbfbfd]">
       <Navbar locale={locale as Locale} dictionary={dictionary} />
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 py-12">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-12">
         {/* Header */}
         <div className="text-center mb-10">
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#0071e3]/10 mb-4">
@@ -115,7 +115,7 @@ export default async function GuidePage({ params }: GuidePageProps) {
             <ArrowRight className={"w-4 h-4 " + (isRTL ? "rotate-180" : "")} />
           </Link>
         </div>
-      </main>
+      </div>
       <Footer locale={locale as Locale} dictionary={dictionary} />
     </div>
   );

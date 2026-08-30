@@ -109,7 +109,7 @@ export default async function AboutPage({ params }: AboutPageProps) {
     <div className="bg-warm-white text-navy font-sans" dir={isRTL ? "rtl" : "ltr"}>
       <Navbar locale={locale} dictionary={dictionary} />
 
-      <main id="main-content">
+      <div>
         <section className="pt-24 pb-16 px-4 sm:px-6 lg:px-8 text-center bg-[#fbfbfd]">
           <div className="max-w-3xl mx-auto">
             <h1 className="text-5xl md:text-6xl font-bold text-navy tracking-tight mb-6">
@@ -168,7 +168,7 @@ export default async function AboutPage({ params }: AboutPageProps) {
             </div>
           </div>
         </section>
-      </main>
+      </div>
 
       <Footer locale={locale} dictionary={dictionary} />
     </div>

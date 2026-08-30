@@ -147,7 +147,7 @@ export default function ContactPage() {
     return (
       <div dir={isRTL ? 'rtl' : 'ltr'} className="min-h-screen bg-[#fbfbfd] text-[#1d1d1f]">
         <Navbar locale={locale} dictionary={dictionary} />
-        <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-20">
+        <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-20">
           <div className="text-center max-w-md">
             <div className="w-16 h-16 bg-[#0071e3]/10 rounded-full flex items-center justify-center mx-auto mb-6">
               <Send className="w-8 h-8 text-[#0071e3]" />
@@ -163,7 +163,7 @@ export default function ContactPage() {
               {copy.home}
             </a>
           </div>
-        </main>
+        </div>
         <Footer locale={locale} dictionary={dictionary} />
       </div>
     );
@@ -237,9 +237,12 @@ export default function ContactPage() {
             ) : null}
             <div className="grid md:grid-cols-2 gap-5">
               <div>
-                <label className="block text-sm font-semibold text-navy mb-1.5">{copy.name}</label>
+                <label htmlFor="contact-name" className="block text-sm font-semibold text-navy mb-1.5">{copy.name}</label>
                 <input
+                  id="contact-name"
+                  name="name"
                   type="text"
+                  autoComplete="name"
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -248,9 +251,12 @@ export default function ContactPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-navy mb-1.5">{copy.email} *</label>
+                <label htmlFor="contact-email" className="block text-sm font-semibold text-navy mb-1.5">{copy.email} *</label>
                 <input
+                  id="contact-email"
+                  name="email"
                   type="email"
+                  autoComplete="email"
                   required
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -261,9 +267,12 @@ export default function ContactPage() {
             </div>
             <div className="grid md:grid-cols-2 gap-5">
               <div>
-                <label className="block text-sm font-semibold text-navy mb-1.5">{copy.company}</label>
+                <label htmlFor="contact-company" className="block text-sm font-semibold text-navy mb-1.5">{copy.company}</label>
                 <input
+                  id="contact-company"
+                  name="company"
                   type="text"
+                  autoComplete="organization"
                   value={formData.company}
                   onChange={(e) => setFormData({ ...formData, company: e.target.value })}
                   className="w-full px-4 py-3 rounded-xl border border-navy/10 focus:outline-none focus:border-[#0071e3] focus:ring-2 focus:ring-[#0071e3]/20 text-sm"
@@ -271,8 +280,10 @@ export default function ContactPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-navy mb-1.5">{copy.subject}</label>
+                <label htmlFor="contact-subject" className="block text-sm font-semibold text-navy mb-1.5">{copy.subject}</label>
                 <select
+                  id="contact-subject"
+                  name="subject"
                   value={formData.subject}
                   onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
                   className="w-full px-4 py-3 rounded-xl border border-navy/10 focus:outline-none focus:border-[#0071e3] focus:ring-2 focus:ring-[#0071e3]/20 text-sm"
@@ -287,8 +298,10 @@ export default function ContactPage() {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-semibold text-navy mb-1.5">{copy.message}</label>
+              <label htmlFor="contact-message" className="block text-sm font-semibold text-navy mb-1.5">{copy.message}</label>
               <textarea
+                id="contact-message"
+                name="message"
                 required
                 value={formData.message}
                 onChange={(e) => setFormData({ ...formData, message: e.target.value })}

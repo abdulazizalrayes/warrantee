@@ -60,7 +60,7 @@ export default function SupportPage() {
   return (
     <div dir={isRTL ? "rtl" : "ltr"} className="min-h-screen bg-[#fbfbfd]">
       <Navbar locale={locale as Locale} dictionary={dictionary} />
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 py-12">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-12">
         {/* Header */}
         <div className="text-center mb-10">
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#0071e3]/10 mb-4">
@@ -119,9 +119,12 @@ export default function SupportPage() {
               )}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[13px] font-medium text-[#1d1d1f] mb-1.5">{isRTL ? tr("الاسم") : "Name"}</label>
+                  <label htmlFor="support-name" className="block text-[13px] font-medium text-[#1d1d1f] mb-1.5">{isRTL ? tr("الاسم") : "Name"}</label>
                   <input
+                    id="support-name"
+                    name="name"
                     type="text"
+                    autoComplete="name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     required
@@ -130,9 +133,12 @@ export default function SupportPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-[13px] font-medium text-[#1d1d1f] mb-1.5">{isRTL ? tr("البريد") : "Email"}</label>
+                  <label htmlFor="support-email" className="block text-[13px] font-medium text-[#1d1d1f] mb-1.5">{isRTL ? tr("البريد") : "Email"}</label>
                   <input
+                    id="support-email"
+                    name="email"
                     type="email"
+                    autoComplete="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
@@ -142,8 +148,10 @@ export default function SupportPage() {
                 </div>
               </div>
               <div>
-                <label className="block text-[13px] font-medium text-[#1d1d1f] mb-1.5">{isRTL ? tr("الموضوع") : "Subject"}</label>
+                <label htmlFor="support-subject" className="block text-[13px] font-medium text-[#1d1d1f] mb-1.5">{isRTL ? tr("الموضوع") : "Subject"}</label>
                 <input
+                  id="support-subject"
+                  name="subject"
                   type="text"
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
@@ -153,8 +161,10 @@ export default function SupportPage() {
                 />
               </div>
               <div>
-                <label className="block text-[13px] font-medium text-[#1d1d1f] mb-1.5">{isRTL ? tr("الرسالة") : "Message"}</label>
+                <label htmlFor="support-message" className="block text-[13px] font-medium text-[#1d1d1f] mb-1.5">{isRTL ? tr("الرسالة") : "Message"}</label>
                 <textarea
+                  id="support-message"
+                  name="message"
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   required
@@ -198,7 +208,7 @@ export default function SupportPage() {
             <ChevronRight className={"w-4 h-4 text-[#86868b] group-hover:text-[#30d158] transition-colors " + (isRTL ? "rotate-180" : "")} />
           </Link>
         </div>
-      </main>
+      </div>
       <Footer locale={locale as Locale} dictionary={dictionary} />
     </div>
   );

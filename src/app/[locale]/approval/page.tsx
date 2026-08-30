@@ -229,6 +229,7 @@ function ApprovalPageInner() {
   if (authLoading || loading) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center" dir={isRTL ? 'rtl' : 'ltr'}>
+        <h1 className="sr-only">{t.title}</h1>
         <div className="flex flex-col items-center gap-3">
           <div className="w-8 h-8 border-2 border-[#1A1A2E] border-t-transparent rounded-full animate-spin" />
           <p className="text-[15px] text-[#86868b]">{t.loading}</p>
@@ -240,6 +241,7 @@ function ApprovalPageInner() {
   if (!user) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center text-[#86868b]" dir={isRTL ? 'rtl' : 'ltr'}>
+        <h1 className="sr-only">{t.title}</h1>
         {t.loginRequired}
       </div>
     );

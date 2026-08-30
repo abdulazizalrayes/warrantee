@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { expect, test } from "@playwright/test";
-import { signInWithPassword, watchForPageErrors } from "./helpers";
+import { openDashboardNavigationOnMobile, signInWithPassword, watchForPageErrors } from "./helpers";
 
 const hasCredentials = Boolean(process.env.E2E_USER_EMAIL && process.env.E2E_USER_PASSWORD);
 const hasSupabaseAdmin = Boolean(
@@ -159,6 +159,7 @@ test.describe("authenticated core operating flows", () => {
         await expect(page.getByRole("heading", { name: /Admin|Overview/i }).first()).toBeVisible();
         await expect(page.getByRole("link", { name: /Back to Dashboard/i }).first()).toBeVisible();
       } else {
+        await openDashboardNavigationOnMobile(page);
         await expect(page.getByRole("link", { name: /^Dashboard$/i }).first()).toBeVisible();
         await expect(page.getByRole("link", { name: /^Warranties$/i }).first()).toBeVisible();
         await expect(page.getByRole("link", { name: /^Notifications$/i }).first()).toBeVisible();
@@ -175,6 +176,7 @@ test.describe("authenticated core operating flows", () => {
 
     await page.goto(`/en/warranties/${qaWarrantyId}`, { waitUntil: "domcontentloaded" });
     await expect(page.getByRole("heading", { name: /QA Authenticated Flow Warranty/i })).toBeVisible();
+    await openDashboardNavigationOnMobile(page);
     await expect(page.getByRole("link", { name: /Documents/i }).first()).toBeVisible();
 
     await page.goto(`/en/warranties/${qaWarrantyId}/claim`, { waitUntil: "domcontentloaded" });

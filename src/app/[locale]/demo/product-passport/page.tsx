@@ -54,7 +54,7 @@ export default async function DemoProductPassportPage({ params }: DemoPassportPa
   return (
     <div dir={isRTL ? "rtl" : "ltr"} className="min-h-screen bg-[#fbfbfd] text-[#1d1d1f]">
       <Navbar locale={locale} dictionary={dictionary} />
-      <main>
+      <div>
         <section className="px-4 pb-12 pt-24 sm:px-6">
           <div className="mx-auto max-w-[980px]">
             <div className="mb-8 inline-flex items-center gap-2 rounded-full bg-[#0071e3]/10 px-3 py-1 text-[13px] font-semibold text-[#0071e3]">
@@ -161,7 +161,7 @@ export default async function DemoProductPassportPage({ params }: DemoPassportPa
             </div>
           </div>
         </section>
-      </main>
+      </div>
       <Footer locale={locale} dictionary={dictionary} />
     </div>
   );

@@ -924,7 +924,7 @@ export default function AdminPage() {
               {/* Search */}
               <div className="hidden md:flex items-center bg-[#12122a] border border-[#2a2a4a] rounded-lg px-3 py-1.5">
                 <svg className="w-3.5 h-3.5 text-gray-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder={text.search}
+                <input aria-label={text.search} type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder={text.search}
                   className="bg-transparent text-xs text-gray-300 outline-none w-48 placeholder-gray-600" />
               </div>
 
@@ -985,7 +985,7 @@ export default function AdminPage() {
         </div>
 
         {/* ─── CONTENT AREA ─── */}
-        <main className="flex-1 min-w-0 p-4 lg:p-6">
+        <div className="flex-1 min-w-0 p-4 lg:p-6">
           <section className="mb-6 rounded-2xl border border-[#1a1a3a] bg-gradient-to-br from-[#0e0e20] via-[#12122a] to-[#171733] p-5 lg:p-6">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div className="space-y-3">
@@ -1706,6 +1706,7 @@ export default function AdminPage() {
                           </td>
                           <td className="px-4 py-3">
                             <select
+                              aria-label={locale === 'ar' ? 'مصدر التمديد' : 'Extension source'}
                               value={entry.policy?.source || 'none'}
                               onChange={e => updateExtensionPolicyField(entry.warranty.id, 'source', e.target.value)}
                               className="px-2 py-1.5 bg-[#12122a] border border-[#2a2a4a] rounded-lg text-xs text-gray-200 outline-none"
@@ -1719,6 +1720,7 @@ export default function AdminPage() {
                           </td>
                           <td className="px-4 py-3">
                             <select
+                              aria-label={locale === 'ar' ? 'حالة التمديد' : 'Extension status'}
                               value={entry.policy?.status || 'not_configured'}
                               onChange={e => updateExtensionPolicyField(entry.warranty.id, 'status', e.target.value)}
                               className="px-2 py-1.5 bg-[#12122a] border border-[#2a2a4a] rounded-lg text-xs text-gray-200 outline-none"
@@ -1732,12 +1734,14 @@ export default function AdminPage() {
                           <td className="px-4 py-3">
                             <div className="grid grid-cols-1 xl:grid-cols-2 gap-2 min-w-[360px]">
                               <input
+                                aria-label={locale === 'ar' ? 'اسم المزود' : 'Provider label'}
                                 value={entry.policy?.providerLabel || ''}
                                 onChange={e => updateExtensionPolicyField(entry.warranty.id, 'providerLabel', e.target.value)}
                                 placeholder={locale === 'ar' ? 'اسم المزود' : 'Provider label'}
                                 className="px-2 py-1.5 bg-[#12122a] border border-[#2a2a4a] rounded-lg text-xs text-gray-200 outline-none"
                               />
                               <input
+                                aria-label={locale === 'ar' ? 'بريد المزود' : 'Provider email'}
                                 value={entry.policy?.providerEmail || ''}
                                 onChange={e => updateExtensionPolicyField(entry.warranty.id, 'providerEmail', e.target.value)}
                                 placeholder={locale === 'ar' ? 'بريد المزود' : 'Provider email'}
@@ -1745,6 +1749,7 @@ export default function AdminPage() {
                                 dir="ltr"
                               />
                               <select
+                                aria-label={locale === 'ar' ? 'وضع التسعير' : 'Pricing mode'}
                                 value={entry.policy?.pricingMode || 'quote_required'}
                                 onChange={e => updateExtensionPolicyField(entry.warranty.id, 'pricingMode', e.target.value)}
                                 className="px-2 py-1.5 bg-[#12122a] border border-[#2a2a4a] rounded-lg text-xs text-gray-200 outline-none"
@@ -1754,6 +1759,7 @@ export default function AdminPage() {
                                 <option value="admin_review">Admin review</option>
                               </select>
                               <select
+                                aria-label={locale === 'ar' ? 'حالة الاكتتاب' : 'Underwriting status'}
                                 value={entry.policy?.underwritingStatus || 'not_started'}
                                 onChange={e => updateExtensionPolicyField(entry.warranty.id, 'underwritingStatus', e.target.value)}
                                 className="px-2 py-1.5 bg-[#12122a] border border-[#2a2a4a] rounded-lg text-xs text-gray-200 outline-none"
@@ -1764,6 +1770,7 @@ export default function AdminPage() {
                                 <option value="rejected">Underwriting rejected</option>
                               </select>
                               <input
+                                aria-label={locale === 'ar' ? 'السعر المعتمد' : 'Approved price'}
                                 type="number"
                                 min="0"
                                 value={entry.policy?.price || ''}
@@ -1772,12 +1779,14 @@ export default function AdminPage() {
                                 className="px-2 py-1.5 bg-[#12122a] border border-[#2a2a4a] rounded-lg text-xs text-gray-200 outline-none"
                               />
                               <input
+                                aria-label={locale === 'ar' ? 'العملة' : 'Currency'}
                                 value={entry.policy?.currency || ''}
                                 onChange={e => updateExtensionPolicyField(entry.warranty.id, 'currency', e.target.value)}
                                 placeholder={locale === 'ar' ? 'العملة' : 'Currency'}
                                 className="px-2 py-1.5 bg-[#12122a] border border-[#2a2a4a] rounded-lg text-xs text-gray-200 outline-none"
                               />
                               <input
+                                aria-label={locale === 'ar' ? 'مدة الخدمة بالساعات' : 'SLA hours'}
                                 type="number"
                                 min="1"
                                 value={entry.policy?.slaHours || ''}
@@ -1786,18 +1795,21 @@ export default function AdminPage() {
                                 className="px-2 py-1.5 bg-[#12122a] border border-[#2a2a4a] rounded-lg text-xs text-gray-200 outline-none"
                               />
                               <input
+                                aria-label={locale === 'ar' ? 'مرجع المزود' : 'Provider reference'}
                                 value={entry.policy?.providerReference || ''}
                                 onChange={e => updateExtensionPolicyField(entry.warranty.id, 'providerReference', e.target.value)}
                                 placeholder={locale === 'ar' ? 'مرجع المزود' : 'Provider reference'}
                                 className="px-2 py-1.5 bg-[#12122a] border border-[#2a2a4a] rounded-lg text-xs text-gray-200 outline-none"
                               />
                               <input
+                                aria-label={locale === 'ar' ? 'ملاحظات داخلية' : 'Internal notes'}
                                 value={entry.policy?.notes || ''}
                                 onChange={e => updateExtensionPolicyField(entry.warranty.id, 'notes', e.target.value)}
                                 placeholder={locale === 'ar' ? 'ملاحظات داخلية' : 'Internal notes'}
                                 className="xl:col-span-2 px-2 py-1.5 bg-[#12122a] border border-[#2a2a4a] rounded-lg text-xs text-gray-200 outline-none"
                               />
                               <input
+                                aria-label={locale === 'ar' ? 'شروط التغطية المعتمدة' : 'Approved coverage terms'}
                                 value={entry.policy?.coverageTerms || ''}
                                 onChange={e => updateExtensionPolicyField(entry.warranty.id, 'coverageTerms', e.target.value)}
                                 placeholder={locale === 'ar' ? 'شروط التغطية المعتمدة' : 'Approved coverage terms'}
@@ -1856,9 +1868,9 @@ export default function AdminPage() {
               <div className="bg-[#0e0e20] rounded-xl border border-[#1a1a3a] p-4 mb-4">
                 <p className="text-xs font-medium text-gray-400 mb-3">{text.addAdmin}</p>
                 <div className="flex gap-3 flex-wrap">
-                  <input type="email" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder={text.emailPlaceholder}
+                  <input aria-label={text.emailPlaceholder} type="email" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder={text.emailPlaceholder}
                     className="flex-1 min-w-[250px] px-4 py-2.5 bg-[#12122a] border border-[#2a2a4a] rounded-lg text-xs text-gray-200 outline-none focus:border-[#0071e3]/50" dir="ltr" />
-                  <select value={inviteRole} onChange={e => setInviteRole(e.target.value as any)}
+                  <select aria-label={text.role} value={inviteRole} onChange={e => setInviteRole(e.target.value as any)}
                     className="px-4 py-2.5 bg-[#12122a] border border-[#2a2a4a] rounded-lg text-xs text-gray-200 outline-none">
                     <option value="admin">{text.admin}</option>
                     <option value="support">{text.support}</option>
@@ -1954,7 +1966,7 @@ export default function AdminPage() {
             </div>
           )}
 
-        </main>
+        </div>
       </div>
     </div>
   );

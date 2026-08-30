@@ -346,6 +346,7 @@ function WarrantiesPageInner() {
           <div className="relative w-full sm:w-80">
             <Search className={`absolute top-1/2 -translate-y-1/2 w-4 h-4 text-[#86868b] ${isRTL ? 'right-3' : 'left-3'}`} />
             <input
+              aria-label={t.search}
               type="text"
               value={searchQuery}
               onChange={(event) => {

@@ -190,7 +190,7 @@ export default function ApiDocsPage() {
   return (
     <div className="min-h-screen bg-[#fbfbfd] text-[#1d1d1f]" dir={direction}>
       <Navbar locale={locale} dictionary={dictionary} />
-      <main className="mx-auto max-w-4xl overflow-hidden px-4 py-12 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-4xl overflow-hidden px-4 py-12 sm:px-6 lg:px-8">
         <div className="mb-8">
           <Link href={`/${locale}`} className="text-[#0071e3] hover:underline flex items-center gap-2 mb-2 text-sm">
             <ArrowLeft className="w-4 h-4" /> {t.back}
@@ -239,7 +239,12 @@ export default function ApiDocsPage() {
           </div>
           <div className="flex min-w-0 items-center gap-2 bg-gray-900 rounded-lg p-3">
             <code className="min-w-0 flex-1 overflow-x-auto text-sm text-green-400" dir="ltr">https://warrantee.io/api/v1</code>
-            <button onClick={() => copyText('https://warrantee.io/api/v1', 'baseUrl')}>
+            <button
+              type="button"
+              aria-label={copied === 'baseUrl' ? t.copied : (isRTL ? 'نسخ الرابط الأساسي' : 'Copy base URL')}
+              title={copied === 'baseUrl' ? t.copied : (isRTL ? 'نسخ الرابط الأساسي' : 'Copy base URL')}
+              onClick={() => copyText('https://warrantee.io/api/v1', 'baseUrl')}
+            >
               {copied === 'baseUrl' ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4 text-gray-400 hover:text-white" />}
             </button>
           </div>
@@ -375,7 +380,11 @@ export default function ApiDocsPage() {
           <div className="mt-8">
             <h4 className="font-medium text-gray-900 mb-3">Example Request</h4>
             <div className="relative min-w-0 overflow-hidden rounded-lg bg-gray-900 p-4">
-              <button onClick={() => copyText(`curl -X GET "https://warrantee.io/api/v1/warranties?page=1&limit=10" -H "x-api-key: YOUR_SERVER_INTEGRATION_TOKEN"`, 'example')}
+              <button
+                type="button"
+                aria-label={copied === 'example' ? t.copied : (isRTL ? 'نسخ مثال الطلب' : 'Copy example request')}
+                title={copied === 'example' ? t.copied : (isRTL ? 'نسخ مثال الطلب' : 'Copy example request')}
+                onClick={() => copyText(`curl -X GET "https://warrantee.io/api/v1/warranties?page=1&limit=10" -H "x-api-key: YOUR_SERVER_INTEGRATION_TOKEN"`, 'example')}
                 className="absolute right-3 top-3">
                 {copied === 'example' ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4 text-gray-400 hover:text-white" />}
               </button>
@@ -384,7 +393,7 @@ export default function ApiDocsPage() {
             </div>
           </div>
         </div>
-      </main>
+      </div>
       <Footer locale={locale} dictionary={dictionary} />
     </div>
   );

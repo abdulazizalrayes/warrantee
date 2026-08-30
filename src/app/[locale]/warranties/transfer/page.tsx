@@ -96,10 +96,10 @@ export default function TransferWarrantyPage({ params }: { params: Promise<{ loc
 
         <form onSubmit={handleTransfer} className="bg-white rounded-2xl shadow-sm border p-6 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="transfer-warranty" className="block text-sm font-medium text-gray-700 mb-1">
               {isAr ? tr("اختر الضمان") : "Select Warranty"}
             </label>
-            <select value={selectedWarranty} onChange={(e) => setSelectedWarranty(e.target.value)}
+            <select id="transfer-warranty" name="warrantyId" value={selectedWarranty} onChange={(e) => setSelectedWarranty(e.target.value)}
               className="w-full px-4 py-3 border border-gray-300 rounded-xl" required>
               <option value="">{isAr ? tr("-- اختر --") : "-- Select --"}</option>
               {warranties.map((w) => (
@@ -108,18 +108,18 @@ export default function TransferWarrantyPage({ params }: { params: Promise<{ loc
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="transfer-recipient-email" className="block text-sm font-medium text-gray-700 mb-1">
               {isAr ? tr("البريد الإلكتروني للمستلم") : "Recipient Email"}
             </label>
-            <input type="email" value={recipientEmail} onChange={(e) => setRecipientEmail(e.target.value)}
+            <input id="transfer-recipient-email" name="recipientEmail" autoComplete="email" type="email" value={recipientEmail} onChange={(e) => setRecipientEmail(e.target.value)}
               className="w-full px-4 py-3 border border-gray-300 rounded-xl" required
               placeholder={isAr ? "email@example.com" : "email@example.com"} />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="transfer-reason" className="block text-sm font-medium text-gray-700 mb-1">
               {isAr ? tr("سبب النقل (اختياري)") : "Transfer Reason (optional)"}
             </label>
-            <textarea value={reason} onChange={(e) => setReason(e.target.value)}
+            <textarea id="transfer-reason" name="reason" value={reason} onChange={(e) => setReason(e.target.value)}
               className="w-full px-4 py-3 border border-gray-300 rounded-xl" rows={3}
               placeholder={isAr ? tr("سبب نقل الضمان...") : "Reason for transfer..."} />
           </div>

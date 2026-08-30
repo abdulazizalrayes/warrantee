@@ -97,8 +97,8 @@ export default function SellerInvitePage() {
       <form onSubmit={handleSubmit} className="space-y-4">
         {[["name", isRTL ? "\u0627\u0644\u0627\u0633\u0645" : "Name"], ["email", isRTL ? "\u0627\u0644\u0628\u0631\u064a\u062f" : "Email"], ["cr_number", isRTL ? "\u0631\u0642\u0645 \u0627\u0644\u0633\u062c\u0644" : "CR Number"], ["industry", isRTL ? "\u0627\u0644\u0635\u0646\u0627\u0639\u0629" : "Industry"], ["contact_person", isRTL ? "\u0634\u062e\u0635 \u0627\u0644\u062a\u0648\u0627\u0635\u0644" : "Contact Person"], ["phone", isRTL ? "\u0627\u0644\u0647\u0627\u062a\u0641" : "Phone"]].map(([key, label]) => (
           <div key={key}>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
-            <input type={key === "email" ? "email" : "text"} required={key === "name" || key === "email"} value={form[key as keyof typeof form]} onChange={e => setForm(prev => ({ ...prev, [key]: e.target.value }))} className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#0071e3]/30 focus:border-[#0071e3] outline-none" />
+            <label htmlFor={`seller-${key}`} className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+            <input id={`seller-${key}`} name={key} autoComplete={key === "email" ? "email" : key === "phone" ? "tel" : undefined} type={key === "email" ? "email" : key === "phone" ? "tel" : "text"} required={key === "name" || key === "email"} value={form[key as keyof typeof form]} onChange={e => setForm(prev => ({ ...prev, [key]: e.target.value }))} className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#0071e3]/30 focus:border-[#0071e3] outline-none" />
           </div>
         ))}
         {error && <p role="alert" className="text-sm text-red-600">{error}</p>}

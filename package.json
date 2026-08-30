@@ -37,6 +37,7 @@
     "qa:agent-markdown": "node scripts/check-agent-markdown.mjs",
     "qa:agent-markdown:local": "node scripts/run-agent-markdown-local-gate.mjs",
     "qa:html-preservation": "node scripts/check-html-preservation.mjs",
+    "qa:frontend-budget": "node scripts/check-frontend-performance-budget.mjs",
     "qa:growth-readiness": "node scripts/check-growth-readiness.mjs",
     "crm:reconcile": "node scripts/reconcile-twenty-leads.mjs",
     "qa:full-local": "node scripts/run-local-full-qa.mjs",
