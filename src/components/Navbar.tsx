@@ -35,7 +35,7 @@ export function Navbar({ locale, dictionary }: NavbarProps) {
             <span className="text-[#0071e3]">.</span>
           </Link>
 
-          <div className={`hidden md:flex items-center gap-1 ${isRTL ? 'flex-row-reverse' : ''}`}>
+          <div className={`hidden lg:flex items-center gap-1 ${isRTL ? 'flex-row-reverse' : ''}`}>
             {navLinks.map((link) => (
               <Link
                 key={link.href}
@@ -47,7 +47,7 @@ export function Navbar({ locale, dictionary }: NavbarProps) {
             ))}
           </div>
 
-          <div className={`hidden md:flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
+          <div className={`hidden lg:flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
             <LanguageToggle currentLocale={locale} variant="text" />
             <Link
               href={`/${locale}/login`}
@@ -65,7 +65,7 @@ export function Navbar({ locale, dictionary }: NavbarProps) {
             </Link>
           </div>
 
-          <div className="md:hidden flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 lg:hidden">
             <Link
               href={`/${locale}/auth?tab=signup`}
               prefetch={false}
@@ -86,7 +86,7 @@ export function Navbar({ locale, dictionary }: NavbarProps) {
         </div>
 
         {isOpen && (
-          <div className={`md:hidden pb-4 space-y-2 ${isRTL ? 'text-right' : ''}`}>
+          <div className={`space-y-2 pb-4 lg:hidden ${isRTL ? 'text-right' : ''}`}>
             {navLinks.map((link) => (
               <Link
                 key={link.href}

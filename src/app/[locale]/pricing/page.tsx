@@ -113,6 +113,7 @@ export default function PricingPage() {
     return (
       <div
         key={plan.id}
+        data-testid={`pricing-card-${plan.id}`}
         className={`relative h-full overflow-hidden rounded-2xl ring-1 shadow-sm transition-all duration-200 hover:shadow-md ${
           plan.featured
             ? "bg-white ring-2 ring-[#0071e3]"
@@ -126,7 +127,7 @@ export default function PricingPage() {
             {isRTL ? "وصول تجريبي" : "Pilot access"}
           </div>
         )}
-        <div className="p-6">
+        <div className="flex h-full flex-col p-6">
           <div className={`mb-4 flex h-10 w-10 items-center justify-center rounded-xl ${plan.iconBg}`}>
             <Icon className={`h-5 w-5 ${plan.iconColor}`} aria-hidden="true" />
           </div>
@@ -162,7 +163,7 @@ export default function PricingPage() {
             )}
           </div>
 
-          <ul className="mb-6 space-y-2.5">
+          <ul className="mb-6 flex-1 space-y-2.5">
             {features.map((feature: string) => (
               <li key={feature} className="flex items-start gap-2.5 text-[14px] text-[#1d1d1f]">
                 <div className="mt-0.5 flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full bg-[#30d158]/10">
@@ -202,7 +203,7 @@ export default function PricingPage() {
       <PageViewTracker pageName="pricing" pageType="marketing" locale={locale} />
       <Navbar locale={locale} dictionary={dictionary} />
       <PublicBreadcrumbs locale={locale} includeJsonLd={false} />
-      <main className="mx-auto max-w-5xl px-6 py-16 sm:py-20">
+      <main className="mx-auto w-full max-w-[1504px] px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
         {/* Header */}
         <div className="text-center mb-16">
           <h1 className="text-[40px] sm:text-[48px] font-semibold tracking-tight text-[#1d1d1f]">
@@ -221,8 +222,8 @@ export default function PricingPage() {
         </div>
 
         {/* Account families */}
-        <div className="grid gap-10 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,3fr)] xl:gap-8">
-          <section aria-labelledby="personal-plans-heading">
+        <div className="grid items-start gap-10 xl:grid-cols-[minmax(260px,1fr)_minmax(0,3fr)] xl:gap-8">
+          <section aria-labelledby="personal-plans-heading" data-testid="pricing-personal-plan-group">
             <div className="flex items-center gap-2 border-t-2 border-[#0f766e] pt-4 text-[#0f766e]">
               <UserRound className="h-4 w-4" aria-hidden="true" />
               <h2 id="personal-plans-heading" className="text-[13px] font-semibold uppercase">
@@ -235,7 +236,7 @@ export default function PricingPage() {
             {plans.filter((plan) => plan.account === "consumer").map(renderPlanCard)}
           </section>
 
-          <section aria-labelledby="business-plans-heading">
+          <section aria-labelledby="business-plans-heading" data-testid="pricing-business-plan-group">
             <div className="flex items-center gap-2 border-t-2 border-[#0071e3] pt-4 text-[#0071e3]">
               <Building2 className="h-4 w-4" aria-hidden="true" />
               <h2 id="business-plans-heading" className="text-[13px] font-semibold uppercase">
@@ -245,7 +246,7 @@ export default function PricingPage() {
             <p className="mb-4 mt-2 text-[13px] leading-5 text-[#6e6e73]">
               {isRTL ? "لإصدار ضمانات العملاء وإدارة الفريق." : "For issuing customer warranties and managing a team."}
             </p>
-            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid items-stretch gap-5 md:grid-cols-2 xl:grid-cols-3">
               {plans.filter((plan) => plan.account === "business").map(renderPlanCard)}
             </div>
           </section>

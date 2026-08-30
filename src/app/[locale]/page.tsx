@@ -120,7 +120,7 @@ export default async function HomePage({ params }: HomePageProps) {
       ];
 
   const renderPricingPlan = (plan: (typeof pricing)[number]) => (
-    <article key={plan.id} className="flex h-full flex-col py-6 lg:px-7">
+    <article key={plan.id} className="flex h-full min-h-0 flex-col px-5 py-6 lg:px-6">
       <h3 className="text-[19px] font-semibold text-[#1d1d1f]">{plan.name}</h3>
       <p className="mt-3 text-[24px] font-semibold tracking-tight text-[#1d1d1f]">{plan.price}</p>
       {plan.secondaryPrice && <p className="mt-1 text-[12px] font-medium text-[#6e6e73]">{plan.secondaryPrice}</p>}
@@ -288,7 +288,7 @@ export default async function HomePage({ params }: HomePageProps) {
         </section>
 
         <section id="pricing" className="px-4 py-20 sm:px-6 sm:py-24">
-          <div className="mx-auto max-w-[1080px]">
+          <div className="mx-auto max-w-[1440px]">
             <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
               <div className="max-w-[680px]">
                 <p className="brand-eyebrow">{isRTL ? "تسعير واضح" : "Clear pricing"}</p>
@@ -307,9 +307,13 @@ export default async function HomePage({ params }: HomePageProps) {
               </TrackedLink>
             </div>
 
-            <div className="mt-12 grid gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,3fr)] lg:gap-8">
-              <section aria-labelledby="home-personal-plans" className="border-t-2 border-[#0f766e] bg-[#f0fdfa] px-5">
-                <div className="flex items-center gap-2 pt-5 text-[#0f766e]">
+            <div className="mt-12 grid items-stretch gap-10 lg:grid-cols-[minmax(240px,1fr)_minmax(0,3fr)] lg:gap-8">
+              <section
+                aria-labelledby="home-personal-plans"
+                data-testid="home-personal-plan-group"
+                className="grid h-full grid-rows-[auto_minmax(0,1fr)] border-t-2 border-[#0f766e] bg-[#f0fdfa]"
+              >
+                <div className="flex items-center gap-2 px-5 pt-5 text-[#0f766e]">
                   <UserRound className="h-4 w-4" aria-hidden="true" />
                   <h3 id="home-personal-plans" className="text-[12px] font-semibold uppercase">
                     {isRTL ? "للأفراد" : "Personal"}
@@ -318,14 +322,18 @@ export default async function HomePage({ params }: HomePageProps) {
                 {pricing.filter((plan) => plan.audience === "personal").map(renderPricingPlan)}
               </section>
 
-              <section aria-labelledby="home-business-plans" className="border-t-2 border-[#0071e3]">
-                <div className="flex items-center gap-2 pt-5 text-[#0071e3]">
+              <section
+                aria-labelledby="home-business-plans"
+                data-testid="home-business-plan-group"
+                className="grid h-full grid-rows-[auto_minmax(0,1fr)] border-t-2 border-[#0071e3]"
+              >
+                <div className="flex items-center gap-2 px-5 pt-5 text-[#0071e3]">
                   <Building2 className="h-4 w-4" aria-hidden="true" />
                   <h3 id="home-business-plans" className="text-[12px] font-semibold uppercase">
                     {isRTL ? "للأعمال" : "Business"}
                   </h3>
                 </div>
-                <div className="mt-1 divide-y divide-black/[0.08] lg:grid lg:grid-cols-3 lg:divide-x lg:divide-y-0 rtl:lg:divide-x-reverse">
+                <div className="mt-1 h-full divide-y divide-black/[0.08] lg:grid lg:grid-cols-3 lg:divide-x lg:divide-y-0 rtl:lg:divide-x-reverse">
                   {pricing.filter((plan) => plan.audience === "business").map(renderPricingPlan)}
                 </div>
               </section>

@@ -55,4 +55,67 @@ test.describe("public experience", () => {
     await page.getByRole("button", { name: "Request pilot access" }).click();
     await expect(page).toHaveURL(/\/en\/contact\?intent=professional-access$/);
   });
+
+  for (const locale of ["en", "ar"]) {
+    test(`${locale} pricing uses wide displays without plan overlap`, async ({ page }) => {
+      await page.setViewportSize({ width: 1920, height: 1080 });
+
+      await expectHealthyPage(page, `/${locale}`);
+      const homeGeometry = await page.evaluate(() => {
+        const personal = document.querySelector<HTMLElement>('[data-testid="home-personal-plan-group"]');
+        const business = document.querySelector<HTMLElement>('[data-testid="home-business-plan-group"]');
+        const personalCta = personal?.querySelector<HTMLElement>("a");
+        if (!personal || !business || !personalCta) return null;
+        return {
+          viewportWidth: document.documentElement.clientWidth,
+          personal: personal.getBoundingClientRect().toJSON(),
+          business: business.getBoundingClientRect().toJSON(),
+          personalCta: personalCta.getBoundingClientRect().toJSON(),
+        };
+      });
+
+      expect(homeGeometry).not.toBeNull();
+      const home = homeGeometry!;
+      const homeCombinedWidth = Math.max(home.personal.right, home.business.right)
+        - Math.min(home.personal.left, home.business.left);
+      expect(homeCombinedWidth / home.viewportWidth).toBeGreaterThanOrEqual(0.72);
+      expect(home.personalCta.bottom).toBeLessThanOrEqual(home.personal.bottom + 1);
+      expect(home.personalCta.left).toBeGreaterThanOrEqual(home.personal.left - 1);
+      expect(home.personalCta.right).toBeLessThanOrEqual(home.personal.right + 1);
+      expect(
+        home.personal.right <= home.business.left + 1 || home.business.right <= home.personal.left + 1,
+      ).toBe(true);
+
+      await expectHealthyPage(page, `/${locale}/pricing`);
+      const pricingGeometry = await page.evaluate(() => {
+        const personal = document.querySelector<HTMLElement>('[data-testid="pricing-personal-plan-group"]');
+        const business = document.querySelector<HTMLElement>('[data-testid="pricing-business-plan-group"]');
+        if (!personal || !business) return null;
+        return {
+          viewportWidth: document.documentElement.clientWidth,
+          personal: personal.getBoundingClientRect().toJSON(),
+          business: business.getBoundingClientRect().toJSON(),
+        };
+      });
+
+      expect(pricingGeometry).not.toBeNull();
+      const pricing = pricingGeometry!;
+      const pricingCombinedWidth = Math.max(pricing.personal.right, pricing.business.right)
+        - Math.min(pricing.personal.left, pricing.business.left);
+      expect(pricingCombinedWidth / pricing.viewportWidth).toBeGreaterThanOrEqual(0.72);
+      expect(
+        pricing.personal.right <= pricing.business.left + 1
+          || pricing.business.right <= pricing.personal.left + 1,
+      ).toBe(true);
+
+      await page.setViewportSize({ width: 768, height: 1024 });
+      for (const path of [`/${locale}`, `/${locale}/pricing`]) {
+        await expectHealthyPage(page, path);
+        const horizontalOverflow = await page.evaluate(
+          () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        );
+        expect(horizontalOverflow, `${path} should fit the tablet breakpoint`).toBeLessThanOrEqual(1);
+      }
+    });
+  }
 });
