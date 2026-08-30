@@ -1,6 +1,6 @@
 {
   "projectRef": "erptubrslnfmkuouczgn",
-  "verifiedAt": "2026-08-23",
+  "verifiedAt": "2026-08-30",
   "migrations": [
     {
       "file": "20260324094041_create_contact_submissions.sql",
@@ -330,6 +330,16 @@
     {
       "file": "20260830151500_harden_business_onboarding_rpc.sql",
       "sha256": "a1b0afb11a73432b5aafeb3c6d9dcbf0d3d5ea529b86992366445370d7edce28",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260830200356_agent_concierge_questions.sql",
+      "sha256": "e5219a9b1d9a58885e10fbdacde3c9c16b6b72f91f8bc7a702fdec2d175ffb82",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260830203311_agent_concierge_explicit_deny_policy.sql",
+      "sha256": "95ff2a98975c6631ede7990fe4693028881f9d3cf3ded73ff236aa7c76f04589",
       "productionState": "applied"
     }
   ]

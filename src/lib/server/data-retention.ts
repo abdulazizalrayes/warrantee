@@ -4,6 +4,7 @@ const DEFAULT_INGESTION_PAYLOAD_DAYS = 90;
 const DEFAULT_OCR_TEXT_DAYS = 90;
 const DEFAULT_API_USAGE_DAYS = 400;
 const DEFAULT_WEBHOOK_EVENT_DAYS = 400;
+const DEFAULT_AGENT_QUESTION_DAYS = 180;
 const DEFAULT_LIMIT = 250;
 const MAX_LIMIT = 1000;
 
@@ -33,6 +34,12 @@ export function getDataRetentionConfig() {
       30,
       3650
     ),
+    agentQuestionDays: boundedInteger(
+      process.env.DATA_RETENTION_AGENT_QUESTION_DAYS,
+      DEFAULT_AGENT_QUESTION_DAYS,
+      30,
+      3650
+    ),
     limit: boundedInteger(process.env.DATA_RETENTION_BATCH_LIMIT, DEFAULT_LIMIT, 1, MAX_LIMIT),
   };
 }
@@ -46,6 +53,7 @@ export async function runOperationalDataRetention() {
   const ocrTextCutoff = daysAgoIso(config.ocrTextDays);
   const apiUsageCutoff = daysAgoIso(config.apiUsageDays);
   const webhookEventCutoff = daysAgoIso(config.webhookEventDays);
+  const agentQuestionCutoff = daysAgoIso(config.agentQuestionDays);
 
   const { data: ingestionJobs, error: ingestionSelectError } = await supabase
     .from("ingestion_jobs")
@@ -133,6 +141,24 @@ export async function runOperationalDataRetention() {
     if (webhookEventDeleteError) throw webhookEventDeleteError;
   }
 
+  const { data: agentQuestions, error: agentQuestionSelectError } = await supabase
+    .from("agent_concierge_questions")
+    .select("id")
+    .lt("created_at", agentQuestionCutoff)
+    .limit(config.limit);
+
+  if (agentQuestionSelectError) throw agentQuestionSelectError;
+
+  const agentQuestionIds = (agentQuestions || []).map((item) => item.id);
+  if (agentQuestionIds.length > 0) {
+    const { error: agentQuestionDeleteError } = await supabase
+      .from("agent_concierge_questions")
+      .delete()
+      .in("id", agentQuestionIds);
+
+    if (agentQuestionDeleteError) throw agentQuestionDeleteError;
+  }
+
   return {
     status: "ok",
     config,
@@ -141,6 +167,7 @@ export async function runOperationalDataRetention() {
       ocrTextCutoff,
       apiUsageCutoff,
       webhookEventCutoff,
+      agentQuestionCutoff,
     },
     redacted: {
       ingestionPayloads: ingestionJobIds.length,
@@ -149,6 +176,7 @@ export async function runOperationalDataRetention() {
     deleted: {
       apiUsageEvents: apiUsageEventIds.length,
       webhookEvents: webhookEventIds.length,
+      agentQuestions: agentQuestionIds.length,
     },
   };
 }

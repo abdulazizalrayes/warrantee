@@ -48,6 +48,8 @@ ${listPublicResourceLinks().map((resource) => `- ${resource.name}: ${resource.ur
 - MCP card: ${BASE_URL}/.well-known/mcp.json
 - MCP server card collection: ${BASE_URL}/.well-known/mcp/server-cards.json
 - Hosted MCP endpoint: ${BASE_URL}/api/mcp
+- Public read-only Agent Concierge: ${BASE_URL}/api/agent-concierge
+- A2A 1.0 agent endpoint: ${BASE_URL}/api/a2a
 - Auth guide: ${BASE_URL}/auth.md
 - OAuth protected-resource metadata: ${BASE_URL}/.well-known/oauth-protected-resource/api
 
@@ -65,6 +67,8 @@ ${listPublicResourceLinks().map((resource) => `- ${resource.name}: ${resource.ur
 - Account dashboards, warranty records, claims, billing, settings, seller workspaces, admin pages, and private APIs require authentication.
 - API / CLI / MCP account actions require a signed-in user to generate a scoped integration token. Do not ask users for Warrantee usernames or passwords.
 - Agents may prepare inquiry drafts but must not submit forms, send emails, upload files, or contact Warrantee without explicit user approval.
+- The public Agent Concierge answers deterministic questions from cited public sources. It has no language-model inference, private account access, submission, contact, or purchase capability.
+- Concierge questions are redacted before storage for aggregate service improvement. No IP address, raw user-agent, credentials, private warranty data, or full request body is retained.
 `;
 }
 
@@ -93,6 +97,14 @@ ${capabilitiesData.futureReadiness.map((capability) => `- ${capability}`).join("
 - Careers, internships, training requests, vendor pitches, backlink outreach, spam, retail shopping, and unrelated product-support requests are not project/enterprise inquiries.
 - Use /data/agent-routing.json and /data/project-inquiry-schema.json before preparing an inquiry.
 - Prepare only. Ask for explicit approval before submitting anything.
+
+## Public Agent Concierge
+
+- HTTP: POST ${BASE_URL}/api/agent-concierge with JSON {"question":"...","locale":"en|ar"}.
+- MCP: call the public \`ask_warrantee\` tool on ${BASE_URL}/api/mcp.
+- A2A: use the HTTP+JSON interface at ${BASE_URL}/api/a2a and POST a ROLE_USER message to /api/a2a/message:send with A2A-Version: 1.0.
+- All three surfaces use the same deterministic answer engine and public sources.
+- The owner can review privacy-redacted questions, repeated themes, partial answers, and improvement tags through an authenticated admin report.
 
 ## Security Notes For Agents
 

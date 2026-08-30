@@ -66,12 +66,48 @@ test.describe("SEO and agent-readiness endpoints", () => {
     expect(openapiJson.paths["/.well-known/ai-catalog.json"]).toBeTruthy();
     expect(openapiJson.paths["/.well-known/oauth-protected-resource/api"]).toBeTruthy();
     expect(openapiJson.paths["/api/mcp"]).toBeTruthy();
+    expect(openapiJson.paths["/api/agent-concierge"]).toBeTruthy();
+    expect(openapiJson.paths["/api/a2a"]).toBeTruthy();
+    expect(openapiJson.paths["/api/a2a/message:send"]).toBeTruthy();
     expect(openapiJson.paths["/.well-known/http-message-signatures-directory"]).toBeTruthy();
     expect(openapiJson.paths["/.well-known/acp.json"]).toBeTruthy();
     expect(openapiJson.paths["/.well-known/ucp"]).toBeTruthy();
 
     const authGuide = await request.get("/auth.md");
     expect(await authGuide.text()).toContain("# auth.md - Warrantee API / CLI / MCP Authentication");
+
+    const agentCard = await request.get("/.well-known/agent-card.json");
+    const agentCardJson = await agentCard.json();
+    expect(agentCardJson.supportedInterfaces[0]).toMatchObject({
+      url: "https://warrantee.io/api/a2a",
+      protocolBinding: "HTTP+JSON",
+      protocolVersion: "1.0",
+    });
+
+    const concierge = await request.post("/api/agent-concierge", {
+      data: { question: "How does Warrantee MCP work without a password?", locale: "en" },
+      headers: { "user-agent": "warrantee-agent-readiness-check/1.0" },
+    });
+    expect(concierge.status()).toBe(200);
+    const conciergeJson = await concierge.json();
+    expect(conciergeJson.intent).toBe("api_cli_mcp_integration");
+    expect(conciergeJson.boundaries.readOnly).toBe(true);
+
+    const a2a = await request.post("/api/a2a/message:send", {
+      headers: {
+        "A2A-Version": "1.0",
+        "user-agent": "warrantee-agent-readiness-check/1.0",
+      },
+      data: {
+        message: {
+          messageId: "e2e-agent-question",
+          role: "ROLE_USER",
+          parts: [{ text: "Which plan is for a small business?" }],
+        },
+      },
+    });
+    expect(a2a.status()).toBe(200);
+    expect((await a2a.json()).message.role).toBe("ROLE_AGENT");
 
     const aiCatalog = await request.get("/.well-known/ai-catalog.json");
     expect(aiCatalog.headers()["content-type"]).toContain("application/ai-catalog+json");

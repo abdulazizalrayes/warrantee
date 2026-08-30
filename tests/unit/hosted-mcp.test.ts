@@ -57,6 +57,29 @@ describe("hosted Warrantee MCP endpoint", () => {
     expect(toolsBody.result.tools.map((tool: { name: string }) => tool.name)).toContain(
       "get_company_overview"
     );
+    expect(toolsBody.result.tools.map((tool: { name: string }) => tool.name)).toContain(
+      "ask_warrantee"
+    );
+  });
+
+  it("answers public concierge questions through MCP without credentials", async () => {
+    const response = await POST(
+      mcpRequest({
+        jsonrpc: "2.0",
+        id: 6,
+        method: "tools/call",
+        params: {
+          name: "ask_warrantee",
+          arguments: { question: "Which plan is for a small business?", locale: "en" },
+        },
+      }),
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.result.isError).toBe(false);
+    expect(body.result.content[0].text).toContain("plans_and_pricing");
+    expect(body.result.content[0].text).toContain("first 100 customer warranties");
   });
 
   it("allows public discovery tools and resources without an API key", async () => {

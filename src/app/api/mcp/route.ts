@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { apiJson } from "@/lib/api-response";
 import { getClientIp, getRateLimitHeaders, rateLimit } from "@/lib/rate-limit";
 import { logAgentUsage } from "@/lib/server/agent-usage-logger";
+import { answerAgentQuestion } from "@/lib/agent-concierge";
+import { recordAgentQuestion } from "@/lib/server/agent-question-recorder";
 
 type JsonRpcMessage = {
   id?: string | number | null;
@@ -16,6 +18,7 @@ type McpModule = {
       env?: Record<string, string | undefined>;
       fetchImpl?: typeof fetch;
       logAgentUsage?: (event: string, metadata?: Record<string, unknown>) => void;
+      askAgentConcierge?: (question: string, locale?: string) => Promise<unknown>;
     }
   ) => Promise<unknown>;
 };
@@ -141,6 +144,21 @@ export async function POST(request: NextRequest) {
     fetchImpl: fetch,
     logAgentUsage: (event: string, metadata: Record<string, unknown> = {}) => {
       logAgentUsage(request, event as Parameters<typeof logAgentUsage>[1], metadata);
+    },
+    askAgentConcierge: async (question: string, locale?: string) => {
+      const result = answerAgentQuestion(question, locale);
+      await recordAgentQuestion({
+        question,
+        result,
+        source: "mcp",
+        userAgent: request.headers.get("user-agent"),
+      });
+      logAgentUsage(request, "agent_question", {
+        protocol: "mcp",
+        intent: result.intent,
+        answer_status: result.answerStatus,
+      });
+      return result;
     },
   });
 

@@ -33,6 +33,33 @@ function toolModule(path: string) {
 }
 
 describe("Warrantee CLI and MCP", () => {
+  it("uses the public concierge endpoint for stdio MCP questions", async () => {
+    const calls: FetchCall[] = [];
+    const { callTool } = await import(toolModule("mcp-server.mjs"));
+    const result = await callTool(
+      "ask_warrantee",
+      { question: "How does API access work?", locale: "en" },
+      {
+        env: { WARRANTEE_BASE_URL: "https://warrantee.io" },
+        fetchImpl: mockFetch(
+          {
+            intent: "api_cli_mcp_integration",
+            answer: "Use a scoped token, not a password.",
+          },
+          calls,
+        ),
+      },
+    );
+
+    expect(result.intent).toBe("api_cli_mcp_integration");
+    expect(calls[0]?.url).toBe("https://warrantee.io/api/agent-concierge");
+    expect(JSON.parse(String(calls[0]?.init.body))).toMatchObject({
+      question: "How does API access work?",
+      locale: "en",
+      source: "mcp",
+    });
+  });
+
   it("reports the CLI version without network access", async () => {
     const stdout: string[] = [];
     const { runCli } = await import(toolModule("cli.mjs"));

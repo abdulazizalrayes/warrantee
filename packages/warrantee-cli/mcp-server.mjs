@@ -269,6 +269,20 @@ const authProperties = {
 
 export const tools = [
   {
+    name: "ask_warrantee",
+    title: "Ask Warrantee Agent Concierge",
+    description:
+      "Ask a public read-only question about Warrantee plans, services, warranty workflows, integrations, security, markets, or product fit. Answers use verified public sources, record a privacy-redacted question for service improvement, and never access private accounts or submit actions.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        question: { type: "string", minLength: 1, maxLength: 2000 },
+        locale: { type: "string", enum: ["en", "ar"] },
+      },
+      required: ["question"],
+    },
+  },
+  {
     name: "get_company_overview",
     title: "Get company overview",
     description: "Read Warrantee public company overview without private account data.",
@@ -482,6 +496,37 @@ export async function callTool(name, args = {}, context = {}) {
   context.logAgentUsage?.("mcp_tool_call", { tool: name });
 
   switch (name) {
+    case "ask_warrantee": {
+      const question = requireString(args, "question");
+      if (question.length > 2000) {
+        throw new WarranteeApiError("question must be 2000 characters or fewer");
+      }
+      const locale = optionalString(args, "locale");
+      if (locale && !["en", "ar"].includes(locale)) {
+        throw new WarranteeApiError("locale must be en or ar");
+      }
+      if (typeof context.askAgentConcierge === "function") {
+        return context.askAgentConcierge(question, locale);
+      }
+
+      const baseUrl = String(options.baseUrl || BASE_URL).replace(/\/+$/, "");
+      const response = await options.fetchImpl(`${baseUrl}/api/agent-concierge`, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ question, locale, source: "mcp" }),
+      });
+      const body = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new WarranteeApiError(
+          body?.error || `Warrantee Agent Concierge failed with status ${response.status}`,
+          { status: response.status, body },
+        );
+      }
+      return body;
+    }
     case "get_company_overview":
       return publicData["company.json"];
     case "list_services":

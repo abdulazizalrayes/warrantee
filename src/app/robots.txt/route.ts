@@ -4,6 +4,8 @@ import { CONTENT_SIGNAL_HEADER } from "@/lib/agent-content-policy";
 const ROBOTS_TXT = `User-Agent: *
 Allow: /
 Allow: /api/mcp
+Allow: /api/agent-concierge
+Allow: /api/a2a
 Allow: /api/health
 Disallow: /api/
 Content-Signal: ${CONTENT_SIGNAL_HEADER}
@@ -11,18 +13,24 @@ Content-Signal: ${CONTENT_SIGNAL_HEADER}
 User-Agent: GPTBot
 Allow: /
 Allow: /api/mcp
+Allow: /api/agent-concierge
+Allow: /api/a2a
 Disallow: /api/
 Content-Signal: ${CONTENT_SIGNAL_HEADER}
 
 User-Agent: Google-Extended
 Allow: /
 Allow: /api/mcp
+Allow: /api/agent-concierge
+Allow: /api/a2a
 Disallow: /api/
 Content-Signal: ${CONTENT_SIGNAL_HEADER}
 
 User-Agent: anthropic-ai
 Allow: /
 Allow: /api/mcp
+Allow: /api/agent-concierge
+Allow: /api/a2a
 Disallow: /api/
 Content-Signal: ${CONTENT_SIGNAL_HEADER}
 

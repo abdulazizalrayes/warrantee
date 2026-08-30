@@ -28,11 +28,19 @@ const catalog = {
     },
     {
       identifier: "urn:air:warrantee.io:agent:public-card",
-      displayName: "Warrantee Agent Card",
+      displayName: "Warrantee A2A Agent Card",
       type: "application/agent-card+json",
       url: `${BASE_URL}/.well-known/agent-card.json`,
       description:
-        "Generic discovery card describing Warrantee's public and authenticated agent capabilities.",
+        "A2A 1.0 discovery card for the synchronous public read-only Warrantee Agent Concierge.",
+    },
+    {
+      identifier: "urn:air:warrantee.io:a2a:concierge",
+      displayName: "Warrantee A2A Concierge",
+      type: "application/json",
+      url: `${BASE_URL}/api/a2a`,
+      description:
+        "A2A 1.0 HTTP+JSON endpoint for deterministic public questions. It has no task, streaming, push, submission, purchase, or private-account capability.",
     },
     {
       identifier: "urn:air:warrantee.io:api:openapi",

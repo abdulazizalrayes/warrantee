@@ -38,12 +38,24 @@ MCP:
 
 - Hosted endpoint: `/api/mcp`
 - Public read-only tools:
+  - `ask_warrantee`
   - `get_company_overview`
   - `list_services`
   - `match_project_scope`
   - `prepare_project_inquiry`
   - `list_service_areas`
   - `read_public_resource`
+
+Agent Concierge and A2A:
+
+- Public HTTP contract and endpoint: `/api/agent-concierge`
+- A2A 1.0 HTTP+JSON interface: `/api/a2a`
+- A2A synchronous send endpoint: `/api/a2a/message:send`
+- Protected owner report: `/api/admin/agent-concierge/questions`
+- Shared deterministic answer engine: `src/lib/agent-concierge.ts`
+- Privacy redaction: `src/lib/agent-question-privacy.ts`
+- Server-side recording: `src/lib/server/agent-question-recorder.ts`
+- Question ledger migration: `supabase/migrations/20260830200356_agent_concierge_questions.sql`
 
 ## Warrantee-Specific Adaptation
 
@@ -77,6 +89,9 @@ Agents must route these away from enterprise or seller inquiry forms:
 - Use scoped integration tokens from Settings > API / CLI / MCP.
 - Agents may prepare inquiry drafts only.
 - Agents must not submit forms, send emails, upload files, or contact Warrantee unless the user explicitly approves the exact action.
+- The Agent Concierge is public and read-only. It has no model inference, private account access, task execution, form submission, contact, upload, or purchase capability.
+- Concierge answers must cite public Warrantee sources and distinguish current features from planned commercial or asset-intelligence directions.
+- Questions are redacted before storage. Do not retain IP addresses, raw user-agents, credentials, private warranty data, or full request bodies.
 
 ## How The Pieces Work Together
 
@@ -87,6 +102,8 @@ Agents must route these away from enterprise or seller inquiry forms:
 - `api-catalog` points machines to APIs, docs, OpenAPI, MCP, and structured data.
 - `mcp.json` describes tools and resources available to MCP clients.
 - `/api/mcp` provides hosted JSON-RPC MCP access.
+- `/api/agent-concierge` provides the same deterministic public answer engine over plain HTTP.
+- `/api/a2a` and `/api/a2a/message:send` provide a bounded A2A 1.0 HTTP+JSON interface for synchronous public questions.
 - `/openapi.json` documents public discovery endpoints plus authenticated API boundaries.
 - `/auth.md` explains public versus private access and the no-password rule.
 - `robots.txt` allows public content, blocks private API surfaces, permits the hosted public MCP endpoint, and declares `Content-Signal` preferences for search, AI input, and AI training.
@@ -141,7 +158,7 @@ DNS-AID cannot be completed from the Next.js application. It requires DNS provid
 
 ## Agentic Resource And OAuth Discovery
 
-- `/.well-known/ai-catalog.json` publishes a deterministic AI Catalog 1.0 envelope for Warrantee's live MCP server card, Agent Skills index, generic agent card, OpenAPI description, and API catalog. It does not advertise A2A or commerce protocols that Warrantee does not operate.
+- `/.well-known/ai-catalog.json` publishes a deterministic AI Catalog 1.0 envelope for Warrantee's live MCP server card, Agent Skills index, A2A agent card, OpenAPI description, and API catalog. It advertises only the implemented synchronous read-only A2A interface; commerce remains disabled.
 - `/.well-known/oauth-protected-resource/api` publishes RFC 9728 protected-resource metadata for `https://warrantee.io/api`.
 - Anonymous or invalid requests to `/api/v1/*` return a Bearer `WWW-Authenticate` challenge pointing to that protected-resource metadata while continuing to support scoped `x-api-key` integration tokens.
 - The canonical-page discovery `Link` header advertises the AI catalog using `rel="ai-catalog"`.
@@ -174,6 +191,7 @@ Agent-readiness route handlers log privacy-safe events through the app logger:
 - MCP tool calls
 - MCP resource reads
 - inquiry preparation events
+- public Agent Concierge questions by protocol, intent, and answer status
 
 The logger does not record request bodies, IP addresses, emails, API keys, passwords, or private warranty data. It records event type, path, bounded user-agent hint, and a broad user-agent class.
 
@@ -184,6 +202,9 @@ Operational checks:
 - Filter `user_agent_class = ai_or_search_crawler` to understand AI/search crawler activity.
 - Exclude `user_agent_class = automation` when measuring real agent adoption; release validators use this class intentionally.
 - Review `mcp_tool_call` and `inquiry_preparation` counts for agent usage.
+- As a signed-in Warrantee admin, request `/api/admin/agent-concierge/questions?days=30&limit=50&page=1` to review redacted questions, repeated themes, partial answers, locale/protocol breakdowns, and improvement tags.
+- Use the report's `pagination.hasNextPage` value and increment `page` to retrieve every sanitized question in the selected period. Add `includeAutomation=1` only when release-check traffic should be included.
+- Retention defaults to 180 days and can be changed with `DATA_RETENTION_AGENT_QUESTION_DAYS` within the bounded retention configuration.
 - Review `agent_markdown_read` for negotiated canonical Markdown usage. Direct sidecars remain statically served for cost and reliability; use platform request logs for aggregate direct-sidecar traffic.
 
 ## Validation Commands

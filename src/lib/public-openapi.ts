@@ -22,7 +22,7 @@ export function buildPublicOpenApi() {
     openapi: "3.1.0",
     info: {
       title: "Warrantee Public Discovery And Integration API",
-      version: "1.2.0",
+      version: "1.3.0",
       description:
         "Public OpenAPI description for Warrantee structured data, agent discovery, warranty verification, API / CLI / MCP integration guidance, and authenticated warranty-management APIs.",
     },
@@ -116,6 +116,87 @@ export function buildPublicOpenApi() {
           },
         },
       },
+      "/api/agent-concierge": {
+        get: {
+          summary: "Describe the public Warrantee Agent Concierge",
+          description:
+            "Returns the supported topics, privacy policy, boundaries, and request contract for the deterministic read-only concierge.",
+          responses: { "200": { description: "Concierge contract returned" } },
+        },
+        post: {
+          summary: "Ask a public question about Warrantee",
+          description:
+            "Answers from verified public sources without model inference or private account access. The question is redacted before privacy-safe recording for service improvement. The endpoint cannot submit forms, contact Warrantee, or initiate purchases.",
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  additionalProperties: false,
+                  required: ["question"],
+                  properties: {
+                    question: { type: "string", minLength: 1, maxLength: 2000 },
+                    locale: { type: "string", enum: ["en", "ar"] },
+                  },
+                },
+              },
+            },
+          },
+          responses: {
+            "200": { description: "Cited public answer returned" },
+            "400": { description: "Invalid question" },
+            "429": { description: "Rate limit exceeded" },
+          },
+        },
+      },
+      "/api/a2a": {
+        get: {
+          summary: "Describe the Warrantee A2A interface",
+          description:
+            "A2A 1.0 HTTP+JSON interface metadata for synchronous public read-only message responses.",
+          responses: { "200": { description: "A2A interface metadata returned" } },
+        },
+      },
+      "/api/a2a/message:send": {
+        post: {
+          summary: "Send a public A2A question",
+          description:
+            "Requires A2A-Version: 1.0 and a ROLE_USER message with text parts. Returns a ROLE_AGENT message; tasks, streaming, push, private actions, submissions, and purchases are not supported.",
+          parameters: [
+            {
+              name: "A2A-Version",
+              in: "header",
+              required: true,
+              schema: { type: "string", const: "1.0" },
+            },
+          ],
+          responses: {
+            "200": { description: "A2A SendMessageResponse returned" },
+            "400": { description: "Unsupported version or invalid message" },
+            "429": { description: "Rate limit exceeded" },
+          },
+        },
+      },
+      "/api/admin/agent-concierge/questions": {
+        get: {
+          summary: "Read the protected agent-question improvement report",
+          description:
+            "Admin-only aggregate report containing privacy-redacted questions, repeated themes, answer gaps, locales, protocols, and improvement tags. No IP addresses, raw user-agents, credentials, or private warranty payloads are returned.",
+          security: [{ SessionCookie: [] }],
+          parameters: [
+            { name: "days", in: "query", schema: { type: "integer", minimum: 1, maximum: 180, default: 30 } },
+            { name: "limit", in: "query", schema: { type: "integer", minimum: 1, maximum: 200, default: 50 } },
+            { name: "page", in: "query", schema: { type: "integer", minimum: 1, default: 1 } },
+            { name: "includeAutomation", in: "query", schema: { type: "boolean", default: false } },
+          ],
+          responses: {
+            "200": { description: "Privacy-safe improvement report returned" },
+            "401": { description: "Not signed in" },
+            "403": { description: "Administrator role required" },
+          },
+        },
+      },
       "/api/v1/warranties/verify": {
         get: {
           summary: "Verify warranty",
@@ -193,12 +274,25 @@ export function buildPublicOpenApi() {
           scheme: "bearer",
           description: "Supabase-backed session or service token for approved authenticated workflows.",
         },
+        SessionCookie: {
+          type: "apiKey",
+          in: "cookie",
+          name: "sb-access-token",
+          description: "Authenticated Warrantee browser session; administrator role is also required.",
+        },
       },
     },
     "x-agent-policy": {
       approvalRequiredBeforeSubmission: true,
       nonFitRouting:
         "Careers, vendors, internships, training, spam, retail shopping, and unrelated requests should not be routed into Warrantee enterprise or seller inquiry flows.",
+      agentConcierge: {
+        readOnly: true,
+        modelInference: false,
+        questionRecording: "privacy-redacted for service improvement",
+        privateAccountAccess: false,
+        submissionOrPurchase: false,
+      },
     },
   };
 }

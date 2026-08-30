@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.4"
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
@@ -222,6 +222,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      agent_concierge_questions: {
+        Row: {
+          answer_status: string
+          citations: Json
+          client_class: string
+          created_at: string
+          fit: boolean
+          id: string
+          improvement_tags: string[]
+          intent: string
+          locale: string
+          question_hash: string
+          question_redacted: string
+          redaction_applied: boolean
+          source_protocol: string
+        }
+        Insert: {
+          answer_status: string
+          citations?: Json
+          client_class?: string
+          created_at?: string
+          fit: boolean
+          id?: string
+          improvement_tags?: string[]
+          intent: string
+          locale: string
+          question_hash: string
+          question_redacted: string
+          redaction_applied?: boolean
+          source_protocol: string
+        }
+        Update: {
+          answer_status?: string
+          citations?: Json
+          client_class?: string
+          created_at?: string
+          fit?: boolean
+          id?: string
+          improvement_tags?: string[]
+          intent?: string
+          locale?: string
+          question_hash?: string
+          question_redacted?: string
+          redaction_applied?: boolean
+          source_protocol?: string
+        }
+        Relationships: []
       }
       analytics_daily_rollups: {
         Row: {
@@ -3590,6 +3638,10 @@ export type Database = {
         Returns: boolean
       }
       company_has_members: { Args: { p_company_id: string }; Returns: boolean }
+      complete_business_onboarding: {
+        Args: { p_company_name: string; p_user_id: string }
+        Returns: string
+      }
       complete_stripe_webhook_event: {
         Args: { p_event_id: string }
         Returns: boolean

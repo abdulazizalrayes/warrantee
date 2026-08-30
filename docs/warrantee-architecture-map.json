@@ -7,8 +7,8 @@
     "domain": "https://warrantee.io",
     "repository": "https://github.com/abdulazizalrayes/warrantee",
     "branch": "main",
-    "mapped_from_commit": "df7284cf1035b280ff6721917a420da841b20d3b",
-    "generated_at": "2026-08-23",
+    "mapped_from_commit": "working-tree-agent-concierge-2026-08-30",
+    "generated_at": "2026-08-30",
     "classification": "internal engineering documentation; no secrets or customer records",
     "human_view": "docs/WARRANTEE_ARCHITECTURE_MAP.html",
     "agent_view": "docs/warrantee-architecture-map.json",
@@ -60,7 +60,7 @@
       "application": "Next.js 15.5.21",
       "ui": "React 19",
       "language": "TypeScript",
-      "node": ">=20 <25",
+      "node": ">=22.13 <25",
       "hosting": "Vercel",
       "edge_and_dns": "Cloudflare",
       "database": "Supabase Postgres",
@@ -69,10 +69,10 @@
     },
     "inventory_counts": {
       "page_files": 59,
-      "route_handlers": 108,
+      "route_handlers": 112,
       "layouts": 30,
-      "database_tables": 49,
-      "migration_files": 66,
+      "database_tables": 50,
+      "migration_files": 68,
       "scheduled_jobs": 3,
       "github_workflows": 3,
       "e2e_spec_files": 8
@@ -215,6 +215,7 @@
       "goals": [
         "Discover public capabilities",
         "Read structured resources",
+        "Ask cited public questions in English or Arabic",
         "Prepare an inquiry",
         "Use hosted MCP without autonomous submission"
       ]
@@ -284,8 +285,9 @@
       "layer": "actors",
       "kind": "software_actor",
       "status": "active",
-      "responsibility": "Public discovery, structured reads, hosted MCP tool calls, and inquiry preparation.",
+      "responsibility": "Public discovery, structured reads, cited bilingual concierge questions, hosted MCP tool calls, and inquiry preparation.",
       "code_refs": [
+        "src/lib/agent-concierge.ts",
         "src/lib/agent-public-data.ts",
         "src/lib/agent-ready.ts"
       ]
@@ -391,11 +393,13 @@
       "layer": "experience",
       "kind": "agent_surface",
       "status": "active",
-      "responsibility": "Expose llms guidance, agent cards, skills, structured data, standards-correct Accept negotiation, canonical .md aliases, and deterministic Markdown companions.",
+      "responsibility": "Expose llms guidance, A2A and MCP cards, skills, structured data, standards-correct Accept negotiation, canonical .md aliases, and deterministic Markdown companions.",
       "code_refs": [
         "src/app/llms.txt/route.ts",
         "src/app/llms-full.txt/route.ts",
         "src/app/.well-known/agent-card.json/route.ts",
+        "src/app/api/a2a/route.ts",
+        "src/app/api/a2a/message:send/route.ts",
         "src/app/agent-markdown/[...segments]/route.ts",
         "src/app/api/agent-markdown/route.ts",
         "src/lib/agent-ready.ts",
@@ -718,12 +722,28 @@
       ]
     },
     {
+      "id": "agent_concierge",
+      "name": "Warrantee Agent Concierge",
+      "layer": "domain",
+      "kind": "agent_api",
+      "status": "active",
+      "responsibility": "Answer deterministic bilingual public questions through HTTP, A2A, and MCP; cite verified public sources; redact questions before service-improvement recording; and take no actions.",
+      "code_refs": [
+        "src/lib/agent-concierge.ts",
+        "src/lib/agent-question-privacy.ts",
+        "src/lib/server/agent-question-recorder.ts",
+        "src/app/api/agent-concierge/route.ts",
+        "src/app/api/a2a/message:send/route.ts",
+        "src/app/api/admin/agent-concierge/questions/route.ts"
+      ]
+    },
+    {
       "id": "hosted_mcp",
       "name": "Hosted MCP endpoint",
       "layer": "domain",
       "kind": "agent_api",
       "status": "active",
-      "responsibility": "Public read-only company tools plus authenticated tenant tools that share API policy and explicit confirmation boundaries.",
+      "responsibility": "Public read-only company and concierge tools plus authenticated tenant tools that share API policy and explicit confirmation boundaries.",
       "code_refs": [
         "src/app/api/mcp/route.ts",
         "tools/warrantee/mcp-server.mjs"
@@ -759,10 +779,11 @@
       "layer": "data",
       "kind": "event_store",
       "status": "active",
-      "responsibility": "Activity, admin audit, ingestion audit, API usage, webhook idempotency, and privacy-safe funnel evidence.",
+      "responsibility": "Activity, admin audit, ingestion audit, API usage, webhook idempotency, privacy-safe funnel evidence, and redacted agent questions.",
       "code_refs": [
         "src/app/api/funnel/events/route.ts",
         "src/lib/server/agent-usage-logger.ts",
+        "src/lib/server/agent-question-recorder.ts",
         "src/lib/api-v1.ts"
       ]
     },
@@ -1042,6 +1063,12 @@
       "label": "public or scoped MCP"
     },
     {
+      "from": "actor_agent",
+      "to": "agent_concierge",
+      "type": "asks",
+      "label": "HTTP / A2A / MCP public question"
+    },
+    {
       "from": "public_web",
       "to": "cloudflare_edge",
       "type": "served_through",
@@ -1310,6 +1337,18 @@
       "to": "hosted_mcp",
       "type": "advertises",
       "label": "server card"
+    },
+    {
+      "from": "agent_discovery",
+      "to": "agent_concierge",
+      "type": "advertises",
+      "label": "A2A card and public endpoint"
+    },
+    {
+      "from": "agent_concierge",
+      "to": "audit_and_usage",
+      "type": "records",
+      "label": "redacted questions and answer gaps"
     },
     {
       "from": "agent_discovery",
@@ -1621,7 +1660,8 @@
         "api_clients",
         "api_idempotency_records",
         "api_integration_tokens",
-        "api_usage_events"
+        "api_usage_events",
+        "agent_concierge_questions"
       ],
       "owner": "Registered user and server authorization layer",
       "sensitivity": "restricted"
@@ -1748,7 +1788,8 @@
           "/api/admin/ingestion",
           "/api/admin/ingestion/stats",
           "/api/admin/ingestion/[id]/resolve",
-          "/api/admin/extension-policies"
+          "/api/admin/extension-policies",
+          "/api/admin/agent-concierge/questions"
         ]
       },
       {
@@ -1877,7 +1918,10 @@
       "/.well-known/acp.json",
       "/.well-known/ucp",
       "/agent-markdown/[...segments]",
-      "/api/agent-markdown"
+      "/api/agent-markdown",
+      "/api/agent-concierge",
+      "/api/a2a",
+      "/api/a2a/message:send"
     ],
     "platform_routes": [
       {
@@ -2462,7 +2506,7 @@
       "name": "Agent discovery and public read-only routing",
       "actor": "AI or procurement agent",
       "entry": "/llms.txt or /.well-known/agent-card.json",
-      "terminal_outcome": "Agent understands Warrantee, reads canonical resources, and prepares but does not autonomously submit an inquiry.",
+      "terminal_outcome": "Agent understands Warrantee, receives a cited answer, reads canonical resources, and prepares but does not autonomously submit an inquiry.",
       "status": "implemented",
       "steps": [
         {
@@ -2473,21 +2517,27 @@
         },
         {
           "order": 2,
-          "component": "hosted_mcp",
-          "action": "Agent calls public overview, service, capability, matching, area, or resource tools.",
-          "control": "Public MCP is read-only."
+          "component": "agent_concierge",
+          "action": "Agent asks a public English or Arabic question through HTTP, A2A, or MCP and receives a deterministic cited response.",
+          "control": "No private account access, model inference, action, submission, contact, or purchase capability."
         },
         {
           "order": 3,
+          "component": "hosted_mcp",
+          "action": "Agent calls public concierge, overview, service, capability, matching, area, or resource tools.",
+          "control": "Public MCP is read-only."
+        },
+        {
+          "order": 4,
           "component": "lead_service",
           "action": "Agent may prepare an inquiry payload but cannot submit without explicit user approval.",
           "control": "Non-fit routing keeps careers, vendors, spam, and unrelated requests out of project inquiry."
         },
         {
-          "order": 4,
+          "order": 5,
           "component": "audit_and_usage",
-          "action": "Crawler/resource/tool use is logged with privacy-safe metadata.",
-          "control": "No personal information."
+          "action": "Crawler/resource/tool use and redacted concierge questions are recorded for owner review.",
+          "control": "No IP addresses, raw user-agents, credentials, private warranty data, or full request bodies."
         }
       ],
       "verification": [

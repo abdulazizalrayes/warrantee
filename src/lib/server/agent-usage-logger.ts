@@ -10,9 +10,10 @@ type AgentUsageEvent =
   | "public_data_read"
   | "mcp_tool_call"
   | "mcp_resource_read"
-  | "inquiry_preparation";
+  | "inquiry_preparation"
+  | "agent_question";
 
-function classifyUserAgent(userAgent: string | null) {
+export function classifyUserAgent(userAgent: string | null) {
   const ua = (userAgent || "").toLowerCase();
   if (!ua) return "unknown";
   if (/(warrantee-agent-.*(validator|check)|playwright)/.test(ua)) {

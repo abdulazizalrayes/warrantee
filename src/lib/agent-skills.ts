@@ -13,6 +13,18 @@ export type AgentSkillDefinition = {
 
 export const AGENT_SKILLS: AgentSkillDefinition[] = [
   {
+    slug: "ask-warrantee",
+    name: "Ask Warrantee",
+    description:
+      "Ask public questions about Warrantee plans, services, warranty workflows, integrations, security, markets, and product fit through the privacy-safe read-only concierge.",
+    inputs: ["public question", "optional English or Arabic locale"],
+    outputs: ["deterministic answer", "public citations", "fit", "safe next actions"],
+    examples: [
+      "Which account type should a small retailer use?",
+      "Explain how MCP authentication works without a password",
+    ],
+  },
+  {
     slug: "warranty-verification",
     name: "Warranty Verification",
     description:

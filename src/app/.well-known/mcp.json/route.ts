@@ -66,6 +66,20 @@ export function GET() {
       ],
       tools: [
         {
+          name: "ask_warrantee",
+          title: "Ask Warrantee Agent Concierge",
+          description:
+            "Ask a public read-only question about Warrantee plans, services, workflows, integrations, security, markets, or product fit. Questions are privacy-redacted before aggregate recording and no private account data is accessed.",
+          inputSchema: {
+            type: "object",
+            properties: {
+              question: { type: "string", minLength: 1, maxLength: 2000 },
+              locale: { type: "string", enum: ["en", "ar"] },
+            },
+            required: ["question"],
+          },
+        },
+        {
           name: "get_company_overview",
           title: "Get Company Overview",
           description: "Read Warrantee public company overview without private account data.",
@@ -157,6 +171,8 @@ export function GET() {
         agentSkills: `${BASE_URL}/.well-known/agent-skills/index.json`,
         apiCliMcpGuide: `${BASE_URL}/en/api-docs`,
         hostedMcpEndpoint: `${BASE_URL}/api/mcp`,
+        agentConcierge: `${BASE_URL}/api/agent-concierge`,
+        a2aAgent: `${BASE_URL}/api/a2a`,
         serverCards: `${BASE_URL}/.well-known/mcp/server-cards.json`,
         markdownRepresentations: `${BASE_URL}/data/agent-markdown-manifest.json`,
         markdownNegotiation: "Send Accept: text/markdown to canonical sitemap URLs.",
