@@ -95,6 +95,21 @@ If verification cannot be run, explain why and state the remaining risk.
 - Do not hide uncertainty.
 - Do not claim success without verification.
 
+## Design Operating Principles
+
+Owner-approved on 2026-08-30 and adapted from the supplied "How I Design With AI" reference. Apply these principles to all future Warrantee visual and product-design work; they do not grant permission to publish visual changes without owner approval.
+
+- Start with the whole system before editing a screen: identify the audience, job to be done, complete journey, content, states, data, permissions, Arabic/English behavior, accessibility, performance, and business constraints.
+- List important constraints and contradictions early. When a requirement changes, reassess the affected design system and journey instead of layering local patches onto a broken premise.
+- Remove unnecessary elements before adding new ones. Every visible element must improve comprehension, trust, completion, or navigation.
+- Iterate through an approval preview for meaningful visual changes. Compare alternatives in context and use desktop, mobile, English, and Arabic evidence before selecting one.
+- Prefer Warrantee's established components, tokens, icons, and interaction patterns. Add a new component or visual rule only when the existing system cannot express the required distinction clearly.
+- Use preview deployments and visual regression checks before production. A build passing does not prove the design is correct, responsive, accessible, or visually unchanged.
+- Study strong external patterns for principles and usability, but do not copy protected work, another company's identity, or a design that conflicts with Warrantee's own brand and audience.
+- Develop a consistent Warrantee point of view: calm, trustworthy, operational, bilingual, and easy to scan. Avoid decoration that competes with warranty evidence and decisions.
+- Never rely on color alone to communicate account type, state, plan, risk, or action. Pair controlled color accents with explicit labels, icons, hierarchy, and grouping.
+- Pricing must make Personal and Business paths distinguishable within a fast scroll. Treat Personal as one individual plan and Business as the family containing Business Free, Professional, and Enterprise; preserve that distinction across the homepage, pricing page, signup, and account settings.
+
 ## External Paperclip Context
 
 Use this section only when the user explicitly asks about cloud Paperclip (`ai.eijarat.com`) or Paperclip agents. Do not mix Paperclip work, accounts, models, or assumptions into Warrantee product work.
