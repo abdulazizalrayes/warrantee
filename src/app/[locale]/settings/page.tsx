@@ -471,8 +471,8 @@ export default function SettingsPage() {
                   <p className="text-[15px] text-white/60 mt-1">
                     {profile?.account_type === "business"
                       ? isRTL
-                        ? "مجاني للأعمال يشمل أول 100 ضمان مُصدر مع الاحتفاظ بالسجلات. الاحترافية مخططة بسعر 14.90 ر.س شهريًا في الخليج."
-                        : "Business Free includes the first 100 issued warranties with records retained. Professional is planned at SAR 14.90/month in the GCC."
+                        ? "مجاني للأعمال يشمل أول 100 ضمان مُصدر مع الاحتفاظ بالسجلات. الاحترافية مخططة بسعر 14.90 ر.س / 3.99 دولار شهريًا."
+                        : "Business Free includes the first 100 issued warranties with records retained. Professional is planned at SAR 14.90 / USD 3.99 per month."
                       : isRTL
                         ? "مجاني للأفراد يشمل حتى 10 ضمانات شخصية مع الاحتفاظ بالسجلات."
                         : "Personal Free includes up to 10 personal warranties with records retained."}

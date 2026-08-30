@@ -347,13 +347,18 @@ export default function BillingPage() {
                         <p className="text-[17px] font-semibold text-[#1d1d1f]">{isRTL ? "تواصل معنا" : "Contact Us"}</p>
                       ) : (
                         <div>
-                          <span className="block text-[28px] font-semibold tracking-tight text-[#1d1d1f]">{isRTL ? `${plan.price.toFixed(2)} ر.س` : `SAR ${plan.price.toFixed(2)}`}</span>
+                          <span className={`block font-semibold tracking-tight text-[#1d1d1f] ${plan.id === "pro" ? "text-[24px]" : "text-[28px]"}`}>
+                            {plan.id === "pro"
+                              ? isRTL
+                                ? `${plan.price.toFixed(2)} ر.س / ${plan.usdPrice?.toFixed(2)} دولار`
+                                : `SAR ${plan.price.toFixed(2)} / USD ${plan.usdPrice?.toFixed(2)}`
+                              : isRTL
+                                ? `${plan.price.toFixed(2)} ر.س`
+                                : `SAR ${plan.price.toFixed(2)}`}
+                          </span>
                           <span className="text-[14px] text-[#86868b]"> /{isRTL ? "شهر" : "month"}</span>
                           {plan.id === "pro" && (
-                            <>
-                              <p className="mt-1 text-[13px] font-medium text-[#1d1d1f]">{isRTL ? `${plan.usdPrice?.toFixed(2)} دولار خارج الخليج` : `USD ${plan.usdPrice?.toFixed(2)} outside the GCC`}</p>
-                              <p className="text-[12px] text-[#0071e3] font-medium mt-1">{isRTL ? plan.pricePrefix_ar : plan.pricePrefix_en}</p>
-                            </>
+                            <p className="text-[12px] text-[#0071e3] font-medium mt-1">{isRTL ? plan.pricePrefix_ar : plan.pricePrefix_en}</p>
                           )}
                         </div>
                       )}

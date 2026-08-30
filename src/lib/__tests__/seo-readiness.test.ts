@@ -58,13 +58,13 @@ describe("SEO and AI-search readiness metadata", () => {
     expect(software.offers.map((offer: { name: string }) => offer.name)).toEqual([
       "Personal Free",
       "Business Free",
-      "Professional GCC",
-      "Professional International",
+      "Professional SAR",
+      "Professional USD",
       "Enterprise",
     ]);
     expect(software.description).toContain("Warranty management software");
     expect(serialized).not.toContain("\"@type\":\"Product\"");
-    expect(serialized).toContain("Planned GCC Professional launch price");
+    expect(serialized).toContain("Planned Professional launch price in Saudi riyals");
     expect(serialized).toContain("SAR 14.90/month");
     expect(serialized).toContain("USD 3.99/month");
     expect(serialized).toContain("https://schema.org/PreOrder");
@@ -82,14 +82,14 @@ describe("SEO and AI-search readiness metadata", () => {
     expect(englishFaq.mainEntity[1].acceptedAnswer.text).toContain(
       "Business Free for the first 100 issued warranties",
     );
-    expect(englishFaq.mainEntity[1].acceptedAnswer.text).toContain("SAR 14.90/month");
+    expect(englishFaq.mainEntity[1].acceptedAnswer.text).toContain("SAR 14.90 / USD 3.99 per month");
   });
 
   it("describes pricing with the current Professional plan", () => {
     const metadata = buildPageMetadata("pricing", "en");
     expect(metadata.description).toContain("Professional");
     expect(metadata.description).toContain("Business Free");
-    expect(metadata.description).toContain("SAR 14.90/month");
+    expect(metadata.description).toContain("SAR 14.90 / USD 3.99 per month");
     expect(metadata.description).toContain("USD 3.99");
     expect(metadata.description).not.toContain("first month free");
     expect(metadata.description).not.toContain("first year free");
