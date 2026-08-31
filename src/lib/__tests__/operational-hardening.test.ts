@@ -362,6 +362,8 @@ describe("operational hardening", () => {
     expect(adminPage).toContain("campaignBreakdown");
     expect(adminPage).toContain("metadata.utm_source");
     expect(adminPage).toContain("metadata.utm_campaign");
+    expect(adminPage).toContain('max-w-[1600px] mx-auto flex flex-col lg:flex-row');
+    expect(adminPage).toContain('lg:hidden w-full min-w-0 overflow-x-auto');
     expect(adminPage).toContain("/api/admin/agent-concierge/report?days=30&limit=50&page=1");
     expect(adminPage).toContain("Agent Concierge Insights");
     expect(agentQuestionsRoute).toContain('["admin", "super_admin"]');

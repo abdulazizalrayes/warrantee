@@ -1012,7 +1012,7 @@ export default function AdminPage() {
         </div>
       </header>
 
-      <div className="max-w-[1600px] mx-auto flex">
+      <div className="max-w-[1600px] mx-auto flex flex-col lg:flex-row">
         {/* ─── SIDEBAR NAV ─── */}
         <nav className="hidden lg:flex flex-col w-56 min-h-[calc(100vh-56px)] bg-[#0e0e20] border-r border-[#1a1a3a] py-4 px-2 sticky top-14 self-start">
           {tabs.map((tab, i) => (
@@ -1038,7 +1038,7 @@ export default function AdminPage() {
         </nav>
 
         {/* ─── MOBILE NAV ─── */}
-        <div className="lg:hidden w-full overflow-x-auto border-b border-[#1a1a3a] bg-[#0e0e20] sticky top-14 z-40">
+        <div className="lg:hidden w-full min-w-0 overflow-x-auto border-b border-[#1a1a3a] bg-[#0e0e20] sticky top-14 z-40">
           <div className="flex gap-0.5 p-1.5 min-w-max">
             {tabs.map(tab => (
               <button key={tab.id} onClick={() => setActiveTab(tab.id)}
