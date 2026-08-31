@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { filterRealFunnelEvents, isRealFunnelEvent } from "@/lib/growth-analytics";
+import {
+  filterRealFunnelEvents,
+  isPaidSubscriptionSignal,
+  isRealFunnelEvent,
+} from "@/lib/growth-analytics";
 
 describe("growth analytics", () => {
   const excludedUsers = new Set(["owner-user", "qa-user"]);
@@ -31,5 +35,15 @@ describe("growth analytics", () => {
   it("treats ambiguous or missing classification as non-customer evidence", () => {
     expect(isRealFunnelEvent({ metadata: null }, excludedUsers)).toBe(false);
     expect(isRealFunnelEvent({ metadata: { traffic_class: "" } }, excludedUsers)).toBe(false);
+  });
+
+  it("counts only paid subscriptions attached to eligible real users", () => {
+    const realUsers = new Set(["real-user"]);
+
+    expect(isPaidSubscriptionSignal({ user_id: "real-user", plan_id: "pro", status: "active" }, realUsers)).toBe(true);
+    expect(isPaidSubscriptionSignal({ user_id: "real-user", plan_id: "pro", status: "trialing" }, realUsers)).toBe(true);
+    expect(isPaidSubscriptionSignal({ user_id: "real-user", plan_id: "free", status: "active" }, realUsers)).toBe(false);
+    expect(isPaidSubscriptionSignal({ user_id: "deleted-user", plan_id: "pro", status: "active" }, realUsers)).toBe(false);
+    expect(isPaidSubscriptionSignal({ user_id: "real-user", plan_id: "pro", status: "past_due" }, realUsers)).toBe(false);
   });
 });

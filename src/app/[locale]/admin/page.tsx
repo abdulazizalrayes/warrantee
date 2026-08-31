@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
 import Link from 'next/link';
 import { getContentLocale, normalizeLocale } from '@/lib/i18n';
-import { filterRealFunnelEvents } from '@/lib/growth-analytics';
+import { filterRealFunnelEvents, isPaidSubscriptionSignal } from '@/lib/growth-analytics';
 import { PROFESSIONAL_PRICE_SAR } from '@/lib/plan-config';
 
 const supabase = createSupabaseBrowserClient();
@@ -195,7 +195,7 @@ const buildAdminStats = ({
     openTickets: tickets.filter((x: StatusRow) => x.status === 'open' || x.status === 'in_progress').length,
     fraudSignals: fraudSignals.filter((x: StatusRow) => x.status === 'open' || x.status === 'investigating').length,
     totalRevenue: revenueEvents.reduce((sum: number, event: RevenueAdminRow) => sum + (event.amount || 0), 0),
-    activeSubscriptions: subscriptions.filter((x: StatusRow) => x.status === 'active' || x.status === 'trialing').length,
+    activeSubscriptions: subscriptions.filter((subscription) => isPaidSubscriptionSignal(subscription)).length,
     ingestionSuccess: ingestions.filter((x: StatusRow) => ['auto_confirmed', 'confirmed', 'ocr_complete'].includes(x.status || '')).length,
     ingestionTotal: ingestions.length,
     recentActivity,
@@ -557,6 +557,7 @@ export default function AdminPage() {
     );
     setExcludedUserIds(Array.from(excludedUsers));
     const realUsers = u.filter((user: UserAdminRow & { id?: string | null }) => !excludedUsers.has(String(user.id)));
+    const realUserIds = new Set<string>(realUsers.map((user: { id?: string | null }) => String(user.id)).filter(Boolean));
     const realWarranties = w.filter((warranty: any) => !isLikelyQaWarranty(warranty, excludedUsers));
     const realWarrantyIds = new Set(realWarranties.map((warranty: any) => String(warranty.id)));
     const realClaims = cl.filter((claim: any) => {
@@ -565,7 +566,7 @@ export default function AdminPage() {
     });
     const realIngestions = ig.filter((job: any) => !isLikelyQaEmail(job.from_email) && ![job.matched_user_id, job.buyer_id, job.user_id].some((id) => id && excludedUsers.has(String(id))));
     const realRevenueEvents = rv.filter((event: any) => ![event.user_id, event.customer_id, event.profile_id].some((id) => id && excludedUsers.has(String(id))));
-    const realSubscriptions = sb.filter((subscription: any) => ![subscription.user_id, subscription.customer_id, subscription.profile_id].some((id) => id && excludedUsers.has(String(id))));
+    const realSubscriptions = sb.filter((subscription: any) => isPaidSubscriptionSignal(subscription, realUserIds));
 
     setStats(allStats);
     setRealStats(buildAdminStats({
