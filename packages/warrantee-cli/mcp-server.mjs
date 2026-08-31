@@ -729,10 +729,18 @@ export async function runMcpServer({
   }
 }
 
-if (
-  process.argv[1] &&
-  realpathSync(fileURLToPath(import.meta.url)) === realpathSync(resolve(process.argv[1]))
-) {
+function isDirectExecution() {
+  if (!process.argv[1]) return false;
+
+  try {
+    return realpathSync(fileURLToPath(import.meta.url)) === realpathSync(resolve(process.argv[1]));
+  } catch {
+    // Serverless runtimes may expose a non-file argv entry when this module is imported.
+    return false;
+  }
+}
+
+if (isDirectExecution()) {
   runMcpServer().catch((error) => {
     process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
     process.exitCode = 1;
