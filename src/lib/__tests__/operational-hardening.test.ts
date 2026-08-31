@@ -341,6 +341,7 @@ describe("operational hardening", () => {
     const campaignLinks = readProjectFile("scripts/generate-campaign-links.mjs");
     const homePage = readProjectFile("src/app/[locale]/page.tsx");
     const adminPage = readProjectFile("src/app/[locale]/admin/page.tsx");
+    const agentQuestionsRoute = readProjectFile("src/app/api/admin/agent-concierge/questions/route.ts");
     const docs = readProjectFile("docs/ONBOARDING_FUNNEL_ANALYTICS_2026-06-23.md");
 
     for (const key of ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "ref"]) {
@@ -361,9 +362,15 @@ describe("operational hardening", () => {
     expect(adminPage).toContain("campaignBreakdown");
     expect(adminPage).toContain("metadata.utm_source");
     expect(adminPage).toContain("metadata.utm_campaign");
-    expect(campaignLinks).toContain("seller_pilot_july_2026");
-    expect(campaignLinks).toContain("business_pilot_july_2026");
-    expect(campaignLinks).toContain("integration_pilot_july_2026");
+    expect(adminPage).toContain("/api/admin/agent-concierge/report?days=30&limit=50&page=1");
+    expect(adminPage).toContain("Agent Concierge Insights");
+    expect(agentQuestionsRoute).toContain('["admin", "super_admin"]');
+    expect(agentQuestionsRoute).toContain('.neq("client_class", "automation")');
+    expect(agentQuestionsRoute).not.toContain("ip_address");
+    expect(agentQuestionsRoute).not.toContain("user_agent");
+    expect(campaignLinks).toContain("seller_pilot_sep_2026");
+    expect(campaignLinks).toContain("business_pilot_sep_2026");
+    expect(campaignLinks).toContain("integration_pilot_sep_2026");
     expect(campaignLinks).toContain("safeTrackingValue");
     expect(docs).toContain("npm run campaign:links");
     expect(docs).toContain("Do not place names, emails, phone numbers");

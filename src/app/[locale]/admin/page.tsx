@@ -14,6 +14,35 @@ const supabase = createSupabaseBrowserClient();
 type TabId = 'overview' | 'funnel' | 'users' | 'warranties' | 'companies' | 'claims' | 'support' | 'fraud' | 'ingestion' | 'billing' | 'config' | 'team' | 'audit';
 type GrowthLens = 'real' | 'all';
 
+type AgentConciergeCount = { key: string; value: number };
+type AgentConciergeQuestion = {
+  askedAt: string;
+  question: string;
+  intent: string;
+  status: string;
+  fit?: string;
+  locale: string;
+  source: string;
+  redactionApplied?: boolean;
+};
+type AgentConciergeReport = {
+  period: { days: number; since: string; includeAutomation: boolean };
+  total: number;
+  analyzed: number;
+  sampled: boolean;
+  breakdown: {
+    intents: AgentConciergeCount[];
+    statuses: AgentConciergeCount[];
+    locales: AgentConciergeCount[];
+    sources: AgentConciergeCount[];
+    clientClasses: AgentConciergeCount[];
+  };
+  improvementBacklog: AgentConciergeCount[];
+  unansweredOrPartial: AgentConciergeQuestion[];
+  recentQuestions: AgentConciergeQuestion[];
+  privacy: string;
+};
+
 interface Stats {
   totalUsers: number; totalWarranties: number; totalCompanies: number; totalClaims: number;
   activeWarranties: number; expiredWarranties: number; pendingClaims: number;
@@ -213,6 +242,11 @@ const rawTranslations = {
     serverFunnel: 'Server-side Funnel Events', noFunnelEvents: 'No server-side funnel events yet.',
     campaignBreakdown: 'Campaign Breakdown', noCampaignAttribution: 'No campaign attribution yet.',
     campaign: 'Campaign', marketingMedium: 'Medium',
+    agentConcierge: 'Agent Concierge Insights', agentQuestions: 'Recorded questions',
+    agentAnswered: 'Answered', agentNeedsImprovement: 'Needs improvement',
+    agentThemes: 'Improvement themes', agentRecentQuestions: 'Recent sanitized questions',
+    agentNoQuestions: 'No non-automated agent questions recorded in this period.',
+    agentPrivacy: 'Questions are redacted before storage. No credentials, IP addresses, private warranty data, or raw user-agent strings are shown.',
     exportData: 'Export CSV', refresh: 'Refresh', search: 'Search...',
     // Team
     teamTitle: 'Team Management', addAdmin: 'Add Team Member', emailPlaceholder: 'Enter email address',
@@ -280,6 +314,11 @@ const rawTranslations = {
     serverFunnel: 'أحداث القمع من الخادم', noFunnelEvents: 'لا توجد أحداث قمع من الخادم بعد.',
     campaignBreakdown: 'تحليل الحملات', noCampaignAttribution: 'لا توجد بيانات حملات بعد.',
     campaign: 'الحملة', marketingMedium: 'الوسيط',
+    agentConcierge: 'رؤى مساعد الوكلاء', agentQuestions: 'الأسئلة المسجلة',
+    agentAnswered: 'تمت الإجابة', agentNeedsImprovement: 'تحتاج تحسينا',
+    agentThemes: 'موضوعات التحسين', agentRecentQuestions: 'أحدث الأسئلة المنقحة',
+    agentNoQuestions: 'لا توجد أسئلة مسجلة من وكلاء غير آليين في هذه الفترة.',
+    agentPrivacy: 'تنقح الأسئلة قبل الحفظ. لا تعرض بيانات اعتماد أو عناوين IP أو بيانات ضمان خاصة أو نص متصفح خام.',
     exportData: 'تصدير CSV', refresh: 'تحديث', search: 'بحث...',
     teamTitle: 'إدارة الفريق', addAdmin: 'إضافة عضو', emailPlaceholder: 'أدخل البريد الإلكتروني',
     invite: 'إضافة', removeAccess: 'إزالة', confirmRemove: 'تأكيد الإزالة',
@@ -419,6 +458,9 @@ export default function AdminPage() {
   const [revenueEvents, setRevenueEvents] = useState<any[]>([]);
   const [subscriptions, setSubscriptions] = useState<any[]>([]);
   const [funnelEvents, setFunnelEvents] = useState<any[]>([]);
+  const [agentConciergeReport, setAgentConciergeReport] = useState<AgentConciergeReport | null>(null);
+  const [agentConciergeLoading, setAgentConciergeLoading] = useState(false);
+  const [agentConciergeError, setAgentConciergeError] = useState('');
   const [excludedUserIds, setExcludedUserIds] = useState<string[]>([]);
   const [systemConfig, setSystemConfig] = useState<any[]>([]);
   const [extensionPolicies, setExtensionPolicies] = useState<any[]>([]);
@@ -579,7 +621,23 @@ export default function AdminPage() {
     }
   };
 
+  const loadAgentConciergeReport = async () => {
+    setAgentConciergeLoading(true);
+    setAgentConciergeError('');
+    try {
+      const response = await fetch('/api/admin/agent-concierge/report?days=30&limit=50&page=1', { cache: 'no-store' });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload.error || 'Failed to load agent concierge report');
+      setAgentConciergeReport(payload as AgentConciergeReport);
+    } catch (error) {
+      setAgentConciergeError((error as Error).message || 'Failed to load agent concierge report');
+    } finally {
+      setAgentConciergeLoading(false);
+    }
+  };
+
   useEffect(() => {
+    if (activeTab === 'funnel') loadAgentConciergeReport();
     if (activeTab === 'team' && isSuperAdmin) loadTeam();
     if (activeTab === 'audit' && isSuperAdmin) loadAudit();
     if (activeTab === 'config' && isSuperAdmin) {
@@ -881,6 +939,12 @@ export default function AdminPage() {
       return acc;
     }, {})
   ).sort((a, b) => b.count - a.count);
+  const agentConciergeStatusCounts = Object.fromEntries(
+    (agentConciergeReport?.breakdown.statuses || []).map(({ key, value }) => [key, value])
+  );
+  const answeredAgentQuestions = agentConciergeStatusCounts.answered || 0;
+  const agentQuestionsNeedingImprovement = (agentConciergeStatusCounts.partial || 0)
+    + (agentConciergeStatusCounts.not_supported || 0);
 
   // ─── LOADING / UNAUTHORIZED ───────────────────────────
   if (loading) return (
@@ -1255,6 +1319,85 @@ export default function AdminPage() {
                         </div>
                       );
                     })}
+                  </div>
+                )}
+              </section>
+
+              <section className="rounded-xl border border-[#1a1a3a] bg-[#0e0e20] p-5">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-200">{text.agentConcierge}</h3>
+                    <p className="mt-1 text-xs text-gray-500">
+                      {locale === 'ar'
+                        ? 'إجماليات آمنة للخصوصية لآخر 30 يوما، مع استبعاد الأتمتة.'
+                        : 'Privacy-safe totals for the last 30 days, excluding automation.'}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={loadAgentConciergeReport}
+                    disabled={agentConciergeLoading}
+                    className="text-xs text-[#64d2ff] transition hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {text.refresh}
+                  </button>
+                </div>
+
+                {agentConciergeLoading && !agentConciergeReport ? (
+                  <p className="mt-6 text-sm text-gray-500">{locale === 'ar' ? 'جارٍ التحميل...' : 'Loading concierge insights...'}</p>
+                ) : agentConciergeError ? (
+                  <p className="mt-6 rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-300">{agentConciergeError}</p>
+                ) : !agentConciergeReport || agentConciergeReport.total === 0 ? (
+                  <p className="mt-6 text-sm text-gray-500">{text.agentNoQuestions}</p>
+                ) : (
+                  <div className="mt-5 space-y-5">
+                    <div className="grid gap-3 sm:grid-cols-3">
+                      {[
+                        { label: text.agentQuestions, value: agentConciergeReport.total, color: '#64d2ff' },
+                        { label: text.agentAnswered, value: answeredAgentQuestions, color: '#10B981' },
+                        { label: text.agentNeedsImprovement, value: agentQuestionsNeedingImprovement, color: '#F59E0B' },
+                      ].map((item) => (
+                        <div key={item.label} className="rounded-lg border border-[#1a1a3a] bg-[#12122a] p-4">
+                          <p className="text-xs text-gray-500">{item.label}</p>
+                          <p className="mt-2 text-2xl font-bold" style={{ color: item.color }}>{item.value.toLocaleString()}</p>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div>
+                      <h4 className="text-xs font-semibold uppercase text-gray-500">{text.agentThemes}</h4>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {agentConciergeReport.improvementBacklog.length === 0 ? (
+                          <span className="text-xs text-gray-600">{text.noData}</span>
+                        ) : agentConciergeReport.improvementBacklog.slice(0, 10).map((item) => (
+                          <span key={item.key} className="rounded-full border border-[#2a2a4a] bg-[#12122a] px-3 py-1 text-xs text-gray-300">
+                            {item.key.split('-').join(' ')} <span className="text-gray-600">{item.value}</span>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <h4 className="text-xs font-semibold uppercase text-gray-500">{text.agentRecentQuestions}</h4>
+                      <div className="mt-3 divide-y divide-[#1a1a3a] overflow-hidden rounded-lg border border-[#1a1a3a] bg-[#12122a]">
+                        {agentConciergeReport.recentQuestions.slice(0, 10).map((question, index) => (
+                          <div key={`${question.askedAt}-${index}`} className="p-4">
+                            <div className="flex flex-wrap items-center gap-2 text-[11px] text-gray-500">
+                              <span>{question.intent}</span>
+                              <span aria-hidden="true">{EM_DASH}</span>
+                              <span>{question.status}</span>
+                              <span aria-hidden="true">{EM_DASH}</span>
+                              <span>{question.locale.toUpperCase()}</span>
+                              <span aria-hidden="true">{EM_DASH}</span>
+                              <span>{fmtDateTime(question.askedAt)}</span>
+                            </div>
+                            <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-gray-200">{question.question}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <p className="text-[11px] leading-5 text-gray-600">{text.agentPrivacy}</p>
                   </div>
                 )}
               </section>

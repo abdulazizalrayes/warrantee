@@ -1,6 +1,7 @@
 # Warrantee First Customer Sprint
 
 Date: 2026-08-21
+Last verified: 2026-08-31
 Scope: founder-led, zero paid media, no automated sends.
 
 ## Recommendation
@@ -17,7 +18,7 @@ Do not sell asset intelligence, API / CLI / MCP, a marketplace, or seventeen fut
 
 ## Public Fit Candidates
 
-These are research candidates, not endorsements or CRM records. Their public sites describe warranty-backed service, equipment supply, maintenance, after-sales support, or serialized equipment. Verify fit and the current public contact channel immediately before outreach.
+These are research candidates, not endorsements or CRM records. On 2026-08-31, each official public site was reachable and continued to describe warranty-backed service, equipment supply, maintenance, after-sales support, or serialized equipment. Verify the current public contact channel again immediately before outreach.
 
 | Candidate | Public evidence of fit | Public source |
 | --- | --- | --- |
@@ -31,6 +32,17 @@ These are research candidates, not endorsements or CRM records. Their public sit
 | Western Pump | Riyadh warranty, service-network, and after-sales workflow | https://thewesternpump.com/costumer-service/ |
 | Windcatcher HVAC | Riyadh installation warranties, maintenance contracts, and extended-warranty offer | https://www.windcco.com/contact.html |
 | Ekuep | Riyadh/Khobar equipment seller with documented serial-number and warranty-service rules | https://www.ekuep.com/en/warranty |
+
+## Current Measurable Links
+
+Use only these September 2026 links for the next approved pilot. They contain campaign labels only and no person or company identifiers.
+
+- Seller pilot EN: `https://warrantee.io/en/seller/register?utm_source=manual_outreach&utm_medium=direct&utm_campaign=seller_pilot_sep_2026`
+- Seller pilot AR: `https://warrantee.io/ar/seller/register?utm_source=manual_outreach&utm_medium=direct&utm_campaign=seller_pilot_sep_2026`
+- Business-pricing EN: `https://warrantee.io/en/pricing?utm_source=manual_outreach&utm_medium=direct&utm_campaign=business_pilot_sep_2026`
+- Business-pricing AR: `https://warrantee.io/ar/pricing?utm_source=manual_outreach&utm_medium=direct&utm_campaign=business_pilot_sep_2026`
+
+The integration-pilot links remain available from `npm run campaign:links`, but they are not part of this first-customer sprint. The sprint stays focused on one company issuing one warranty.
 
 ## Seven-Day Operating Plan
 

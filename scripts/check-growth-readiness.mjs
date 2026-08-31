@@ -188,9 +188,9 @@ const salesCampaigns = anyFileContains([
 ], [
   "seller onboarding",
   "campaign",
-  "seller_pilot_july_2026",
-  "business_pilot_july_2026",
-  "integration_pilot_july_2026",
+  "seller_pilot_sep_2026",
+  "business_pilot_sep_2026",
+  "integration_pilot_sep_2026",
   "Meta",
   "Draft",
 ]);

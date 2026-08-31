@@ -9,7 +9,7 @@ const campaigns = [
     path: "seller/register",
     source: "manual_outreach",
     medium: "direct",
-    campaign: "seller_pilot_july_2026",
+    campaign: "seller_pilot_sep_2026",
     intent: "Qualified Saudi/GCC sellers who can issue warranties through Warrantee.",
   },
   {
@@ -18,7 +18,7 @@ const campaigns = [
     path: "pricing",
     source: "manual_outreach",
     medium: "direct",
-    campaign: "business_pilot_july_2026",
+    campaign: "business_pilot_sep_2026",
     intent: "SMB operators currently tracking warranties in spreadsheets or manual workflows.",
   },
   {
@@ -27,7 +27,7 @@ const campaigns = [
     path: "api-docs",
     source: "partner_outreach",
     medium: "direct",
-    campaign: "integration_pilot_july_2026",
+    campaign: "integration_pilot_sep_2026",
     intent: "ERP, ecommerce, support, or technical teams evaluating Warrantee integrations.",
   },
 ];
