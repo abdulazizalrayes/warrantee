@@ -459,6 +459,16 @@ describe("operational hardening", () => {
     expect(callback).toContain('source: "signup"');
   });
 
+  it("keeps public contact details out of fallback query URLs", () => {
+    const contact = readProjectFile("src/app/[locale]/contact/page.tsx");
+    const support = readProjectFile("src/app/[locale]/support/page.tsx");
+
+    expect(contact).toContain('<form method="post" onSubmit={handleSubmit}');
+    expect(support).toContain('<form method="post" onSubmit={handleSubmit}');
+    expect(contact).toContain("intent === 'enterprise-demo' || intent === 'enterprise'");
+    expect(contact).toContain("intent === 'api' || intent === 'integration'");
+  });
+
   it("keeps admin ingestion management on service-role reads after admin authorization", () => {
     const ingestionList = readProjectFile("src/app/api/admin/ingestion/route.ts");
     const ingestionStats = readProjectFile("src/app/api/admin/ingestion/stats/route.ts");

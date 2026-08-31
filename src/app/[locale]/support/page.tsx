@@ -111,7 +111,7 @@ export default function SupportPage() {
               </p>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            <form method="post" onSubmit={handleSubmit} className="p-6 space-y-4">
               {error && (
                 <div className="rounded-xl bg-red-50 px-4 py-3 text-[14px] font-medium text-red-700">
                   {error}

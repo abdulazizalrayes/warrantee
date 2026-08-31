@@ -229,7 +229,7 @@ export default function ContactPage() {
       <section className="px-4 sm:px-6 lg:px-8 pb-20">
         <div className="max-w-2xl mx-auto">
           <h2 className="text-2xl font-bold text-navy mb-6">{copy.formTitle}</h2>
-          <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-navy/5 p-8 space-y-5">
+          <form method="post" onSubmit={handleSubmit} className="bg-white rounded-2xl border border-navy/5 p-8 space-y-5">
             {error ? (
               <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                 {error}
