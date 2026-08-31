@@ -24,15 +24,4 @@ if (missing.length > 0) {
   process.exit(1);
 }
 
-console.log(
-  JSON.stringify(
-    {
-      ok: true,
-      hasE2eUser: Boolean(process.env.E2E_USER_EMAIL),
-      hasPassword: Boolean(process.env.E2E_USER_PASSWORD),
-      hasSupabaseAdmin: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
-    },
-    null,
-    2
-  )
-);
+console.log(JSON.stringify({ ok: true }, null, 2));

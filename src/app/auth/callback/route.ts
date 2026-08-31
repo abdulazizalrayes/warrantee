@@ -24,10 +24,24 @@ export async function GET(request: NextRequest) {
     `/${fallbackLocale}/dashboard`,
   );
 
-  if (code) {
-    const supabase = await createServerSupabaseClient();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error) {
+  if (!code) {
+    const missingCodeResponse = NextResponse.redirect(
+      new URL(`/${fallbackLocale}/auth?error=auth_callback_error`, origin),
+    );
+    missingCodeResponse.cookies.delete(OAUTH_SIGNUP_INTENT_COOKIE);
+    return missingCodeResponse;
+  }
+
+  const supabase = await createServerSupabaseClient();
+  const { error } = await supabase.auth.exchangeCodeForSession(code);
+  if (error) {
+    const exchangeErrorResponse = NextResponse.redirect(
+      new URL(`/${fallbackLocale}/auth?error=auth_callback_error`, origin),
+    );
+    exchangeErrorResponse.cookies.delete(OAUTH_SIGNUP_INTENT_COOKIE);
+    return exchangeErrorResponse;
+  }
+
       const signupIntent = parseOAuthSignupIntent(
         request.cookies.get(OAUTH_SIGNUP_INTENT_COOKIE)?.value
       );
@@ -96,10 +110,4 @@ export async function GET(request: NextRequest) {
       const successResponse = NextResponse.redirect(new URL(next, origin));
       successResponse.cookies.delete(OAUTH_SIGNUP_INTENT_COOKIE);
       return successResponse;
-    }
-  }
-
-  const errorResponse = NextResponse.redirect(new URL(`/${fallbackLocale}/auth?error=auth_callback_error`, origin));
-  errorResponse.cookies.delete(OAUTH_SIGNUP_INTENT_COOKIE);
-  return errorResponse;
 }
