@@ -178,11 +178,11 @@ export function buildPublicOpenApi() {
           },
         },
       },
-      "/api/admin/agent-concierge/questions": {
+      "/api/admin/agent-concierge/report": {
         get: {
           summary: "Read the protected agent-question improvement report",
           description:
-            "Admin-only aggregate report containing privacy-redacted questions, repeated themes, answer gaps, locales, protocols, and improvement tags. No IP addresses, raw user-agents, credentials, or private warranty payloads are returned.",
+            "Admin-only aggregate report containing privacy-redacted questions, repeated themes, answer gaps, locales, protocols, and improvement tags. This browser-safe path uses the same protected handler as the legacy /api/admin/agent-concierge/questions endpoint. No IP addresses, raw user-agents, credentials, or private warranty payloads are returned.",
           security: [{ SessionCookie: [] }],
           parameters: [
             { name: "days", in: "query", schema: { type: "integer", minimum: 1, maximum: 180, default: 30 } },
