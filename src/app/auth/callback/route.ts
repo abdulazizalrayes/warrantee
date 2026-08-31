@@ -8,6 +8,7 @@ import {
   OAUTH_SIGNUP_INTENT_COOKIE,
   parseOAuthSignupIntent,
 } from "@/lib/oauth-signup-intent";
+import { resolveSafeAuthRedirect } from "@/lib/auth-redirect";
 
 function getLocaleFromPath(path: string | null): Locale {
   return normalizeLocale(path?.split("/").filter(Boolean)[0]);
@@ -18,10 +19,10 @@ export async function GET(request: NextRequest) {
   const code = searchParams?.get("code");
   const requestedNext = searchParams?.get("next");
   const fallbackLocale = getLocaleFromPath(requestedNext);
-  const next =
-    requestedNext && requestedNext.startsWith("/") && !requestedNext.startsWith("//")
-      ? requestedNext
-      : `/${fallbackLocale}/dashboard`;
+  const next = resolveSafeAuthRedirect(
+    requestedNext,
+    `/${fallbackLocale}/dashboard`,
+  );
 
   if (code) {
     const supabase = await createServerSupabaseClient();

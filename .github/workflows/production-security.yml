@@ -8,6 +8,9 @@ on:
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
+permissions:
+  contents: read
+
 concurrency:
   # Serialize creation, use, and cleanup of the shared disposable QA identity.
   group: warrantee-production-qa-identity

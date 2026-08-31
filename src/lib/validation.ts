@@ -39,8 +39,18 @@ export function sanitizePostgrestSearch(value: string, maxLength = 80): string {
 }
 
 export function isValidEmail(value: unknown): value is string {
-  if (typeof value !== "string") return false;
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) && value.length <= 254;
+  if (typeof value !== "string" || value.length > 254 || value.length === 0) return false;
+  if (Array.from(value).some((character) => character.trim().length === 0)) return false;
+
+  const separator = value.indexOf("@");
+  if (separator <= 0 || separator !== value.lastIndexOf("@")) return false;
+
+  const local = value.slice(0, separator);
+  const domain = value.slice(separator + 1);
+  if (local.length > 64 || domain.length === 0 || domain.length > 253) return false;
+
+  const labels = domain.split(".");
+  return labels.length >= 2 && labels.every((label) => label.length > 0 && label.length <= 63);
 }
 
 export function isValidDate(value: unknown): boolean {

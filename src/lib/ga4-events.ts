@@ -49,29 +49,27 @@ export const campaignParamKeys = [
 ] as const;
 
 function sanitizeServerPayload(payload: Record<string, unknown>) {
-  const sanitized: Record<string, string | number | boolean | null> = {};
+  const entries: Array<[string, string | number | boolean | null]> = [];
   for (const [key, value] of Object.entries(payload)) {
     if (value === null || typeof value === "boolean" || typeof value === "number") {
-      sanitized[key] = value;
+      entries.push([key, value]);
     } else if (typeof value === "string") {
-      sanitized[key] = value.slice(0, 160);
+      entries.push([key, value.slice(0, 160)]);
     }
   }
-  return sanitized;
+  return Object.fromEntries(entries);
 }
 
 export function readCampaignParams() {
-  const campaign: Record<string, string> = {};
-
-  if (typeof window === "undefined") return campaign;
+  if (typeof window === "undefined") return {};
 
   const params = new URLSearchParams(window.location.search);
+  const entries: Array<[string, string]> = [];
   for (const key of campaignParamKeys) {
     const value = params.get(key);
-    if (value) campaign[key] = value.slice(0, 160);
+    if (value) entries.push([key, value.slice(0, 160)]);
   }
-
-  return campaign;
+  return Object.fromEntries(entries);
 }
 
 export function appendCampaignParams(destination: string) {

@@ -5,6 +5,7 @@ import crypto from "crypto";
 import { resolveWarrantyAccessOrClause } from "@/lib/warranty-access";
 import { escapeHtml } from "@/lib/html-escape";
 import { certificateRateLimit, getClientIp, getRateLimitHeaders } from "@/lib/rate-limit";
+import { isValidUUID } from "@/lib/validation";
 
 function getSupabaseAdmin() {
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
@@ -24,7 +25,8 @@ function generateCertificateNumber(): string {
 }
 
 function generateCertificateHTML(warranty: any, company: any, locale: string = "en"): string {
-  const isAr = locale === "ar";
+  const safeLocale = locale === "ar" ? "ar" : "en";
+  const isAr = safeLocale === "ar";
   const dir = isAr ? "rtl" : "ltr";
   const lang = isAr ? "ar" : "en";
   const fontFamily = isAr
@@ -32,7 +34,8 @@ function generateCertificateHTML(warranty: any, company: any, locale: string = "
     : "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Segoe UI', system-ui";
   const startDate = new Date(warranty.start_date).toLocaleDateString(isAr ? "ar-SA" : "en-US", { year: "numeric", month: "long", day: "numeric" });
   const endDate = new Date(warranty.end_date).toLocaleDateString(isAr ? "ar-SA" : "en-US", { year: "numeric", month: "long", day: "numeric" });
-  const certNumber = warranty.certificate_number || generateCertificateNumber();
+  const certNumber = escapeHtml(String(warranty.certificate_number || generateCertificateNumber()));
+  const certNumberQuery = encodeURIComponent(String(warranty.certificate_number || ""));
   const issueDate = new Date().toLocaleDateString(isAr ? "ar-SA" : "en-US", { year: "numeric", month: "long", day: "numeric" });
 
   const trustText = isAr ? "ثق بالشروط" : "Trust the Terms";
@@ -120,7 +123,7 @@ function generateCertificateHTML(warranty: any, company: any, locale: string = "
     '<div class="stamp"><div class="stamp-circle"><div class="stamp-text">' + verifiedText + '</div></div></div>',
     '<div style="text-align: ' + textAlign + '"><div class="detail-label">' + issueDateLabel + '</div><div class="issue-date">' + issueDate + '</div></div>',
     "</div>",
-    '<div class="verify-note">' + verifyText + ' https://warrantee.io/' + locale + '/verify?q=' + certNumber + '</div>',
+    '<div class="verify-note">' + verifyText + ' https://warrantee.io/' + safeLocale + '/verify?q=' + certNumberQuery + '</div>',
     '<div class="verify-note">' + poweredByText + ' | warrantee.io</div>',
     "</div>",
     "</body>",
@@ -150,9 +153,11 @@ export async function POST(request: Request) {
 
     const { warrantyId, locale = "en" } = await request.json();
 
-    if (!warrantyId) {
-      return NextResponse.json({ error: "Missing warrantyId" }, { status: 400 });
+    if (!isValidUUID(warrantyId)) {
+      return NextResponse.json({ error: "Invalid warrantyId" }, { status: 400 });
     }
+
+    const safeLocale = locale === "ar" ? "ar" : "en";
 
     const { data: warranty, error: wError } = await supabase
       .from("warranties")
@@ -177,12 +182,19 @@ export async function POST(request: Request) {
         .eq("id", warrantyId);
     }
 
-    const html = generateCertificateHTML(warranty, warranty.companies, locale);
+    const html = generateCertificateHTML(
+      { ...warranty, certificate_number: certNumber },
+      warranty.companies,
+      safeLocale,
+    );
+    const safeFileNumber = encodeURIComponent(String(certNumber));
 
     return new Response(html, {
       headers: {
         "Content-Type": "text/html; charset=utf-8",
-        "Content-Disposition": "inline; filename=\"warranty-certificate-" + certNumber + ".html\"",
+        "Content-Disposition": "inline; filename=\"warranty-certificate-" + safeFileNumber + ".html\"",
+        "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; sandbox",
+        "X-Content-Type-Options": "nosniff",
       },
     });
   } catch (error) {

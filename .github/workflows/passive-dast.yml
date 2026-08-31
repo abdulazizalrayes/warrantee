@@ -1,0 +1,30 @@
+name: Passive DAST
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "37 3 * * 1"
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: passive-dast-production
+  cancel-in-progress: false
+
+jobs:
+  zap-baseline:
+    name: OWASP ZAP passive production baseline
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Scan public production surface
+        uses: zaproxy/action-baseline@v0.15.0
+        with:
+          target: https://warrantee.io
+          fail_action: false
+          allow_issue_writing: true
+          issue_title: Warrantee OWASP ZAP passive baseline report
+          artifact_name: warrantee-zap-passive-baseline
+          cmd_options: -a -j -m 5

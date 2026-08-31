@@ -11,7 +11,8 @@ export class WarranteeApiError extends Error {
 }
 
 export function normalizeBaseUrl(baseUrl = DEFAULT_BASE_URL) {
-  const normalized = String(baseUrl || DEFAULT_BASE_URL).trim().replace(/\/+$/, "");
+  let normalized = String(baseUrl || DEFAULT_BASE_URL).trim();
+  while (normalized.endsWith("/")) normalized = normalized.slice(0, -1);
   if (!/^https?:\/\//i.test(normalized)) {
     throw new WarranteeApiError("Base URL must start with http:// or https://");
   }

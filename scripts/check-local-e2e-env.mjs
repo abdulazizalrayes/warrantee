@@ -24,14 +24,11 @@ if (missing.length > 0) {
   process.exit(1);
 }
 
-const email = process.env.E2E_USER_EMAIL || "";
-const maskedEmail = email.replace(/^(.).+(@.+)$/, "$1***$2");
-
 console.log(
   JSON.stringify(
     {
       ok: true,
-      e2eUser: maskedEmail,
+      hasE2eUser: Boolean(process.env.E2E_USER_EMAIL),
       hasPassword: Boolean(process.env.E2E_USER_PASSWORD),
       hasSupabaseAdmin: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
     },

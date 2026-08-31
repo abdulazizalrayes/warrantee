@@ -268,11 +268,11 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (isAdminArea || isApprovalArea) {
-    if (!user) {
-      return buildNoIndexAuthRedirect(request, locale);
-    }
+  if ((isProtectedAppArea || isAdminArea || isApprovalArea) && !user) {
+    return buildNoIndexAuthRedirect(request, locale);
+  }
 
+  if ((isAdminArea || isApprovalArea) && user) {
     const { data: profile } = await supabase
       .from("profiles")
       .select("role")
@@ -302,12 +302,6 @@ export async function middleware(request: NextRequest) {
       if (!isGlobalApprover && !approvalMembership) {
         return buildNoIndexRedirect(request, "/" + locale + "/dashboard");
       }
-    }
-  }
-
-  if (isProtectedAppArea && !isAdminArea && !isApprovalArea) {
-    if (!user) {
-      return buildNoIndexAuthRedirect(request, locale);
     }
   }
 

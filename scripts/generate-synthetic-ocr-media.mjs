@@ -175,10 +175,13 @@ const corruptedPath = path.join(outputDir, "synthetic-corrupted.pdf");
 fs.writeFileSync(corruptedPath, Buffer.from("%PDF-1.7\nsynthetic broken stream\nxref missing\n%%EOF truncated", "utf8"));
 files.push(corruptedPath);
 
-const output = files.map((filePath) => ({
-  file: path.relative(process.cwd(), filePath),
-  bytes: fs.statSync(filePath).size,
-  sha256: crypto.createHash("sha256").update(fs.readFileSync(filePath)).digest("hex"),
-}));
+const output = files.map((filePath) => {
+  const contents = fs.readFileSync(filePath);
+  return {
+    file: path.relative(process.cwd(), filePath),
+    bytes: contents.length,
+    sha256: crypto.createHash("sha256").update(contents).digest("hex"),
+  };
+});
 
 console.log(JSON.stringify({ ok: true, generated: output }, null, 2));

@@ -509,7 +509,8 @@ export async function callTool(name, args = {}, context = {}) {
         return context.askAgentConcierge(question, locale);
       }
 
-      const baseUrl = String(options.baseUrl || BASE_URL).replace(/\/+$/, "");
+      let baseUrl = String(options.baseUrl || BASE_URL);
+      while (baseUrl.endsWith("/")) baseUrl = baseUrl.slice(0, -1);
       const response = await options.fetchImpl(`${baseUrl}/api/agent-concierge`, {
         method: "POST",
         headers: {

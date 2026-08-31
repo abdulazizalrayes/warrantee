@@ -176,7 +176,7 @@ describe("operational hardening", () => {
       /const protectedAppPrefixes = \[[\s\S]*["']\/onboarding["'][\s\S]*\]/,
     );
     expect(middleware).toContain(
-      "if (isProtectedAppArea && !isAdminArea && !isApprovalArea)",
+      "if ((isProtectedAppArea || isAdminArea || isApprovalArea) && !user)",
     );
     expect(middleware).toContain("return buildNoIndexAuthRedirect(request, locale);");
   });
@@ -493,6 +493,16 @@ describe("operational hardening", () => {
     expect(signedCertificate).toContain("IBM Plex Sans Arabic");
     expect(publicCertificate).toContain("IBM Plex Sans Arabic");
     expect(adminLogin).toContain("var(--font-arabic-fallback)");
+  });
+
+  it("validates and sandboxes generated HTML certificates", () => {
+    const certificate = readProjectFile("src/app/api/certificates/generate/route.ts");
+
+    expect(certificate).toContain("isValidUUID(warrantyId)");
+    expect(certificate).toContain('locale === "ar" ? "ar" : "en"');
+    expect(certificate).toContain("certificate_number: certNumber");
+    expect(certificate).toContain("encodeURIComponent(String(certNumber))");
+    expect(certificate).toContain("default-src 'none'; style-src 'unsafe-inline'; sandbox");
   });
 
   it("keeps production smoke failures diagnostic", () => {
