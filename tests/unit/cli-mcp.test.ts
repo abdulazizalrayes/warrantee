@@ -122,6 +122,22 @@ describe("Warrantee CLI and MCP", () => {
     }
   });
 
+  it("can be imported when the runtime argv entry is not a real file", () => {
+    const moduleUrl = toolModule("mcp-server.mjs");
+    const result = spawnSync(
+      process.execPath,
+      [
+        "--input-type=module",
+        "--eval",
+        `process.argv[1] = "/vercel"; const module = await import(${JSON.stringify(moduleUrl)}); if (typeof module.handleMcpRequest !== "function") process.exit(1);`,
+      ],
+      { encoding: "utf8" },
+    );
+
+    expect(result.status).toBe(0);
+    expect(result.stderr).toBe("");
+  });
+
   it("runs read-only operational status with a scoped integration token", async () => {
     const calls: FetchCall[] = [];
     const stdout: string[] = [];
