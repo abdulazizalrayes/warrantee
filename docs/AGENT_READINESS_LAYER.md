@@ -51,8 +51,8 @@ Agent Concierge and A2A:
 - Public HTTP contract and endpoint: `/api/agent-concierge`
 - A2A 1.0 HTTP+JSON interface: `/api/a2a`
 - A2A synchronous send endpoint: `/api/a2a/message:send`
-- Protected owner report: `/api/admin/agent-concierge/report`
-- Legacy owner-report alias: `/api/admin/agent-concierge/questions`
+- Protected owner report for regular browsers: `/owner/service-report`
+- API owner-report aliases: `/api/admin/agent-concierge/report` and `/api/admin/agent-concierge/questions`
 - Shared deterministic answer engine: `src/lib/agent-concierge.ts`
 - Privacy redaction: `src/lib/agent-question-privacy.ts`
 - Server-side recording: `src/lib/server/agent-question-recorder.ts`
@@ -203,7 +203,7 @@ Operational checks:
 - Filter `user_agent_class = ai_or_search_crawler` to understand AI/search crawler activity.
 - Exclude `user_agent_class = automation` when measuring real agent adoption; release validators use this class intentionally.
 - Review `mcp_tool_call` and `inquiry_preparation` counts for agent usage.
-- As a signed-in Warrantee admin, request `/api/admin/agent-concierge/report?days=30&limit=50&page=1` to review redacted questions, repeated themes, partial answers, locale/protocol breakdowns, and improvement tags. The browser-safe `report` path avoids client-side filters that sometimes block URLs containing `questions`.
+- As a signed-in Warrantee admin, request `/owner/service-report?days=30&limit=50&page=1` to review redacted questions, repeated themes, partial answers, locale/protocol breakdowns, and improvement tags. This regular-browser path reuses the protected API handler because some client-side filters block direct navigation to raw `/api/*` URLs. The API aliases remain available for authenticated integrations.
 - Use the report's `pagination.hasNextPage` value and increment `page` to retrieve every sanitized question in the selected period. Add `includeAutomation=1` only when release-check traffic should be included.
 - Retention defaults to 180 days and can be changed with `DATA_RETENTION_AGENT_QUESTION_DAYS` within the bounded retention configuration.
 - Review `agent_markdown_read` for negotiated canonical Markdown usage. Direct sidecars remain statically served for cost and reliability; use platform request logs for aggregate direct-sidecar traffic.
