@@ -72,6 +72,11 @@ const allowlist = [
     reason: "Compose deliberately publishes the authenticated scanner on the host loopback interface only.",
   },
   {
+    file: "services/clamav-scanner/cloud-run-config.mjs",
+    patterns: new Set(["127.0.0.1"]),
+    reason: "Cloud Run sidecars share one instance network; the wrapper reaches clamd over loopback without exposing port 3310.",
+  },
+  {
     file: "scripts/check-no-loopback-links.mjs",
     patterns: new Set(patterns.map((pattern) => pattern.name)),
     reason: "This guard contains the loopback patterns it scans for.",

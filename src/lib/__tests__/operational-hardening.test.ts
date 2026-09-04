@@ -263,6 +263,12 @@ describe("operational hardening", () => {
       "checkDocumentSecurityScanner"
     );
     expect(readProjectFile("scripts/operational-readiness-check.mjs")).toContain(
+      "DOCUMENT_SECURITY_SCANNER_TOKEN is required"
+    );
+    expect(readProjectFile("scripts/operational-readiness-check.mjs")).toContain(
+      "External document scanner health check failed"
+    );
+    expect(readProjectFile("scripts/operational-readiness-check.mjs")).toContain(
       "pending_provider"
     );
     expect(scanRoute).toContain("requireInternalBearer");

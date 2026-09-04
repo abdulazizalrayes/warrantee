@@ -8,6 +8,13 @@ const MAX_FILE_BYTES = Number(process.env.MAX_FILE_BYTES || 10 * 1024 * 1024);
 const MAX_JSON_BYTES = 32 * 1024;
 const CLAMD_HOST = process.env.CLAMD_HOST || "clamav";
 const CLAMD_PORT = Number(process.env.CLAMD_PORT || 3310);
+const HEALTH_CACHE_MS = 5_000;
+const configuredRateLimit = Number(process.env.SCAN_RATE_LIMIT_PER_MINUTE || 30);
+const SCAN_RATE_LIMIT_PER_MINUTE = Number.isSafeInteger(configuredRateLimit) && configuredRateLimit > 0
+  ? Math.min(configuredRateLimit, 120)
+  : 30;
+
+let healthCache = { expiresAt: 0, payload: null };
 
 function safeEqual(left, right) {
   const leftBuffer = Buffer.from(String(left || ""));
@@ -59,6 +66,29 @@ export function validateDownloadedSize(actualSize, declaredSize) {
   if (actualSize !== declaredSize) return "document_size_mismatch";
   return null;
 }
+
+export function createFixedWindowRateLimiter(limit, windowMs = 60_000) {
+  let windowStartedAt = 0;
+  let count = 0;
+
+  return {
+    consume(now = Date.now()) {
+      if (!windowStartedAt || now - windowStartedAt >= windowMs) {
+        windowStartedAt = now;
+        count = 0;
+      }
+      count += 1;
+      const retryAfterSeconds = Math.max(1, Math.ceil((windowStartedAt + windowMs - now) / 1000));
+      return {
+        allowed: count <= limit,
+        remaining: Math.max(0, limit - count),
+        retryAfterSeconds,
+      };
+    },
+  };
+}
+
+const scanRateLimiter = createFixedWindowRateLimiter(SCAN_RATE_LIMIT_PER_MINUTE);
 
 async function readBoundedResponse(response) {
   if (!response.body) throw new Error("empty_document_response");
@@ -119,20 +149,30 @@ async function readJson(request) {
   return JSON.parse(Buffer.concat(chunks).toString("utf8"));
 }
 
-function send(response, status, payload) {
+function send(response, status, payload, headers = {}) {
   response.writeHead(status, {
     "Content-Type": "application/json; charset=utf-8",
     "Cache-Control": "no-store",
     "X-Content-Type-Options": "nosniff",
+    ...headers,
   });
   response.end(JSON.stringify(payload));
+}
+
+async function readHealth() {
+  const now = Date.now();
+  if (healthCache.payload && healthCache.expiresAt > now) return healthCache.payload;
+
+  const version = String(await clamdCommand("VERSION")).replace(/\0/g, "").trim().slice(0, 200);
+  const payload = { status: "ok", engine: "clamav", version };
+  healthCache = { expiresAt: now + HEALTH_CACHE_MS, payload };
+  return payload;
 }
 
 async function handle(request, response) {
   if (request.method === "GET" && request.url === "/healthz") {
     try {
-      const version = String(await clamdCommand("VERSION")).replace(/\0/g, "").trim().slice(0, 200);
-      return send(response, 200, { status: "ok", engine: "clamav", version });
+      return send(response, 200, await readHealth());
     } catch {
       return send(response, 503, { status: "unavailable", engine: "clamav" });
     }
@@ -142,6 +182,14 @@ async function handle(request, response) {
   }
   if (!authorized(request.headers.authorization)) {
     return send(response, 401, { error: "unauthorized" });
+  }
+  const capacity = scanRateLimiter.consume();
+  if (!capacity.allowed) {
+    return send(response, 429, { error: "rate_limited" }, {
+      "Retry-After": String(capacity.retryAfterSeconds),
+      "X-RateLimit-Limit": String(SCAN_RATE_LIMIT_PER_MINUTE),
+      "X-RateLimit-Remaining": "0",
+    });
   }
 
   try {

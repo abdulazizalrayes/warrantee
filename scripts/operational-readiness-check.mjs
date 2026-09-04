@@ -611,7 +611,9 @@ async function checkOCRProvider() {
 
 async function checkDocumentSecurityScanner() {
   const scannerUrl = process.env.DOCUMENT_SECURITY_SCANNER_URL?.trim() || "";
+  const scannerToken = process.env.DOCUMENT_SECURITY_SCANNER_TOKEN?.trim() || "";
   const strictDownloads = process.env.DOCUMENT_DOWNLOAD_REQUIRE_CLEAN === "1";
+  const configuredTimeout = Number(process.env.DOCUMENT_SECURITY_SCANNER_TIMEOUT_MS || 20_000);
 
   if (!scannerUrl) {
     return {
@@ -633,13 +635,39 @@ async function checkDocumentSecurityScanner() {
   if (parsedUrl.protocol !== "https:") {
     throw new Error("DOCUMENT_SECURITY_SCANNER_URL must use HTTPS");
   }
+  if (parsedUrl.username || parsedUrl.password || parsedUrl.search || parsedUrl.hash) {
+    throw new Error("DOCUMENT_SECURITY_SCANNER_URL cannot contain credentials, query parameters, or fragments");
+  }
+  if (!scannerToken) {
+    throw new Error("DOCUMENT_SECURITY_SCANNER_TOKEN is required when the document scanner is configured");
+  }
+  if (!Number.isSafeInteger(configuredTimeout) || configuredTimeout < 5_000 || configuredTimeout > 120_000) {
+    throw new Error("DOCUMENT_SECURITY_SCANNER_TIMEOUT_MS must be an integer from 5000 to 120000");
+  }
+
+  const appHost = new URL(process.env.NEXT_PUBLIC_APP_URL || "https://warrantee.io").host;
+  let engine = "warrantee-baseline";
+  if (parsedUrl.host !== appHost) {
+    const healthUrl = new URL("/healthz", parsedUrl.origin);
+    const healthResponse = await fetch(healthUrl, {
+      redirect: "error",
+      signal: AbortSignal.timeout(Math.min(configuredTimeout, 120_000)),
+    });
+    const healthPayload = await healthResponse.json().catch(() => ({}));
+    if (!healthResponse.ok || healthPayload?.status !== "ok" || healthPayload?.engine !== "clamav") {
+      throw new Error(`External document scanner health check failed (${healthResponse.status})`);
+    }
+    engine = "clamav";
+  }
 
   return {
     name: "document-security-scanner",
     status: "ok",
     mode: "external-provider",
+    engine,
     strictDownloads,
     host: parsedUrl.host,
+    timeoutMs: configuredTimeout,
   };
 }
 

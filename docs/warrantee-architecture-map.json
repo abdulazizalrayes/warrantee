@@ -7,8 +7,8 @@
     "domain": "https://warrantee.io",
     "repository": "https://github.com/abdulazizalrayes/warrantee",
     "branch": "main",
-    "mapped_from_commit": "working-tree-agent-concierge-2026-08-30",
-    "generated_at": "2026-08-30",
+    "mapped_from_commit": "working-tree-clamav-cloud-run-2026-09-05",
+    "generated_at": "2026-09-05",
     "classification": "internal engineering documentation; no secrets or customer records",
     "human_view": "docs/WARRANTEE_ARCHITECTURE_MAP.html",
     "agent_view": "docs/warrantee-architecture-map.json",
@@ -2818,7 +2818,7 @@
     {
       "provider": "ClamAV",
       "purpose": "Self-hosted signature malware scanning",
-      "status": "service implementation ready; persistent container host not selected",
+      "status": "service and Dammam Cloud Run deployment specification ready; activation blocked on owner-approved Google billing",
       "failure_behavior": "Configured scans fail closed and documents do not proceed to OCR or download."
     },
     {
@@ -2880,7 +2880,7 @@
     {
       "id": "clamav_runtime",
       "classification": "external compute pending",
-      "detail": "The ClamAV wrapper and container topology are implemented, but no secure persistent container host is currently approved or configured.",
+      "detail": "The hardened ClamAV wrapper, live validator, and Warrantee-only scale-to-zero Cloud Run topology for project warrantee-491217 are implemented. The Google project still requires owner-approved free-trial or billing activation before APIs and resources can be created.",
       "impact": "The active in-app heuristic scanner remains in place; do not claim signature antivirus is live until health and EICAR isolation tests pass."
     },
     {
