@@ -14,6 +14,7 @@ import { logAgentUsage } from "@/lib/server/agent-usage-logger";
 const A2A_VERSION = "1.0";
 const MAX_BODY_BYTES = 12_288;
 const RATE_LIMIT_PER_MINUTE = 30;
+const BLOCKED_RATE_LIMIT = 3;
 
 type A2APart = { text?: unknown };
 type A2AMessage = {
@@ -133,7 +134,6 @@ export async function POST(request: NextRequest) {
   const contextId = boundedId(message.contextId) || randomUUID();
 
   await recordAgentQuestion({
-    question,
     result,
     source: "a2a",
     userAgent: request.headers.get("user-agent"),
@@ -143,6 +143,26 @@ export async function POST(request: NextRequest) {
     intent: result.intent,
     answer_status: result.answerStatus,
   });
+
+  if (result.security.blocked) {
+    const blockedLimit = await rateLimit(getClientIp(request), {
+      maxRequests: BLOCKED_RATE_LIMIT,
+      windowMs: 15 * 60_000,
+      identifier: "a2a-blocked-content",
+    });
+    if (!blockedLimit.success) {
+      return apiJson(
+        { error: { code: "temporarily_blocked", message: "Repeated unsafe requests were blocked" } },
+        {
+          status: 429,
+          headers: a2aHeaders({
+            ...getRateLimitHeaders(blockedLimit),
+            "X-RateLimit-Limit": String(BLOCKED_RATE_LIMIT),
+          }),
+        },
+      );
+    }
+  }
 
   return apiJson(
     {

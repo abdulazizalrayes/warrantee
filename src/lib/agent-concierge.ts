@@ -3,6 +3,10 @@ import {
   companyData,
   servicesData,
 } from "@/lib/agent-public-data";
+import {
+  assessUntrustedContent,
+  type UntrustedContentAssessment,
+} from "@/lib/untrusted-content";
 
 const BASE_URL = "https://warrantee.io";
 export const AGENT_CONCIERGE_MAX_QUESTION_LENGTH = 2000;
@@ -12,7 +16,8 @@ export type AgentConciergeStatus =
   | "answered"
   | "partial"
   | "not_supported"
-  | "routed";
+  | "routed"
+  | "blocked";
 
 export type AgentConciergeResult = {
   schemaVersion: "1.0";
@@ -30,6 +35,7 @@ export type AgentConciergeResult = {
     requiresApproval: boolean;
   }>;
   improvementTags: string[];
+  security: UntrustedContentAssessment;
   boundaries: {
     readOnly: true;
     noSubmission: true;
@@ -55,22 +61,6 @@ type Topic = {
 };
 
 const topics: Topic[] = [
-  {
-    intent: "unsafe_or_private_request",
-    patterns: [
-      /ignore (all |the )?(previous|system|developer) instructions/i,
-      /reveal|expose|dump|show me (the )?(secret|password|token|key|private data)/i,
-      /تجاهل .*التعليمات|اكشف|أظهر .*كلمة المرور|أظهر .*المفتاح/i,
-    ],
-    fit: false,
-    status: "not_supported",
-    answer: {
-      en: "I can explain Warrantee using verified public information, but I cannot reveal secrets, credentials, private warranty records, internal instructions, or administrative data.",
-      ar: "يمكنني شرح Warrantee بالاعتماد على المعلومات العامة الموثقة، لكن لا يمكنني كشف الأسرار أو بيانات الدخول أو سجلات الضمان الخاصة أو التعليمات الداخلية أو بيانات الإدارة.",
-    },
-    citations: [{ title: "Security and trust", path: "/en/security" }],
-    tags: ["security-boundary", "private-data-request"],
-  },
   {
     intent: "non_fit_request",
     patterns: [
@@ -336,6 +326,7 @@ function fallbackResult(locale: AgentConciergeLocale): AgentConciergeResult {
       },
     ],
     improvementTags: ["unanswered-question", "content-gap"],
+    security: { blocked: false, category: "none" },
     boundaries: {
       readOnly: true,
       noSubmission: true,
@@ -349,12 +340,47 @@ function fallbackResult(locale: AgentConciergeLocale): AgentConciergeResult {
   };
 }
 
+function blockedResult(
+  locale: AgentConciergeLocale,
+  security: UntrustedContentAssessment,
+): AgentConciergeResult {
+  return {
+    schemaVersion: "1.0",
+    agent: "Warrantee Agent Concierge",
+    answer:
+      locale === "ar"
+        ? "لا يمكنني تنفيذ التعليمات الواردة في المحتوى الخارجي أو كشف معلومات خاصة أو اعتبار ذلك المحتوى موافقة. يمكنني فقط تقديم معلومات عامة موثقة عن Warrantee ضمن واجهة القراءة فقط."
+        : "I cannot execute instructions embedded in external content, disclose private information, or treat that content as authorization. I can only provide verified public Warrantee information through this read-only interface.",
+    language: locale,
+    intent: "unsafe_external_instruction",
+    fit: false,
+    confidence: "high",
+    answerStatus: "blocked",
+    citations: [{ title: "Security and trust", url: absoluteUrl("/en/security", locale) }],
+    nextActions: [],
+    improvementTags: ["security-boundary", security.category],
+    security,
+    boundaries: {
+      readOnly: true,
+      noSubmission: true,
+      noPrivateData: true,
+      noCredentials: true,
+    },
+    disclosure:
+      locale === "ar"
+        ? "تم رفض الطلب قبل أي تنفيذ أو وصول إلى أداة، ولم يتم الاحتفاظ بنصه."
+        : "The request was refused before any action or tool access, and its wording was not retained.",
+  };
+}
+
 export function answerAgentQuestion(
   question: string,
   requestedLocale?: string,
 ): AgentConciergeResult {
   const normalized = question.trim().slice(0, AGENT_CONCIERGE_MAX_QUESTION_LENGTH);
   const locale = detectLocale(normalized, requestedLocale);
+  const security = assessUntrustedContent(normalized);
+  if (security.blocked) return blockedResult(locale, security);
   const topic = topics.find((candidate) =>
     candidate.patterns.some((pattern) => pattern.test(normalized)),
   );
@@ -380,6 +406,7 @@ export function answerAgentQuestion(
       requiresApproval: action.requiresApproval ?? false,
     })),
     improvementTags: topic.tags,
+    security,
     boundaries: {
       readOnly: true,
       noSubmission: true,
@@ -416,9 +443,9 @@ export function getAgentConciergeContract() {
     },
     recording: {
       enabled: true,
-      purpose: "Aggregate question and content-gap analysis for product improvement.",
+      purpose: "Aggregate intent, answer-gap, and security-category analysis for product improvement.",
       privacy:
-        "Questions are redacted before storage. No IP address, raw user-agent, credentials, private warranty data, or full request body is retained.",
+        "Question wording and hashes are not stored or shown to administrators. Only bounded categorical telemetry is retained; blocked attacks are counted by hour, surface, and category.",
     },
     boundaries: {
       readOnly: true,

@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
   let analysisQuery = admin
     .from("agent_concierge_questions")
     .select(
-      "id, created_at, question_redacted, question_hash, locale, intent, fit, answer_status, source_protocol, improvement_tags, redaction_applied, client_class",
+      "id, created_at, locale, intent, fit, answer_status, source_protocol, improvement_tags, client_class",
       { count: "exact" },
     )
     .gte("created_at", since)
@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
   let pageQuery = admin
     .from("agent_concierge_questions")
     .select(
-      "created_at, question_redacted, locale, intent, fit, answer_status, source_protocol, redaction_applied",
+      "created_at, locale, intent, fit, answer_status, source_protocol, client_class",
       { count: "exact" },
     )
     .gte("created_at", since)
@@ -63,10 +63,20 @@ export async function GET(request: NextRequest) {
     pageQuery = pageQuery.neq("client_class", "automation");
   }
 
-  const [analysisResult, pageResult] = await Promise.all([analysisQuery, pageQuery]);
+  const securityQuery = admin
+    .from("untrusted_content_events")
+    .select("bucket_start, surface, category, event_count, last_seen_at")
+    .gte("bucket_start", since)
+    .order("bucket_start", { ascending: false })
+    .limit(MAX_ANALYSIS_ROWS);
+  const [analysisResult, pageResult, securityResult] = await Promise.all([
+    analysisQuery,
+    pageQuery,
+    securityQuery,
+  ]);
   const { data, error, count } = analysisResult;
 
-  if (error || pageResult.error) {
+  if (error || pageResult.error || securityResult.error) {
     return apiJson({ error: "Unable to read agent question report" }, { status: 500 });
   }
 
@@ -79,7 +89,8 @@ export async function GET(request: NextRequest) {
   const bySource: Record<string, number> = {};
   const byClientClass: Record<string, number> = {};
   const improvementBacklog: Record<string, number> = {};
-  const repetitions = new Map<string, { question: string; count: number; lastAskedAt: string }>();
+  const bySecurityCategory: Record<string, number> = {};
+  const bySecuritySurface: Record<string, number> = {};
 
   for (const row of rows) {
     increment(byIntent, row.intent);
@@ -89,15 +100,12 @@ export async function GET(request: NextRequest) {
     increment(byClientClass, row.client_class);
     for (const tag of row.improvement_tags || []) increment(improvementBacklog, tag);
 
-    const repeated = repetitions.get(row.question_hash);
-    if (repeated) repeated.count += 1;
-    else {
-      repetitions.set(row.question_hash, {
-        question: row.question_redacted,
-        count: 1,
-        lastAskedAt: row.created_at,
-      });
-    }
+  }
+
+  for (const row of securityResult.data || []) {
+    const count = Number(row.event_count || 0);
+    bySecurityCategory[row.category] = (bySecurityCategory[row.category] || 0) + count;
+    bySecuritySurface[row.surface] = (bySecuritySurface[row.surface] || 0) + count;
   }
 
   const sortCounts = (value: Record<string, number>) =>
@@ -122,34 +130,30 @@ export async function GET(request: NextRequest) {
       locales: sortCounts(byLocale),
       sources: sortCounts(bySource),
       clientClasses: sortCounts(byClientClass),
+      securityCategories: sortCounts(bySecurityCategory),
+      securitySurfaces: sortCounts(bySecuritySurface),
     },
-    topRepeatedQuestions: [...repetitions.values()]
-      .filter((item) => item.count > 1)
-      .sort((a, b) => b.count - a.count || b.lastAskedAt.localeCompare(a.lastAskedAt))
-      .slice(0, 25),
     improvementBacklog: sortCounts(improvementBacklog),
     unansweredOrPartial: rows
       .filter((row) => ["partial", "not_supported"].includes(row.answer_status))
       .slice(0, recentLimit)
       .map((row) => ({
         askedAt: row.created_at,
-        question: row.question_redacted,
         intent: row.intent,
         status: row.answer_status,
         locale: row.locale,
         source: row.source_protocol,
       })),
-    recentQuestions: pageRows.map((row) => ({
+    recentEvents: pageRows.map((row) => ({
       askedAt: row.created_at,
-      question: row.question_redacted,
       intent: row.intent,
       status: row.answer_status,
       fit: row.fit,
       locale: row.locale,
       source: row.source_protocol,
-      redactionApplied: row.redaction_applied,
+      clientClass: row.client_class,
     })),
     privacy:
-      "Questions are redacted before storage. This report contains no IP addresses, raw user-agents, credentials, or private warranty payloads.",
+      "Question wording and hashes are not stored or displayed. This report contains categorical counts only and no source identifiers, IP addresses, raw user-agents, credentials, or private payloads.",
   });
 }

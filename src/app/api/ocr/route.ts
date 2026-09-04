@@ -7,16 +7,24 @@ import { cleanOCRTelemetry, type OCRProviderTelemetry } from "@/lib/ocr/telemetr
 import { extractWarrantyFields } from "@/lib/ocr/warranty-field-parser";
 import {
   hasMistralOCRConfig,
-  MistralOCRConfigurationError,
   MistralOCRUnsupportedFileError,
   recognizeDataUriWithMistral,
 } from "@/lib/ocr/mistral";
+import {
+  hasPaddleOCRConfig,
+  PaddleOCRConfigurationError,
+  recognizeBase64WithPaddle,
+} from "@/lib/ocr/paddle";
+import { scanDocumentBaseline } from "@/lib/server/document-security-baseline";
+import { recordUntrustedContentEvent } from "@/lib/server/untrusted-content-events";
+import { assessUntrustedContent, isInstructionAttack } from "@/lib/untrusted-content";
 
 const MAX_OCR_TEXT_LENGTH = 50000;
 const MAX_IMAGE_DATA_URI_BYTES = 4 * 1024 * 1024;
 const OCR_PIPELINE_VERSION = "2026-07-24.1";
 const OCR_FIELD_PARSER_VERSION = "2026-07-24.1";
 const MISTRAL_TIMEOUT_MS = 15000;
+const PADDLE_TIMEOUT_MS = 20000;
 const VISION_TIMEOUT_MS = 8000;
 const LOCAL_OCR_TIMEOUT_MS = 45000;
 
@@ -56,10 +64,32 @@ function summarizeOCRProviderError(error: unknown) {
   return `${name}: ${message}`;
 }
 
+function stripBase64Padding(value: string) {
+  let end = value.length;
+  while (end > 0 && value.charCodeAt(end - 1) === 61) end -= 1;
+  return value.slice(0, end);
+}
+
 function getDataUriMeta(dataUri: string) {
-  const header = dataUri.split(",")[0] || "";
-  const mimeType = header.startsWith("data:") ? header.slice(5).split(";")[0] || "application/octet-stream" : "application/octet-stream";
-  const base64 = dataUri.includes(",") ? dataUri.split(",")[1] : dataUri;
+  const match = dataUri.match(/^data:(application\/pdf|image\/(?:jpeg|png));base64,([A-Za-z0-9+/]+={0,2})$/);
+  if (!match) throw new Error("OCR requires a base64 PDF, JPEG, or PNG data URI.");
+  const mimeType = match[1];
+  const base64 = match[2];
+  const bytes = Buffer.from(base64, "base64");
+  const normalized = stripBase64Padding(base64);
+  if (!bytes.length || stripBase64Padding(bytes.toString("base64")) !== normalized) {
+    throw new Error("OCR data URI contains invalid base64 content.");
+  }
+  const extension = mimeType === "application/pdf" ? "pdf" : mimeType === "image/png" ? "png" : "jpg";
+  const baseline = scanDocumentBaseline({
+    fileName: `ocr-upload.${extension}`,
+    fileType: mimeType,
+    fileSize: bytes.length,
+    bytes,
+  });
+  if (baseline.verdict !== "clean") {
+    throw new Error(`OCR document was rejected by the security baseline: ${baseline.reason || "blocked"}.`);
+  }
   return { mimeType, base64 };
 }
 
@@ -77,7 +107,16 @@ function shouldTryGoogleVision() {
   return (
     provider === "google" ||
     provider === "google-vision" ||
-    ((provider === "auto" || provider === "mistral") && Boolean(process.env.GOOGLE_CLOUD_VISION_API_KEY))
+    ((provider === "auto" || provider === "mistral" || provider === "paddle" || provider === "paddleocr") && Boolean(process.env.GOOGLE_CLOUD_VISION_API_KEY))
+  );
+}
+
+function shouldTryPaddle() {
+  const provider = getOCRProviderPreference();
+  return (
+    provider === "paddle" ||
+    provider === "paddleocr" ||
+    ((provider === "auto" || provider === "mistral") && hasPaddleOCRConfig())
   );
 }
 
@@ -109,6 +148,34 @@ async function extractTextWithMistral(dataUri: string, mimeType: string, fallbac
     telemetry: cleanOCRTelemetry({
       provider: "mistral",
       engine: "mistral_ocr",
+      mode: "hosted",
+      providerPreference: getOCRProviderPreference(),
+      fallback,
+      mimeType,
+      model: result.model,
+      pipelineVersion: OCR_PIPELINE_VERSION,
+      parserVersion: OCR_FIELD_PARSER_VERSION,
+      confidence: result.confidence,
+      pageCount: result.pageCount,
+    }),
+  };
+}
+
+async function extractTextWithPaddle(
+  base64: string,
+  mimeType: string,
+  fallback = false,
+): Promise<OCRDocumentExtraction> {
+  const result = await withTimeout(
+    recognizeBase64WithPaddle(base64, mimeType, { timeoutMs: PADDLE_TIMEOUT_MS }),
+    PADDLE_TIMEOUT_MS + 1000,
+    "PaddleOCR timed out. Please try a clearer or smaller document.",
+  );
+  return {
+    text: result.text,
+    telemetry: cleanOCRTelemetry({
+      provider: "paddle",
+      engine: "paddle_ocr",
       mode: "hosted",
       providerPreference: getOCRProviderPreference(),
       fallback,
@@ -168,47 +235,79 @@ async function extractTextFromDocument(dataUri: string): Promise<OCRDocumentExtr
   const { mimeType, base64 } = getDataUriMeta(dataUri);
   const provider = getOCRProviderPreference();
   const tryMistral = shouldTryMistral();
-  let fallbackFromMistral = false;
+  const tryPaddle = shouldTryPaddle();
+  let providerFallback = false;
+
+  if ((provider === "paddle" || provider === "paddleocr") && !hasPaddleOCRConfig()) {
+    throw new OCRServiceConfigurationError(
+      "PaddleOCR is selected but PADDLE_OCR_URL or PADDLE_OCR_TOKEN is missing.",
+    );
+  }
 
   if (mimeType === "application/pdf") {
     const result = await withTimeout(
-      extractTextFromPdfBuffer(Buffer.from(base64, "base64"), 5, { enableImageOcr: !tryMistral }),
+      extractTextFromPdfBuffer(Buffer.from(base64, "base64"), 5, { enableImageOcr: !tryMistral && !tryPaddle }),
       LOCAL_OCR_TIMEOUT_MS,
       "PDF OCR timed out. Please try a smaller or clearer PDF."
     );
-    if (result.text.trim() || !tryMistral) {
+    if (result.text.trim() || (!tryMistral && !tryPaddle)) {
       return { text: result.text, telemetry: pdfTelemetry(result, mimeType) };
     }
 
     try {
-      return await extractTextWithMistral(dataUri, mimeType);
+      if (tryMistral) return await extractTextWithMistral(dataUri, mimeType);
     } catch (error) {
-      fallbackFromMistral = true;
-      if ((provider === "mistral" || error instanceof MistralOCRConfigurationError) && !shouldTryGoogleVision()) {
+      providerFallback = true;
+      if (provider === "mistral" && !tryPaddle && !shouldTryGoogleVision()) {
         throw new OCRServiceConfigurationError(error instanceof Error ? error.message : "Mistral OCR is unavailable.");
       }
-      console.warn("Mistral PDF OCR unavailable, falling back to local PDF OCR:", summarizeOCRProviderError(error));
-      const fallback = await withTimeout(
-        extractTextFromPdfBuffer(Buffer.from(base64, "base64"), 5, { enableImageOcr: true }),
-        LOCAL_OCR_TIMEOUT_MS,
-        "PDF OCR timed out after Mistral fallback. Please try a smaller or clearer PDF."
-      );
-      return { text: fallback.text, telemetry: pdfTelemetry(fallback, mimeType, fallbackFromMistral) };
+      console.warn("Mistral PDF OCR unavailable, trying next OCR provider:", summarizeOCRProviderError(error));
     }
+
+    if (tryPaddle) {
+      try {
+        return await extractTextWithPaddle(base64, mimeType, providerFallback);
+      } catch (error) {
+        providerFallback = true;
+        if ((provider === "paddle" || provider === "paddleocr") && !shouldTryGoogleVision()) {
+          throw new OCRServiceConfigurationError(error instanceof Error ? error.message : "PaddleOCR is unavailable.");
+        }
+        console.warn("PaddleOCR PDF unavailable, falling back to local PDF OCR:", summarizeOCRProviderError(error));
+      }
+    }
+
+    const fallback = await withTimeout(
+      extractTextFromPdfBuffer(Buffer.from(base64, "base64"), 5, { enableImageOcr: true }),
+      LOCAL_OCR_TIMEOUT_MS,
+      "PDF OCR timed out after provider fallback. Please try a smaller or clearer PDF.",
+    );
+    return { text: fallback.text, telemetry: pdfTelemetry(fallback, mimeType, providerFallback) };
   }
 
   if (tryMistral) {
     try {
       return await extractTextWithMistral(dataUri, mimeType);
     } catch (error) {
-      fallbackFromMistral = true;
-      if ((provider === "mistral" || error instanceof MistralOCRConfigurationError) && !shouldTryGoogleVision()) {
+      providerFallback = true;
+      if (provider === "mistral" && !tryPaddle && !shouldTryGoogleVision()) {
         throw new OCRServiceConfigurationError(error instanceof Error ? error.message : "Mistral OCR is unavailable.");
       }
       if (error instanceof MistralOCRUnsupportedFileError && !shouldTryGoogleVision()) {
         throw error;
       }
       console.warn("Mistral OCR unavailable, trying next OCR provider:", summarizeOCRProviderError(error));
+    }
+  }
+
+  if (tryPaddle) {
+    try {
+      return await extractTextWithPaddle(base64, mimeType, providerFallback);
+    } catch (error) {
+      providerFallback = true;
+      if ((provider === "paddle" || provider === "paddleocr" || error instanceof PaddleOCRConfigurationError) && !shouldTryGoogleVision()) {
+        throw new OCRServiceConfigurationError(error instanceof Error ? error.message : "PaddleOCR is unavailable.");
+      }
+      console.warn("PaddleOCR unavailable, trying next OCR provider:", summarizeOCRProviderError(error));
     }
   }
 
@@ -219,7 +318,7 @@ async function extractTextFromDocument(dataUri: string): Promise<OCRDocumentExtr
       LOCAL_OCR_TIMEOUT_MS,
       "Image OCR timed out. Please try a clearer or smaller image."
     );
-    const fallbackToLocal = fallbackFromMistral || provider === "mistral" || provider === "google" || provider === "google-vision";
+    const fallbackToLocal = providerFallback || ["mistral", "paddle", "paddleocr", "google", "google-vision"].includes(provider);
     return { text: fallback.text, telemetry: tesseractTelemetry(fallback, mimeType, fallbackToLocal) };
   }
 
@@ -261,7 +360,7 @@ async function extractTextFromDocument(dataUri: string): Promise<OCRDocumentExtr
         engine: "google_document_text_detection",
         mode: "hosted",
         providerPreference: provider,
-        fallback: fallbackFromMistral,
+        fallback: providerFallback,
         mimeType,
         pipelineVersion: OCR_PIPELINE_VERSION,
         parserVersion: OCR_FIELD_PARSER_VERSION,
@@ -346,6 +445,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const contentAssessment = assessUntrustedContent(trimmedText);
+    if (isInstructionAttack(contentAssessment) && contentAssessment.category !== "none") {
+      await recordUntrustedContentEvent("ocr_output", contentAssessment.category);
+      return NextResponse.json(
+        { error: "Unsafe external instructions are not accepted" },
+        { status: 400 },
+      );
+    }
+
     const fields = extractWarrantyFields(trimmedText);
     console.info("OCR provider selected", {
       provider: ocrTelemetry.provider,
@@ -391,8 +499,8 @@ export async function GET() {
   return NextResponse.json({
     status: "OCR parsing endpoint active",
     usage: "POST with { text: 'extracted OCR text' } or { image: 'data:image/png;base64,...' | 'data:application/pdf;base64,...' }",
-    engines: ["mistral_ocr", "google_vision_fallback", "pdfjs_local", "tesseract_dev_fallback"],
-    note: "Warrantee prefers Mistral OCR when MISTRAL_API_KEY is configured, keeps embedded-text PDFs local, falls back to Google Vision when available, and uses in-house Tesseract as an emergency availability fallback. Successful POST responses include ocr.provider and ocr.engine.",
+    engines: ["mistral_ocr", "paddle_ocr_self_hosted", "google_vision_fallback", "pdfjs_local", "tesseract_dev_fallback"],
+    note: "Warrantee keeps embedded-text PDFs local, supports an explicitly configured self-hosted PaddleOCR provider, and retains Mistral plus local fallbacks. Successful POST responses include ocr.provider and ocr.engine.",
     max_text_length: MAX_OCR_TEXT_LENGTH,
     fields: [
       "product_name",

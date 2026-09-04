@@ -4,6 +4,7 @@ import { getClientIp, getRateLimitHeaders, rateLimit } from "@/lib/rate-limit";
 import { logAgentUsage } from "@/lib/server/agent-usage-logger";
 import { answerAgentQuestion } from "@/lib/agent-concierge";
 import { recordAgentQuestion } from "@/lib/server/agent-question-recorder";
+import { assessUntrustedContent } from "@/lib/untrusted-content";
 
 type JsonRpcMessage = {
   id?: string | number | null;
@@ -135,6 +136,23 @@ export async function POST(request: NextRequest) {
   }
 
   const apiKey = request.headers.get("x-api-key")?.trim() || undefined;
+  const toolCall = message.method === "tools/call" && message.params && typeof message.params === "object"
+    ? message.params as { name?: unknown; arguments?: { question?: unknown } }
+    : null;
+  if (
+    toolCall?.name === "ask_warrantee" &&
+    typeof toolCall.arguments?.question === "string" &&
+    assessUntrustedContent(toolCall.arguments.question).blocked
+  ) {
+    const blockedLimit = await rateLimit(getClientIp(request), {
+      maxRequests: 3,
+      windowMs: 15 * 60_000,
+      identifier: "mcp-blocked-content",
+    });
+    if (!blockedLimit.success) {
+      return jsonRpcError(message.id, -32029, "Repeated unsafe requests were temporarily blocked", 429);
+    }
+  }
   const { handleMcpRequest } = await loadMcpModule();
   const response = await handleMcpRequest(message, {
     env: {
@@ -148,7 +166,6 @@ export async function POST(request: NextRequest) {
     askAgentConcierge: async (question: string, locale?: string) => {
       const result = answerAgentQuestion(question, locale);
       await recordAgentQuestion({
-        question,
         result,
         source: "mcp",
         userAgent: request.headers.get("user-agent"),

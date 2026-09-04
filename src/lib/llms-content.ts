@@ -104,7 +104,7 @@ ${capabilitiesData.futureReadiness.map((capability) => `- ${capability}`).join("
 - MCP: call the public \`ask_warrantee\` tool on ${BASE_URL}/api/mcp.
 - A2A: use the HTTP+JSON interface at ${BASE_URL}/api/a2a and POST a ROLE_USER message to /api/a2a/message:send with A2A-Version: 1.0.
 - All three surfaces use the same deterministic answer engine and public sources.
-- The owner can review privacy-redacted questions, repeated themes, partial answers, and improvement tags through an authenticated admin report.
+- The owner can review categorical intents, partial-answer counts, blocked-content categories, and improvement tags through an authenticated admin report. Question wording and hashes are not stored or displayed.
 
 ## Security Notes For Agents
 

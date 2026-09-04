@@ -6,6 +6,8 @@ import { validateContactInput } from "@/lib/validation";
 import { upsertCrmContact } from "@/lib/crm";
 import { sendEmail } from "@/lib/email";
 import { isTrustedSameOriginRequest } from "@/lib/request-origin";
+import { assessUntrustedContent, isInstructionAttack } from "@/lib/untrusted-content";
+import { recordUntrustedContentEvent } from "@/lib/server/untrusted-content-events";
 
 function createSupabaseAdminClient() {
   return createClient(
@@ -110,6 +112,13 @@ export async function POST(request: NextRequest) {
     }
 
     const input = validation.sanitized;
+    const contentAssessment = assessUntrustedContent(
+      [input.subject, input.message, input.name, input.company].filter(Boolean).join("\n"),
+    );
+    if (isInstructionAttack(contentAssessment) && contentAssessment.category !== "none") {
+      await recordUntrustedContentEvent("contact_form", contentAssessment.category);
+      return NextResponse.json({ error: "Unsafe external instructions are not accepted" }, { status: 400 });
+    }
     const crmResult = await upsertCrmContact({
       email: input.email,
       firstname: input.name,
@@ -149,6 +158,8 @@ export async function POST(request: NextRequest) {
           phone: input.phone || null,
           original_kind: input.kind || "contact_form",
           crm: crmResult,
+          content_boundary: "untrusted_external_text",
+          execution_policy: "display_only_no_actions",
         },
       })
       .select("id, ticket_number")
@@ -175,6 +186,8 @@ export async function POST(request: NextRequest) {
             source: "contact_form",
             original_kind: input.kind || "contact_form",
             crm: crmResult,
+            content_boundary: "untrusted_external_text",
+            execution_policy: "display_only_no_actions",
             rich_insert_error: richTicketError.message,
           },
         })
@@ -190,7 +203,6 @@ export async function POST(request: NextRequest) {
       action: input.kind === "seller_application" ? "seller_application_submit" : "contact_form_submit",
       metadata: {
         source: "contact_api",
-        subject: input.subject,
         original_kind: input.kind || "contact_form",
       },
     }).then(({ error }) => {

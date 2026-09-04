@@ -4,6 +4,8 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { contactRateLimit, getClientIp, getRateLimitHeaders } from "@/lib/rate-limit";
 import { isTrustedSameOriginRequest } from "@/lib/request-origin";
 import { isValidEmail, sanitizeString } from "@/lib/validation";
+import { assessUntrustedContent, isInstructionAttack } from "@/lib/untrusted-content";
+import { recordUntrustedContentEvent } from "@/lib/server/untrusted-content-events";
 
 function requiredString(value: unknown, maxLength: number) {
   return typeof value === "string" && value.trim()
@@ -61,6 +63,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "A valid contact email is required" }, { status: 400 });
     }
 
+    const contentAssessment = assessUntrustedContent(
+      Object.values(application).filter((value): value is string => typeof value === "string").join("\n"),
+    );
+    if (isInstructionAttack(contentAssessment) && contentAssessment.category !== "none") {
+      await recordUntrustedContentEvent("seller_application", contentAssessment.category);
+      return NextResponse.json({ error: "Unsafe external instructions are not accepted" }, { status: 400 });
+    }
+
     const supabase = await createServerSupabaseClient();
     const {
       data: { user },
@@ -115,7 +125,11 @@ export async function POST(request: NextRequest) {
         priority: "medium",
         status: "open",
         source: "seller_application",
-        metadata: application,
+        metadata: {
+          source: "seller_application",
+          content_boundary: "untrusted_external_text",
+          execution_policy: "display_only_no_actions",
+        },
       })
       .select("id, ticket_number")
       .single();

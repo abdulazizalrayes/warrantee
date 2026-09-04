@@ -234,8 +234,8 @@ export type Database = {
           improvement_tags: string[]
           intent: string
           locale: string
-          question_hash: string
-          question_redacted: string
+          question_hash: string | null
+          question_redacted: string | null
           redaction_applied: boolean
           source_protocol: string
         }
@@ -249,8 +249,8 @@ export type Database = {
           improvement_tags?: string[]
           intent: string
           locale: string
-          question_hash: string
-          question_redacted: string
+          question_hash?: string | null
+          question_redacted?: string | null
           redaction_applied?: boolean
           source_protocol: string
         }
@@ -264,10 +264,34 @@ export type Database = {
           improvement_tags?: string[]
           intent?: string
           locale?: string
-          question_hash?: string
-          question_redacted?: string
+          question_hash?: string | null
+          question_redacted?: string | null
           redaction_applied?: boolean
           source_protocol?: string
+        }
+        Relationships: []
+      }
+      untrusted_content_events: {
+        Row: {
+          bucket_start: string
+          category: string
+          event_count: number
+          last_seen_at: string
+          surface: string
+        }
+        Insert: {
+          bucket_start: string
+          category: string
+          event_count?: number
+          last_seen_at?: string
+          surface: string
+        }
+        Update: {
+          bucket_start?: string
+          category?: string
+          event_count?: number
+          last_seen_at?: string
+          surface?: string
         }
         Relationships: []
       }
@@ -3591,6 +3615,10 @@ export type Database = {
       }
     }
     Functions: {
+      record_untrusted_content_event: {
+        Args: { p_category: string; p_surface: string }
+        Returns: undefined
+      }
       check_rate_limit: {
         Args: {
           p_identifier: string

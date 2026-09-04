@@ -52,6 +52,26 @@ const allowlist = [
     reason: "Non-production same-origin checks accept loopback aliases for CI/browser tests only.",
   },
   {
+    file: "src/lib/ocr/paddle.ts",
+    patterns: new Set(["localhost", "127.0.0.1", "::1"]),
+    reason: "The Paddle client permits loopback only outside production; production requires HTTPS.",
+  },
+  {
+    file: "services/paddle-ocr/Dockerfile",
+    patterns: new Set(["0.0.0.0"]),
+    reason: "The private Paddle container listens on its container interface; no public URL is embedded.",
+  },
+  {
+    file: "services/clamav-scanner/server.mjs",
+    patterns: new Set(["0.0.0.0"]),
+    reason: "The private scanner listens on its container interface and requires bearer authentication.",
+  },
+  {
+    file: "services/clamav-scanner/docker-compose.yml",
+    patterns: new Set(["127.0.0.1"]),
+    reason: "Compose deliberately publishes the authenticated scanner on the host loopback interface only.",
+  },
+  {
     file: "scripts/check-no-loopback-links.mjs",
     patterns: new Set(patterns.map((pattern) => pattern.name)),
     reason: "This guard contains the loopback patterns it scans for.",

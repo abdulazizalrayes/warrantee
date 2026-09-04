@@ -124,6 +124,42 @@ async function callScanner(input: {
   }
 }
 
+export async function scanSignedDocumentWithConfiguredScanner(input: {
+  signedUrl: string;
+  documentId: string;
+  warrantyId?: string | null;
+  fileName?: string | null;
+  fileType?: string | null;
+  fileSize?: number | null;
+  fileHash?: string | null;
+  storagePath: string;
+}) {
+  const { url, token } = scannerConfig();
+  if (!url) {
+    return {
+      configured: false as const,
+      verdict: "scan_failed" as ScanVerdict,
+      metadata: { scanner: "unconfigured", reason: "scanner_not_configured" },
+    };
+  }
+
+  const result = await callScanner({
+    scannerUrl: url,
+    scannerToken: token,
+    signedUrl: input.signedUrl,
+    storagePath: input.storagePath,
+    document: {
+      id: input.documentId,
+      warranty_id: input.warrantyId || "",
+      file_name: input.fileName || null,
+      file_type: input.fileType || null,
+      file_size: input.fileSize || null,
+      file_hash: input.fileHash || null,
+    },
+  });
+  return { configured: true as const, ...result };
+}
+
 async function updateDocumentScanResult(input: {
   document: PendingDocument;
   verdict: ScanVerdict;

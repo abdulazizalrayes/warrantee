@@ -7,10 +7,14 @@ import { recognizeImageBufferWithTesseract } from '@/lib/ocr/tesseract';
 import { cleanOCRTelemetry, type OCRProviderTelemetry } from '@/lib/ocr/telemetry';
 import {
   hasMistralOCRConfig,
-  MistralOCRConfigurationError,
   MistralOCRUnsupportedFileError,
   recognizeBase64WithMistral,
 } from '@/lib/ocr/mistral';
+import {
+  hasPaddleOCRConfig,
+  PaddleOCRConfigurationError,
+  recognizeBase64WithPaddle,
+} from '@/lib/ocr/paddle';
 
 const VISION_API_URL = 'https://vision.googleapis.com/v1/images:annotate';
 const OCR_PIPELINE_VERSION = '2026-07-24.1';
@@ -68,31 +72,51 @@ export async function processDocument(
 ): Promise<OCRResult> {
   const provider = getOCRProviderPreference();
   const tryMistral = shouldTryMistral();
+  const tryPaddle = shouldTryPaddle();
+
+  if ((provider === 'paddle' || provider === 'paddleocr') && !hasPaddleOCRConfig()) {
+    throw new PaddleOCRConfigurationError(
+      'PaddleOCR is selected but PADDLE_OCR_URL or PADDLE_OCR_TOKEN is missing.'
+    );
+  }
 
   if (mimeType === 'application/pdf') {
-    const localResult = await processPdfWithLocalStack(imageBase64, !tryMistral, false, provider, mimeType);
-    if (localResult.raw_text.trim() || !tryMistral) {
+    const localResult = await processPdfWithLocalStack(imageBase64, !tryMistral && !tryPaddle, false, provider, mimeType);
+    if (localResult.raw_text.trim() || (!tryMistral && !tryPaddle)) {
       return localResult;
     }
 
-    try {
-      return await processWithMistral(imageBase64, mimeType, false, provider);
-    } catch (error) {
-      if ((provider === 'mistral' || error instanceof MistralOCRConfigurationError) && !shouldTryGoogleVision()) {
-        throw error;
+    let providerFallback = false;
+    if (tryMistral) {
+      try {
+        return await processWithMistral(imageBase64, mimeType, false, provider);
+      } catch (error) {
+        providerFallback = true;
+        if (provider === 'mistral' && !tryPaddle && !shouldTryGoogleVision()) throw error;
+        console.warn('Mistral PDF OCR unavailable, trying next OCR provider:', summarizeOCRProviderError(error));
       }
-      console.warn('Mistral PDF OCR unavailable, falling back to local PDF OCR:', summarizeOCRProviderError(error));
-      return processPdfWithLocalStack(imageBase64, true, true, provider, mimeType);
     }
+
+    if (tryPaddle) {
+      try {
+        return await processWithPaddle(imageBase64, mimeType, providerFallback, provider);
+      } catch (error) {
+        providerFallback = true;
+        if ((provider === 'paddle' || provider === 'paddleocr') && !shouldTryGoogleVision()) throw error;
+        console.warn('PaddleOCR PDF unavailable, falling back to local PDF OCR:', summarizeOCRProviderError(error));
+      }
+    }
+
+    return processPdfWithLocalStack(imageBase64, true, providerFallback, provider, mimeType);
   }
 
-  let fallbackFromMistral = false;
+  let providerFallback = false;
   if (tryMistral) {
     try {
       return await processWithMistral(imageBase64, mimeType, false, provider);
     } catch (error) {
-      fallbackFromMistral = true;
-      if ((provider === 'mistral' || error instanceof MistralOCRConfigurationError) && !shouldTryGoogleVision()) {
+      providerFallback = true;
+      if (provider === 'mistral' && !tryPaddle && !shouldTryGoogleVision()) {
         throw error;
       }
       if (error instanceof MistralOCRUnsupportedFileError && !shouldTryGoogleVision()) {
@@ -102,17 +126,33 @@ export async function processDocument(
     }
   }
 
+  if (tryPaddle) {
+    try {
+      return await processWithPaddle(imageBase64, mimeType, providerFallback, provider);
+    } catch (error) {
+      providerFallback = true;
+      if ((provider === 'paddle' || provider === 'paddleocr') && !shouldTryGoogleVision()) {
+        throw error;
+      }
+      console.warn('PaddleOCR unavailable, trying next OCR provider:', summarizeOCRProviderError(error));
+    }
+  }
+
   const apiKey = process.env.GOOGLE_CLOUD_VISION_API_KEY;
   if (!apiKey || !mimeType.startsWith('image/') || !shouldTryGoogleVision()) {
-    const fallbackToLocal = fallbackFromMistral || provider === 'mistral' || provider === 'google' || provider === 'google-vision';
+    const fallbackToLocal = providerFallback || ['mistral', 'paddle', 'paddleocr', 'google', 'google-vision'].includes(provider);
     return processWithTesseract(imageBase64, mimeType, fallbackToLocal, provider);
   }
 
   try {
     // Call Google Cloud Vision API
-    const response = await fetch(`${VISION_API_URL}?key=${apiKey}`, {
+    const response = await fetch(VISION_API_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': apiKey,
+      },
+      signal: AbortSignal.timeout(8_000),
       body: JSON.stringify({
         requests: [{
           image: { content: imageBase64 },
@@ -143,7 +183,7 @@ export async function processDocument(
         engine: 'google_document_text_detection',
         mode: 'hosted',
         providerPreference: provider,
-        fallback: fallbackFromMistral,
+        fallback: providerFallback,
         mimeType,
       });
     }
@@ -177,7 +217,7 @@ export async function processDocument(
       engine: 'google_document_text_detection',
       mode: 'hosted',
       providerPreference: provider,
-      fallback: fallbackFromMistral,
+      fallback: providerFallback,
       mimeType,
       confidence: wordConfidence,
       pageCount: pages?.length,
@@ -202,7 +242,16 @@ function shouldTryGoogleVision() {
   return (
     provider === 'google' ||
     provider === 'google-vision' ||
-    ((provider === 'auto' || provider === 'mistral') && Boolean(process.env.GOOGLE_CLOUD_VISION_API_KEY))
+    ((provider === 'auto' || provider === 'mistral' || provider === 'paddle' || provider === 'paddleocr') && Boolean(process.env.GOOGLE_CLOUD_VISION_API_KEY))
+  );
+}
+
+function shouldTryPaddle() {
+  const provider = getOCRProviderPreference();
+  return (
+    provider === 'paddle' ||
+    provider === 'paddleocr' ||
+    ((provider === 'auto' || provider === 'mistral') && hasPaddleOCRConfig())
   );
 }
 
@@ -250,6 +299,41 @@ async function processWithMistral(
   }, {
     provider: 'mistral',
     engine: 'mistral_ocr',
+    mode: 'hosted',
+    providerPreference,
+    fallback,
+    mimeType,
+    model: result.model,
+    confidence: result.confidence,
+    pageCount: result.pageCount,
+  });
+}
+
+async function processWithPaddle(
+  imageBase64: string,
+  mimeType: string,
+  fallback = false,
+  providerPreference = getOCRProviderPreference()
+): Promise<OCRResult> {
+  const result = await recognizeBase64WithPaddle(imageBase64, mimeType);
+  const rawText = result.text;
+  const languageDetected = rawText
+    ? (/[^\x00-\x7F]/.test(rawText) && /[\u0600-\u06FF]/.test(rawText) ? 'ar' : 'en')
+    : 'unknown';
+  const extractedFields = rawText ? extractFields(rawText, languageDetected) : emptyFields();
+  const aggregateConfidence = rawText
+    ? calculateAggregateConfidence(result.confidence, extractedFields)
+    : 0;
+
+  return withOCRProvider({
+    raw_text: rawText,
+    language_detected: languageDetected,
+    confidence: result.confidence,
+    extracted_fields: extractedFields,
+    aggregate_confidence: aggregateConfidence,
+  }, {
+    provider: 'paddle',
+    engine: 'paddle_ocr',
     mode: 'hosted',
     providerPreference,
     fallback,

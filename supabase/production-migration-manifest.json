@@ -1,6 +1,6 @@
 {
   "projectRef": "erptubrslnfmkuouczgn",
-  "verifiedAt": "2026-08-30",
+  "verifiedAt": "2026-09-04",
   "migrations": [
     {
       "file": "20260324094041_create_contact_submissions.sql",
@@ -340,6 +340,11 @@
     {
       "file": "20260830203311_agent_concierge_explicit_deny_policy.sql",
       "sha256": "95ff2a98975c6631ede7990fe4693028881f9d3cf3ded73ff236aa7c76f04589",
+      "productionState": "applied"
+    },
+    {
+      "file": "20260904120000_harden_untrusted_content_telemetry.sql",
+      "sha256": "0b99ec330a566117f9d12f16b00f0a73a9a86087fd4ffdf2fe40511eeb2a2555",
       "productionState": "applied"
     }
   ]

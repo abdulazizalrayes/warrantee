@@ -5,6 +5,8 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { classifyTrafficUserAgent } from "@/lib/traffic-classification";
 import { sanitizeString } from "@/lib/validation";
+import { assessUntrustedContent, isInstructionAttack } from "@/lib/untrusted-content";
+import { recordUntrustedContentEvent } from "@/lib/server/untrusted-content-events";
 
 const allowedStages = new Set([
   "landing",
@@ -54,6 +56,11 @@ export async function POST(request: NextRequest) {
   const comment = typeof body?.comment === "string"
     ? sanitizeString(body.comment, 1000) || null
     : null;
+  const contentAssessment = assessUntrustedContent(comment);
+  if (isInstructionAttack(contentAssessment) && contentAssessment.category !== "none") {
+    await recordUntrustedContentEvent("customer_feedback", contentAssessment.category);
+    return NextResponse.json({ error: "Unsafe external instructions are not accepted" }, { status: 400 });
+  }
   const locale = body?.locale === "ar" ? "ar" : "en";
   const supabase = await createServerSupabaseClient();
   const { data: auth } = await supabase.auth.getUser();
@@ -67,7 +74,11 @@ export async function POST(request: NextRequest) {
     comment,
     locale,
     traffic_class: classifyTrafficUserAgent(userAgent),
-    metadata: { source: "in_product" },
+    metadata: {
+      source: "in_product",
+      content_boundary: "untrusted_external_text",
+      execution_policy: "display_only_no_actions",
+    },
   });
 
   if (error) {
