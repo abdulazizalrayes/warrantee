@@ -69,12 +69,12 @@
     },
     "inventory_counts": {
       "page_files": 59,
-      "route_handlers": 112,
+      "route_handlers": 115,
       "layouts": 30,
-      "database_tables": 50,
-      "migration_files": 68,
+      "database_tables": 51,
+      "migration_files": 69,
       "scheduled_jobs": 3,
-      "github_workflows": 3,
+      "github_workflows": 4,
       "e2e_spec_files": 8
     }
   },
@@ -593,7 +593,7 @@
       "layer": "domain",
       "kind": "domain_service",
       "status": "active",
-      "responsibility": "Validate, upload, hash, scan, quarantine, authorize, download, and record warranty documents and claim attachments.",
+      "responsibility": "Validate, upload, hash, scan, quarantine, authorize, download, and record warranty documents and claim attachments through baseline checks and an optional self-hosted ClamAV service.",
       "code_refs": [
         "src/app/api/documents/route.ts",
         "src/app/api/documents/[id]/download/route.ts",
@@ -607,7 +607,7 @@
       "layer": "domain",
       "kind": "domain_service",
       "status": "active",
-      "responsibility": "Authenticate inbound email, bound attachment retrieval, detect duplicates/fraud, and create provisional warranties for review.",
+      "responsibility": "Authenticate inbound email, reject instruction attacks before persistence, scan attachments before OCR, detect duplicates/fraud, and create provisional warranties for review.",
       "code_refs": [
         "src/app/api/ingest/email/route.ts",
         "src/lib/ingestion/email-authentication.ts",
@@ -621,11 +621,12 @@
       "layer": "domain",
       "kind": "document_intelligence",
       "status": "active_with_external_validation_gap",
-      "responsibility": "Extract embedded PDF text or run Mistral-first OCR with optional Google Vision and Tesseract fallback, then parse warranty fields.",
+      "responsibility": "Extract embedded PDF text or run Mistral-first OCR with opt-in self-hosted PaddleOCR plus local fallbacks, classify OCR output as untrusted before action, then parse warranty fields.",
       "code_refs": [
         "src/app/api/ocr/route.ts",
         "src/lib/ingestion/ocr-pipeline.ts",
         "src/lib/ocr/mistral.ts",
+        "src/lib/ocr/paddle.ts",
         "src/lib/ocr/warranty-field-parser.ts"
       ]
     },
@@ -727,10 +728,10 @@
       "layer": "domain",
       "kind": "agent_api",
       "status": "active",
-      "responsibility": "Answer deterministic bilingual public questions through HTTP, A2A, and MCP; cite verified public sources; redact questions before service-improvement recording; and take no actions.",
+      "responsibility": "Answer deterministic bilingual public questions through HTTP, A2A, and MCP; classify untrusted instructions before execution; retain categorical telemetry only; cite verified sources; and take no actions.",
       "code_refs": [
         "src/lib/agent-concierge.ts",
-        "src/lib/agent-question-privacy.ts",
+        "src/lib/untrusted-content.ts",
         "src/lib/server/agent-question-recorder.ts",
         "src/app/api/agent-concierge/route.ts",
         "src/app/api/a2a/message:send/route.ts",
@@ -779,7 +780,7 @@
       "layer": "data",
       "kind": "event_store",
       "status": "active",
-      "responsibility": "Activity, admin audit, ingestion audit, API usage, webhook idempotency, privacy-safe funnel evidence, and redacted agent questions.",
+      "responsibility": "Activity, admin audit, ingestion audit, API usage, webhook idempotency, privacy-safe funnel evidence, category-only agent metrics, and hourly blocked-content counts.",
       "code_refs": [
         "src/app/api/funnel/events/route.ts",
         "src/lib/server/agent-usage-logger.ts",
@@ -804,12 +805,13 @@
       "name": "Document security scan",
       "layer": "automation",
       "kind": "security_job",
-      "status": "active",
-      "responsibility": "Scan pending files through the configured scanner and persist clean, rejected, or failed status.",
+      "status": "active_baseline_clamav_ready",
+      "responsibility": "Scan pending and inbound files through the configured fail-closed scanner; the in-app baseline is active and a self-hosted ClamAV service is deployment-ready.",
       "code_refs": [
         "src/app/api/cron/scan-documents/route.ts",
         "src/app/api/internal/document-security-scan/route.ts",
-        "src/lib/server/document-security-scanner.ts"
+        "src/lib/server/document-security-scanner.ts",
+        "services/clamav-scanner"
       ]
     },
     {
@@ -870,6 +872,29 @@
       "responsibility": "Primary remote OCR provider using pinned model configuration.",
       "code_refs": [
         "src/lib/ocr/mistral.ts"
+      ]
+    },
+    {
+      "id": "paddle_ocr",
+      "name": "Self-hosted PaddleOCR",
+      "layer": "integrations",
+      "kind": "ocr_provider",
+      "status": "implemented_not_activated",
+      "responsibility": "Open-source PP-OCRv5 Arabic/English candidate behind an authenticated private adapter and owner-approved benchmark gate.",
+      "code_refs": [
+        "src/lib/ocr/paddle.ts",
+        "services/paddle-ocr"
+      ]
+    },
+    {
+      "id": "clamav",
+      "name": "Self-hosted ClamAV",
+      "layer": "integrations",
+      "kind": "malware_scanner",
+      "status": "implemented_not_activated",
+      "responsibility": "Open-source signature malware scanning through an authenticated wrapper; clamd remains on an internal-only network.",
+      "code_refs": [
+        "services/clamav-scanner"
       ]
     },
     {
@@ -1348,7 +1373,7 @@
       "from": "agent_concierge",
       "to": "audit_and_usage",
       "type": "records",
-      "label": "redacted questions and answer gaps"
+      "label": "categorical intents and blocked-content counts"
     },
     {
       "from": "agent_discovery",
@@ -1403,6 +1428,18 @@
       "to": "document_service",
       "type": "updates",
       "label": "clean / rejected / failed"
+    },
+    {
+      "from": "document_scanner_job",
+      "to": "clamav",
+      "type": "invokes",
+      "label": "authenticated signature scan when activated"
+    },
+    {
+      "from": "ocr_pipeline",
+      "to": "paddle_ocr",
+      "type": "invokes",
+      "label": "opt-in open-source OCR"
     },
     {
       "from": "retention_job",
@@ -1543,7 +1580,7 @@
       "crossed_by": [
         "Stripe",
         "Resend",
-        "Mistral/Google OCR",
+        "Mistral/PaddleOCR/Google OCR",
         "Twenty CRM",
         "Sentry",
         "Analytics",
@@ -1661,7 +1698,8 @@
         "api_idempotency_records",
         "api_integration_tokens",
         "api_usage_events",
-        "agent_concierge_questions"
+        "agent_concierge_questions",
+        "untrusted_content_events"
       ],
       "owner": "Registered user and server authorization layer",
       "sensitivity": "restricted"
@@ -1789,7 +1827,8 @@
           "/api/admin/ingestion/stats",
           "/api/admin/ingestion/[id]/resolve",
           "/api/admin/extension-policies",
-          "/api/admin/agent-concierge/questions"
+          "/api/admin/agent-concierge/questions",
+          "/api/admin/agent-concierge/report"
         ]
       },
       {
@@ -1924,6 +1963,14 @@
       "/api/a2a/message:send"
     ],
     "platform_routes": [
+      {
+        "path": "/[locale]/owner/brief.txt",
+        "access": "authenticated platform-admin categorical operational brief"
+      },
+      {
+        "path": "/[locale]/owner/service-report",
+        "access": "authenticated platform-admin service report"
+      },
       {
         "path": "/[locale]/auth/callback",
         "access": "Supabase browser authentication callback"
@@ -2171,8 +2218,8 @@
         {
           "order": 6,
           "component": "ocr_fallbacks",
-          "action": "Embedded text, optional Google Vision, or Tesseract provides fallback.",
-          "control": "OCR output remains assisted extraction, not unquestioned truth."
+          "action": "Self-hosted PaddleOCR, embedded text, optional Google Vision, or Tesseract provides a controlled alternative or fallback.",
+          "control": "PaddleOCR remains opt-in until benchmarked; OCR output is classified as untrusted before downstream action."
         },
         {
           "order": 7,
@@ -2763,6 +2810,18 @@
       "failure_behavior": "Pipeline can use embedded PDF text, optional Google Vision, or Tesseract fallback."
     },
     {
+      "provider": "PaddleOCR",
+      "purpose": "Self-hosted Arabic/English OCR candidate",
+      "status": "implemented but not activated pending private-corpus benchmark",
+      "failure_behavior": "Production remains on the verified provider; explicit Paddle selection fails safely when its authenticated service is unavailable."
+    },
+    {
+      "provider": "ClamAV",
+      "purpose": "Self-hosted signature malware scanning",
+      "status": "service implementation ready; persistent container host not selected",
+      "failure_behavior": "Configured scans fail closed and documents do not proceed to OCR or download."
+    },
+    {
       "provider": "Twenty CRM",
       "purpose": "Contacts and leads only",
       "status": "active and intentionally non-blocking",
@@ -2817,6 +2876,12 @@
       "classification": "external evidence pending",
       "detail": "Synthetic and redacted local fixtures exist, but real approved receipts, invoices, poor scans, handwriting, multilingual layouts, and corrupted files are still required.",
       "impact": "Do not claim validated production OCR accuracy across real document populations."
+    },
+    {
+      "id": "clamav_runtime",
+      "classification": "external compute pending",
+      "detail": "The ClamAV wrapper and container topology are implemented, but no secure persistent container host is currently approved or configured.",
+      "impact": "The active in-app heuristic scanner remains in place; do not claim signature antivirus is live until health and EICAR isolation tests pass."
     },
     {
       "id": "real_user_validation",

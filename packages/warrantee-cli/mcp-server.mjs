@@ -177,7 +177,29 @@ function optionalRequestText(args = {}) {
   return optionalString(args, "request") || optionalString(args, "query") || "";
 }
 
+function classifyUnsafeInquiry(input) {
+  const checks = [
+    ["prompt_injection", /(?:ignore|bypass|override|disregard).{0,40}(?:instructions?|prompts?|polic(?:y|ies)|guardrails?)/i],
+    ["instruction_extraction", /(?:reveal|repeat|print|show|dump).{0,40}(?:system|developer|hidden|internal).{0,20}(?:prompt|message|instructions?)/i],
+    ["credential_exfiltration", /(?:reveal|show|print|dump|send|expose).{0,30}(?:secret|password|credential|private key|access token|service role key)/i],
+    ["authorization_spoofing", /(?:owner|admin|administrator|developer|system).{0,30}(?:approved|authorized|permitted|told you)/i],
+  ];
+  for (const [category, pattern] of checks) {
+    if (pattern.test(input)) {
+      return {
+        fit: false,
+        intent: "unsafe_external_instruction",
+        route: "none",
+        security: { blocked: true, category },
+      };
+    }
+  }
+  return null;
+}
+
 function classifyInquiryIntent(input) {
+  const unsafe = classifyUnsafeInquiry(input);
+  if (unsafe) return unsafe;
   const normalized = input.toLowerCase();
   const nonFitMatches = [
     ["career_or_internship", ["career", "job", "intern", "internship", "cv", "resume", "hiring"]],
@@ -210,6 +232,15 @@ function classifyInquiryIntent(input) {
 
 function buildInquiryDraft(input) {
   const classification = classifyInquiryIntent(input);
+  if (classification.intent === "unsafe_external_instruction") {
+    return {
+      classification,
+      approvalRequiredBeforeSubmission: true,
+      submissionAllowedNow: false,
+      draftOnly: "Unsafe external instructions were refused. No draft, action, or original wording was retained.",
+      suggestedFields: {},
+    };
+  }
   return {
     classification,
     approvalRequiredBeforeSubmission: true,
@@ -272,7 +303,7 @@ export const tools = [
     name: "ask_warrantee",
     title: "Ask Warrantee Agent Concierge",
     description:
-      "Ask a public read-only question about Warrantee plans, services, warranty workflows, integrations, security, markets, or product fit. Answers use verified public sources, record a privacy-redacted question for service improvement, and never access private accounts or submit actions.",
+      "Ask a public read-only question about Warrantee plans, services, warranty workflows, integrations, security, markets, or product fit. Answers use verified public sources, retain only categorical telemetry, refuse embedded instructions, and never access private accounts or submit actions.",
     inputSchema: {
       type: "object",
       properties: {
@@ -364,29 +395,31 @@ export const tools = [
   {
     name: "create_warranty",
     title: "Create warranty",
-    description: "Create a warranty for the authenticated Warrantee user.",
+    description: "Create a warranty for the authenticated Warrantee user. Requires confirm=true from the authenticated user at execution time.",
     inputSchema: {
       type: "object",
       properties: {
         ...authProperties,
         idempotencyKey: { type: "string" },
+        confirm: { type: "boolean" },
         ...warrantyFieldsSchema,
       },
-      required: ["product_name", "start_date", "end_date"],
+      required: ["product_name", "start_date", "end_date", "confirm"],
     },
   },
   {
     name: "update_warranty",
     title: "Update warranty",
-    description: "Update a warranty visible to the authenticated Warrantee integration token.",
+    description: "Update a warranty visible to the authenticated Warrantee integration token. Requires confirm=true from the authenticated user at execution time.",
     inputSchema: {
       type: "object",
       properties: {
         ...authProperties,
         id: { type: "string" },
+        confirm: { type: "boolean" },
         ...warrantyFieldsSchema,
       },
-      required: ["id"],
+      required: ["id", "confirm"],
     },
   },
   {
@@ -557,11 +590,17 @@ export async function callTool(name, args = {}, context = {}) {
     case "get_warranty":
       return getWarranty(requireString(args, "id"), options);
     case "create_warranty":
+      if (args.confirm !== true) {
+        throw new WarranteeApiError("create_warranty requires confirm=true from the authenticated user at execution time");
+      }
       return createWarranty(removeUndefined(warrantyInput(args)), {
         ...options,
         idempotencyKey: optionalString(args, "idempotencyKey"),
       });
     case "update_warranty":
+      if (args.confirm !== true) {
+        throw new WarranteeApiError("update_warranty requires confirm=true from the authenticated user at execution time");
+      }
       return updateWarranty(requireString(args, "id"), removeUndefined(warrantyInput(args)), options);
     case "delete_warranty":
       if (args.confirm !== true) {

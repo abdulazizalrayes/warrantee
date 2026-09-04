@@ -1,8 +1,9 @@
-export type OCRProviderId = "submitted_text" | "mistral" | "google_vision" | "pdfjs" | "tesseract";
+export type OCRProviderId = "submitted_text" | "mistral" | "paddle" | "google_vision" | "pdfjs" | "tesseract";
 
 export type OCREngineId =
   | "submitted_text"
   | "mistral_ocr"
+  | "paddle_ocr"
   | "google_document_text_detection"
   | "pdf_text"
   | "pdf_tesseract"

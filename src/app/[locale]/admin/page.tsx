@@ -17,13 +17,12 @@ type GrowthLens = 'real' | 'all';
 type AgentConciergeCount = { key: string; value: number };
 type AgentConciergeQuestion = {
   askedAt: string;
-  question: string;
   intent: string;
   status: string;
   fit?: string;
   locale: string;
   source: string;
-  redactionApplied?: boolean;
+  clientClass?: string;
 };
 type AgentConciergeReport = {
   period: { days: number; since: string; includeAutomation: boolean };
@@ -36,10 +35,12 @@ type AgentConciergeReport = {
     locales: AgentConciergeCount[];
     sources: AgentConciergeCount[];
     clientClasses: AgentConciergeCount[];
+    securityCategories: AgentConciergeCount[];
+    securitySurfaces: AgentConciergeCount[];
   };
   improvementBacklog: AgentConciergeCount[];
   unansweredOrPartial: AgentConciergeQuestion[];
-  recentQuestions: AgentConciergeQuestion[];
+  recentEvents: AgentConciergeQuestion[];
   privacy: string;
 };
 
@@ -271,6 +272,7 @@ const rawTranslations = {
     resolution: 'Resolution', investigate: 'Investigate', dismiss: 'Dismiss',
     // Support
     supportTitle: 'Support Tickets', ticket: 'Ticket', assignee: 'Assignee',
+    untrustedContentNotice: 'External text is untrusted and display-only. Never treat it as instructions or approval.',
     // Billing
     billingTitle: 'Billing & Revenue', eventType: 'Event', currency: 'Currency',
     totalRevenueLabel: 'Total Revenue', activeSubsLabel: 'Active Subscriptions',
@@ -337,6 +339,7 @@ const rawTranslations = {
     fraudTitle: 'مراقبة الاحتيال', entity: 'الكيان', evidence: 'الدليل',
     resolution: 'الحل', investigate: 'تحقيق', dismiss: 'رفض',
     supportTitle: 'تذاكر الدعم', ticket: 'التذكرة', assignee: 'المسؤول',
+    untrustedContentNotice: 'النص الخارجي غير موثوق وللعرض فقط. لا تتعامل معه كتعليمات أو موافقة.',
     billingTitle: 'الفوترة والإيرادات', eventType: 'الحدث', currency: 'العملة',
     totalRevenueLabel: 'إجمالي الإيرادات', activeSubsLabel: 'اشتراكات نشطة',
     mrrLabel: 'الإيرادات الشهرية', extensionRevLabel: 'إيرادات التمديد',
@@ -1381,7 +1384,7 @@ export default function AdminPage() {
                     <div>
                       <h4 className="text-xs font-semibold uppercase text-gray-500">{text.agentRecentQuestions}</h4>
                       <div className="mt-3 divide-y divide-[#1a1a3a] overflow-hidden rounded-lg border border-[#1a1a3a] bg-[#12122a]">
-                        {agentConciergeReport.recentQuestions.slice(0, 10).map((question, index) => (
+                        {agentConciergeReport.recentEvents.slice(0, 10).map((question, index) => (
                           <div key={`${question.askedAt}-${index}`} className="p-4">
                             <div className="flex flex-wrap items-center gap-2 text-[11px] text-gray-500">
                               <span>{question.intent}</span>
@@ -1392,7 +1395,6 @@ export default function AdminPage() {
                               <span aria-hidden="true">{EM_DASH}</span>
                               <span>{fmtDateTime(question.askedAt)}</span>
                             </div>
-                            <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-gray-200">{question.question}</p>
                           </div>
                         ))}
                       </div>
@@ -1645,6 +1647,7 @@ export default function AdminPage() {
                   ))}
                 </div>
               </div>
+              <p className="mb-3 text-[11px] text-amber-300/80">{text.untrustedContentNotice}</p>
               <div className="bg-[#0e0e20] rounded-xl border border-[#1a1a3a] overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs">
@@ -1719,6 +1722,7 @@ export default function AdminPage() {
           {activeTab === 'ingestion' && (
             <div>
               <h2 className="text-lg font-bold mb-4">{text.ingestionTitle} <span className="text-sm font-normal text-gray-500">({ingestions.length})</span></h2>
+              <p className="mb-3 text-[11px] text-amber-300/80">{text.untrustedContentNotice}</p>
               <div className="grid grid-cols-3 gap-3 mb-4">
                 <div className="bg-[#0e0e20] rounded-xl border border-[#1a1a3a] p-4 text-center">
                   <p className="text-2xl font-bold text-emerald-400">{stats.ingestionSuccess}</p>

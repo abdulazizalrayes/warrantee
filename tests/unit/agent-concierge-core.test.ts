@@ -27,10 +27,12 @@ describe("Warrantee Agent Concierge core", () => {
     );
 
     expect(result.fit).toBe(false);
-    expect(result.answerStatus).toBe("not_supported");
+    expect(result.answerStatus).toBe("blocked");
+    expect(result.intent).toBe("unsafe_external_instruction");
+    expect(result.security.category).toBe("prompt_injection");
   });
 
-  it("redacts credentials and personal identifiers", () => {
+  it("keeps the legacy redaction utility protective for non-ledger uses", () => {
     const result = redactAgentQuestion(
       "Email person@example.com, phone +966 50 123 4567, token=sk_live_secret123456 and warranty: WR-123456",
     );

@@ -12,6 +12,7 @@ import { logAgentUsage } from "@/lib/server/agent-usage-logger";
 
 const MAX_BODY_BYTES = 8_192;
 const RATE_LIMIT_PER_MINUTE = 30;
+const BLOCKED_RATE_LIMIT = 3;
 
 function publicHeaders(extra?: HeadersInit) {
   const headers = new Headers(extra);
@@ -101,7 +102,6 @@ export async function POST(request: NextRequest) {
   const source = body.source === "mcp" ? "mcp" : "http";
 
   await recordAgentQuestion({
-    question,
     result,
     source,
     userAgent: request.headers.get("user-agent"),
@@ -111,6 +111,26 @@ export async function POST(request: NextRequest) {
     intent: result.intent,
     answer_status: result.answerStatus,
   });
+
+  if (result.security.blocked) {
+    const blockedLimit = await rateLimit(getClientIp(request), {
+      maxRequests: BLOCKED_RATE_LIMIT,
+      windowMs: 15 * 60_000,
+      identifier: "agent-concierge-blocked-content",
+    });
+    if (!blockedLimit.success) {
+      return apiJson(
+        { error: "Temporarily blocked after repeated unsafe requests" },
+        {
+          status: 429,
+          headers: publicHeaders({
+            ...getRateLimitHeaders(blockedLimit),
+            "X-RateLimit-Limit": String(BLOCKED_RATE_LIMIT),
+          }),
+        },
+      );
+    }
+  }
 
   return apiJson(result, { headers: publicHeaders() });
 }

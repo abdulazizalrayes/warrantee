@@ -16,9 +16,11 @@ const serverSchema = z.object({
   // Optional
   TWENTY_API_KEY: z.string().optional(),
   TWENTY_API_BASE_URL: z.string().url("TWENTY_API_BASE_URL must be a valid URL").optional(),
-  OCR_PROVIDER: z.enum(["auto", "mistral", "google", "google-vision", "tesseract"]).optional(),
+  OCR_PROVIDER: z.enum(["auto", "mistral", "paddle", "paddleocr", "google", "google-vision", "tesseract"]).optional(),
   MISTRAL_API_KEY: z.string().optional(),
   MISTRAL_OCR_MODEL: z.string().optional(),
+  PADDLE_OCR_URL: z.string().url("PADDLE_OCR_URL must be a valid URL").optional(),
+  PADDLE_OCR_TOKEN: z.string().optional(),
   GOOGLE_CLOUD_VISION_API_KEY: z.string().optional(),
   SENTRY_AUTH_TOKEN: z.string().optional(),
   META_CAPI_ACCESS_TOKEN: z.string().optional(),

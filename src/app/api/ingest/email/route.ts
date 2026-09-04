@@ -30,6 +30,10 @@ import {
   getInboundEmailAuthentication,
   type InboundEmailAuthentication,
 } from '@/lib/ingestion/email-authentication';
+import { scanDocumentBaseline } from '@/lib/server/document-security-baseline';
+import { scanSignedDocumentWithConfiguredScanner } from '@/lib/server/document-security-scanner';
+import { assessUntrustedContent, isInstructionAttack } from '@/lib/untrusted-content';
+import { recordUntrustedContentEvent } from '@/lib/server/untrusted-content-events';
 
 function getSupabaseAdmin() {
   return createClient<Database>(
@@ -187,6 +191,14 @@ export async function POST(request: NextRequest) {
     if (!isAllowed) {
       console.warn(`[Ingest] Rate limited: ${fromEmail}`);
       return NextResponse.json({ error: 'Rate limited' }, { status: 429 });
+    }
+
+    const emailAssessment = assessUntrustedContent(
+      [payload.subject, payload.text, payload.html].filter(Boolean).join('\n')
+    );
+    if (isInstructionAttack(emailAssessment) && emailAssessment.category !== 'none') {
+      await recordUntrustedContentEvent('email_body', emailAssessment.category);
+      return NextResponse.json({ status: 'blocked_untrusted_content' }, { status: 202 });
     }
 
     // 3. Create ingestion job
@@ -379,6 +391,20 @@ async function processAttachment(
     return { confidence: 0, hasFraud: false, provisional: null };
   }
   const fileHash = crypto.createHash('sha256').update(fileBuffer).digest('hex');
+  const baseline = scanDocumentBaseline({
+    fileName: safeFilename,
+    fileType: contentType,
+    fileSize: fileBuffer.byteLength,
+    fileHash,
+    bytes: fileBuffer,
+  });
+  if (baseline.verdict !== 'clean') {
+    await logAudit(jobId, 'attachment_security_blocked', 'system', {
+      reason: baseline.reason || 'baseline_security_check_failed',
+      engine: baseline.engine || 'document_security_baseline',
+    });
+    return { confidence: 0, hasFraud: true, provisional: null };
+  }
 
   const storagePath = `ingestion/${jobId}/${safeFilename}`;
   const { error: storageError } = await supabaseAdmin.storage
@@ -421,6 +447,42 @@ async function processAttachment(
     supported: isSupported,
   });
 
+  const { data: signedUrlData, error: signedUrlError } = await supabaseAdmin.storage
+    .from('warranty-documents')
+    .createSignedUrl(storagePath, 5 * 60);
+  if (signedUrlError || !signedUrlData?.signedUrl) {
+    await supabaseAdmin.storage.from('warranty-documents').remove([storagePath]);
+    await supabaseAdmin.from('ingestion_attachments').update({
+      ocr_status: 'failed',
+    }).eq('id', attachmentRecord.id);
+    await logAudit(jobId, 'attachment_security_blocked', 'system', {
+      reason: 'signed_url_failed',
+    }, attachmentRecord.id);
+    return { confidence: 0, hasFraud: true, provisional: null };
+  }
+
+  const securityScan = await scanSignedDocumentWithConfiguredScanner({
+    signedUrl: signedUrlData.signedUrl,
+    documentId: attachmentRecord.id,
+    fileName: safeFilename,
+    fileType: contentType,
+    fileSize: fileBuffer.byteLength,
+    fileHash,
+    storagePath,
+  });
+  if (securityScan.configured && securityScan.verdict !== 'clean') {
+    await supabaseAdmin.storage.from('warranty-documents').remove([storagePath]);
+    await supabaseAdmin.from('ingestion_attachments').update({
+      ocr_status: 'failed',
+    }).eq('id', attachmentRecord.id);
+    await logAudit(jobId, 'attachment_security_blocked', 'system', {
+      reason: securityScan.metadata.reason || 'document_security_scan_failed',
+      engine: securityScan.metadata.engine || 'external',
+      signature: securityScan.metadata.signature || null,
+    }, attachmentRecord.id);
+    return { confidence: 0, hasFraud: true, provisional: null };
+  }
+
   if (!isSupported) {
     return { confidence: 0, hasFraud: false, provisional: null };
   }
@@ -431,6 +493,25 @@ async function processAttachment(
 
   try {
     const ocrResult = await processDocument(attachment.content, contentType);
+    const ocrAssessment = assessUntrustedContent(ocrResult.raw_text);
+    if (isInstructionAttack(ocrAssessment) && ocrAssessment.category !== 'none') {
+      await recordUntrustedContentEvent('ocr_output', ocrAssessment.category);
+      const { error: removalError } = await supabaseAdmin.storage
+        .from('warranty-documents')
+        .remove([storagePath]);
+      await supabaseAdmin.from('ingestion_attachments').update({
+        ocr_status: 'failed',
+        ocr_raw_text: null,
+        extracted_fields: {} as Json,
+        aggregate_confidence: 0,
+        processed_at: new Date().toISOString(),
+      }).eq('id', attachmentRecord.id);
+      await logAudit(jobId, 'ocr_untrusted_content_blocked', 'system', {
+        category: ocrAssessment.category,
+        retained_in_quarantine: Boolean(removalError),
+      }, attachmentRecord.id);
+      return { confidence: 0, hasFraud: true, provisional: null };
+    }
     const simHash = ocrResult.raw_text ? computeSimHash(ocrResult.raw_text) : null;
 
     await supabaseAdmin.from('ingestion_attachments').update({
