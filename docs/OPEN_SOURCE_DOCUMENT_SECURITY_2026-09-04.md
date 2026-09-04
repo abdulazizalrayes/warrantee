@@ -79,7 +79,11 @@ DOCUMENT_SECURITY_SCANNER_TOKEN=<same secret used by the scanner wrapper>
 DOCUMENT_DOWNLOAD_REQUIRE_CLEAN=1
 ```
 
-The existing internal heuristic scanner remains active until ClamAV has a persistent container host. ClamAV is not suitable inside a Vercel Function because its daemon, signature database, memory footprint, writable state, and update lifecycle do not match serverless function limits. No secure always-on free host was identified; activation may therefore require existing owner-controlled compute or a small paid container.
+The existing internal heuristic scanner remains active until ClamAV has a verified container host. ClamAV is not suitable inside a Vercel Function because its daemon, signature database, memory footprint, writable state, and update lifecycle do not match serverless function limits.
+
+A dedicated Warrantee-only, scale-to-zero Cloud Run deployment is now specified and tested in `services/clamav-scanner/cloud-run-config.mjs`; the operational procedure is in `services/clamav-scanner/CLOUD_RUN.md`. It is locked to project `warrantee-491217`, region `me-central2` (Dammam), a dedicated service account, Secret Manager, maximum one instance, and concurrency one. The application supports a bounded `DOCUMENT_SECURITY_SCANNER_TIMEOUT_MS` for cold-start verification.
+
+The Google Cloud project displayed `Start your Free Trial` on 5 September 2026. No API, service, repository, secret, or billing relationship was created. Activating billing remains an external owner decision because even a scale-to-zero service can create charges after free allowances. The current internal scanner must remain configured until ClamAV passes health, clean-file, isolated EICAR, cold-start, log-privacy, CI, and Production Security Gate checks.
 
 Email ingestion now applies the baseline check before storage, invokes the configured document scanner before OCR, and stops on scanner failure. This closes the prior gap where inbound attachments could reach OCR without the shared scanner contract.
 

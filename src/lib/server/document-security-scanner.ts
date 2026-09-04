@@ -26,7 +26,15 @@ type ScannerResponse = {
 
 const DEFAULT_SCAN_LIMIT = 10;
 const MAX_SCAN_LIMIT = 25;
-const SCAN_TIMEOUT_MS = 20_000;
+const DEFAULT_SCAN_TIMEOUT_MS = 20_000;
+const MIN_SCAN_TIMEOUT_MS = 5_000;
+const MAX_SCAN_TIMEOUT_MS = 120_000;
+
+function scannerTimeoutMs() {
+  const configured = Number(process.env.DOCUMENT_SECURITY_SCANNER_TIMEOUT_MS || DEFAULT_SCAN_TIMEOUT_MS);
+  if (!Number.isSafeInteger(configured)) return DEFAULT_SCAN_TIMEOUT_MS;
+  return Math.min(MAX_SCAN_TIMEOUT_MS, Math.max(MIN_SCAN_TIMEOUT_MS, configured));
+}
 
 function scannerConfig() {
   return {
@@ -50,7 +58,7 @@ async function callScanner(input: {
   storagePath: string;
 }) {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), SCAN_TIMEOUT_MS);
+  const timer = setTimeout(() => controller.abort(), scannerTimeoutMs());
   try {
     const response = await fetch(input.scannerUrl, {
       method: "POST",

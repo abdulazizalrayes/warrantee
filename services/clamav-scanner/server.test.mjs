@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   authorized,
+  createFixedWindowRateLimiter,
   parseClamdScanResponse,
   validateDownloadedSize,
   validateSignedUrl,
@@ -42,4 +43,14 @@ test("downloaded documents must match their bounded declared size", () => {
   assert.equal(validateDownloadedSize(1024, 1024), null);
   assert.equal(validateDownloadedSize(1025, 1024), "document_size_mismatch");
   assert.equal(validateDownloadedSize(0, 0), "invalid_download_size");
+});
+
+test("the authenticated scan limiter resets after its fixed window", () => {
+  const limiter = createFixedWindowRateLimiter(2, 1_000);
+  assert.equal(limiter.consume(10_000).allowed, true);
+  assert.equal(limiter.consume(10_100).allowed, true);
+  const blocked = limiter.consume(10_200);
+  assert.equal(blocked.allowed, false);
+  assert.equal(blocked.retryAfterSeconds, 1);
+  assert.equal(limiter.consume(11_000).allowed, true);
 });
