@@ -55,8 +55,13 @@ describe("crm integration", () => {
     expect(JSON.parse(String(createOptions.body))).toEqual(expect.objectContaining({
       name: { firstName: "Lead", lastName: "Person" },
       emails: { primaryEmail: "lead@example.com", additionalEmails: [] },
-      companyName: "Example Co",
+      primaryBrandKey: "WARRANTEE",
+      consentStatus: "UNKNOWN",
+      campaignEligible: false,
     }));
+    expect(JSON.parse(String(createOptions.body))).not.toHaveProperty("crmNotes");
+    expect(JSON.parse(String(createOptions.body))).not.toHaveProperty("companyName");
+    expect(JSON.parse(String(createOptions.body))).not.toHaveProperty("phones");
   });
 
   it("patches the existing person instead of creating a duplicate", async () => {

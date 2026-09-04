@@ -75,7 +75,7 @@ jobs:
         run: npm run qa:agent-markdown
 
       - name: Reconcile legitimate lead intake with Twenty CRM
-        run: npm run crm:reconcile -- --strict
+        run: npm run crm:reconcile -- --repair --confirm --strict
 
       - name: Sentry unresolved issue inventory
         run: npm run observability:sentry-issues -- --summary-only --fail-on-unresolved

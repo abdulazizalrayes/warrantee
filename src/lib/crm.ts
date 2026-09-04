@@ -58,23 +58,10 @@ function buildTwentyPersonPayload(payload: CrmContactPayload) {
       primaryEmail: email,
       additionalEmails: [],
     },
+    primaryBrandKey: "WARRANTEE",
+    consentStatus: "UNKNOWN",
+    campaignEligible: false,
   };
-
-  if (payload.phone) {
-    person.phones = {
-      primaryPhoneNumber: payload.phone,
-      additionalPhones: [],
-    };
-  }
-
-  if (payload.company) person.companyName = payload.company;
-
-  if (payload.lifecycleStage || payload.source) {
-    person.crmNotes = [
-      payload.lifecycleStage ? `Lifecycle: ${payload.lifecycleStage}` : null,
-      payload.source ? `Source: ${payload.source}` : null,
-    ].filter(Boolean).join("\n");
-  }
 
   return person;
 }

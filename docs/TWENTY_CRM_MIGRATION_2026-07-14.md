@@ -56,4 +56,8 @@ After `TWENTY_API_KEY` is configured, `readiness:operational` should show the CR
 
 ## Privacy-safe reconciliation
 
-`npm run crm:reconcile -- --strict` compares legitimate Warrantee signups, contact-form inquiries, and seller applications created since the Twenty migration with exact-email records in Twenty. It is read-only: it does not create contacts, send messages, or print names, email addresses, phone numbers, or message bodies. The scheduled Production Security Gates run this check and fail when a legitimate Warrantee lead is missing or the comparison cannot be completed.
+`npm run crm:reconcile -- --strict` compares legitimate Warrantee signups, contact-form inquiries, and seller applications created since the Twenty migration with exact-email records in Twenty. It is read-only and does not print names, email addresses, phone numbers, or message bodies.
+
+`npm run crm:reconcile -- --repair --confirm --strict` repairs missing filtered legitimate contacts, verifies each write by reading the record back, and reports aggregate counts only. Owner/internal, QA, test, demo, synthetic, and monitoring identities are excluded. The repair does not send messages or create campaign activity. Both `--repair` and `--confirm` are required; the scheduled Production Security Gates use this approved mode so a transient non-blocking CRM failure does not strand a legitimate signup.
+
+Twenty Person writes use the live workspace schema: normalized email and name, `primaryBrandKey=WARRANTEE`, `consentStatus=UNKNOWN`, and `campaignEligible=false`. Warrantee remains the source of truth for submitted phone/company details until explicit Twenty phone normalization and Company relation mapping are approved.
