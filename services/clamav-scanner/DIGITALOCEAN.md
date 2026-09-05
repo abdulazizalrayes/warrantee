@@ -1,6 +1,8 @@
 # Warrantee ClamAV DigitalOcean Runbook
 
-This is the owner-approved early-launch runtime for Warrantee document malware scanning. It uses spare capacity on the existing DigitalOcean Droplet without sharing application directories, databases, object stores, Docker networks, volumes, or secrets with the other workloads on that host.
+> Status: deployment postponed by the owner on 5 September 2026. This is a prepared, tested runbook only. Do not create containers, secrets, DNS, TLS configuration, or Vercel scanner settings unless the owner explicitly resumes ClamAV deployment.
+
+This is the prepared DigitalOcean runtime for a future Warrantee document malware scanner. If deployment is later approved, it can use spare capacity on the existing DigitalOcean Droplet without sharing application directories, databases, object stores, Docker networks, volumes, or secrets with the other workloads on that host.
 
 ## What ClamAV Adds
 
@@ -24,7 +26,7 @@ ClamAV is not OCR. OCR extracts text and warranty fields. ClamAV decides whether
 
 The scanner does not mount Paperclip, JFCO, Hadhr, CRM, Postgres, MinIO, or application directories or volumes. ClamAV port `3310` is not published. Documents are downloaded into bounded process memory, streamed to `clamd`, and not retained in a file volume. Only antivirus signatures persist.
 
-This is logical container isolation on one Linux kernel. It is appropriate for the owner-approved early launch, but it is not equivalent to a dedicated Droplet. Move the unchanged Compose project to a dedicated DigitalOcean Droplet before sustained customer volume, stricter data-residency commitments, or enterprise security review.
+This is logical container isolation on one Linux kernel. It may be appropriate for an explicitly approved early launch, but it is not equivalent to a dedicated Droplet. Move the unchanged Compose project to a dedicated DigitalOcean Droplet before sustained customer volume, stricter data-residency commitments, or enterprise security review.
 
 ## Resource Boundaries
 
