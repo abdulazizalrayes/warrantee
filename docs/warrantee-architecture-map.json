@@ -2818,7 +2818,7 @@
     {
       "provider": "ClamAV",
       "purpose": "Self-hosted signature malware scanning",
-      "status": "service and Dammam Cloud Run deployment specification ready; activation blocked on owner-approved Google billing",
+      "status": "service and hardened DigitalOcean runtime ready for the owner-approved early-launch deployment; Cloud Run remains inactive",
       "failure_behavior": "Configured scans fail closed and documents do not proceed to OCR or download."
     },
     {
@@ -2879,9 +2879,9 @@
     },
     {
       "id": "clamav_runtime",
-      "classification": "external compute pending",
-      "detail": "The hardened ClamAV wrapper, live validator, and Warrantee-only scale-to-zero Cloud Run topology for project warrantee-491217 are implemented. The Google project still requires owner-approved free-trial or billing activation before APIs and resources can be created.",
-      "impact": "The active in-app heuristic scanner remains in place; do not claim signature antivirus is live until health and EICAR isolation tests pass."
+      "classification": "approved deployment in progress",
+      "detail": "The owner selected the existing DigitalOcean Droplet for early launch. The hardened runtime uses the Warrantee-only Compose project, private ClamAV network, dedicated signature volume, host-loopback wrapper, separate hostname and secret, bounded resources, and no document persistence or mounts from other workloads. Move it to a dedicated DigitalOcean Droplet when usage or assurance requirements justify machine-level isolation.",
+      "impact": "The active in-app heuristic scanner remains in place; do not claim signature antivirus is live until DigitalOcean health, EICAR, log-privacy, shared-host regression, and production cutover tests pass."
     },
     {
       "id": "real_user_validation",
