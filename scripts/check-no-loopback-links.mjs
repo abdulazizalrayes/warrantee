@@ -72,6 +72,21 @@ const allowlist = [
     reason: "Compose deliberately publishes the authenticated scanner on the host loopback interface only.",
   },
   {
+    file: "services/clamav-scanner/nginx-scanner.conf",
+    patterns: new Set(["127.0.0.1"]),
+    reason: "The dedicated Warrantee virtual host proxies only to the scanner bound on host loopback.",
+  },
+  {
+    file: "services/clamav-scanner/digitalocean-config.test.mjs",
+    patterns: new Set(["localhost", "127.0.0.1"]),
+    reason: "The deployment regression test asserts that the scanner remains reachable only through loopback.",
+  },
+  {
+    file: "services/clamav-scanner/DIGITALOCEAN.md",
+    patterns: new Set(["127.0.0.1"]),
+    reason: "The runbook records the required private host binding and pre-deployment port check.",
+  },
+  {
     file: "services/clamav-scanner/cloud-run-config.mjs",
     patterns: new Set(["127.0.0.1"]),
     reason: "Cloud Run sidecars share one instance network; the wrapper reaches clamd over loopback without exposing port 3310.",

@@ -1,5 +1,7 @@
 # Warrantee ClamAV Cloud Run Runbook
 
+> Status: retained as an unactivated future migration option. On 5 September 2026, the owner selected the existing DigitalOcean Droplet for the early-launch runtime. Use `DIGITALOCEAN.md` for the active deployment path. Do not enable Google Cloud billing or resources unless the owner reverses that decision.
+
 This runbook is locked to the Warrantee Google Cloud project and must not be reused for another company without changing and reviewing every identity boundary.
 
 ## Identity Lock
@@ -14,9 +16,9 @@ This runbook is locked to the Warrantee Google Cloud project and must not be reu
 
 Do not use the shared Paperclip droplet or the CRM Email Intelligence application. Customer documents and scanner credentials must remain in Warrantee-owned infrastructure.
 
-## Current Blocker
+## Inactive Option
 
-As verified on 5 September 2026, the project has no active Google Cloud billing profile and displays `Start your Free Trial`. Cloud Run resource creation is therefore blocked until the owner explicitly activates the trial or billing. Activation can create future charges even when expected usage stays within free allowances.
+As verified on 5 September 2026, the project has no active Google Cloud billing profile and displays `Start your Free Trial`. The owner elected not to activate it for the early launch. Activation can create future charges even when expected usage stays within free allowances.
 
 Do not enable APIs, create resources, or attach billing without fresh owner approval at execution time.
 

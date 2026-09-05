@@ -2,14 +2,22 @@
 
 Last updated: 2026-09-05
 
+## 2026-09-05 DigitalOcean ClamAV Runtime Decision
+
+- The owner selected the existing DigitalOcean Droplet for the early-launch ClamAV runtime and declined Google Cloud activation.
+- Current verified Droplet capacity is 8 vCPUs, 16 GB RAM with about 14 GB available, and 49 GB free disk. The host already serves other isolated workloads; this approval is for logical container isolation during early launch, not a claim of dedicated-machine isolation.
+- The reviewed runtime uses the `warrantee-clamav` Compose project, separate egress and internal-only networks, a dedicated signature volume, a root-only environment file, a host-loopback-only wrapper port, read-only wrapper filesystem, dropped Linux capabilities, resource/PID limits, and bounded logs. It does not mount or join Paperclip, JFCO, Hadhr, CRM, Postgres, or MinIO paths, volumes, or networks.
+- Google Cloud remains unactivated. Its runbook is retained only as a future migration option. The next infrastructure upgrade is a dedicated DigitalOcean Droplet in the same account when usage or customer assurance justifies machine-level isolation.
+- Production remains on the internal baseline until the DigitalOcean service, TLS hostname, clean fixture, isolated EICAR detection, log privacy, unaffected shared workloads, and Vercel cutover gates pass.
+
 ## 2026-09-05 ClamAV Production Readiness
 
 - The signature-scanning wrapper now adds a bounded authenticated request rate, cached health checks, exact Warrantee Supabase signed-URL allowlisting, constant-time bearer authentication, strict size limits, redirect denial, and fail-closed ClamAV response handling.
 - A deterministic Cloud Run service generator and tests lock deployment to Google account `abdulaziz.alrayes@gmail.com`, project `warrantee-491217`, Dammam region `me-central2`, a dedicated service account, Secret Manager, one maximum instance, one-request concurrency, startup probes, and 120-second bounded requests. A live validator checks ClamAV health, unauthenticated denial, and bounded invalid requests without printing secrets.
 - Vercel project inspection confirmed Fluid Compute is enabled. The scanner client now supports a bounded `DOCUMENT_SECURITY_SCANNER_TIMEOUT_MS` from 5 to 120 seconds so a verified scale-to-zero cold start can use 90 seconds without making timeouts unbounded.
-- Google Cloud was inspected in regular Chrome under the Warrantee account and project. Cloud Run has no services and the account displays `Start your Free Trial`; no API, resource, repository, secret, permission, or billing relationship was created.
-- Production remains on `https://warrantee.io/api/internal/document-security-scan` with strict clean-before-download gating. Do not claim ClamAV is active until owner-approved Google activation plus health, clean-file, isolated EICAR, cold-start, log-privacy, CI, and Production Security Gate verification pass.
-- Deployment, cutover, rollback, and identity-lock instructions are recorded in `services/clamav-scanner/CLOUD_RUN.md`.
+- Google Cloud was inspected in regular Chrome under the Warrantee account and project. Cloud Run has no services and the account displays `Start your Free Trial`; no API, resource, repository, secret, permission, or billing relationship was created. The owner subsequently selected DigitalOcean instead.
+- Production remains on `https://warrantee.io/api/internal/document-security-scan` with strict clean-before-download gating. Do not claim ClamAV is active until the DigitalOcean health, clean-file, isolated EICAR, log-privacy, shared-host regression, CI, and Production Security Gate verification pass.
+- The active deployment, cutover, rollback, and isolation instructions are recorded in `services/clamav-scanner/DIGITALOCEAN.md`. `CLOUD_RUN.md` is an inactive future option.
 
 ## 2026-08-30 Account-Aware Pricing, Signup, Quotas, And Indexing
 

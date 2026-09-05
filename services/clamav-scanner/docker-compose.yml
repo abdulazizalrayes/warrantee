@@ -1,35 +1,73 @@
+name: warrantee-clamav
+
 services:
   clamav:
     image: clamav/clamav:1.5.3
     restart: unless-stopped
+    init: true
     volumes:
-      - clamav-signatures:/var/lib/clamav
+      - warrantee-clamav-signatures:/var/lib/clamav
+    tmpfs:
+      - /tmp:size=64m,nosuid,nodev,noexec
+      - /run/clamav:size=32m,nosuid,nodev
     healthcheck:
       test: ["CMD", "/usr/local/bin/clamdcheck.sh"]
       interval: 30s
       timeout: 10s
       retries: 10
-    networks: [clamd]
+      start_period: 120s
+    mem_limit: 4g
+    cpus: 1.5
+    pids_limit: 512
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+    networks: [warrantee-clamd]
 
   scanner:
     build: .
     restart: unless-stopped
+    init: true
     depends_on:
       clamav:
         condition: service_healthy
+    read_only: true
+    tmpfs:
+      - /tmp:size=32m,nosuid,nodev,noexec
     environment:
       CLAMD_HOST: clamav
       CLAMD_PORT: "3310"
       MAX_FILE_BYTES: "10485760"
+      SCAN_RATE_LIMIT_PER_MINUTE: "30"
       ALLOWED_DOCUMENT_ORIGIN: ${ALLOWED_DOCUMENT_ORIGIN:?required}
       SCANNER_TOKEN: ${SCANNER_TOKEN:?required}
     ports:
-      - "127.0.0.1:8080:8080"
-    networks: [default, clamd]
+      - "127.0.0.1:${SCANNER_BIND_PORT:-8787}:8080"
+    mem_limit: 512m
+    cpus: 0.5
+    pids_limit: 128
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+    networks: [warrantee-egress, warrantee-clamd]
 
 networks:
-  clamd:
+  warrantee-egress:
+    name: warrantee-clamav-egress
+  warrantee-clamd:
+    name: warrantee-clamav-internal
     internal: true
 
 volumes:
-  clamav-signatures:
+  warrantee-clamav-signatures:
+    name: warrantee-clamav-signatures
