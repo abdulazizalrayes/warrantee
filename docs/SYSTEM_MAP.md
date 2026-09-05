@@ -66,7 +66,7 @@ RLS posture:
 ## OCR And Document Processing
 
 - OCR endpoint prefers Mistral when configured, uses embedded PDF text where possible, falls back to Google Vision when configured, and uses Tesseract for availability.
-- Document security baseline and scanner code exists under `src/lib/server`. The dedicated ClamAV wrapper, hardened DigitalOcean Compose runtime, inactive Cloud Run alternative, and live validator are under `services/clamav-scanner`; production remains on the internal baseline until the owner-approved DigitalOcean deployment passes the live cutover gates.
+- Document security baseline and scanner code exists under `src/lib/server`. The dedicated ClamAV wrapper, hardened DigitalOcean Compose runtime, inactive Cloud Run alternative, and live validator are under `services/clamav-scanner`; production remains on the internal baseline and ClamAV deployment is owner-postponed.
 - Synthetic OCR corpus exists under `tests/fixtures/ocr-corpus/synthetic`.
 - Private OCR corpus remains external because it requires founder-provided real/redacted invoices and receipts.
 
