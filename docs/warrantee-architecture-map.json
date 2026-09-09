@@ -57,7 +57,7 @@
       "ar"
     ],
     "runtime": {
-      "application": "Next.js 15.5.21",
+      "application": "Next.js 16.3.4",
       "ui": "React 19",
       "language": "TypeScript",
       "node": ">=22.13 <25",
@@ -403,7 +403,7 @@
         "src/app/agent-markdown/[...segments]/route.ts",
         "src/app/api/agent-markdown/route.ts",
         "src/lib/agent-ready.ts",
-        "src/middleware.ts",
+        "src/proxy.ts",
         "src/generated/agent-markdown-pages.json"
       ]
     },
@@ -417,14 +417,14 @@
       "code_refs": []
     },
     {
-      "id": "next_middleware",
-      "name": "Next.js middleware",
+      "id": "next_proxy",
+      "name": "Next.js proxy",
       "layer": "edge",
       "kind": "request_policy",
       "status": "active",
       "responsibility": "Locale normalization, protected-route redirects, role gates, noindex policy, security headers, and Markdown content negotiation.",
       "code_refs": [
-        "src/middleware.ts"
+        "src/proxy.ts"
       ]
     },
     {
@@ -471,7 +471,7 @@
       "status": "active",
       "responsibility": "Enforce authenticated route access, platform roles, company approver roles, and safe redirects.",
       "code_refs": [
-        "src/middleware.ts",
+        "src/proxy.ts",
         "src/lib/server/company-team.ts"
       ]
     },
@@ -1119,12 +1119,12 @@
     },
     {
       "from": "vercel_deployment",
-      "to": "next_middleware",
+      "to": "next_proxy",
       "type": "executes",
       "label": "request"
     },
     {
-      "from": "next_middleware",
+      "from": "next_proxy",
       "to": "app_router",
       "type": "routes",
       "label": "allowed / redirected"
@@ -1136,13 +1136,13 @@
       "label": "server APIs"
     },
     {
-      "from": "next_middleware",
+      "from": "next_proxy",
       "to": "supabase_auth",
       "type": "validates",
       "label": "session"
     },
     {
-      "from": "next_middleware",
+      "from": "next_proxy",
       "to": "session_and_role_guard",
       "type": "enforces",
       "label": "route role"
@@ -2034,7 +2034,7 @@
         },
         {
           "order": 2,
-          "component": "next_middleware",
+          "component": "next_proxy",
           "action": "Request receives locale, security headers, and auth-route noindex policy.",
           "control": "Open redirect and protected-route behavior are constrained."
         },
@@ -2645,7 +2645,7 @@
       "implementation": "Supabase Auth with secure strict session cookies, recovery, OAuth/magic link/password flows, and callback redirect validation.",
       "code_refs": [
         "src/lib/auth-context.tsx",
-        "src/middleware.ts"
+        "src/proxy.ts"
       ]
     },
     {
@@ -2695,7 +2695,7 @@
       "implementation": "HSTS, CSP, frame denial, no-sniff, strict referrer policy, permissions policy, and protected noindex behavior.",
       "code_refs": [
         "next.config.ts",
-        "src/middleware.ts"
+        "src/proxy.ts"
       ]
     },
     {
@@ -2920,7 +2920,7 @@
       {
         "when": "Changing authentication, onboarding, roles, company membership, or protected routes",
         "inspect": [
-          "src/middleware.ts",
+          "src/proxy.ts",
           "src/lib/auth-context.tsx",
           "src/lib/server/company-team.ts",
           "Supabase auth triggers and RLS migrations"

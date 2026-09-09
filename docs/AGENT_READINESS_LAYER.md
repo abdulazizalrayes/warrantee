@@ -129,7 +129,7 @@ Source and validation:
 - Generator: `scripts/generate-agent-markdown.mjs`
 - Structured parser/converter: `scripts/lib/agent-markdown-generator.mjs`
 - Generated source: `src/generated/agent-markdown-pages.json`
-- Runtime negotiation: `src/middleware.ts` and `src/app/api/agent-markdown/route.ts`
+- Runtime negotiation: `src/proxy.ts` and `src/app/api/agent-markdown/route.ts`
 - Static sidecars: `src/app/agent-markdown/[...segments]/route.ts`
 - Manifest: `src/app/data/agent-markdown-manifest.json/route.ts`
 - Coverage and response validator: `scripts/check-agent-markdown.mjs`
