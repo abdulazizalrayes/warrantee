@@ -74,7 +74,7 @@ function buildAuthRedirectUrl(request: NextRequest, locale: string) {
   return url;
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const localeMatch = pathname.match(LOCALE_PREFIX_RE);
   const locale = normalizeLocale(localeMatch?.[1] || DEFAULT_LOCALE);

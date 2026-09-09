@@ -39,16 +39,16 @@ describe("operational hardening", () => {
   it("enforces CSP and keeps the readiness gate aligned with production headers", () => {
     const nextConfig = readProjectFile("next.config.ts");
     const readiness = readProjectFile("scripts/operational-readiness-check.mjs");
-    const middleware = readProjectFile("src/middleware.ts");
+    const proxy = readProjectFile("src/proxy.ts");
 
     expect(nextConfig).toContain('key: "Content-Security-Policy"');
     expect(nextConfig).not.toContain("Content-Security-Policy-Report-Only");
     expect(nextConfig).toContain("https://static.cloudflareinsights.com");
     expect(readiness).toContain('"content-security-policy"');
     expect(readiness).toContain('csp: "enforced"');
-    expect(middleware).toContain("hasSupabaseClientConfig");
-    expect(middleware).toContain("function buildNoIndexAuthRedirect");
-    expect(middleware).toContain("return buildNoIndexAuthRedirect(request, locale);");
+    expect(proxy).toContain("hasSupabaseClientConfig");
+    expect(proxy).toContain("function buildNoIndexAuthRedirect");
+    expect(proxy).toContain("return buildNoIndexAuthRedirect(request, locale);");
   });
 
   it("ships the complete Tesseract worker dependency chain in serverless OCR routes", () => {
@@ -169,16 +169,25 @@ describe("operational hardening", () => {
     expect(pricingPage).toContain("Request pilot access");
   });
 
-  it("keeps first-run onboarding behind the authenticated application boundary", () => {
-    const middleware = readProjectFile("src/middleware.ts");
+  it("keeps the frontend performance budget compatible with Next.js 16 manifests", () => {
+    const budget = readProjectFile("scripts/check-frontend-performance-budget.mjs");
 
-    expect(middleware).toMatch(
+    expect(budget).toContain("_client-reference-manifest.js");
+    expect(budget).toContain("globalThis.__RSC_MANIFEST");
+    expect(budget).toContain("decodeURIComponent(relativeFile)");
+    expect(budget).toContain("appManifest ? routeChunkBytes : sharedBytes + routeChunkBytes");
+  });
+
+  it("keeps first-run onboarding behind the authenticated application boundary", () => {
+    const proxy = readProjectFile("src/proxy.ts");
+
+    expect(proxy).toMatch(
       /const protectedAppPrefixes = \[[\s\S]*["']\/onboarding["'][\s\S]*\]/,
     );
-    expect(middleware).toContain(
+    expect(proxy).toContain(
       "if ((isProtectedAppArea || isAdminArea || isApprovalArea) && !user)",
     );
-    expect(middleware).toContain("return buildNoIndexAuthRedirect(request, locale);");
+    expect(proxy).toContain("return buildNoIndexAuthRedirect(request, locale);");
   });
 
   it("keeps static public content pages server-rendered unless they need browser state", () => {

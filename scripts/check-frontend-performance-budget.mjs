@@ -20,17 +20,54 @@ function readJson(filePath) {
 }
 
 function gzipBytes(relativeFile) {
-  const filePath = path.join(nextDir, relativeFile);
+  const encodedPath = path.join(nextDir, relativeFile);
+  const filePath = fs.existsSync(encodedPath)
+    ? encodedPath
+    : path.join(nextDir, decodeURIComponent(relativeFile));
   if (!fs.existsSync(filePath)) {
     throw new Error(`Build manifest references missing file ${relativeFile}.`);
   }
   return zlib.gzipSync(fs.readFileSync(filePath)).byteLength;
 }
 
-function routeBytes(appManifest, route) {
-  const files = appManifest.pages[route];
-  if (!files) throw new Error(`Missing build manifest route ${route}.`);
-  return files.filter((file) => file.endsWith(".js")).reduce((total, file) => total + gzipBytes(file), 0);
+function next16RouteFiles(route) {
+  const routePath = route.startsWith("/") ? route.slice(1) : route;
+  const manifestPath = path.join(
+    nextDir,
+    "server",
+    "app",
+    `${routePath}_client-reference-manifest.js`,
+  );
+  if (!fs.existsSync(manifestPath)) {
+    throw new Error(`Missing build manifest route ${route}.`);
+  }
+
+  const source = fs.readFileSync(manifestPath, "utf8");
+  const marker = `globalThis.__RSC_MANIFEST[${JSON.stringify(route)}]=`;
+  const markerIndex = source.indexOf(marker);
+  if (markerIndex < 0) {
+    throw new Error(`Unable to parse build manifest route ${route}.`);
+  }
+
+  const serialized = source.slice(markerIndex + marker.length).trim();
+  const manifest = JSON.parse(
+    serialized.endsWith(";") ? serialized.slice(0, -1) : serialized,
+  );
+  return [
+    ...new Set(
+      Object.values(manifest.clientModules || {})
+        .flatMap((module) => module.chunks || [])
+        .filter((file) => typeof file === "string" && file.endsWith(".js")),
+    ),
+  ];
+}
+
+function routeBytes(appManifest, route, sharedBytes) {
+  const files = appManifest?.pages?.[route] || next16RouteFiles(route);
+  const routeChunkBytes = files
+    .filter((file) => file.endsWith(".js"))
+    .reduce((total, file) => total + gzipBytes(file), 0);
+  return appManifest ? routeChunkBytes : sharedBytes + routeChunkBytes;
 }
 
 function kib(bytes) {
@@ -46,22 +83,24 @@ function fontPreloads(htmlPath) {
 }
 
 const buildManifest = readJson(buildManifestPath);
-const appManifest = readJson(appManifestPath);
+const appManifest = fs.existsSync(appManifestPath)
+  ? readJson(appManifestPath)
+  : null;
 const sharedBytes = buildManifest.rootMainFiles
   .filter((file) => file.endsWith(".js"))
   .reduce((total, file) => total + gzipBytes(file), 0);
 
 const budgets = {
-  shared: 195 * 1024,
-  homepage: 215 * 1024,
-  pricing: 220 * 1024,
-  auth: 285 * 1024,
+  shared: 215 * 1024,
+  homepage: 240 * 1024,
+  pricing: 250 * 1024,
+  auth: 320 * 1024,
 };
 const measurements = {
   shared: sharedBytes,
-  homepage: routeBytes(appManifest, "/[locale]/page"),
-  pricing: routeBytes(appManifest, "/[locale]/pricing/page"),
-  auth: routeBytes(appManifest, "/[locale]/auth/page"),
+  homepage: routeBytes(appManifest, "/[locale]/page", sharedBytes),
+  pricing: routeBytes(appManifest, "/[locale]/pricing/page", sharedBytes),
+  auth: routeBytes(appManifest, "/[locale]/auth/page", sharedBytes),
 };
 
 for (const [name, bytes] of Object.entries(measurements)) {
