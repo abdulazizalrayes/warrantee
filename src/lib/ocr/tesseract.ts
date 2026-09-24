@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import { tmpdir } from "node:os";
 
 type TesseractResult = {
   text: string;
@@ -33,12 +34,27 @@ export async function recognizeImageBufferWithTesseract(
 ): Promise<TesseractResult> {
   const Tesseract = await import("tesseract.js");
   const workerPath = resolveTesseractWorkerPath();
-  const worker = await Tesseract.createWorker(normalizeLanguageHint(languages), 1, {
-    logger: () => undefined,
-    ...(workerPath ? { workerPath } : {}),
-  });
-
+  const language = normalizeLanguageHint(languages);
+  // Bundle approved models: serverless cold starts must not depend on a CDN.
+  const codes = language.split("+");
+  for (const code of codes) {
+    if (code !== "eng" && code !== "ara") throw new Error("Unsupported local OCR language.");
+  }
+  const modelDirectory = fs.mkdtempSync(path.join(tmpdir(), "warrantee-ocr-"));
+  let worker: Awaited<ReturnType<typeof Tesseract.createWorker>> | undefined;
   try {
+    for (const code of codes) {
+      fs.copyFileSync(path.join(
+        process.cwd(), "node_modules", "@tesseract.js-data", code,
+        "4.0.0_best_int", `${code}.traineddata.gz`,
+      ), path.join(modelDirectory, `${code}.traineddata.gz`));
+    }
+    worker = await Tesseract.createWorker(language, 1, {
+      logger: () => undefined,
+      langPath: modelDirectory,
+      cacheMethod: "none",
+      ...(workerPath ? { workerPath } : {}),
+    });
     const result = await worker.recognize(image);
     const text = result?.data?.text?.trim() || "";
     const confidence = Number(result?.data?.confidence ?? 0) / 100;
@@ -46,10 +62,14 @@ export async function recognizeImageBufferWithTesseract(
       text,
       confidence: Number.isFinite(confidence) ? Math.max(0, Math.min(1, confidence)) : 0,
       engine: "tesseract",
-      language: normalizeLanguageHint(languages),
+      language,
     };
   } finally {
-    await worker.terminate();
+    try {
+      await worker?.terminate();
+    } finally {
+      fs.rmSync(modelDirectory, { recursive: true, force: true });
+    }
   }
 }
 

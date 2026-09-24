@@ -31,9 +31,11 @@ const contentSecurityPolicy = [
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  serverExternalPackages: ["@napi-rs/canvas", "pdfjs-dist"],
+  serverExternalPackages: ["@napi-rs/canvas", "pdfjs-dist", "tesseract.js"],
   outputFileTracingIncludes: {
     "/api/ocr": [
+      "./node_modules/@tesseract.js-data/eng/4.0.0_best_int/eng.traineddata.gz",
+      "./node_modules/@tesseract.js-data/ara/4.0.0_best_int/ara.traineddata.gz",
       "./node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs",
       "./node_modules/pdfjs-dist/standard_fonts/**/*",
       "./node_modules/tesseract.js/src/worker-script/node/index.js",
@@ -44,6 +46,8 @@ const nextConfig: NextConfig = {
       "./node_modules/webidl-conversions/**/*",
     ],
     "/api/ingest/email": [
+      "./node_modules/@tesseract.js-data/eng/4.0.0_best_int/eng.traineddata.gz",
+      "./node_modules/@tesseract.js-data/ara/4.0.0_best_int/ara.traineddata.gz",
       "./node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs",
       "./node_modules/pdfjs-dist/standard_fonts/**/*",
       "./node_modules/tesseract.js/src/worker-script/node/index.js",
