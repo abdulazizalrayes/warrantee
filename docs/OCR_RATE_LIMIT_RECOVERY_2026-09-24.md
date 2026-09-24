@@ -49,3 +49,30 @@ accurate and must retain user review of extracted fields.
 Rollback: revert the OCR recovery commit and redeploy through the existing Git
 workflow. Prior main was f0ee6e1a371b490fba3df6d0905edb13abc160ee; reverting restores
 the previous behavior, including its known 503 on Mistral rate limiting.
+
+## Live follow-up and cold-start correction
+
+PR #25 passed CI (214 browser tests passed, 92 skipped), merged as
+0ec688de9c3003233f7d82677c103b9e069c30ab, and deployed as
+dpl_44wjxyhHimebcCyXe3JtokFerBX5. Public smoke and health passed.
+Production Security Gates 35970013508 still failed: the local OCR path exceeded
+its 45-second timeout after the Mistral rate-limit warning. QA cleanup passed.
+This was not a completed production recovery.
+
+The follow-up bundles pinned English/Arabic Tesseract language packages, stages
+only their approved models into a request-owned temporary directory, disables
+model caching, and removes that directory after processing. Tesseract is kept as
+a server external package to preserve its native Node worker loading. There is
+no language-model CDN download on the request path. Both OCR and email-ingestion
+function traces explicitly include the model files.
+
+Readiness error reporting now keeps only a bounded first line: Playwright timeout
+errors can otherwise append sensitive authenticated request headers. Do not
+copy raw failed-run logs into reports. The disposable QA identity used by the
+failed run was deleted and cleanup verified.
+
+Follow-up local checks: 279 tests passed, including real packaged-model OCR tests;
+type-check and changed-file lint passed. English receipt content was legible.
+The existing Arabic synthetic image produced its expected identifier but garbled
+Arabic text; identifier regression success is NOT Arabic accuracy validation.
+Provider quota and real-document/Arabic accuracy remain separate limitations.

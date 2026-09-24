@@ -672,8 +672,8 @@ async function checkDocumentSecurityScanner() {
 }
 
 function getErrorMessage(error) {
-  if (error instanceof Error) return error.message;
-  return String(error);
+  // Playwright appends request headers (including session cookies) to errors.
+  return (error instanceof Error ? error.message : String(error)).split(/\r?\n/, 1)[0].slice(0, 300);
 }
 
 async function checkProductionAppUrl() {
