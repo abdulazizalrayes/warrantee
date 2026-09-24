@@ -19,7 +19,7 @@ vi.mock("@/lib/supabase/server", () => ({
 }));
 vi.mock("@/lib/rate-limit", () => ({
   apiRateLimit: mocks.rate, ocrRateLimit: mocks.rate,
-  getClientIp: () => "127.0.0.1", getRateLimitHeaders: () => ({}),
+  getClientIp: () => "192.0.2.1", getRateLimitHeaders: () => ({}),
 }));
 vi.mock("@/lib/server/untrusted-content-events", () => ({ recordUntrustedContentEvent: vi.fn() }));
 
