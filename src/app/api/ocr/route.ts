@@ -7,6 +7,7 @@ import { cleanOCRTelemetry, type OCRProviderTelemetry } from "@/lib/ocr/telemetr
 import { extractWarrantyFields } from "@/lib/ocr/warranty-field-parser";
 import {
   hasMistralOCRConfig,
+  MistralOCRRateLimitError,
   MistralOCRUnsupportedFileError,
   recognizeDataUriWithMistral,
 } from "@/lib/ocr/mistral";
@@ -258,7 +259,7 @@ async function extractTextFromDocument(dataUri: string): Promise<OCRDocumentExtr
       if (tryMistral) return await extractTextWithMistral(dataUri, mimeType);
     } catch (error) {
       providerFallback = true;
-      if (provider === "mistral" && !tryPaddle && !shouldTryGoogleVision()) {
+      if (provider === "mistral" && !tryPaddle && !shouldTryGoogleVision() && !(error instanceof MistralOCRRateLimitError)) {
         throw new OCRServiceConfigurationError(error instanceof Error ? error.message : "Mistral OCR is unavailable.");
       }
       console.warn("Mistral PDF OCR unavailable, trying next OCR provider:", summarizeOCRProviderError(error));
@@ -289,7 +290,7 @@ async function extractTextFromDocument(dataUri: string): Promise<OCRDocumentExtr
       return await extractTextWithMistral(dataUri, mimeType);
     } catch (error) {
       providerFallback = true;
-      if (provider === "mistral" && !tryPaddle && !shouldTryGoogleVision()) {
+      if (provider === "mistral" && !tryPaddle && !shouldTryGoogleVision() && !(error instanceof MistralOCRRateLimitError)) {
         throw new OCRServiceConfigurationError(error instanceof Error ? error.message : "Mistral OCR is unavailable.");
       }
       if (error instanceof MistralOCRUnsupportedFileError && !shouldTryGoogleVision()) {

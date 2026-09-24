@@ -7,6 +7,7 @@ import { recognizeImageBufferWithTesseract } from '@/lib/ocr/tesseract';
 import { cleanOCRTelemetry, type OCRProviderTelemetry } from '@/lib/ocr/telemetry';
 import {
   hasMistralOCRConfig,
+  MistralOCRRateLimitError,
   MistralOCRUnsupportedFileError,
   recognizeBase64WithMistral,
 } from '@/lib/ocr/mistral';
@@ -92,7 +93,7 @@ export async function processDocument(
         return await processWithMistral(imageBase64, mimeType, false, provider);
       } catch (error) {
         providerFallback = true;
-        if (provider === 'mistral' && !tryPaddle && !shouldTryGoogleVision()) throw error;
+        if (provider === 'mistral' && !tryPaddle && !shouldTryGoogleVision() && !(error instanceof MistralOCRRateLimitError)) throw error;
         console.warn('Mistral PDF OCR unavailable, trying next OCR provider:', summarizeOCRProviderError(error));
       }
     }
@@ -116,7 +117,7 @@ export async function processDocument(
       return await processWithMistral(imageBase64, mimeType, false, provider);
     } catch (error) {
       providerFallback = true;
-      if (provider === 'mistral' && !tryPaddle && !shouldTryGoogleVision()) {
+      if (provider === 'mistral' && !tryPaddle && !shouldTryGoogleVision() && !(error instanceof MistralOCRRateLimitError)) {
         throw error;
       }
       if (error instanceof MistralOCRUnsupportedFileError && !shouldTryGoogleVision()) {
