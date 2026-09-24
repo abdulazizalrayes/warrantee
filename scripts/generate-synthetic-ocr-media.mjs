@@ -1,11 +1,15 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { createCanvas } from "@napi-rs/canvas";
+import { createCanvas, GlobalFonts } from "@napi-rs/canvas";
 import PDFDocument from "pdfkit";
 
 const outputDir = path.resolve("tests/fixtures/ocr-corpus/synthetic/media");
 fs.mkdirSync(outputDir, { recursive: true });
+const arabicOnly = process.argv.includes("--arabic-only");
+if (!GlobalFonts.registerFromPath(path.resolve("tests/fixtures/ocr-corpus/synthetic/fonts/NotoSansArabic.ttf"), "SyntheticArabic")) {
+  throw new Error("Synthetic Arabic fixture font could not be loaded");
+}
 
 function seededRandom(seed) {
   let value = seed >>> 0;
@@ -16,6 +20,8 @@ function seededRandom(seed) {
 }
 
 function writeReceipt({ fileName, title, lines, direction = "ltr", degraded = false, seed = 1 }) {
+  if (arabicOnly && direction !== "rtl") return null;
+  const font = direction === "rtl" ? "SyntheticArabic" : "sans-serif";
   const width = 1200;
   const height = 1500;
   const canvas = createCanvas(width, height);
@@ -38,17 +44,17 @@ function writeReceipt({ fileName, title, lines, direction = "ltr", degraded = fa
   const x = direction === "rtl" ? width - 110 : 110;
 
   ctx.fillStyle = "#111827";
-  ctx.font = "bold 54px sans-serif";
+  ctx.font = `bold 54px ${font}`;
   ctx.fillText(title, x, 130);
 
-  ctx.font = "32px sans-serif";
+  ctx.font = `32px ${font}`;
   let y = 245;
   for (const line of lines) {
     ctx.fillText(line, x, y);
     y += 92;
   }
 
-  ctx.font = "bold 25px sans-serif";
+  ctx.font = `bold 25px ${font}`;
   ctx.fillStyle = "#9b1c1c";
   ctx.fillText(
     direction === "rtl" ? "مستند تجريبي - ليس فاتورة حقيقية" : "SYNTHETIC TEST DOCUMENT - NOT A REAL INVOICE",
@@ -170,12 +176,14 @@ const files = [
   }),
 ];
 
-files.push(await writePdf());
-const corruptedPath = path.join(outputDir, "synthetic-corrupted.pdf");
-fs.writeFileSync(corruptedPath, Buffer.from("%PDF-1.7\nsynthetic broken stream\nxref missing\n%%EOF truncated", "utf8"));
-files.push(corruptedPath);
+if (!arabicOnly) {
+  files.push(await writePdf());
+  const corruptedPath = path.join(outputDir, "synthetic-corrupted.pdf");
+  fs.writeFileSync(corruptedPath, Buffer.from("%PDF-1.7\nsynthetic broken stream\nxref missing\n%%EOF truncated", "utf8"));
+  files.push(corruptedPath);
+}
 
-const output = files.map((filePath) => {
+const output = files.filter(Boolean).map((filePath) => {
   const contents = fs.readFileSync(filePath);
   return {
     file: path.relative(process.cwd(), filePath),

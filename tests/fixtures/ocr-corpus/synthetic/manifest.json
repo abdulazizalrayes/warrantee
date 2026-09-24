@@ -195,9 +195,9 @@
       "kind": "receipt_image",
       "sensitivity": "synthetic",
       "file": "media/synthetic-ar-receipt-clean.png",
-      "sha256": "a915010ee7a0a5b74072dbf03cfd99890060b8d7b1e10141fb82128e607a365e",
+      "sha256": "cde370b3be9ffbba9633a912ad70be32763a7524332de48271ae6747dd89cb23",
       "syntheticMediaCheck": "tesseract",
-      "ocrContains": ["SYN-ARINV-55", "SYN-AR-123456", "1999"],
+      "ocrContains": ["SYN-ARINV-55", "SYN-AR-123456", "1999", "غسالة", "الضمان"],
       "text": "رقم الفاتورة: SYN-ARINV-55\nالبائع: متجر تجريبي بالرياض\nالمنتج: غسالة ذكية\nالرقم التسلسلي: SYN-AR-123456\nتاريخ الشراء: 2026-05-10\nالضمان: 24 شهر\nالإجمالي: 1999 ريال",
       "minConfidence": 0.65,
       "expectedFields": {
@@ -217,9 +217,9 @@
       "kind": "mixed_invoice_image",
       "sensitivity": "synthetic",
       "file": "media/synthetic-mixed-invoice.png",
-      "sha256": "91a7e7002386739656947cc574e5a62407faa2d2c4acf7201444534c9d50430d",
+      "sha256": "38899d27593432c4b49f4b87dbc538bf37efe1c589f231e9329263180b6e148b",
       "syntheticMediaCheck": "tesseract",
-      "ocrContains": ["SYN-MIX-7788", "SYN-AC-7788-KSA", "2500"],
+      "ocrContains": ["SYN-MIX-7788", "SYN-AC-7788-KSA", "2500", "مكيف"],
       "text": "فاتورة / Invoice No: SYN-MIX-7788\nStore: Example Gulf Warranty Store\nProduct: مكيف Smart AC 2 Ton\nSerial Number: SYN-AC-7788-KSA\nDate: 2026-05-10\nCoverage: 2 years\nAmount: SAR 2500",
       "minConfidence": 0.55,
       "expectedFields": {
