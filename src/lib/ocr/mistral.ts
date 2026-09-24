@@ -37,6 +37,13 @@ export class MistralOCRConfigurationError extends Error {
   }
 }
 
+export class MistralOCRRateLimitError extends Error {
+  constructor() {
+    super("Mistral OCR rate limit exceeded.");
+    this.name = "MistralOCRRateLimitError";
+  }
+}
+
 export class MistralOCRUnsupportedFileError extends Error {
   constructor(message: string) {
     super(message);
@@ -157,6 +164,7 @@ export async function recognizeBase64WithMistral(
     const payload = parseMistralPayload(payloadText);
 
     if (!response.ok) {
+      if (response.status === 429) throw new MistralOCRRateLimitError();
       const detail = payload.error?.message || payload.message || payloadText || response.statusText;
       if ([400, 401, 403].includes(response.status)) {
         throw new MistralOCRConfigurationError(`Mistral OCR configuration/auth error: ${detail}`);
