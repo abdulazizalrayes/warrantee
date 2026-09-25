@@ -1,4 +1,6 @@
 "use client";
+
+import { SearchableSelect } from '@/components/SearchableSelect';
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { CheckCircle } from "lucide-react";
@@ -312,12 +314,12 @@ export default function ExtendWarrantyPage() {
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
             <label htmlFor="extension-period" className="block text-sm font-medium text-[#1A1A2E] mb-1">{isRTL ? "\u0645\u062f\u0629 \u0627\u0644\u062a\u0645\u062f\u064a\u062f" : "Extension Period"} *</label>
-            <select id="extension-period" name="extensionMonths" value={extensionMonths} onChange={e => setExtensionMonths(parseInt(e.target.value))} className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0071e3]/30 focus:border-[#0071e3]">
+            <SearchableSelect id="extension-period" name="extensionMonths" value={extensionMonths} onChange={e => setExtensionMonths(parseInt(e.target.value))} className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0071e3]/30 focus:border-[#0071e3]">
               <option value={3}>{isRTL ? "3 \u0623\u0634\u0647\u0631" : "3 months"}</option>
               <option value={6}>{isRTL ? "6 \u0623\u0634\u0647\u0631" : "6 months"}</option>
               <option value={12}>{isRTL ? "12 \u0634\u0647\u0631" : "12 months"}</option>
               <option value={24}>{isRTL ? "24 \u0634\u0647\u0631" : "24 months"}</option>
-            </select>
+            </SearchableSelect>
           </div>
           {warranty && calcNewEnd() ? <div className="p-4 bg-[#0071e3]/10 rounded-lg"><p className="text-sm text-gray-600">{isRTL ? "\u062a\u0627\u0631\u064a\u062e \u0627\u0644\u0627\u0646\u062a\u0647\u0627\u0621 \u0627\u0644\u062c\u062f\u064a\u062f" : "New end date"}</p><p className="font-bold text-[#1A1A2E]">{new Date(calcNewEnd()).toLocaleDateString(isRTL ? "ar-SA" : "en-US", { month: "long", day: "numeric", year: "numeric" })}</p></div> : null}
           <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 space-y-2">

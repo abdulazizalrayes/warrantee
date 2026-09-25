@@ -1,5 +1,7 @@
 'use client';
 
+import { SearchableSelect } from '@/components/SearchableSelect';
+
 import { Fragment, useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
@@ -1853,7 +1855,7 @@ export default function AdminPage() {
                             {entry.warranty?.seller_name || entry.warranty?.seller_email || EM_DASH}
                           </td>
                           <td className="px-4 py-3">
-                            <select
+                            <SearchableSelect
                               aria-label={locale === 'ar' ? 'مصدر التمديد' : 'Extension source'}
                               value={entry.policy?.source || 'none'}
                               onChange={e => updateExtensionPolicyField(entry.warranty.id, 'source', e.target.value)}
@@ -1864,10 +1866,10 @@ export default function AdminPage() {
                               <option value="platform">{locale === 'ar' ? 'Warrantee' : 'Warrantee'}</option>
                               <option value="third_party">{locale === 'ar' ? 'طرف ثالث' : 'Third Party'}</option>
                               <option value="seller_then_platform">{locale === 'ar' ? 'البائع ثم Warrantee' : 'Seller then Warrantee'}</option>
-                            </select>
+                            </SearchableSelect>
                           </td>
                           <td className="px-4 py-3">
-                            <select
+                            <SearchableSelect
                               aria-label={locale === 'ar' ? 'حالة التمديد' : 'Extension status'}
                               value={entry.policy?.status || 'not_configured'}
                               onChange={e => updateExtensionPolicyField(entry.warranty.id, 'status', e.target.value)}
@@ -1877,7 +1879,7 @@ export default function AdminPage() {
                               <option value="pending">{locale === 'ar' ? 'قيد المراجعة' : 'Pending'}</option>
                               <option value="approved">{locale === 'ar' ? 'معتمد' : 'Approved'}</option>
                               <option value="rejected">{locale === 'ar' ? 'مرفوض' : 'Rejected'}</option>
-                            </select>
+                            </SearchableSelect>
                           </td>
                           <td className="px-4 py-3">
                             <div className="grid grid-cols-1 xl:grid-cols-2 gap-2 min-w-[360px]">
@@ -1896,7 +1898,7 @@ export default function AdminPage() {
                                 className="px-2 py-1.5 bg-[#12122a] border border-[#2a2a4a] rounded-lg text-xs text-gray-200 outline-none"
                                 dir="ltr"
                               />
-                              <select
+                              <SearchableSelect
                                 aria-label={locale === 'ar' ? 'وضع التسعير' : 'Pricing mode'}
                                 value={entry.policy?.pricingMode || 'quote_required'}
                                 onChange={e => updateExtensionPolicyField(entry.warranty.id, 'pricingMode', e.target.value)}
@@ -1905,8 +1907,8 @@ export default function AdminPage() {
                                 <option value="quote_required">Quote required</option>
                                 <option value="fixed_price">Fixed price</option>
                                 <option value="admin_review">Admin review</option>
-                              </select>
-                              <select
+                              </SearchableSelect>
+                              <SearchableSelect
                                 aria-label={locale === 'ar' ? 'حالة الاكتتاب' : 'Underwriting status'}
                                 value={entry.policy?.underwritingStatus || 'not_started'}
                                 onChange={e => updateExtensionPolicyField(entry.warranty.id, 'underwritingStatus', e.target.value)}
@@ -1916,7 +1918,7 @@ export default function AdminPage() {
                                 <option value="requires_review">Requires review</option>
                                 <option value="approved">Underwriting approved</option>
                                 <option value="rejected">Underwriting rejected</option>
-                              </select>
+                              </SearchableSelect>
                               <input
                                 aria-label={locale === 'ar' ? 'السعر المعتمد' : 'Approved price'}
                                 type="number"
@@ -2018,11 +2020,11 @@ export default function AdminPage() {
                 <div className="flex gap-3 flex-wrap">
                   <input aria-label={text.emailPlaceholder} type="email" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder={text.emailPlaceholder}
                     className="flex-1 min-w-[250px] px-4 py-2.5 bg-[#12122a] border border-[#2a2a4a] rounded-lg text-xs text-gray-200 outline-none focus:border-[#0071e3]/50" dir="ltr" />
-                  <select aria-label={text.role} value={inviteRole} onChange={e => setInviteRole(e.target.value as any)}
+                  <SearchableSelect aria-label={text.role} value={inviteRole} onChange={e => setInviteRole(e.target.value as any)}
                     className="px-4 py-2.5 bg-[#12122a] border border-[#2a2a4a] rounded-lg text-xs text-gray-200 outline-none">
                     <option value="admin">{text.admin}</option>
                     <option value="support">{text.support}</option>
-                  </select>
+                  </SearchableSelect>
                   <button onClick={handleAddMember} disabled={teamLoading || !inviteEmail.trim()}
                     className="px-6 py-2.5 bg-[#0071e3] hover:bg-[#0077ED] text-white font-semibold rounded-lg text-xs disabled:opacity-50 transition">
                     {text.invite}

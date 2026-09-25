@@ -1,5 +1,7 @@
 'use client';
 
+import { SearchableSelect } from '@/components/SearchableSelect';
+
 import { useCallback, useEffect, useState } from 'react';
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
 
@@ -338,14 +340,14 @@ export function CoverageItemsEditor({
 
           <div>
             <label className="text-xs text-gray-500">Coverage Type</label>
-            <select value={item.coverage_type} onChange={(e) => updateItem(idx, 'coverage_type', e.target.value)}
+            <SearchableSelect value={item.coverage_type} onChange={(e) => updateItem(idx, 'coverage_type', e.target.value)}
               className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white">
               <option value="duration">Duration (Calendar Time)</option>
               <option value="mileage">Mileage (km/miles)</option>
               <option value="usage_hours">Operating Hours</option>
               <option value="event_count">Event Count (Cycles)</option>
               <option value="custom">Custom</option>
-            </select>
+            </SearchableSelect>
           </div>
 
           {item.coverage_type === 'duration' ? (

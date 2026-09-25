@@ -1,5 +1,7 @@
 'use client';
 
+import { SearchableSelect } from '@/components/SearchableSelect';
+
 // Warrantee — Admin Ingestion Review Queue
 // Shows all ingestion jobs with filtering, search, pagination, and fraud resolution
 
@@ -165,7 +167,7 @@ export default function AdminIngestionPage() {
             fontSize: '14px', flex: 1, minWidth: '200px',
           }}
         />
-        <select
+        <SearchableSelect
           aria-label={isRtl ? 'تصفية حسب الحالة' : 'Filter by status'}
           value={statusFilter}
           onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
@@ -175,7 +177,7 @@ export default function AdminIngestionPage() {
           {Object.keys(STATUS_COLORS).map((s) => (
             <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>
           ))}
-        </select>
+        </SearchableSelect>
       </div>
       {/* Jobs Table */}
       <div style={{ overflowX: 'auto' }}>

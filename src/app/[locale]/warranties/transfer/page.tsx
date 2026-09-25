@@ -1,5 +1,7 @@
 "use client";
 
+import { SearchableSelect } from '@/components/SearchableSelect';
+
 import { use, useState, useEffect } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 
@@ -99,13 +101,13 @@ export default function TransferWarrantyPage({ params }: { params: Promise<{ loc
             <label htmlFor="transfer-warranty" className="block text-sm font-medium text-gray-700 mb-1">
               {isAr ? tr("اختر الضمان") : "Select Warranty"}
             </label>
-            <select id="transfer-warranty" name="warrantyId" value={selectedWarranty} onChange={(e) => setSelectedWarranty(e.target.value)}
+            <SearchableSelect id="transfer-warranty" name="warrantyId" value={selectedWarranty} onChange={(e) => setSelectedWarranty(e.target.value)}
               className="w-full px-4 py-3 border border-gray-300 rounded-xl" required>
               <option value="">{isAr ? tr("-- اختر --") : "-- Select --"}</option>
               {warranties.map((w) => (
                 <option key={w.id} value={w.id}>{w.product_name} ({w.serial_number})</option>
               ))}
-            </select>
+            </SearchableSelect>
           </div>
           <div>
             <label htmlFor="transfer-recipient-email" className="block text-sm font-medium text-gray-700 mb-1">

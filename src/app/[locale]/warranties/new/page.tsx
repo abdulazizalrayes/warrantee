@@ -1,5 +1,7 @@
 "use client";
 
+import { SearchableSelect } from '@/components/SearchableSelect';
+
 import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, ArrowRight, Upload, X, FileText, CheckCircle, ScanLine, Sparkles, Camera } from "lucide-react";
@@ -379,10 +381,10 @@ export default function NewWarrantyPage() {
       </div>
       <div>
         <label htmlFor="warranty-category" className="block text-sm font-medium text-navy mb-1">{isRTL ? "\u0627\u0644\u0641\u0626\u0629" : "Category"} *</label>
-        <select id="warranty-category" name="category" value={category} onChange={(e) => setCategory(e.target.value)}
+        <SearchableSelect id="warranty-category" name="category" value={category} onChange={(e) => setCategory(e.target.value)}
           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0071e3]/30 focus:border-[#0071e3]">
           {CATEGORIES.map((c) => (<option key={c.value} value={c.value}>{isRTL ? c.ar : c.en}</option>))}
-        </select>
+        </SearchableSelect>
       </div>
       <div className="flex justify-end">
         <button onClick={() => setStep(2)} disabled={!canProceedStep1}
