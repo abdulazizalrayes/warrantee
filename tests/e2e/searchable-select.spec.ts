@@ -3,6 +3,8 @@ import { test, expect } from '@playwright/test';
 for (const locale of ['en', 'ar']) {
   test(`${locale} dropdown search preserves values and keyboard navigation`, async ({ page }) => {
     await page.goto(`/${locale}/contact`);
+    const rejectCookies = page.getByRole('button', { name: /Reject All|رفض الكل/ });
+    if (await rejectCookies.isVisible()) await rejectCookies.click();
     const select = page.locator('select[name="subject"]');
     const search = select.locator('..').locator('input[type="search"]');
     const initial = await select.inputValue();
