@@ -1,5 +1,7 @@
 'use client';
 
+import { SearchableSelect } from '@/components/SearchableSelect';
+
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
@@ -221,13 +223,13 @@ export default function BulkOperationsPage() {
             {action === 'status' && (
               <div className="flex items-center gap-4">
                 <label htmlFor="bulk-status" className="text-sm font-medium text-gray-700">{t.newStatus}</label>
-                <select id="bulk-status" name="status" value={newStatus} onChange={e => setNewStatus(e.target.value)}
+                <SearchableSelect id="bulk-status" name="status" value={newStatus} onChange={e => setNewStatus(e.target.value)}
                   className="px-3 py-2 border border-gray-300 rounded-lg">
                   <option value="active">{t.active}</option>
                   <option value="expired">{t.expired}</option>
                   <option value="pending">{t.pending}</option>
                   <option value="cancelled">{t.cancelled}</option>
-                </select>
+                </SearchableSelect>
                 <button onClick={handleBulkStatus} disabled={processing}
                   className="px-4 py-2 bg-[#4169E1] text-white rounded-lg disabled:opacity-50 flex items-center gap-2">
                   {processing && <Loader2 className="w-4 h-4 animate-spin" />} {t.apply}

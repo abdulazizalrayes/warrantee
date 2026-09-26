@@ -1,5 +1,7 @@
 'use client';
 
+import { SearchableSelect } from '@/components/SearchableSelect';
+
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { Mail, MessageCircle, Phone, Send } from 'lucide-react';
@@ -281,7 +283,7 @@ export default function ContactPage() {
               </div>
               <div>
                 <label htmlFor="contact-subject" className="block text-sm font-semibold text-navy mb-1.5">{copy.subject}</label>
-                <select
+                <SearchableSelect
                   id="contact-subject"
                   name="subject"
                   value={formData.subject}
@@ -294,7 +296,7 @@ export default function ContactPage() {
                   <option value="enterprise">{copy.subjects.enterprise}</option>
                   <option value="api">{copy.subjects.api}</option>
                   <option value="press">{copy.subjects.press}</option>
-                </select>
+                </SearchableSelect>
               </div>
             </div>
             <div>

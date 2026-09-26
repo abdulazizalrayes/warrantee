@@ -1,5 +1,7 @@
 "use client";
 
+import { SearchableSelect } from '@/components/SearchableSelect';
+
 import { useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { CheckCircle, Paperclip, X, Upload } from "lucide-react";
@@ -225,20 +227,20 @@ export default function FileClaimPage() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label htmlFor="claim-severity" className="block text-sm font-medium text-[#1A1A2E] mb-1">{t.sev}</label>
-              <select id="claim-severity" name="severity" value={severity} onChange={e => setSeverity(e.target.value)}
+              <SearchableSelect id="claim-severity" name="severity" value={severity} onChange={e => setSeverity(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#4169E1]">
                 <option value="low">{t.low}</option><option value="medium">{t.medium}</option>
                 <option value="high">{t.high}</option><option value="critical">{t.critical}</option>
-              </select>
+              </SearchableSelect>
             </div>
             <div>
               <label htmlFor="claim-category" className="block text-sm font-medium text-[#1A1A2E] mb-1">{t.cat}</label>
-              <select id="claim-category" name="category" value={category} onChange={e => setCategory(e.target.value)}
+              <SearchableSelect id="claim-category" name="category" value={category} onChange={e => setCategory(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#4169E1]">
                 <option value="">{t.selectCat}</option><option value="defect">{t.defect}</option>
                 <option value="damage">{t.damage}</option><option value="malfunction">{t.malfunction}</option>
                 <option value="missing_parts">{t.missing_parts}</option><option value="other">{t.other}</option>
-              </select>
+              </SearchableSelect>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -249,19 +251,19 @@ export default function FileClaimPage() {
             </div>
             <div>
               <label htmlFor="claim-currency" className="block text-sm font-medium text-[#1A1A2E] mb-1">{t.curr}</label>
-              <select id="claim-currency" name="currency" value={currency} onChange={e => setCurrency(e.target.value)}
+              <SearchableSelect id="claim-currency" name="currency" value={currency} onChange={e => setCurrency(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#4169E1]">
                 <option value="SAR">SAR</option><option value="USD">USD</option><option value="EUR">EUR</option>
-              </select>
+              </SearchableSelect>
             </div>
           </div>
           <div>
             <label htmlFor="claim-contact-method" className="block text-sm font-medium text-[#1A1A2E] mb-1">{t.contact}</label>
-            <select id="claim-contact-method" name="contactMethod" value={contactMethod} onChange={e => setContactMethod(e.target.value)}
+            <SearchableSelect id="claim-contact-method" name="contactMethod" value={contactMethod} onChange={e => setContactMethod(e.target.value)}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#4169E1]">
               <option value="email">{t.email}</option><option value="phone">{t.phone}</option>
               <option value="in_person">{t.in_person}</option><option value="other">{t.otherC}</option>
-            </select>
+            </SearchableSelect>
           </div>
 
           <div>

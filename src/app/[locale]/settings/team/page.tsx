@@ -1,5 +1,7 @@
 "use client";
 
+import { SearchableSelect } from '@/components/SearchableSelect';
+
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { DashboardPageShell } from "@/components/dashboard/DashboardPageShell";
@@ -275,7 +277,7 @@ export default function TeamManagementPage() {
                   </div>
                   <div className="lg:w-48">
                     <label htmlFor="team-invite-role" className="mb-1 block text-sm font-medium text-gray-700">{t.role}</label>
-                    <select
+                    <SearchableSelect
                       id="team-invite-role"
                       name="role"
                       value={inviteRole}
@@ -287,7 +289,7 @@ export default function TeamManagementPage() {
                           {roleLabel(r)}
                         </option>
                       ))}
-                    </select>
+                    </SearchableSelect>
                   </div>
                   <div className="flex items-center gap-2">
                     <button type="submit" className="rounded-full bg-[#1A1A2E] px-6 py-2 text-white transition hover:bg-[#16213E]">
@@ -326,7 +328,7 @@ export default function TeamManagementPage() {
                         <td className="px-6 py-4 text-sm font-medium text-[#1A1A2E]">{member.full_name || "—"}</td>
                         <td className="px-6 py-4 text-sm text-gray-600">{member.email}</td>
                         <td className="px-6 py-4">
-                          <select
+                          <SearchableSelect
                             aria-label={`${t.role}: ${member.full_name || member.email}`}
                             value={member.role || "viewer"}
                             onChange={(e) => handleRoleChange(member.id, e.target.value)}
@@ -338,7 +340,7 @@ export default function TeamManagementPage() {
                                 {roleLabel(r)}
                               </option>
                             ))}
-                          </select>
+                          </SearchableSelect>
                         </td>
                         <td className="px-6 py-4">
                           <button

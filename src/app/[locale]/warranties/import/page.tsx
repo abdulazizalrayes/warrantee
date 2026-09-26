@@ -1,5 +1,7 @@
 "use client";
 
+import { SearchableSelect } from '@/components/SearchableSelect';
+
 import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Upload, CheckCircle, AlertCircle, Download, FileSpreadsheet, ShieldCheck, RotateCcw } from "lucide-react";
@@ -260,10 +262,10 @@ export default function ImportWarrantiesPage() {
               {headers.map((header) => (
                 <label key={header} className="grid grid-cols-[1fr_1fr] items-center gap-3 text-sm">
                   <span className="truncate text-gray-600" title={header}>{header}</span>
-                  <select value={mapping[header] || "ignore"} onChange={(event) => setMapping((current) => ({ ...current, [header]: event.target.value }))} className="rounded-lg border border-gray-200 bg-white px-3 py-2">
+                  <SearchableSelect value={mapping[header] || "ignore"} onChange={(event) => setMapping((current) => ({ ...current, [header]: event.target.value }))} className="rounded-lg border border-gray-200 bg-white px-3 py-2">
                     <option value="ignore">{isRTL ? "تجاهل" : "Ignore"}</option>
                     {WARRANTY_IMPORT_FIELDS.map((field) => <option key={field} value={field}>{field}</option>)}
-                  </select>
+                  </SearchableSelect>
                 </label>
               ))}
             </div>

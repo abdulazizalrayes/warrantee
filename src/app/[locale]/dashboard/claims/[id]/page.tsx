@@ -1,5 +1,7 @@
 'use client';
 
+import { SearchableSelect } from '@/components/SearchableSelect';
+
 import { useCallback, useEffect, useState } from 'react';
 import { usePathname, useParams } from 'next/navigation';
 import Link from 'next/link';
@@ -445,10 +447,10 @@ export default function ClaimDetailPage() {
               <label className="block">
                 <span className="mb-1 block text-xs text-gray-500">{t.decisionReason}</span>
                 {canManage ? (
-                  <select value={serviceLevel.decision_reason_code} onChange={(event) => setServiceLevel({ ...serviceLevel, decision_reason_code: event.target.value })} className="w-full rounded-lg border border-gray-200 px-3 py-2">
+                  <SearchableSelect value={serviceLevel.decision_reason_code} onChange={(event) => setServiceLevel({ ...serviceLevel, decision_reason_code: event.target.value })} className="w-full rounded-lg border border-gray-200 px-3 py-2">
                     <option value="">{t.notConfigured}</option>
                     {['coverage_confirmed','coverage_excluded','insufficient_evidence','duplicate_claim','repair_authorized','replacement_authorized','customer_withdrew','other'].map((reason) => <option key={reason} value={reason}>{reason.replace(/_/g, ' ')}</option>)}
-                  </select>
+                  </SearchableSelect>
                 ) : <span>{claim.decision_reason_code?.replace(/_/g, ' ') || t.notConfigured}</span>}
               </label>
               <label className="block">

@@ -1,5 +1,7 @@
 'use client';
 
+import { SearchableSelect } from '@/components/SearchableSelect';
+
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Check, ShieldCheck } from 'lucide-react';
@@ -274,10 +276,10 @@ export default function SellerRegisterPage() {
               <Field label={t.companyName}><input type="text" value={data.companyName} onChange={(event) => update('companyName', event.target.value)} className={inputClass} /></Field>
               <Field label={t.crNumber}><input type="text" value={data.crNumber} onChange={(event) => update('crNumber', event.target.value)} className={inputClass} dir="ltr" /></Field>
               <Field label={t.industry}>
-                <select value={data.industry} onChange={(event) => update('industry', event.target.value)} className={inputClass}>
+                <SearchableSelect value={data.industry} onChange={(event) => update('industry', event.target.value)} className={inputClass}>
                   <option value="">---</option>
                   {t.industries.map((industry) => <option key={industry} value={industry}>{industry}</option>)}
-                </select>
+                </SearchableSelect>
               </Field>
               <Field label={`${t.website} (${t.optional})`} mutedSuffix>
                 <input type="url" value={data.website} onChange={(event) => update('website', event.target.value)} className={inputClass} dir="ltr" placeholder="https://" />
