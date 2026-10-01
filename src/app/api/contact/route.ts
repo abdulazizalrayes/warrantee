@@ -8,6 +8,7 @@ import { sendEmail } from "@/lib/email";
 import { isTrustedSameOriginRequest } from "@/lib/request-origin";
 import { assessUntrustedContent, isInstructionAttack } from "@/lib/untrusted-content";
 import { recordUntrustedContentEvent } from "@/lib/server/untrusted-content-events";
+import { classifyTrafficUserAgent } from "@/lib/traffic-classification";
 
 function createSupabaseAdminClient() {
   return createClient(
@@ -204,6 +205,7 @@ export async function POST(request: NextRequest) {
       metadata: {
         source: "contact_api",
         original_kind: input.kind || "contact_form",
+        traffic_class: classifyTrafficUserAgent(request.headers.get("user-agent")),
       },
     }).then(({ error }) => {
       if (error) console.warn("Contact funnel log failed:", error.message);
