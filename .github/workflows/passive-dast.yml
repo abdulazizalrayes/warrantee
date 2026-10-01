@@ -27,4 +27,7 @@ jobs:
           allow_issue_writing: true
           issue_title: Warrantee OWASP ZAP passive baseline report
           artifact_name: warrantee-zap-passive-baseline
-          cmd_options: -a -j -m 5
+          # Browser spiders can submit forms. Keep production discovery non-transactional.
+          cmd_options: >-
+            -a -m 5
+            -z "-config spider.processform=false -config spider.postform=false -config connection.defaultUserAgent=Warrantee-QA/1.0"
