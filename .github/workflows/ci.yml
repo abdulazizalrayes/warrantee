@@ -89,6 +89,9 @@ jobs:
       - name: Create disposable QA identity
         run: npm run qa:user:ensure
 
+      - name: Require authenticated E2E configuration
+        run: npm run qa:e2e-env
+
       - name: E2E smoke gate
         run: npm run test:e2e
 
