@@ -39,7 +39,7 @@ try {
       ids: [...document.querySelectorAll('[id]')].map(el => el.id),
       controls: [...document.querySelectorAll('button, input, select, textarea')].length
     }));
-    metadata.links.filter(link => link.startsWith(base)).forEach(link => targets.add(link));
+    metadata.links.filter(link => new URL(link).origin === base).forEach(link => targets.add(link));
     results.push({ url, status: response?.status(), elapsedMs: Date.now() - started, errors, layouts, ...metadata });
     await page.close();
   }
