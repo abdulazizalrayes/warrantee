@@ -52,7 +52,7 @@ test.describe("public experience", () => {
 
   test("Professional access request opens the contact journey", async ({ page }) => {
     await expectHealthyPage(page, "/en/pricing");
-    await page.getByRole("button", { name: "Request pilot access" }).click();
+    await page.getByRole("link", { name: "Request pilot access" }).click();
     await expect(page).toHaveURL(/\/en\/contact\?intent=professional-access$/);
   });
 
@@ -127,7 +127,7 @@ test.describe("public experience", () => {
 
         const cardContainment = await page.evaluate(() =>
           Array.from(document.querySelectorAll<HTMLElement>('[data-testid^="pricing-card-"]')).map((card) => {
-            const button = card.querySelector<HTMLElement>("button");
+            const button = card.querySelector<HTMLElement>("a");
             const cardRect = card.getBoundingClientRect();
             const buttonRect = button?.getBoundingClientRect();
             return {
@@ -150,4 +150,16 @@ test.describe("public experience", () => {
       }
     });
   }
+
+  test("pricing navigation works with JavaScript disabled", async ({ browser, baseURL }) => {
+    const context = await browser.newContext({ javaScriptEnabled: false, userAgent: "Warrantee-QA/1.0" });
+    try {
+      const page = await context.newPage();
+      await page.goto(`${baseURL}/en/pricing`);
+      const link = page.getByRole("link", { name: "Request pilot access" });
+      await expect(link).toHaveAttribute("href", "/en/contact?intent=professional-access");
+      await link.click();
+      await expect(page).toHaveURL(/\/en\/contact\?intent=professional-access$/);
+    } finally { await context.close(); }
+  });
 });

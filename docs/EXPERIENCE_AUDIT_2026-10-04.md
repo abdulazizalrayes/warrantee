@@ -81,3 +81,16 @@ and a fail-fast authenticated E2E configuration gate. Local unit suite: 290 pass
 build and type-check passed; lint has no errors and two pre-existing navigation warnings.
 Operational E2E now checks aggregate document and claim endpoints with its existing
 disposable fixture. Deployment and live results must be recorded separately.
+
+Pricing plan navigation now uses normal anchors with unchanged classes and labels,
+while retaining campaign attribution and click tracking. A browser test confirms
+Professional contact navigation with JavaScript disabled. This removes dependency
+on hydration for navigation; it does not establish the original intermittent failure's
+root cause. Companions were regenerated from the local production build.
+
+Additional executed checks: six synthetic OCR media cases passed (English, Arabic,
+mixed-language images, multipage PDF and corrupt-file rejection); 13 document-service
+tests passed. October 3 production gates verified Tesseract fallback, the baseline
+scanner with strict downloads, unsigned-webhook rejection, no-send email probing,
+Twenty connectivity, RLS probe and operational QA cleanup. Those are dated evidence,
+not live ClamAV detection or actual email delivery. Billing remains disabled by policy.
