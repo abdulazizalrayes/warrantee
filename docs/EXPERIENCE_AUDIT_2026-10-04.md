@@ -70,3 +70,14 @@ Evidence output: /private/tmp/warrantee-public-audit-20261004.json.
 Do not mark a whole-project audit complete until the coverage gaps above have
 executed evidence or explicitly accepted owner exceptions. Keep product/visual
 changes separate from audit tooling; rank confirmed findings before implementation.
+
+## Remediation candidate
+
+Implemented on the PR #30 branch: inner-joined authorization filters and explicit
+pagination for documents/claims, six request-construction/authorization regression
+tests, removal of broad hydration/404 console exclusions, seven widths for public
+and authenticated release contracts, refreshed architecture inventory and CI gate,
+and a fail-fast authenticated E2E configuration gate. Local unit suite: 290 passed;
+build and type-check passed; lint has no errors and two pre-existing navigation warnings.
+Operational E2E now checks aggregate document and claim endpoints with its existing
+disposable fixture. Deployment and live results must be recorded separately.
