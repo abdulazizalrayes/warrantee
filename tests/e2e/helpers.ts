@@ -18,7 +18,7 @@ export function watchForPageErrors(page: Page, testInfo: TestInfo) {
   page.on("console", (message) => {
     if (message.type() !== "error") return;
     const text = message.text();
-    if (/favicon|ResizeObserver loop|hydration|Failed to load resource: the server responded with a status of 404/i.test(text)) return;
+    if (/ResizeObserver loop/i.test(text)) return;
     const location = message.location();
     const source = location.url ? ` at ${location.url}:${location.lineNumber}:${location.columnNumber}` : "";
     errors.push(`console.error: ${text}${source}`);

@@ -3,8 +3,8 @@ import sitemap from "../../src/app/sitemap";
 import { expectHealthyPage, signInWithPassword, watchForPageErrors } from "./helpers";
 
 const publicPaths = sitemap().map(({ url }) => new URL(url).pathname);
-const publicWidths = [320, 390, 768, 1440, 1920] as const;
-const authenticatedWidths = [390, 1440] as const;
+const publicWidths = [320, 390, 768, 1024, 1280, 1440, 1920] as const;
+const authenticatedWidths = publicWidths;
 const authenticatedRoutes = [
   "/dashboard",
   "/onboarding",

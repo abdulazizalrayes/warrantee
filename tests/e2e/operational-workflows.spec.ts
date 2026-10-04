@@ -321,6 +321,13 @@ test.describe("fully operational production workflows", () => {
     expect(documentsResponse.status()).toBe(200);
     expect(JSON.stringify(await documentsResponse.json())).toContain(`${runId}-original-proof.pdf`);
 
+    const collectionResponse = await page.request.get(`/api/documents?q=${encodeURIComponent(runId)}&limit=25&offset=0`);
+    expect(collectionResponse.status()).toBe(200);
+    expect(JSON.stringify(await collectionResponse.json())).toContain(`${runId}-original-proof.pdf`);
+    const claimsCollectionResponse = await page.request.get("/api/claims?limit=25&offset=0");
+    expect(claimsCollectionResponse.status()).toBe(200);
+    expect(Array.isArray((await claimsCollectionResponse.json()).data)).toBe(true);
+
     const downloadResponse = await page.request.get(`/api/documents/${documentPayload.id}/download`);
     if (downloadResponse.status() === 423) {
       expect(hasCronSecret).toBe(true);

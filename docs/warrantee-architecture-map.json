@@ -75,7 +75,7 @@
       "migration_files": 69,
       "scheduled_jobs": 3,
       "github_workflows": 4,
-      "e2e_spec_files": 8
+      "e2e_spec_files": 10
     }
   },
   "layers": [

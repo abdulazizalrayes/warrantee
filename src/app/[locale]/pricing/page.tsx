@@ -1,6 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
+import type { MouseEvent } from "react";
 import Link from "next/link";
 import { Check, Shield, Zap, Building2, UserRound } from "lucide-react";
 import { DIRECTION, getDictionary, normalizeLocale } from "@/lib/i18n";
@@ -83,15 +84,15 @@ export default function PricingPage() {
   const isRTL = locale === "ar";
   const direction = DIRECTION[locale];
   const dictionary = getDictionary(locale);
-  const selectPlan = (planId: string) => {
-    const rawDestination = planId === "enterprise"
+  const planDestination = (planId: string) => planId === "enterprise"
       ? `/${locale}/contact?intent=enterprise`
       : planId === "personal-free"
         ? `/${locale}/auth?tab=signup&account=consumer`
       : planId === "business-free"
         ? `/${locale}/auth?tab=signup&account=business`
         : `/${locale}/contact?intent=professional-access`;
-    const trackedDestination = appendCampaignParams(rawDestination);
+  const selectPlan = (event: MouseEvent<HTMLAnchorElement>, planId: string) => {
+    const trackedDestination = appendCampaignParams(planDestination(planId));
 
     trackFunnelCtaClick("pricing_plan_cta", trackedDestination, {
       locale,
@@ -99,12 +100,7 @@ export default function PricingPage() {
       location: "pricing_plan_card",
     });
 
-    if (planId === "personal-free" || planId === "business-free") {
-      window.location.href = trackedDestination;
-      return;
-    }
-
-    window.location.href = trackedDestination;
+    event.currentTarget.href = trackedDestination;
   };
 
   const renderPlanCard = (plan: (typeof plans)[number]) => {
@@ -179,9 +175,9 @@ export default function PricingPage() {
             ))}
           </ul>
 
-          <button
-            type="button"
-            onClick={() => selectPlan(plan.id)}
+          <a
+            href={planDestination(plan.id)}
+            onClick={(event) => selectPlan(event, plan.id)}
             className={`block w-full rounded-full py-2.5 text-center text-[14px] font-medium transition-all duration-200 ${
               plan.featured
                 ? "bg-[#0071e3] text-white shadow-sm hover:bg-[#0077ED] hover:shadow-md"
@@ -197,7 +193,7 @@ export default function PricingPage() {
                 : plan.id === "personal-free"
                   ? isRTL ? "أنشئ حسابًا شخصيًا" : "Create personal account"
                   : isRTL ? "أنشئ حساب أعمال" : "Create business account"}
-          </button>
+          </a>
         </div>
       </div>
     );
