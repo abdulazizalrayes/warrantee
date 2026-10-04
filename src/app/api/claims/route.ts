@@ -25,26 +25,19 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { data: visibleWarranties, error: warrantyListError } = await supabase
-      .from("warranties")
-      .select("id")
-      .or(await resolveWarrantyAccessOrClause(supabase, user.id));
-
-    if (warrantyListError) {
-      console.warn("Claim warranty scope fetch error:", warrantyListError.message);
-      return NextResponse.json({ error: warrantyListError.message }, { status: 500 });
-    }
-
-    const warrantyIds = (visibleWarranties || []).map((warranty) => warranty.id);
-    if (warrantyIds.length === 0) {
-      return NextResponse.json({ data: [] });
-    }
+    const access = await resolveWarrantyAccessOrClause(supabase, user.id);
+    const limitParam = Number(request.nextUrl.searchParams.get("limit") || 1000);
+    const limit = Number.isSafeInteger(limitParam) && limitParam > 0 ? Math.min(limitParam, 1000) : 1000;
+    const offsetParam = Number(request.nextUrl.searchParams.get("offset") || 0);
+    const offset = Number.isSafeInteger(offsetParam) && offsetParam >= 0 ? offsetParam : 0;
 
     const { data, error } = await supabase
       .from("warranty_claims")
-      .select("*, warranties(product_name)")
-      .in("warranty_id", warrantyIds)
-      .order("created_at", { ascending: false });
+      .select("*, warranties!inner(product_name)")
+      .or(access, { referencedTable: "warranties" })
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false })
+      .range(offset, offset + limit - 1);
 
     if (error) {
       console.warn("Claims fetch error:", error.message);
