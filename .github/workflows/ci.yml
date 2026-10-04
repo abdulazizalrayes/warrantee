@@ -56,6 +56,9 @@ jobs:
       - name: Verify migration source integrity
         run: npm run qa:migrations
 
+      - name: Verify architecture inventory
+        run: npm run qa:architecture-map
+
       - name: Verify CLI release package
         run: npm run qa:cli-release
 
