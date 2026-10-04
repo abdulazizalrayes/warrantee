@@ -10,12 +10,12 @@ describe('searchable selection', () => {
     expect(normalizeOptionSearch('ضَـمان')).toBe(normalizeOptionSearch('ضمان'));
   });
 
-  it('keeps native selects centralized so new dropdowns cannot omit search', () => {
+  it('keeps form selects searchable while allowing the owner-approved compact language selector', () => {
     function scan(dir: string): string[] {
       return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
         const file = path.join(dir, entry.name);
         if (entry.isDirectory()) return scan(file);
-        if (!file.endsWith('.tsx') || file.endsWith('SearchableSelect.tsx')) return [];
+        if (!file.endsWith('.tsx') || file.endsWith('SearchableSelect.tsx') || file === path.join('src', 'components', 'LanguageToggle.tsx')) return [];
         return /<select\b/.test(fs.readFileSync(file, 'utf8')) ? [file] : [];
       });
     }

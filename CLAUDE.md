@@ -97,6 +97,13 @@ If verification cannot be run, explain why and state the remaining risk.
 
 ## Design Operating Principles
 
+### Public Language Selector - Owner Correction (4 October 2026)
+
+- Keep header and footer language selectors compact, with no separate visible search field. The owner explicitly excluded these controls from the general searchable-dropdown requirement.
+- Preserve searchable form dropdowns. Do not apply generic form-control wrappers to navigation without checking the resulting header/footer layout.
+- Public footers must display the approved email `hello@warrantee.io` as a mailto link. Contact Us must open the localized contact page, not a missing homepage anchor.
+- Verify real header/footer clicks, language switching, and responsive layout in English and Arabic before release.
+
 Owner-approved on 2026-08-30 and adapted from the supplied "How I Design With AI" reference. Apply these principles to all future Warrantee visual and product-design work; they do not grant permission to publish visual changes without owner approval.
 
 - Start with the whole system before editing a screen: identify the audience, job to be done, complete journey, content, states, data, permissions, Arabic/English behavior, accessibility, performance, and business constraints.

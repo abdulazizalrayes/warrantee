@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { MessageCircle, Phone } from 'lucide-react';
+import { Mail, MessageCircle, Phone } from 'lucide-react';
 import { Dictionary, Locale, DIRECTION } from '@/lib/i18n';
 import {
   WARRANTEE_PHONE_DISPLAY,
@@ -37,7 +37,7 @@ export function Footer({ locale, dictionary }: FooterProps) {
       title: dictionary.footer.company,
       links: [
         { label: isArabic ? 'عن وارنتي' : 'About', href: `/${locale}/about` },
-        { label: dictionary.nav.contact, href: `/${locale}#contact` },
+        { label: dictionary.nav.contact, href: `/${locale}/contact` },
       ],
     },
     {
@@ -73,6 +73,14 @@ export function Footer({ locale, dictionary }: FooterProps) {
                 : 'Trust the Terms™. Track every warranty with confidence.'}
             </p>
             <div className="mb-4 space-y-2">
+              <a
+                href="mailto:hello@warrantee.io"
+                dir="ltr"
+                className={`flex w-fit max-w-full items-center gap-2 text-sm text-[#6e6e73] transition-colors hover:text-[#0071e3] ${isRTL ? 'ml-auto' : ''}`}
+              >
+                <Mail className="h-4 w-4 shrink-0" aria-hidden="true" />
+                <span className="break-all">hello@warrantee.io</span>
+              </a>
               <ContactActionLink
                 href={WARRANTEE_PHONE_TEL_URL}
                 channel="phone"
