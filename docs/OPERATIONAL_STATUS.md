@@ -1,3 +1,19 @@
+## CURRENT STATUS / SUPERSEDED RECORDS - 2026-11-07
+
+`CLAUDE.md` governs. This notice and `docs/BACKLOG.md` supersede conflicting historical status, pricing, priorities, and schedules below without erasing the dated records. Earlier uses of "now", "current", or "production" describe their historical snapshot, not today's live state.
+
+- **Parent-verified prior-turn release evidence:** production main `fcab224afe0054e7c63a4912720ddd75c3ae2082`; Vercel `dpl_87EqrvHVVkA7GGteQBTLiA1LmT3d`; PR #39. CI `42387386000` passed: 296 unit tests, 224 browser tests, 92 intentional skips (not executed coverage). Production Security Gate `42387613197` passed; Sentry unresolved issues 0, persistent QA records 0, full `npm audit` vulnerabilities 0. These are parent-verified snapshots, not fresh live verification by this documentation worker.
+- **Pricing:** `src/lib/plan-config.ts` defines Personal Free 10, Business Free 100, and Professional SAR 15 / USD 4 monthly. Prior SAR 14.90 is historical; later owner-approved currency unification/rounding may supersede it. No confirmed pricing defect or repricing is asserted here; unresolved historical approval requires ledger verification. Billing/payment activation remains postponed; do not claim paid activation is live.
+- **CRM boundary:** Twenty is connected for contacts/leads, not full warranty data or the complete warranty lifecycle.
+- **Analytics task 1:** explicit-destination routing produced exactly one QA `funnel_cta_click`, Google HTTP 204 at 16:08:15 UTC, and one event in the correct GA4 Realtime property. Drill-down confirmed `traffic_class=qa`, count 1. Released-bundle verification remains pending; this is not customer demand. See `docs/GA4_RECEIPT_RECONCILIATION_2026-11-07.md`.
+- **Aggregate activation:** report verifies four candidate profiles since July 14 plus three older candidates, no recent-seven-day sign-ins, and zero undeleted attributed warranties/certificates across both cohorts. These are heuristic candidates, not owner-verified customers. See `docs/ACTIVATION_VERIFICATION_2026-11-07.md`.
+- **Security/recovery evidence:** assigned ZAP alert triage validated no currently exploitable defect; CSP/edge hardening remains. Recovery discovery verified eight completed physical-backup metadata records with PITR off; restore/integrity/independent backup/RPO/RTO remain unproven. See `docs/SECURITY_SCAN_TRIAGE_2026-11-07.md` and `docs/RECOVERY_READINESS_2026-11-07.md`. Tasks 4/5 are not represented as finished.
+- **Current approved scope:** tasks 1-5 only. Aggregate activation and assigned ZAP triage are verified within the report limits; documentation is reconciled. Analytics source routing/receipt is proved but release checks remain pending. Backup metadata is verified; actual isolated recovery remains UNTESTED.
+- **Postponed for now:** tasks 6 OCR, 7 physical/accessibility, 8 field performance, 9 SEO recheck, and 10 growth pilot. Also preserve prior postponements of payments/billing activation, ClamAV, independent paid pentest, public npm publication, and Vercel Pro. Historical task numbering and schedules are not renewed approval.
+- **Verification boundary:** analytics receipt, aggregate activation, validated ZAP disposition, and recovery proof require their own evidence. Existing green gates do not close these tasks. No visual/source-code edits, private-data access, commit, push, or deploy are part of this documentation task.
+
+---
+
 # Warrantee Operational Status
 
 Last updated: 2026-09-05
