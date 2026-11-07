@@ -19,7 +19,7 @@ concurrency:
 jobs:
   production-security:
     name: Warrantee production smoke and RLS probe
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     env:
       SMOKE_BASE_URL: https://warrantee.io
