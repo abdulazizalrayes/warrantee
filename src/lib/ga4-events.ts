@@ -134,7 +134,13 @@ function emitEvent(event: string, payload: Record<string, unknown>) {
   if (process.env.NEXT_PUBLIC_GTM_ID) {
     pushDataLayer(event, classifiedPayload);
     if (event !== "page_view" && !gtmForwardedEvents.has(event)) {
-      gtag("event", event, classifiedPayload);
+      // GTM's Google tag does not configure gtag's default destination group.
+      gtag("event", event, {
+        ...classifiedPayload,
+        ...(process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID
+          ? { send_to: process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID }
+          : {}),
+      });
     }
   } else if (process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID) {
     gtag("event", event, classifiedPayload);

@@ -80,6 +80,7 @@ describe("browser analytics dispatch", () => {
       expect.objectContaining({
         method: "email",
         traffic_class: "human",
+        send_to: "G-TEST",
       })
     );
     expect(dataLayer).toContainEqual(
@@ -90,6 +91,40 @@ describe("browser analytics dispatch", () => {
       })
     );
     expect(dataLayer).toHaveLength(1);
+  });
+
+  it("routes one QA pricing CTA to the configured property without adding private data", async () => {
+    process.env.NEXT_PUBLIC_GTM_ID = "GTM-WFLBH83M";
+    process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID = "G-ZQJ4LRG4GN";
+    const { dataLayer, gtag, sendBeacon } = stubAnalyticsGlobals();
+    vi.stubGlobal("navigator", { webdriver: true, sendBeacon });
+    const { trackFunnelCtaClick } = await import("../ga4-events");
+
+    trackFunnelCtaClick("pricing_personal", "/en/auth?tab=signup", { locale: "en" });
+
+    expect(gtag).toHaveBeenCalledExactlyOnceWith("event", "funnel_cta_click", {
+      cta: "pricing_personal",
+      destination: "/en/auth?tab=signup",
+      event_category: "conversion_path",
+      event_label: "pricing_personal",
+      locale: "en",
+      traffic_class: "qa",
+      send_to: "G-ZQJ4LRG4GN",
+    });
+    expect(dataLayer).toHaveLength(1);
+    expect(dataLayer[0]).not.toHaveProperty("send_to");
+    expect(sendBeacon).toHaveBeenCalledOnce();
+    const body = JSON.parse(await (sendBeacon.mock.calls[0] as unknown as [string, Blob])[1].text());
+    expect(body.metadata.traffic_class).toBe("qa");
+    expect(body.metadata).not.toHaveProperty("send_to");
+  });
+
+  it("does not invent a destination when only GTM is configured", async () => {
+    process.env.NEXT_PUBLIC_GTM_ID = "GTM-TEST";
+    const { gtag } = stubAnalyticsGlobals();
+    const { trackSignup } = await import("../ga4-events");
+    trackSignup();
+    expect(gtag.mock.calls[0][2]).not.toHaveProperty("send_to");
   });
 
   it("falls back to direct GA events when GTM is not configured", async () => {
@@ -107,6 +142,8 @@ describe("browser analytics dispatch", () => {
       })
     );
     expect(dataLayer).toEqual([]);
+    expect(gtag).toHaveBeenCalledOnce();
+    expect(gtag.mock.calls[0][2]).not.toHaveProperty("send_to");
   });
 
   it("does not duplicate GTM's automatic GA4 page view", async () => {
