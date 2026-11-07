@@ -61,6 +61,7 @@ Only the first custom collect request matching the exact measurement ID, `funnel
 The parent independently observed GA4 Realtime in regular Chrome, authenticated
 as the authorized owner, on property `530040415`: baseline zero events became
 exactly one `funnel_cta_click` after the controlled 16:08:15 UTC transmission.
+The event parameter drill-down confirmed `traffic_class=qa`, count 1.
 No key event was recorded. This confirms reporting receipt for the controlled
 test, not customer demand or a deployed-bundle verification.
 
