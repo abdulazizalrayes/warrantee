@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { createRequire } from "node:module";
 import { spawn, spawnSync } from "node:child_process";
 import { mkdtempSync, mkdirSync, readFileSync, realpathSync, writeFileSync, rmSync, symlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -12,6 +13,7 @@ const temp = () => { const dir = mkdtempSync(path.join(tmpdir(), "warrantee-csp-
 const json = (file) => JSON.parse(readFileSync(file, "utf8"));
 const put = (root, file, value) => { mkdirSync(path.dirname(path.join(root, file)), { recursive: true }); writeFileSync(path.join(root, file), typeof value === "string" ? value : JSON.stringify(value)); };
 const policy = "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com; script-src-attr 'none'; style-src 'self' 'unsafe-inline'";
+const { getRouteCacheKey } = createRequire(import.meta.url)("next/dist/server/lib/route-cache-key");
 function fixture() {
   const root = path.join(temp(), ".next");
   put(root, "BUILD_ID", "build-one");
@@ -105,6 +107,87 @@ describe("final-build CSP binding", () => {
     expect(() => finalizeBuild(root)).toThrow("Invalid Node Proxy NFT");
     rmSync(path.join(root, "server/middleware.js.nft.json"));
     expect(() => finalizeBuild(root)).toThrow();
+  });
+  it.each(["file", "symlink"])("exclusive atomic creation does not clobber an existing temporary %s", (kind) => {
+    const root = fixture();
+    const project = path.dirname(root);
+    const artifact = path.join(project, ".warrantee-csp/static-routes.json");
+    const pending = { schemaVersion: 1, complete: false };
+    put(project, ".warrantee-csp/static-routes.json", pending);
+    const temporary = `${artifact}.csp-tmp`;
+    const sentinel = "existing bytes must remain unchanged";
+    const target = path.join(project, "trusted-target.txt");
+    if (kind === "symlink") {
+      writeFileSync(target, sentinel);
+      symlinkSync(target, temporary);
+    } else {
+      writeFileSync(temporary, sentinel);
+    }
+    const trace = readFileSync(path.join(root, "server/middleware.js.nft.json"));
+    expect(() => finalizeBuild(root)).toThrow(/EEXIST/);
+    expect(readFileSync(temporary, "utf8")).toBe(sentinel);
+    if (kind === "symlink") expect(readFileSync(target, "utf8")).toBe(sentinel);
+    expect(json(artifact)).toEqual(pending);
+    expect(readFileSync(path.join(root, "server/middleware.js.nft.json"))).toEqual(trace);
+  });
+  it("accepts the cloud adapter private source map without a cached hash and never rewrites metadata", () => {
+    const root = fixture();
+    const configPath = "output/functions/_middleware.func/.vc-config.json";
+    const privatePath = ".warrantee-csp/static-routes.json";
+    put(root, configPath, {
+      runtime: "nodejs24.x", filePathMap: { [privatePath]: privatePath },
+      fileHashes: { "unrelated.js": "preserve" }, providerField: "unchanged",
+    });
+    const before = readFileSync(path.join(root, configPath));
+    const result = finalizeBuild(root);
+    expect(json(result.artifactPath).complete).toBe(true);
+    expect(json(result.artifactPath).buildId).toBe("build-one");
+    expect(finalizeBuild(root, { check: true }).checked).toBe(true);
+    expect(readFileSync(path.join(root, configPath))).toEqual(before);
+    put(root, configPath, { filePathMap: {} });
+    expect(() => finalizeBuild(root, { check: true })).toThrow("Prepackaged");
+  });
+  it.each([
+    {},
+    { filePathMap: {} },
+    { filePathMap: { ".warrantee-csp/static-routes.json": "public/static-routes.json" } },
+    { filePathMap: { ".warrantee-csp/static-routes.json": ".warrantee-csp/static-routes.json" }, fileHashes: { ".warrantee-csp/static-routes.json": "stale-placeholder-hash" } },
+    { filePathMap: { ".warrantee-csp/static-routes.json": ".warrantee-csp/static-routes.json" }, fileHashes: { ".warrantee-csp/static-routes.json": null } },
+  ])("rejects missing/wrong cloud private mappings and any cached artifact hash", (config) => {
+    const root = fixture();
+    const configPath = "output/functions/_middleware.func/.vc-config.json";
+    put(root, configPath, config);
+    const before = readFileSync(path.join(root, configPath));
+    expect(() => finalizeBuild(root)).toThrow("Prepackaged");
+    expect(readFileSync(path.join(root, configPath))).toEqual(before);
+  });
+  it("supports adapter scoped APP_PAGE files using the source entry, without including API bodies", () => {
+    const root = fixture();
+    const manifest = json(path.join(root, "prerender-manifest.json"));
+    manifest.routes["/en/a%20b"].srcRoute = "/[locale]/[slug]";
+    put(root, "prerender-manifest.json", manifest);
+    put(root, "app-path-routes-manifest.json", { "/(root)/page": "/", "/[locale]/[slug]/page": "/[locale]/[slug]" });
+    for (const [route, sourceRoute, file] of [["/", "/(root)/page", "index.html"], ["/en/a%20b", "/[locale]/[slug]/page", "en/a b.html"]]) {
+      const key = getRouteCacheKey(route, { kind: "APP_PAGE", sourceRoute });
+      put(root, `server${key}.html`, readFileSync(path.join(root, `server/app/${file}`), "utf8"));
+    }
+    rmSync(path.join(root, "server/app"), { recursive: true });
+    put(root, "server/route-cache/APP_ROUTE/api/test.body", "not HTML");
+    const result = finalizeBuild(root);
+    expect(result.routes).toBe(2);
+    expect(json(result.artifactPath).routes["/en/a%20b"].policy).toContain(inlineHashes("<script>window.second=2;</script>")[0]);
+    const proof = json(path.join(root, "csp-finalization.json"));
+    expect(proof.binding.html.every((entry) => entry.file.startsWith("route-cache/APP_PAGE/"))).toBe(true);
+    expect(finalizeBuild(root, { check: true }).checked).toBe(true);
+  });
+  it("fails closed for duplicate legacy/scoped HTML and orphan scoped APP_PAGE HTML", () => {
+    const root = fixture();
+    const key = getRouteCacheKey("/", { kind: "APP_PAGE", sourceRoute: "/page" });
+    put(root, `server${key}.html`, "<h1>duplicate</h1>");
+    expect(() => finalizeBuild(root)).toThrow("ambiguous");
+    rmSync(path.join(root, `server${key}.html`));
+    put(root, "server/route-cache/APP_PAGE/unowned/extra.html", "orphan");
+    expect(() => finalizeBuild(root)).toThrow("inventory");
   });
   it("can attach trace metadata to an unchanged pre-NFT finalized build without rebuilding", () => {
     const root = fixture(); finalizeBuild(root);

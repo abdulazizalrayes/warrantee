@@ -7,6 +7,7 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   serverExternalPackages: ["@napi-rs/canvas", "pdfjs-dist", "tesseract.js"],
   outputFileTracingIncludes: {
+    middleware: ["./.warrantee-csp/static-routes.json"],
     "/api/ocr": [
       "./node_modules/@tesseract.js-data/eng/4.0.0_best_int/eng.traineddata.gz",
       "./node_modules/@tesseract.js-data/ara/4.0.0_best_int/ara.traineddata.gz",

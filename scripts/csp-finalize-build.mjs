@@ -2,7 +2,12 @@ import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, readdirSync, realpathSync, renameSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { createRequire } from "node:module";
 import { load } from "cheerio";
+
+const require = createRequire(import.meta.url);
+const { getRouteCacheKey } = require("next/dist/server/lib/route-cache-key");
+const { selectAppPageEntry } = require("next/dist/shared/lib/router/utils/app-paths");
 
 const marker = "warranteeCspFinalization";
 const digest = (value) => createHash("sha256").update(value).digest("hex");
@@ -68,14 +73,20 @@ function createFinalized(dist, manifest, baseHeaders) {
   const prerender = JSON.parse(prerenderBytes);
   const appRoutesBytes = readFileSync(path.join(dist, "app-path-routes-manifest.json"));
   const appRoutes = JSON.parse(appRoutesBytes);
-  const pageSources = new Set(Object.entries(appRoutes).filter(([key]) => key.endsWith("/page")).map(([, route]) => route));
+  const pageEntries = Object.entries(appRoutes).filter(([key]) => key.endsWith("/page"));
+  const pageSources = new Set(pageEntries.map(([, route]) => route));
   if (manifest.basePath || manifest.i18n) throw new Error("basePath/i18n manifest routing is unsupported");
   if ((manifest.onMatchHeaders ?? []).some((rule) => rule.headers.some((header) => header.key.toLowerCase() === "content-security-policy"))) {
     throw new Error("onMatchHeaders CSP overrides are unsupported");
   }
   const buildId = readFileSync(path.join(dist, "BUILD_ID"));
   if (!buildId.toString("utf8").trim()) throw new Error("Missing build identity");
-  const files = htmlFiles(app);
+  const server = path.join(dist, "server");
+  const scoped = path.join(server, "route-cache/APP_PAGE");
+  const files = [
+    ...(existsSync(app) ? htmlFiles(app).map((file) => `app/${file}`) : []),
+    ...(existsSync(scoped) ? htmlFiles(scoped).map((file) => `route-cache/APP_PAGE/${file}`) : []),
+  ].sort();
   if (!files.length) throw new Error("Missing final HTML files");
   const available = new Set(files);
   const records = [];
@@ -92,13 +103,23 @@ function createFinalized(dist, manifest, baseHeaders) {
     if (!pageSources.has(info.srcRoute ?? route)) throw new Error(`Missing page source mapping: ${route}`);
     const pathname = decoded.map(encodeURIComponent).join("/");
     const forms = new Set([route, decoded.join("/"), pathname]);
-    const candidates = [...forms].map((s) => s === "/" ? "index.html" : `${s.slice(1)}.html`).filter((s) => available.has(s));
+    const source = info.srcRoute ?? route;
+    const sourceKey = selectAppPageEntry(source, pageEntries.map(([key]) => key));
+    if (!sourceKey || appRoutes[sourceKey] !== source) throw new Error(`Ambiguous page source mapping: ${route}`);
+    const scopedKey = getRouteCacheKey(route, { kind: "APP_PAGE", sourceRoute: sourceKey });
+    if (!scopedKey.startsWith("/route-cache/APP_PAGE/") || scopedKey.split("/").includes("..")) {
+      throw new Error(`Invalid scoped HTML key: ${route}`);
+    }
+    const candidates = [...new Set([
+      ...[...forms].map((s) => s === "/" ? "app/index.html" : `app/${s.slice(1)}.html`),
+      `${scopedKey.slice(1)}.html`,
+    ])].filter((s) => available.has(s));
     if (candidates.length !== 1) throw new Error(`Missing or ambiguous final HTML for ${route}`);
     if (info.initialRevalidateSeconds !== false || (info.compute && info.compute !== "static") || (info.response && info.response !== "complete")) {
       throw new Error(`Mutable/partial prerender unsupported: ${route}`);
     }
     const file = candidates[0];
-    const bytes = readFileSync(path.join(app, file));
+    const bytes = readFileSync(path.join(server, file));
     const hashes = inlineHashes(new TextDecoder("utf-8", { fatal: true }).decode(bytes));
     const csp = policyFor(baseHeaders, pathname, hashes);
     if (Buffer.byteLength(csp) > 12000) throw new Error(`Oversize CSP for ${route}`);
@@ -113,7 +134,7 @@ function createFinalized(dist, manifest, baseHeaders) {
     const bytes = readFileSync(file);
     const route = `/${status}`;
     const hashes = inlineHashes(new TextDecoder("utf-8", { fatal: true }).decode(bytes));
-    records.push({ route, pathname: route, file: `../pages/${status}.html`, sha256: digest(bytes), hashes, csp: policyFor(baseHeaders, route, hashes) });
+    records.push({ route, pathname: route, file: `pages/${status}.html`, sha256: digest(bytes), hashes, csp: policyFor(baseHeaders, route, hashes) });
   }
   const publicRecords = records;
   const generated = publicRecords.map(({ pathname, csp }) => ({
@@ -148,7 +169,6 @@ function createFinalized(dist, manifest, baseHeaders) {
 function atomicJson(file, value) {
   mkdirSync(path.dirname(file), { recursive: true });
   const temporary = `${file}.csp-tmp`;
-  if (existsSync(temporary)) throw new Error(`Unfinished CSP finalization: ${temporary}`);
   writeFileSync(temporary, `${JSON.stringify(value, null, 2)}\n`, { flag: "wx" });
   renameSync(temporary, file);
 }
@@ -162,6 +182,19 @@ export function finalizeBuild(distDir, { check = false, applyRoutesManifest = fa
       (existsSync(path.dirname(output)) && realpathSync(path.dirname(output)) !== path.dirname(privateOutput)) ||
       (existsSync(output) && realpathSync(output) !== privateOutput)) {
     throw new Error("CSP artifact must remain at the fixed private filesystem path");
+  }
+  const adapterConfigPath = path.join(dist, "output/functions/_middleware.func/.vc-config.json");
+  if (existsSync(adapterConfigPath)) {
+    const adapterConfig = readJson(adapterConfigPath);
+    const privatePath = ".warrantee-csp/static-routes.json";
+    if (!adapterConfig.filePathMap ||
+        !Object.hasOwn(adapterConfig.filePathMap, privatePath) ||
+        adapterConfig.filePathMap[privatePath] !== privatePath) {
+      throw new Error("Prepackaged Node Proxy must map the fixed root-relative private CSP artifact");
+    }
+    if (Object.hasOwn(adapterConfig.fileHashes ?? {}, privatePath)) {
+      throw new Error("Prepackaged Node Proxy has a cached private CSP artifact hash");
+    }
   }
   const tracePath = path.join(dist, "server/middleware.js.nft.json");
   const trace = readJson(tracePath);
