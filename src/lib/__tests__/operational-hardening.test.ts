@@ -352,6 +352,7 @@ describe("operational hardening", () => {
   it("keeps funnel attribution privacy-safe and campaign-aware", () => {
     const ga4Events = readProjectFile("src/lib/ga4-events.ts");
     const funnelRoute = readProjectFile("src/app/api/funnel/events/route.ts");
+    const payloadPolicy = readProjectFile("src/lib/analytics-payload.ts");
     const growthReadiness = readProjectFile("scripts/check-growth-readiness.mjs");
     const campaignLinks = readProjectFile("scripts/generate-campaign-links.mjs");
     const homePage = readProjectFile("src/app/[locale]/page.tsx");
@@ -361,16 +362,18 @@ describe("operational hardening", () => {
 
     for (const key of ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "ref"]) {
       expect(ga4Events).toContain(key);
-      expect(funnelRoute).toContain(key);
       expect(docs).toContain(key);
     }
+    for (const key of ["utm_source", "utm_medium", "utm_campaign", "ref"]) {
+      expect(payloadPolicy).toContain(key);
+    }
     for (const key of ["tab", "auth_mode", "account_type", "has_company_name"]) {
-      expect(funnelRoute).toContain(key);
+      expect(payloadPolicy).toContain(key);
     }
 
     expect(ga4Events).toContain("readCampaignParams");
     expect(ga4Events).toContain("new URLSearchParams(window.location.search)");
-    expect(funnelRoute).toContain("allowedMetadataKeys");
+    expect(funnelRoute).toContain("sanitizeAnalyticsPayload(event, body.metadata, classifyTrafficUserAgent(userAgent))");
     expect(growthReadiness).toContain("utm_source");
     expect(growthReadiness).toContain("utm_campaign");
     expect(adminPage).toContain("campaignFunnelCounts");

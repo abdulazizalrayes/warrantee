@@ -4,89 +4,18 @@ import { apiRateLimit, getClientIp, getRateLimitHeaders } from "@/lib/rate-limit
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { isTrustedSameOriginRequest } from "@/lib/request-origin";
 import { classifyTrafficUserAgent } from "@/lib/traffic-classification";
-
-const allowedEvents = new Set([
-  "page_view",
-  "auth_intent",
-  "funnel_cta_click",
-  "signup_submit",
-  "sign_up",
-  "contact_form_submit",
-  "seller_application_submit",
-  "onboarding_completed",
-  "activation_started",
-  "activation_milestone",
-  "onboarding_template_selected",
-]);
-
-const allowedMetadataKeys = new Set([
-  "action",
-  "account_type",
-  "auth_mode",
-  "cta",
-  "destination",
-  "event_category",
-  "event_label",
-  "feature",
-  "has_company_name",
-  "locale",
-  "location",
-  "milestone",
-  "method",
-  "page_name",
-  "page_type",
-  "plan",
-  "source",
-  "subject",
-  "tab",
-  "template",
-  "utm_campaign",
-  "utm_content",
-  "utm_medium",
-  "utm_source",
-  "utm_term",
-  "ref",
-]);
+import {
+  sanitizeAnalyticsPath,
+  sanitizeAnalyticsPayload,
+  sanitizeAnalyticsReferrer,
+  serverFunnelEvents,
+} from "@/lib/analytics-payload";
 
 function createSupabaseAdminClient() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
-}
-
-function sanitizeMetadata(value: unknown) {
-  const input = value && typeof value === "object" && !Array.isArray(value)
-    ? value as Record<string, unknown>
-    : {};
-  const output: Record<string, string | number | boolean | null> = {};
-
-  for (const [key, item] of Object.entries(input)) {
-    if (!allowedMetadataKeys.has(key)) continue;
-    if (item === null || typeof item === "boolean" || typeof item === "number") {
-      output[key] = item;
-    } else if (typeof item === "string") {
-      output[key] = item.slice(0, 160);
-    }
-  }
-
-  return output;
-}
-
-function sanitizePath(value: unknown) {
-  if (typeof value !== "string") return null;
-  if (!value.startsWith("/")) return null;
-  return value.slice(0, 240);
-}
-
-function sanitizeReferrer(value: unknown) {
-  if (typeof value !== "string" || !value) return null;
-  try {
-    const url = new URL(value);
-    return `${url.origin}${url.pathname}`.slice(0, 240);
-  } catch {
-    return null;
-  }
 }
 
 export async function POST(request: NextRequest) {
@@ -110,8 +39,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
   const event = typeof body.event === "string" ? body.event : "";
-  if (!allowedEvents.has(event)) {
+  if (!serverFunnelEvents.has(event)) {
     return NextResponse.json({ error: "Unsupported event" }, { status: 400 });
   }
 
@@ -119,14 +52,12 @@ export async function POST(request: NextRequest) {
   const { data: auth } = await supabase.auth.getUser();
   const supabaseAdmin = createSupabaseAdminClient();
 
-  const userAgent = request.headers.get("user-agent")?.slice(0, 180) || null;
+  const userAgent = request.headers.get("user-agent");
   const metadata = {
     source: "server_funnel",
-    path: sanitizePath(body.path),
-    referrer: sanitizeReferrer(body.referrer),
-    user_agent: userAgent,
-    ...sanitizeMetadata(body.metadata),
-    traffic_class: classifyTrafficUserAgent(userAgent),
+    path: sanitizeAnalyticsPath(body.path),
+    referrer: sanitizeAnalyticsReferrer(body.referrer),
+    ...sanitizeAnalyticsPayload(event, body.metadata, classifyTrafficUserAgent(userAgent)),
   };
 
   const { error } = await supabaseAdmin.from("activity_log").insert({

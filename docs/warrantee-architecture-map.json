@@ -953,9 +953,10 @@
       "layer": "integrations",
       "kind": "analytics",
       "status": "active",
-      "responsibility": "Consent-aware public funnel and performance measurement, mirrored to privacy-safe server funnel records.",
+      "responsibility": "Consent-aware measurement with event-specific custom-payload allowlists, categorical paths, and independently sanitized server funnel records. Automatic GTM collection is a separate verification boundary.",
       "code_refs": [
         "src/lib/ga4-events.ts",
+        "src/lib/analytics-payload.ts",
         "src/app/api/funnel/events/route.ts",
         "src/components/PageViewTracker.tsx"
       ]
