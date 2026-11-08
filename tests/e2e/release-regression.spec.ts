@@ -299,9 +299,31 @@ test.describe("takeover-grade authenticated release contract", () => {
       const path = `/${locale}${route}`;
       test(`${path} satisfies the portal geometry and semantic contract`, async ({ page }, testInfo) => {
         const errors = watchForPageErrors(page, testInfo);
+        const isTeamGeometryFixture = route === "/settings/team";
+        if (isTeamGeometryFixture) {
+          // Synthetic layout data only; the real login above is not team authorization proof.
+          await page.route("**/api/team/members", (request) => {
+            if (request.request().method() !== "GET") return request.abort("blockedbyclient");
+            return request.fulfill({
+              status: 200,
+              contentType: "application/json",
+              body: JSON.stringify({
+                canManage: true,
+                allowedDomain: "example.invalid",
+                members: [
+                  { id: "synthetic-team-1", full_name: "Synthetic Member One", email: "member.one@example.invalid", role: "manager" },
+                  { id: "synthetic-team-2", full_name: "Synthetic Member Two", email: "member.two@example.invalid", role: "viewer" },
+                ],
+              }),
+            });
+          });
+        }
         await page.setViewportSize({ width: 1440, height: 1000 });
         await expectHealthyPage(page, path);
         await expect(page.locator("h1")).toHaveCount(1, { timeout: 15_000 });
+        if (isTeamGeometryFixture) {
+          await expect(page.getByRole("cell", { name: /^member\.(one|two)@example\.invalid$/ })).toHaveCount(2);
+        }
         await settleLayout(page);
 
         const semantics = await auditSemantics(page);
@@ -316,6 +338,17 @@ test.describe("takeover-grade authenticated release contract", () => {
           await page.setViewportSize({ width, height: 1000 });
           await page.evaluate(() => window.scrollTo(0, 0));
           await settleResponsiveState(page);
+          if (isTeamGeometryFixture) {
+            const table = page.getByRole("table");
+            await expect(table.locator("..")).toHaveCSS("overflow-x", "auto");
+            await expect(table.getByRole("button", { name: locale === "ar" ? "إزالة" : "Remove", exact: true })).toHaveCount(2);
+            for (const control of await table.locator("input, select, button").all()) {
+              await control.scrollIntoViewIfNeeded();
+              // Center away from fractional clip edges; keep full intersection required.
+              await control.evaluate(element => element.scrollIntoView({ block: "nearest", inline: "center", behavior: "instant" }));
+              await expect(control).toBeInViewport({ ratio: 1 });
+            }
+          }
           const geometry = await auditGeometry(page);
           await attachAudit(testInfo, `geometry-${width}`, geometry);
           expect(geometry.horizontalOverflow, `${path} should not overflow at ${width}px`).toBeLessThanOrEqual(1);
