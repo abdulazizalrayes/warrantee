@@ -30,6 +30,7 @@
     "qa:ocr-corpus:private": "OCR_CORPUS_DIR=tests/fixtures/ocr-corpus/private OCR_CORPUS_REQUIRED=1 node scripts/check-ocr-corpus.mjs && OCR_CORPUS_DIR=tests/fixtures/ocr-corpus/private vitest run src/lib/ocr/__tests__/warranty-field-parser.test.ts --maxWorkers=1",
     "qa:pentest-readiness": "node scripts/check-pentest-readiness.mjs",
     "qa:security-assurance": "node scripts/run-internal-security-assurance.mjs",
+    "qa:security-headers": "node --experimental-strip-types --test scripts/security-header-browser.test.mjs",
     "qa:migrations": "node scripts/check-migration-integrity.mjs",
     "qa:agent-readiness": "node scripts/check-agent-readiness.mjs",
     "architecture:generate": "node scripts/generate-architecture-map.mjs",

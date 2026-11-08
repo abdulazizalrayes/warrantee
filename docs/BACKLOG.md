@@ -1,5 +1,12 @@
 # Warrantee Approved Backlog
 
+## Owner Decision - 2026-11-08
+
+- Database backup/restore test (task 5) is POSTPONED by the owner. Do not resume credential searches, enable temporary access, change SSL enforcement, create roles, reset passwords, or provision paid resources to complete it without renewed approval.
+- Existing completed provider backups are not independent restore proof. Local synthetic database and actual Storage byte recovery checks passed only within their recorded scopes; full database recovery remains unverified.
+- Owner-authorized guidance request sent to support@supabase.com from the verified Warrantee owner account abdulaziz.alrayes@gmail.com. Gmail sent message/thread ID: 1a1ba0bdbfd39f64. The inquiry requests a no-additional-cost, passwordless supported export/download path and explicitly prohibits production changes or paid activation. Response and provider ticket number remain pending.
+- This update is local documentation only; no production deployment or configuration change is required or authorized.
+
 Last updated: 2026-11-07
 
 Scope: Warrantee / warrantee.io only.

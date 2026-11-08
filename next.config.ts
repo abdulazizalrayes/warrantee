@@ -20,6 +20,7 @@ const contentSecurityPolicy = [
   "frame-ancestors 'none'",
   "form-action 'self' https://checkout.stripe.com",
   `script-src ${scriptSources}`,
+  "script-src-attr 'none'",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https://erptubrslnfmkuouczgn.supabase.co https://lh3.googleusercontent.com https://www.google-analytics.com https://www.googletagmanager.com",
   "font-src 'self' data:",
