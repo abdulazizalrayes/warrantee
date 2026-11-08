@@ -37,6 +37,7 @@
     "qa:security-assurance": "node scripts/run-internal-security-assurance.mjs",
     "qa:security-headers": "node --experimental-strip-types --test scripts/security-header-browser.test.mjs",
     "qa:analytics-privacy": "node scripts/check-analytics-privacy.mjs",
+    "qa:certificates": "vitest run tests/unit/certificate-handlers.test.ts --maxWorkers=1",
     "qa:migrations": "node scripts/check-migration-integrity.mjs",
     "qa:agent-readiness": "node scripts/check-agent-readiness.mjs",
     "architecture:generate": "node scripts/generate-architecture-map.mjs",
