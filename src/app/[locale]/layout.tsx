@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { notFound } from "next/navigation";
 import {
   DIRECTION,
-  INDEXED_LOCALES,
+  LOCALES,
   getLocaleLanguageTag,
   isValidLocale,
   type Locale,
@@ -66,7 +66,7 @@ interface LocaleLayoutProps {
 }
 
 export async function generateStaticParams() {
-  return INDEXED_LOCALES.map((locale) => ({ locale }));
+  return LOCALES.map((locale) => ({ locale }));
 }
 
 export default async function LocaleLayout({ children, params }: LocaleLayoutProps) {

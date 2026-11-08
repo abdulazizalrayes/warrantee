@@ -20,3 +20,7 @@ signup-page.png
 supabase/.temp/
 supabase/migrations 2/
 tests/e2e 2/
+# Generated from reviewed source during each build.
+/public/web-mcp.js
+/public/agent-bootstrap/
+/.warrantee-csp/

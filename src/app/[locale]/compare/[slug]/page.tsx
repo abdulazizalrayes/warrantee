@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { SeoContentTemplate } from "@/components/SeoContentTemplate";
-import { INDEXED_LOCALES, isValidLocale } from "@/lib/i18n";
+import { LOCALES, isValidLocale } from "@/lib/i18n";
 import { buildSeoContentMetadata } from "@/lib/seo-content-metadata";
 import { COMPARISON_PAGES, getSeoContentPage } from "@/lib/seo-content";
 
@@ -9,8 +9,10 @@ type ComparePageProps = {
   params: Promise<{ locale: string; slug: string }>;
 };
 
+export const dynamicParams = false;
+
 export function generateStaticParams() {
-  return INDEXED_LOCALES.flatMap((locale) =>
+  return LOCALES.flatMap((locale) =>
     COMPARISON_PAGES.map((page) => ({ locale, slug: page.slug })),
   );
 }

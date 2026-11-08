@@ -7,7 +7,12 @@
   },
   "scripts": {
     "dev": "next dev",
+    "predev": "node scripts/generate-analytics-bootstrap.mjs && node --experimental-strip-types scripts/generate-web-mcp.mjs",
+    "prebuild": "node scripts/prepare-csp-build.mjs && node scripts/generate-analytics-bootstrap.mjs && node --experimental-strip-types scripts/generate-web-mcp.mjs",
     "build": "NODE_ENV=production next build --webpack",
+    "postbuild": "node scripts/csp-finalize-build.mjs && node scripts/csp-finalize-build.mjs --check",
+    "qa:csp-build": "node scripts/csp-finalize-build.mjs --check",
+    "qa:csp-package": "node scripts/check-csp-package.mjs",
     "start": "next start",
     "lint": "eslint .",
     "test": "vitest run",

@@ -75,7 +75,7 @@
       "migration_files": 69,
       "scheduled_jobs": 3,
       "github_workflows": 4,
-      "e2e_spec_files": 10
+      "e2e_spec_files": 11
     }
   },
   "layers": [
@@ -2692,10 +2692,13 @@
     },
     {
       "name": "Browser hardening",
-      "implementation": "HSTS, CSP, frame denial, no-sniff, strict referrer policy, permissions policy, and protected noindex behavior.",
+      "implementation": "HSTS, final-build per-route script hashes for static HTML, per-request script nonces for dynamic documents, same-origin generated analytics/WebMCP bootstraps, frame denial, no-sniff, strict referrer policy, permissions policy, and protected noindex behavior. The private CSP manifest must be finalized and packaged with Proxy before release.",
       "code_refs": [
         "next.config.ts",
-        "src/proxy.ts"
+        "src/proxy.ts",
+        "src/lib/csp-runtime.ts",
+        "scripts/csp-finalize-build.mjs",
+        "scripts/check-csp-package.mjs"
       ]
     },
     {

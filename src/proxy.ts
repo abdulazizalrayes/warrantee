@@ -13,6 +13,9 @@ import {
 } from "@/lib/locales";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { NextRequest as DocumentRequest } from "next/server";
+import { getDocumentCsp } from "@/lib/csp-runtime";
+import { contentSecurityPolicy } from "@/lib/csp-policy.mjs";
 
 const LOCALE_PREFIX_RE = new RegExp(`^/(${LOCALE_PREFIX_PATTERN})(/|$)`);
 
@@ -74,18 +77,20 @@ function buildAuthRedirectUrl(request: NextRequest, locale: string) {
   return url;
 }
 
-export async function proxy(request: NextRequest) {
+async function handleRequest(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const localeMatch = pathname.match(LOCALE_PREFIX_RE);
   const locale = normalizeLocale(localeMatch?.[1] || DEFAULT_LOCALE);
   const agentRouteInfo = getAgentRouteInfo(pathname);
   const directSidecarRouteInfo = getAgentDirectSidecarRouteInfo(pathname);
   const isIndexNowKeyPath = /^\/[A-Za-z0-9-]{8,128}\.txt$/.test(pathname);
+  const isPublicBootstrapAsset = ["/web-mcp.js", "/agent-bootstrap/analytics/ga.js", "/agent-bootstrap/analytics/gtm.js"].includes(pathname);
   const isPlatformAssetPath =
     pathname.startsWith("/_next/") ||
     pathname.startsWith("/_vercel/") ||
     pathname.startsWith("/monitoring");
   const isDiscoveryPath =
+    isPublicBootstrapAsset ||
     isIndexNowKeyPath ||
     isPlatformAssetPath ||
     pathname.startsWith("/.well-known/") ||
@@ -132,7 +137,7 @@ export async function proxy(request: NextRequest) {
   const isProtectedAppArea = protectedAppPrefixes.some(
     (prefix) =>
       normalizedPathname === prefix || normalizedPathname.startsWith(`${prefix}/`)
-  ) && !isPublicAppPath;
+  ) && !isPublicAppPath && !isPublicBootstrapAsset;
   const isAuthArea =
     normalizedPathname === "/auth" ||
     normalizedPathname.startsWith("/auth/");
@@ -322,6 +327,31 @@ export async function proxy(request: NextRequest) {
     applyNoIndexHeader(response);
   }
 
+  return response;
+}
+
+export async function proxy(request: NextRequest) {
+  const isDocument = request.method === "GET" || request.method === "HEAD";
+  const isLocalized = LOCALE_PREFIX_RE.test(request.nextUrl.pathname) || request.nextUrl.pathname === "/";
+  if (!isDocument || !isLocalized || process.env.NODE_ENV !== "production") {
+    return handleRequest(request);
+  }
+  let documentCsp;
+  try {
+    documentCsp = getDocumentCsp(request.nextUrl.pathname, contentSecurityPolicy);
+  } catch {
+    return new NextResponse("Document security configuration unavailable", {
+      status: 503,
+      headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" },
+    });
+  }
+  const headers = new Headers(request.headers);
+  headers.set("Content-Security-Policy", documentCsp.policy);
+  headers.delete("x-nonce");
+  if (documentCsp.nonce) headers.set("x-nonce", documentCsp.nonce);
+  const response = await handleRequest(new DocumentRequest(request, { headers }));
+  response.headers.set("Content-Security-Policy", documentCsp.policy);
+  if (documentCsp.nonce) response.headers.set("Cache-Control", "private, no-store");
   return response;
 }
 

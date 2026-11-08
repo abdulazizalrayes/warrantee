@@ -27,6 +27,11 @@ const patterns = [
 
 const allowlist = [
   {
+    file: "tests/unit/csp-finalize-build.test.mjs",
+    patterns: new Set(["127.0.0.1"]),
+    reason: "The CSP integration fixture binds and verifies an isolated local Next.js test server only.",
+  },
+  {
     file: "playwright.config.ts",
     patterns: new Set(["127.0.0.1"]),
     reason: "Playwright starts an isolated local server when E2E_BASE_URL is not set.",

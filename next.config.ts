@@ -1,39 +1,17 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs/config";
+import { resolve } from "node:path";
 
-const scriptSources = [
-  "'self'",
-  "'unsafe-inline'",
-  ...(process.env.NODE_ENV === "development" ? ["'unsafe-eval'"] : []),
-  "https://www.googletagmanager.com",
-  "https://www.google-analytics.com",
-  "https://js.stripe.com",
-  "https://checkout.stripe.com",
-  "https://vercel.live",
-  "https://static.cloudflareinsights.com",
-].join(" ");
-
-const contentSecurityPolicy = [
-  "default-src 'self'",
-  "base-uri 'self'",
-  "object-src 'none'",
-  "frame-ancestors 'none'",
-  "form-action 'self' https://checkout.stripe.com",
-  `script-src ${scriptSources}`,
-  "script-src-attr 'none'",
-  "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob: https://erptubrslnfmkuouczgn.supabase.co https://lh3.googleusercontent.com https://www.google-analytics.com https://www.googletagmanager.com",
-  "font-src 'self' data:",
-  "connect-src 'self' https://erptubrslnfmkuouczgn.supabase.co wss://erptubrslnfmkuouczgn.supabase.co https://api.stripe.com https://checkout.stripe.com https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://vitals.vercel-insights.com https://*.sentry.io https://*.ingest.sentry.io https://static.cloudflareinsights.com https://cloudflareinsights.com",
-  "frame-src https://js.stripe.com https://checkout.stripe.com",
-  "worker-src 'self' blob:",
-  "manifest-src 'self'",
-].join("; ");
+import { contentSecurityPolicy } from "./src/lib/csp-policy.mjs";
 
 const nextConfig: NextConfig = {
+  ...(process.env.NEXT_ADAPTER_PATH
+    ? { adapterPath: resolve("scripts/csp-platform-adapter.mjs") }
+    : {}),
   reactStrictMode: true,
   serverExternalPackages: ["@napi-rs/canvas", "pdfjs-dist", "tesseract.js"],
   outputFileTracingIncludes: {
+    middleware: ["./.warrantee-csp/static-routes.json"],
     "/api/ocr": [
       "./node_modules/@tesseract.js-data/eng/4.0.0_best_int/eng.traineddata.gz",
       "./node_modules/@tesseract.js-data/ara/4.0.0_best_int/ara.traineddata.gz",
