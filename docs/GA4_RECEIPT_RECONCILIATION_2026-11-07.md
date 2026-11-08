@@ -1,6 +1,12 @@
 # Warrantee GA4 Receipt Reconciliation - 2026-11-07
 
-## Latest Release Reconciliation - 2026-11-08
+## Completed Receipt And Current Evidence Pointer - 2026-11-08
+
+**COMPLETE:** the deployed-bundle QA pricing CTA transport and correct-property reporting receipt are recorded in [PR #43](https://github.com/abdulazizalrayes/warrantee/pull/43#issuecomment-6720187401), with `traffic_class=qa`, count 1. Do not repeat actual collection. [Operational status](OPERATIONAL_STATUS.md#current-release-evidence---2026-11-08) is the single evidence pointer for the dated PR #45 baseline and records completion of all four follow-ups, not the status of later releases.
+
+The pre-deployment checkpoints and instructions below are preserved as dated history; they are not outstanding receipt tasks or authority to send another event. Subsequent privacy regression uses interception-only checks, not new Google reporting receipt, activation, demand, or payment evidence. All postponements remain unchanged; no training-policy change is included. This test/documentation follow-up's release outcome belongs in its own release PR closeout, not an invented future deployment record.
+
+## Historical PR #42 Pre-Deployment Checkpoint - 2026-11-08
 
 **PRE-DEPLOYMENT VERIFICATION CHECKPOINT AS OF 2026-11-08.** Recorded prior release: PR #42 merged to main `961e911663286d28d4af85df9a106a129c3ed667`, production deployment `dpl_8fonqoJLZrqqiqKaD8ek6kgbsQUY`. CI `42465567801`, CodeQL `42465568079`, and Production Security Gate `42465831058` all passed. Coverage: 354 unit tests, 236 E2E passes, and 92 intentional skips (not executed coverage). Release checks record 50 sitemap pages, 240 hashes, 56 EN/AR views, Sentry unresolved issues 0, and persistent QA records 0.
 
@@ -10,7 +16,9 @@ The November 7 source-path transport/reporting receipt below remains valid histo
 
 All owner postponements in `docs/BACKLOG.md` remain unchanged, including backup/restore task 5, tasks 6-10, billing/payment activation, ClamAV deployment, independent paid pentest, public npm publication, Vercel Pro, and other explicitly postponed historical scope.
 
-## Custom-Payload Privacy Contract - 2026-11-08
+## Historical Custom-Payload Privacy Checkpoint - 2026-11-08
+
+The earlier limits and proposed receipt procedure below describe this checkpoint only. PR #43 completed the deployed receipt; PR #45 subsequently verified automatic collection/privacy settings and preserved custom-payload filtering. Use interception for routine regression; do not repeat the historical actual-collector procedure.
 
 - `src/lib/analytics-payload.ts` defines event-specific fields and registered value vocabularies. The browser filters before dataLayer, direct gtag events, and server beacons; the funnel API validates independently with the same contract.
 - Custom payloads omit document/warranty IDs, team domains, raw OCR errors, free-text subjects, unregistered fields, and arbitrary nested values. Existing purchase-item metadata is reconstructed from approved fields; this does not activate billing or payments.
@@ -78,7 +86,9 @@ Only the first custom collect request matching the exact measurement ID, `funnel
 - Final observation: exactly 1 allowed actual custom collect request and 1 HTTP 204 response. Disposable browser/context closed; no task-owned tabs remain.
 - Google 204 is collector transport evidence, **not GA4 reporting/UI receipt**. Parent is independently checking the correct property's Realtime view. Production deployment still has not changed.
 
-## Historical Parent Receipt And Current Remaining Verification
+## Historical Source-Path Receipt And Then-Remaining Verification
+
+The numbered instructions below were later satisfied or superseded by PR #43's completed deployed receipt and PR #45's release. They are retained history, not current pending actions.
 
 The parent independently observed GA4 Realtime in regular Chrome, authenticated
 as the authorized owner, on property `530040415`: baseline zero events became

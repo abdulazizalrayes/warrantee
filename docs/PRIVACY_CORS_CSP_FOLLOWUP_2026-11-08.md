@@ -1,10 +1,14 @@
 # Warrantee privacy, CORS and CSP follow-up
 
+## Completed Release And Evidence Pointer - 2026-11-08
+
+**COMPLETE:** all four follow-ups shipped in PR #45. [Operational status](OPERATIONAL_STATUS.md#current-release-evidence---2026-11-08) is the single evidence pointer for that dated baseline, with the final PR evidence and gate identifiers, not a latest-live-deployment claim. The pre-publication candidate records below remain historical; they are not pending production verification. The prior actual GA4 receipt is complete in PR #43 and must not be repeated. No training-policy change or postponed initiative is included. Consult the associated test/documentation follow-up release PR closeout for subsequent verification and release outcomes; this snapshot does not imply that later work remains incomplete.
+
 ## Identity And Scope
 
 Warrantee only: `warrantee.io`, GitHub `abdulazizalrayes/warrantee`, Vercel project `prj_fZIC1oJjpaZ4E8IqLm3UJTbMxlrx`, team `team_AnOdxEeUwCwUtPdqTk5I1Dkt`. Work uses an isolated checkout; unrelated owner/iCloud edits are preserved. No migrations, credential changes, paid service, real form submission or actual Google collector event are included.
 
-Before this candidate, main was `856fd38b917e66ef5f41def62a6ba97c1e260d43`, production `dpl_7phE2yR62vYr2Jhe2kNUfDQvDngH`. Exact source commits, preview/production deployment IDs and final gate runs belong in the release PR closeout. Do not interpret candidate checks here as a production claim.
+Before PR #45, main was `856fd38b917e66ef5f41def62a6ba97c1e260d43`, production `dpl_7phE2yR62vYr2Jhe2kNUfDQvDngH`. The final release closeout is linked through the current evidence pointer above. Candidate checks below retain their original local-only scope and are not a substitute for that release record.
 
 ## Validated Findings And Changes
 
@@ -24,7 +28,7 @@ Regular Chrome, verified owner `abdulaziz.alrayes@gmail.com`, account Warrantee 
 
 These automatic collectors must stay disabled unless privacy-reviewed replacements are verified. Removing raw UTM/search/title values deliberately reduces attribution detail; approved categorical campaign codes in custom events remain available. Unknown future GTM tags are not covered automatically.
 
-## Verification Contract
+## Historical Pre-Publication Verification
 
 Recorded local pre-publication checks: 491 unit tests across 62 files, typecheck, zero-warning lint, zero dependency vulnerabilities, architecture inventory, frontend budgets, production build and final CSP map (1,025 immutable HTML routes) passed. All 50 Markdown companions passed generation, negotiation, public CORS/HEAD/no-credentials, canonical, HTML-tree and noindex checks; all 50 semantic HTML trees matched production. Public release-contract run: 52 passed, 38 authenticated cases intentionally skipped (CI must verify protected journeys). Separately, 22 header/footer/select/CSP browser checks passed; the first release-contract attempt correctly rejected the test's injected CSS before its non-policy-weakening stabilization fix. Six Chromium/Firefox/WebKit script/style isolation checks passed. The 56 paired EN/AR screenshots across seven widths had no page errors/style violations/horizontal overflow, maximum changed-pixel ratio `0.000000175`.
 
@@ -40,7 +44,7 @@ Actual-served local privacy gate (no source override): all four consent modes pa
 
 Repeat the privacy gate with `npm run qa:analytics-privacy -- https://warrantee.io` (installed Chrome), or add `--chromium` for the Playwright browser installed in CI. Default mode verifies the served bootstrap. `--candidate-bootstrap` is explicitly an experimental source override and cannot establish deployment proof. The gate summarizes only approved event names and booleans/counts, never raw URLs, client identifiers, bodies, cookies, or private content.
 
-Rollback application code by restoring the exact prior Vercel deployment `dpl_7phE2yR62vYr2Jhe2kNUfDQvDngH` after revalidating its identity, then run smoke/Markdown/CSP checks. Revert source through a reviewed PR, not a reset of the dirty owner checkout. Keep the privacy-enhancing GA4 settings OFF during rollback; reverting them is not needed for functionality. No database rollback or secret reset is required.
+The historical pre-PR #45 rollback target was `dpl_7phE2yR62vYr2Jhe2kNUfDQvDngH`. Revalidate an approved exact target before any future rollback, then run smoke/Markdown/CSP checks; this identifier is not current rollback authority. Revert source through a reviewed PR, not a reset of the dirty owner checkout. Keep the privacy-enhancing GA4 settings OFF during rollback; reverting them is not needed for functionality. No database rollback or secret reset is required.
 
 All previous postponements remain: backup/restore and credential searches, OCR corpus/provider activation, billing/payments, ClamAV deployment, paid independent pentest, public npm publication, Vercel Pro, physical/accessibility/field-performance audits, SEO recheck, growth/outreach pilots, shared CRM/mailbox restrictions, other companies and Paperclip. Read-only local/synthetic checks do not close these items.
 

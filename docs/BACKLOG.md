@@ -1,13 +1,23 @@
 # Warrantee Approved Backlog
 
-## Current Follow-Up - 2026-11-08
+## Current Handover - 2026-11-08
+
+Use [the dated release baseline](OPERATIONAL_STATUS.md#current-release-evidence---2026-11-08) as the single evidence pointer for the PR #45 snapshot: its four approved follow-ups are complete, and the prior deployed GA4 receipt is complete. Do not repeat an actual collector event or treat intercepted privacy checks as customer demand. All postponements below remain in force, including backup/restore, OCR, billing, ClamAV, paid pentest, npm publication, Vercel Pro, manual SEO/growth, shared CRM/mailbox restrictions, Paperclip, and other-company work.
+
+This is an immutable baseline checkpoint as of 2026-11-08. Consult the associated test/documentation follow-up release PR closeout for subsequent verification and release outcomes; this snapshot does not imply that later work remains incomplete. No training-policy change or postponed initiative is included.
+
+## Historical Pre-PR #45 Follow-Up - 2026-11-08
+
+The remaining-polish wording below is historical; those four items are complete in the current status pointer above.
 
 - Deployed-bundle GA4 receipt completed after the historical checkpoint below: [PR #43 receipt](https://github.com/abdulazizalrayes/warrantee/pull/43#issuecomment-6720187401). No further real collector event is required by this follow-up.
 - Main CodeQL recovery passed on `856fd38b917e66ef5f41def62a6ba97c1e260d43`, run `42472943388`. OCR alerts #25-#27 were subsequently dismissed as verified fixture-only false positives, with evidence in PR #44. A green scan does not establish exhaustive security.
 - Approved remaining polish: automatic Google privacy/consent verification, standalone Markdown CORS parity, non-visual style-element CSP hardening, and explicit ESM Vitest configuration. Implementation and verification boundaries: `docs/PRIVACY_CORS_CSP_FOLLOWUP_2026-11-08.md`; deployment evidence belongs in the release PR closeout.
 - Preserve every owner postponement, especially database recovery task 5 and tasks 6-10. The new follow-up numbering does not resume these historical tasks.
 
-## Latest Release Reconciliation - 2026-11-08
+## Historical PR #42 Release Reconciliation - 2026-11-08
+
+The GA4 checkpoint below was subsequently completed in PR #43. Retained instructions to await or repeat receipt are not current authorization; see the current handover above.
 
 Recorded release evidence:
 
@@ -33,7 +43,7 @@ Scope: Warrantee / warrantee.io only.
 
 `CLAUDE.md` governs project operations. The latest release section above supersedes this dated release snapshot. The operational boundaries here supersede conflicting historical priorities, prices, and time-based plans below; those entries remain intact as dated records, not permission to resume postponed work.
 
-### Current Evidence Baseline
+### Historical Evidence Baseline
 
 - Parent-verified prior-turn release evidence: production main `fcab224afe0054e7c63a4912720ddd75c3ae2082`, Vercel `dpl_87EqrvHVVkA7GGteQBTLiA1LmT3d`, PR #39. CI `42387386000` passed with 296 unit tests, 224 browser tests, and 92 intentional skips; intentional skips are not executed coverage.
 - Parent-verified prior-turn assurance evidence: Production Security Gate `42387613197` passed; Sentry unresolved issues 0, persistent QA records 0, and full `npm audit` vulnerabilities 0. These are the supplied release/check snapshots, not new live checks performed by this documentation worker or proof that the ongoing tasks below are complete.
@@ -44,7 +54,9 @@ Scope: Warrantee / warrantee.io only.
 - Security triage found no currently exploitable defect validated in the assigned alert families; real CSP/edge header hardening observations remain. This is not an independent pentest or exhaustive assurance. See `docs/SECURITY_SCAN_TRIAGE_2026-11-07.md`.
 - Recovery discovery verified eight completed provider physical-backup metadata records; PITR is off. Restore, independent backup, integrity, and achieved RPO/RTO remain unproven. See `docs/RECOVERY_READINESS_2026-11-07.md`.
 
-### Owner-Approved Tasks 1-5
+### Historical Owner-Approved Tasks 1-5
+
+The analytics checkpoint in this dated table is superseded by the completed deployed receipt in the current status pointer. Backup/recovery remains postponed and unverified within its stated scope.
 
 | # | Task | Status | Completion Boundary |
 | --- | --- | --- | --- |

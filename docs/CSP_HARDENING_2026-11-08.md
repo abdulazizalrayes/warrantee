@@ -2,6 +2,12 @@
 
 Scope: Warrantee only. No visual, page-copy, database, billing, crawler-policy, or account changes.
 
+## Current Evidence Pointer - 2026-11-08
+
+This is the historical PR #41 event-attribute hardening record. PR #42 subsequently removed production script unsafe-inline/eval; PR #45 completed the four follow-ups, including style-element hardening. [Operational status](OPERATIONAL_STATUS.md#current-release-evidence---2026-11-08) is the single evidence pointer for that dated baseline, not a latest-live-deployment claim. Statements below that unsafe-inline remains or release checks are outstanding apply only to this historical patch. Do not roll back a later release by removing one directive; revalidate and restore an approved whole deployment. All postponements remain unchanged.
+
+## Historical Patch Record - 2026-11-08
+
 ## Change
 
 Add `script-src-attr 'none'` to the existing application Content-Security-Policy. This blocks string-based HTML event attributes, such as `onclick`, while preserving framework script elements and React event listeners.

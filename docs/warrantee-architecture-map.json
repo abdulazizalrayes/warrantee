@@ -7,8 +7,9 @@
     "domain": "https://warrantee.io",
     "repository": "https://github.com/abdulazizalrayes/warrantee",
     "branch": "main",
-    "mapped_from_commit": "working-tree-clamav-cloud-run-2026-09-05",
-    "generated_at": "2026-09-05",
+    "mapped_from_commit": "9e17ce3559c7b38f997062e72ec4c9893758817c",
+    "generated_at": "2026-11-08",
+    "refresh_scope": "Runtime versions verified against package-lock.json and Node engine contract against package.json; existing architecture retained. Current release evidence: docs/OPERATIONAL_STATUS.md#current-release-evidence---2026-11-08. This is not a fresh provider inventory or a release of the regression/handover follow-up.",
     "classification": "internal engineering documentation; no secrets or customer records",
     "human_view": "docs/WARRANTEE_ARCHITECTURE_MAP.html",
     "agent_view": "docs/warrantee-architecture-map.json",
@@ -57,8 +58,8 @@
       "ar"
     ],
     "runtime": {
-      "application": "Next.js 16.3.4",
-      "ui": "React 19",
+      "application": "Next.js 16.4.5",
+      "ui": "React 19.2.8",
       "language": "TypeScript",
       "node": ">=22.13 <25",
       "hosting": "Vercel",

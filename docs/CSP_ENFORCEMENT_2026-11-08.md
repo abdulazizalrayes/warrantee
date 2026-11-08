@@ -2,7 +2,13 @@
 
 Scope: Warrantee / warrantee.io / abdulazizalrayes/warrantee only.
 
-## Latest Release Reconciliation - 2026-11-08
+## Current Evidence Pointer - 2026-11-08
+
+[Operational status](OPERATIONAL_STATUS.md#current-release-evidence---2026-11-08) records completed PR #45, including style-element hardening, and the completed prior deployed GA4 receipt. Script hashes/nonces remain active; style attributes remain permitted. No repeated actual receipt or training-policy change is required. All owner postponements remain in force.
+
+## Historical PR #42 Release Reconciliation - 2026-11-08
+
+The GA4 pre-deployment checkpoint below was later completed in PR #43; its future-verification wording is retained history, not an outstanding task.
 
 - PASS, recorded release evidence: PR #42 merged to main `961e911663286d28d4af85df9a106a129c3ed667`; production deployment `dpl_8fonqoJLZrqqiqKaD8ek6kgbsQUY`.
 - CI `42465567801`, CodeQL `42465568079`, and Production Security Gate `42465831058` all passed. Coverage: 354 unit tests and 236 E2E tests passed, with 92 intentional skips excluded from executed coverage.
@@ -14,7 +20,7 @@ Scope: Warrantee / warrantee.io / abdulazizalrayes/warrantee only.
 ## Implementation
 
 - Production script-src no longer permits unsafe-inline or unsafe-eval. Existing external origin restrictions are retained; this is not a strict-dynamic policy or a complete XSS defense.
-- Build preparatory scripts generate same-origin GA/GTM and WebMCP files from reviewed source. Analytics identifiers are validated; bootstraps preserve consent ordering, denial/withdrawal, one-time loading, and GA/GTM deduplication. Their source text matches the former inline bootstraps.
+- Build preparatory scripts generate same-origin GA/GTM and WebMCP files from reviewed source. Analytics identifiers are validated; bootstraps preserve consent ordering, denial/withdrawal, one-time loading, and GA/GTM deduplication. PR #42 externalized the former inline bootstraps; PR #45 subsequently added the privacy/consent behavior recorded in the current evidence pointer.
 - Postbuild hashes exact final inline-script text with a structured HTML parser. Each static path receives only its own approved hashes. Final HTML bytes, route inventory, build ID, policies, and Proxy dependency trace are bound by a repeatable --check gate.
 - Proxy reads a private packaged map, applies static hash policies, and forwards fresh cryptographic nonces to Next.js rendering on dynamic document requests. Incoming nonce/CSP headers are replaced. Dynamic documents are private/no-store; missing or unfinished manifests fail closed with 503.
 - Existing supported locale routes and fixed editorial slugs are prebuilt so cached fallback HTML cannot retain an old request nonce. This changes build strategy, not translation quality or search eligibility. INDEXED_LOCALES, sitemap, canonical/hreflang rules, and beta noindex status are unchanged. Unknown editorial slugs remain 404.
@@ -46,7 +52,7 @@ npm run qa:frontend-budget
 
 For an authorized local packaging dry run, use the existing linked Warrantee Vercel project and disable local Sentry uploads. Vercel may create ignored environment files; keep them private and never commit or print their values. Then run `npm run qa:csp-package`. Non-standalone Vercel output uses filePathMap references rather than copying every dependency into each function directory; deployed preview checks remain mandatory.
 
-For future releases, verify canonical static policies, two fresh dynamic nonces, analytics consent/loading, API denial, private-map non-exposure, all 50 Markdown pages, CI, and Production Security Gates after deployment. The recorded release evidence and dated pre-deployment GA4 checkpoint are above; subsequent receipt belongs in the next code release PR's closeout. Never hash arbitrary response content at the edge to authorize it.
+For future authorized releases, verify canonical static policies, two fresh dynamic nonces, analytics consent/loading through interception, API denial, private-map non-exposure, all 50 Markdown pages, CI, and Production Security Gates after deployment. The prior actual GA4 receipt is complete; do not repeat actual collection for routine release checks. Never hash arbitrary response content at the edge to authorize it.
 
 ## Provider Boundaries And Rollback
 
