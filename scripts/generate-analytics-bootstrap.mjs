@@ -14,7 +14,7 @@ export async function generateAnalyticsBootstrap({
     ? buildGaBootstrap(env.NEXT_PUBLIC_GA_MEASUREMENT_ID)
     : "// Google Analytics is not configured.\n";
   const gtm = env.NEXT_PUBLIC_GTM_ID
-    ? buildGtmBootstrap(env.NEXT_PUBLIC_GTM_ID)
+    ? buildGtmBootstrap(env.NEXT_PUBLIC_GTM_ID, env.NEXT_PUBLIC_GA_MEASUREMENT_ID)
     : "// Google Tag Manager is not configured.\n";
   await mkdir(outputDirectory, { recursive: true });
   await writeFile(resolve(outputDirectory, "ga.js"), ga, "utf8");

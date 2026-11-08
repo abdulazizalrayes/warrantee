@@ -83,6 +83,9 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
+      - name: Verify production Google privacy without collector transmissions
+        run: npm run qa:analytics-privacy -- https://warrantee.io --chromium
+
       - name: Create disposable QA identity
         run: npm run qa:user:ensure
 

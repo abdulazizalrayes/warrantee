@@ -1,5 +1,8 @@
 import { LOCALES } from "@/lib/locales";
 import type { TrafficClass } from "@/lib/traffic-classification";
+import { sanitizeAnalyticsPath } from "./analytics-context.mjs";
+
+export { sanitizeAnalyticsPath, sanitizeAnalyticsReferrer } from "./analytics-context.mjs";
 
 type Payload = Record<string, unknown>;
 const record = (value: unknown): Payload => value !== null && typeof value === "object" && !Array.isArray(value)
@@ -25,47 +28,6 @@ const pageTypes: Record<string, string> = {
   account_settings: "account", team_management: "account", reports_hub: "analytics",
   analytics_dashboard: "analytics", seller_registration: "seller_onboarding", seller_application_submitted: "conversion",
 };
-
-const staticPaths = new Set([
-  "/", "/about", "/auth", "/login", "/signup", "/reset-password", "/forgot-password", "/pricing",
-  "/contact", "/support", "/features", "/faq", "/guide", "/api-docs", "/privacy", "/terms", "/cookies",
-  "/security", "/blog", "/verify", "/demo/product-passport", "/approval", "/analytics", "/reports",
-  "/claims", "/documents", "/extensions", "/onboarding", "/notifications", "/billing", "/settings",
-  "/settings/team", "/settings/notifications", "/warranties", "/warranties/new", "/warranties/import",
-  "/warranties/bulk", "/warranties/extend", "/warranties/transfer", "/seller", "/seller/register",
-  "/seller/invite", "/seller/accept-invite", "/admin", "/admin/login", "/admin/accept-invite",
-  "/admin/ingestion", "/dashboard", "/dashboard/provisional", "/dashboard/claims", "/api/seller/applications",
-]);
-
-export function sanitizeAnalyticsPath(value: unknown): string | null {
-  if (typeof value !== "string" || !value.startsWith("/") || value.startsWith("//") || /[\\\u0000-\u0020]/.test(value)) return null;
-  try {
-    const url = new URL(value, "https://warrantee.io");
-    const parts = url.pathname.split("/").filter(Boolean).map((part) => decodeURIComponent(part));
-    if (parts.some((part) => /[/\\\u0000-\u0020]/.test(part))) return null;
-    const prefix = member(parts[0], LOCALES) ? `/${parts.shift()}` : "";
-    const pathname = `/${parts.join("/")}`;
-    if (staticPaths.has(pathname)) return prefix + (pathname === "/" ? "" : pathname) || "/";
-    if (/^\/warranties\/[^/]+(?:\/(?:claim|extend))?$/.test(pathname)) {
-      return `${prefix}/warranties/[id]${parts.length === 3 ? `/${parts[2]}` : ""}`;
-    }
-    if (/^\/(?:approval|verify|documents|claims|resources|compare)\/[^/]+$/.test(pathname)) return `${prefix}/${parts[0]}/[id]`;
-    if (/^\/dashboard\/claims\/[^/]+$/.test(pathname)) return `${prefix}/dashboard/claims/[id]`;
-    return `${prefix}/[other]`;
-  } catch {
-    return null;
-  }
-}
-
-export function sanitizeAnalyticsReferrer(value: unknown): string | null {
-  if (typeof value !== "string") return null;
-  try {
-    const url = new URL(value);
-    return ["https:", "http:"].includes(url.protocol) && !url.username && !url.password ? url.origin : null;
-  } catch {
-    return null;
-  }
-}
 
 function destination(value: unknown): string | null {
   if (value === "phone" || value === "whatsapp") return value;
@@ -105,7 +67,7 @@ function industry(value: unknown): string | undefined {
 
 const mimeTypes = ["application/pdf", "image/jpeg", "image/jpg", "image/png", "image/webp", "image/heic", "image/heif", "image/gif", "image/tiff", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "unknown"];
 
-// Custom-event payloads only. Automatic GA/GTM pageview URLs are a separate, unverified boundary.
+// Custom-event payloads only. Bootstrap context and published Google scripts have a separate browser privacy gate.
 export function sanitizeAnalyticsPayload(event: string, value: unknown, trafficClass: TrafficClass): Payload | null {
   const input = record(value);
   const output: Payload = {};

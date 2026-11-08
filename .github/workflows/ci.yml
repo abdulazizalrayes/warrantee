@@ -26,6 +26,7 @@ jobs:
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
       NEXT_PUBLIC_GTM_ID: ${{ secrets.NEXT_PUBLIC_GTM_ID }}
+      NEXT_PUBLIC_GA_MEASUREMENT_ID: G-ZQJ4LRG4GN
       NEXT_PUBLIC_SENTRY_DSN: ${{ secrets.NEXT_PUBLIC_SENTRY_DSN }}
       SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
       SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
@@ -91,6 +92,14 @@ jobs:
 
       - name: Verify CSP event-handler isolation
         run: npm run qa:security-headers
+
+      - name: Verify Google privacy without sending collector events
+        run: |
+          PORT=3111 npm run start > /tmp/warrantee-privacy-server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          node -e 'let ready = false; for (let i = 0; i < 120; i++) { try { const r = await fetch("http://127.0.0.1:3111/en/pricing"); if (r.ok) { ready = true; break; } } catch {} await new Promise(r => setTimeout(r, 500)); } if (!ready) process.exit(1)'
+          npm run qa:analytics-privacy -- http://127.0.0.1:3111 --chromium
 
       - name: Create disposable QA identity
         run: npm run qa:user:ensure
