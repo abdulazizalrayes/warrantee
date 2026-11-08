@@ -203,8 +203,11 @@ async function handlePost(request: Request) {
         "X-Content-Type-Options": "nosniff",
       },
     });
-  } catch (error) {
-    console.error("Certificate generation error:", error);
-    return NextResponse.json({ error: "Failed to generate certificate" }, { status: 500 });
+  } catch {
+    console.error("Certificate generation failed", { category: "certificate_unavailable" });
+    return NextResponse.json({ error: "Failed to generate certificate" }, {
+      status: 500,
+      headers: { "Cache-Control": "private, no-store" },
+    });
   }
 }

@@ -307,7 +307,7 @@ export default function TeamManagementPage() {
               </form>
             ) : null}
 
-            <div className="overflow-hidden rounded-[28px] border border-gray-200 bg-white shadow-sm">
+            <div className="overflow-x-auto rounded-[28px] border border-gray-200 bg-white shadow-sm">
               {loading ? (
                 <div className="p-8 text-center text-gray-400">{t.loading}</div>
               ) : members.length === 0 ? (

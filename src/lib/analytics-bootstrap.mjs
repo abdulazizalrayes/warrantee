@@ -61,14 +61,19 @@ export function buildGaBootstrap(GA_ID) {
           ${buildContextRuntime(GA_ID)}
           function readConsent(){
             var consent = { analytics: ${defaultCookieConsent.analytics}, marketing: ${defaultCookieConsent.marketing} };
+            if (window.__warranteeConsentStorageFailed === true) return consent;
             try {
-              var saved = window.localStorage.getItem('warrantee_cookie_consent');
+              var storage = window.localStorage;
+              var saved = storage.getItem('warrantee_cookie_consent');
               if (saved) {
-                var parsed = JSON.parse(saved);
+                var parsed;
+                try { parsed = JSON.parse(saved); } catch (e) { return consent; }
+                if (!parsed || typeof parsed !== 'object') return consent;
+                if (parsed.analytics === true || parsed.marketing === true) storage.setItem('warrantee_cookie_consent', saved);
                 consent.analytics = parsed.analytics === true;
                 consent.marketing = parsed.marketing === true;
               }
-            } catch (e) {}
+            } catch (e) { window.__warranteeConsentStorageFailed = true; }
             return consent;
           }
           function loadAnalytics(){
@@ -111,14 +116,19 @@ export function buildGtmBootstrap(GTM_ID, GA_ID) {
         ${buildContextRuntime(GA_ID)}
         function readConsent(){
           var consent={analytics:${defaultCookieConsent.analytics},marketing:${defaultCookieConsent.marketing}};
+          if(w.__warranteeConsentStorageFailed===true) return consent;
           try{
-            var saved=w.localStorage.getItem('warrantee_cookie_consent');
+            var storage=w.localStorage;
+            var saved=storage.getItem('warrantee_cookie_consent');
             if(saved){
-              var parsed=JSON.parse(saved);
+              var parsed;
+              try{parsed=JSON.parse(saved);}catch(e){return consent;}
+              if(!parsed||typeof parsed!=='object') return consent;
+              if(parsed.analytics===true||parsed.marketing===true) storage.setItem('warrantee_cookie_consent',saved);
               consent.analytics=parsed.analytics===true;
               consent.marketing=parsed.marketing===true;
             }
-          }catch(e){}
+          }catch(e){w.__warranteeConsentStorageFailed=true;}
           return consent;
         }
         function applyConsent(consent,mode){

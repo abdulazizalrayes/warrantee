@@ -116,8 +116,18 @@ function emitEvent(event: string, payload: Record<string, unknown>) {
 
   let analyticsAllowed = false;
   try {
-    analyticsAllowed = typeof window !== "undefined" && readStoredCookieConsent(window.localStorage.getItem("warrantee_cookie_consent"))?.analytics === true;
-  } catch { /* Unavailable storage must not authorize external collection. */ }
+    if (typeof window !== "undefined" && window.__warranteeConsentStorageFailed !== true) {
+      const saved = window.localStorage.getItem("warrantee_cookie_consent");
+      analyticsAllowed = readStoredCookieConsent(saved)?.analytics === true;
+      if (analyticsAllowed && saved) window.localStorage.setItem("warrantee_cookie_consent", saved);
+    }
+  } catch {
+    if (typeof window !== "undefined") {
+      window.__warranteeConsentStorageFailed = true;
+      window.dispatchEvent(new CustomEvent("warrantee_cookie_consent_updated"));
+    }
+    analyticsAllowed = false;
+  }
 
   if (analyticsAllowed && process.env.NEXT_PUBLIC_GTM_ID) {
     pushDataLayer(event, classifiedPayload);

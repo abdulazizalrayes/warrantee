@@ -1,4 +1,17 @@
-## CURRENT FOLLOW-UP / SUPERSEDED RECORDS - 2026-11-08
+## Current Release Evidence - 2026-11-08
+
+This is the single handover evidence pointer for the PR #45 baseline snapshot recorded on 2026-11-08, not a claim about the latest live deployment. Consult the associated regression/handover follow-up release PR closeout for subsequent verification and release outcomes; do not infer unfinished later work from this snapshot. Earlier entries below retain dated history, not new instructions to repeat completed verification.
+
+- **PASS / completed:** PR #45's four approved follow-ups: automatic Google privacy/consent, standalone Markdown CORS parity, style-element CSP, and explicit ESM Vitest configuration.
+- **Released baseline:** main `9e17ce3559c7b38f997062e72ec4c9893758817c`, production deployment `dpl_6ZUZ6BAG9nd7jEAb3YJWrTGud5bi`. [PR #45 final release evidence](https://github.com/abdulazizalrayes/warrantee/pull/45#issuecomment-6721932651).
+- **PASS:** CI `42481984501`, CodeQL `42481984286`, Production Security Gate `42482029533`; 491 unit tests and 238 E2E passes, with 94 intentional skips excluded from executed coverage. Recorded Sentry unresolved issues 0 and persistent QA records 0. These are release snapshots, not continuous monitoring or exhaustive security proof.
+- **GA4 receipt complete:** the earlier deployed pricing CTA receipt is recorded in [PR #43](https://github.com/abdulazizalrayes/warrantee/pull/43#issuecomment-6720187401), correctly classified `traffic_class=qa`, count 1. Do not repeat actual collection. PR #45's intercepted privacy checks are not a second reporting receipt or customer demand.
+- **Follow-up boundary:** this released baseline is the checkpoint for the regression/handover test-and-documentation follow-up. Consult its associated release PR closeout for subsequent verification and release outcomes, regardless of when this snapshot is read. No later deployment status is inferred here. No AI-training/content-use policy change is included.
+- **All postponements remain:** database backup/restore and credential searches; OCR corpus/provider activation; billing/payments; ClamAV deployment; paid independent pentest; public npm publication; Vercel Pro/paid hosting; physical/accessibility and field-performance audits; manual SEO rechecks; growth/outreach pilots; shared CRM/mailbox restrictions; Paperclip and other-company work. Historical scope reduction and entity-profile postponements below also remain in force. Nothing in completed PR #45 resumes them.
+
+## Historical Pre-PR #45 Follow-Up Checkpoint - 2026-11-08
+
+Superseded by the current evidence above. Pending/candidate wording in this section describes its pre-release checkpoint only.
 
 - Current release baseline before this follow-up: main `856fd38b917e66ef5f41def62a6ba97c1e260d43`, Vercel `dpl_7phE2yR62vYr2Jhe2kNUfDQvDngH`. Main CI `42472944096` and CodeQL `42472943388` passed. Three medium OCR alerts were validated as synthetic-test false positives, not repaired production vulnerabilities; [triage evidence](https://github.com/abdulazizalrayes/warrantee/pull/44#issuecomment-6720754173). Open CodeQL alerts were zero at the follow-up checkpoint.
 - The deployed-bundle GA4 receipt is already complete: one owner-authorized QA pricing CTA reached the correct property, with `traffic_class=qa`, count 1. [Receipt evidence](https://github.com/abdulazizalrayes/warrantee/pull/43#issuecomment-6720187401). Do not repeat a real collector event for routine verification.

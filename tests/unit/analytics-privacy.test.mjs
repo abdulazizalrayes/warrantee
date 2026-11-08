@@ -9,7 +9,7 @@ const payload = (name, extras = {}) => new URLSearchParams({ en: name, dl: locat
 describe("collector parsing with captured-shape synthetic fixtures", () => {
   it("parses a GET collector request without exposing parameter values", () => {
     const events = parseCollectorEvents(`${base}&${payload("page_view")}`);
-    expect(events).toEqual([{ event: "page_view", parsed: true, expectedProperty: true, locationSafe: true, referrerSafe: true, markerFree: true, privateFieldsAbsent: true, allowedEvent: true }]);
+    expect(events).toEqual([{ event: "page_view", parsed: true, expectedProperty: true, locationSafe: true, privatePathMasked: false, referrerSafe: true, markerFree: true, privateFieldsAbsent: true, allowedEvent: true }]);
     expect(JSON.stringify(events)).not.toContain("reference.example.invalid");
     expect(JSON.stringify(events)).not.toContain("G-ZQJ4LRG4GN");
   });
@@ -49,6 +49,14 @@ describe("collector parsing with captured-shape synthetic fixtures", () => {
       expect(event.event).toBe(name.startsWith("qa-token") ? "unexpected" : name);
       if (name.startsWith("qa-token")) expect(JSON.stringify(event)).not.toContain(name);
     }
+  });
+  it.each(["/en/approval/[id]", "/ar/verify/[id]"])("accepts the approved masked private route but not its raw identifier (%s)", (path) => {
+    const masked = parseCollectorEvents(base, payload("page_view", { dl: `https://warrantee.io${path}` }))[0];
+    expect(masked.locationSafe).toBe(true);
+    expect(masked.privatePathMasked).toBe(true);
+    const raw = parseCollectorEvents(base, payload("page_view", { dl: `https://warrantee.io${path.replace("[id]", "arbitrary-private-record")}` }))[0];
+    expect(raw.locationSafe).toBe(false);
+    expect(raw.privatePathMasked).toBe(false);
   });
   it.each(["", "v=2&gcs=G100", "{invalid", "{\"events\":[]}"])("does not silently drop unparsed collectors: %s", (body) => {
     const events = parseCollectorEvents(base, body);
@@ -122,9 +130,10 @@ describe("isolated network interception harness", () => {
 
 function passingState() {
   const state = createCaseState("analytics");
-  Object.assign(state, { actionsCompleted: true, bootstrapReads: 1, scriptLoads: 2, initialScriptLoads: 2, finalScriptLoads: 2 });
-  for (const [phase, event] of [["initial", "page_view"], ["whatsapp", "whatsapp_click"], ["scroll", "scroll"], ["cta", "funnel_cta_click"], ["path", "page_view"], ["regrant_path", "page_view"], ["regrant_cta", "funnel_cta_click"]]) {
-    state.events.push({ ...parseCollectorEvents(base, payload(event))[0], phase });
+  Object.assign(state, { actionsCompleted: true, healthyDocument: true, bootstrapReads: 1, scriptLoads: 2, initialScriptLoads: 2, finalScriptLoads: 2 });
+  for (const [phase, event] of [["initial", "page_view"], ["whatsapp", "whatsapp_click"], ["scroll", "scroll"], ["cta", "funnel_cta_click"], ["path", "page_view"], ["regrant_path", "page_view"], ["regrant_cta", "funnel_cta_click"], ["cross_tab_path", "page_view"], ["cross_tab_cta", "funnel_cta_click"], ["private_path", "page_view"], ["private_ar_path", "page_view"]]) {
+    const dl = phase === "private_path" ? "https://warrantee.io/en/approval/[id]" : phase === "private_ar_path" ? "https://warrantee.io/ar/verify/[id]" : location;
+    state.events.push({ ...parseCollectorEvents(base, payload(event, { dl }))[0], phase });
     state.collectorRequests++;
   }
   return state;
@@ -136,25 +145,45 @@ describe("strict aggregate privacy proof", () => {
     expect(proof.pass).toBe(true);
     expect(JSON.stringify(proof)).not.toMatch(/https?:|G-ZQJ4LRG4GN|qa-token|qa-redaction|client_id/);
   });
-  it.each(["denied", "marketing_only", "malformed"])("requires quiet collectors and tags for %s", (mode) => {
-    const state = createCaseState(mode); state.actionsCompleted = true; state.bootstrapReads = 1;
+  it.each(["denied", "marketing_only", "malformed", "storage_unavailable", "storage_write_unavailable", "storage_readonly_grant"])("requires quiet collectors and tags for %s", (mode) => {
+    const state = createCaseState(mode); state.actionsCompleted = true; state.healthyDocument = true; state.bootstrapReads = 1; state.storageFailureObserved = true;
     expect(summarizeCase(state).pass).toBe(true);
     state.collectorRequests++;
     expect(summarizeCase(state).pass).toBe(false);
   });
-  it.each(["initial", "whatsapp", "path", "regrant_path", "cta", "regrant_cta"])("fails a missing or duplicated required event in %s", (phase) => {
+  it.each(["initial", "whatsapp", "path", "regrant_path", "cta", "regrant_cta", "cross_tab_path", "cross_tab_cta", "private_path", "private_ar_path"])("fails a missing or duplicated required event in %s", (phase) => {
     const missing = passingState(); missing.events = missing.events.filter((event) => event.phase !== phase);
     expect(summarizeCase(missing).pass).toBe(false);
     const duplicated = passingState(); duplicated.events.push(duplicated.events.find((event) => event.phase === phase));
     expect(summarizeCase(duplicated).pass).toBe(false);
   });
   it("fails query-only pageviews, withdrawn events, post-regrant tag reload and privacy leaks", () => {
-    for (const phase of ["query", "withdrawn", "withdrawal", "regrant"]) {
+    for (const phase of ["query", "withdrawn", "withdrawal", "regrant", "cross_tab_withdrawal", "cross_tab_withdrawn", "cross_tab_regrant"]) {
       const state = passingState(); state.events.push({ ...state.events[0], phase });
       expect(summarizeCase(state).pass).toBe(false);
     }
     const reload = passingState(); reload.finalScriptLoads++; expect(summarizeCase(reload).pass).toBe(false);
     const leak = passingState(); leak.events[0].markerFree = false; expect(summarizeCase(leak).pass).toBe(false);
+  });
+  it("requires actual browser storage-denial evidence, not just quiet collectors", () => {
+    const state = createCaseState("storage_unavailable");
+    state.actionsCompleted = true; state.healthyDocument = true; state.bootstrapReads = 1;
+    expect(summarizeCase(state).pass).toBe(false);
+    state.storageFailureObserved = true;
+    expect(summarizeCase(state).pass).toBe(true);
+  });
+  it("requires a consented initial page and quiet failed withdrawal, with actual storage-denial evidence", () => {
+    const state = passingState(); state.mode = "withdrawal_write_failure";
+    state.events = state.events.filter(entry => ["initial", "whatsapp", "scroll", "cta", "path"].includes(entry.phase));
+    expect(summarizeCase(state).pass).toBe(false);
+    state.storageFailureObserved = true;
+    expect(summarizeCase(state).pass).toBe(true);
+    state.events.push({ ...state.events[0], phase: "withdrawn" });
+    expect(summarizeCase(state).pass).toBe(false);
+  });
+  it("does not mistake a quiet error-boundary page for a successful privacy check", () => {
+    const state = passingState(); state.healthyDocument = false;
+    expect(summarizeCase(state).pass).toBe(false);
   });
   it("CLI exits nonzero without logging raw invalid arguments or starting a browser", () => {
     const result = spawnSync(process.execPath, ["scripts/check-analytics-privacy.mjs", "https://private:qa-token@warrantee.io/?email=qa-redaction"], { encoding: "utf8" });

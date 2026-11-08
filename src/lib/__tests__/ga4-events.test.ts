@@ -1,4 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { runInNewContext } from "node:vm";
+import { buildGaBootstrap, buildGtmBootstrap } from "../analytics-bootstrap.mjs";
 import { appendCampaignParams } from "../ga4-events";
 
 describe("campaign attribution helpers", () => {
@@ -55,7 +57,8 @@ describe("browser analytics dispatch", () => {
       },
       dataLayer,
       gtag,
-      localStorage: { getItem: () => JSON.stringify({ analytics: true, marketing: false }) },
+      dispatchEvent: vi.fn(),
+      localStorage: { getItem: () => JSON.stringify({ analytics: true, marketing: false }), setItem: vi.fn() },
     });
     vi.stubGlobal("document", {
       referrer: "",
@@ -66,6 +69,63 @@ describe("browser analytics dispatch", () => {
 
     return { dataLayer, gtag, sendBeacon };
   }
+
+  it("latches failed grant persistence and requires explicit successful recovery", async () => {
+    process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID = "G-TEST";
+    const { dataLayer, gtag } = stubAnalyticsGlobals();
+    const saved = window.localStorage.getItem("warrantee_cookie_consent")!;
+    vi.mocked(window.localStorage.setItem).mockImplementation(() => { throw new Error("Read-only storage"); });
+    const { trackSignup } = await import("../ga4-events");
+    trackSignup("email");
+    expect(window.__warranteeConsentStorageFailed).toBe(true);
+    expect(window.localStorage.getItem("warrantee_cookie_consent")).toBe(saved);
+    expect(gtag).not.toHaveBeenCalled();
+    expect(dataLayer).toHaveLength(0);
+    vi.mocked(window.localStorage.setItem).mockImplementation(() => {});
+    trackSignup("email");
+    expect(gtag).not.toHaveBeenCalled();
+    window.localStorage.setItem("warrantee_cookie_consent", saved);
+    window.__warranteeConsentStorageFailed = false;
+    trackSignup("email");
+    expect(gtag).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(["GA", "GTM"])("revokes an already-loaded %s bootstrap after custom-event storage failure", async (mode) => {
+    process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID = "G-ZQJ4LRG4GN";
+    if (mode === "GTM") process.env.NEXT_PUBLIC_GTM_ID = "GTM-WFLBH83M";
+    stubAnalyticsGlobals();
+    const listeners: Record<string, () => void> = {};
+    const commands: ArrayLike<unknown>[] = [];
+    const scripts: unknown[] = [];
+    const runtime = window as unknown as Record<string, unknown>;
+    const doc = {
+      title: "Synthetic QA", referrer: "", createElement: () => ({}),
+      head: { appendChild: (script: unknown) => scripts.push(script) },
+      getElementsByTagName: () => [{ parentNode: { insertBefore: (script: unknown) => scripts.push(script) } }],
+    };
+    Object.assign(runtime, {
+      dataLayer: commands, gtag: undefined, document: doc, URL,
+      addEventListener: (name: string, callback: () => void) => { listeners[name] = callback; },
+      dispatchEvent: (event: Event) => { listeners[event.type]?.(); return true; },
+      history: {
+        pushState: (_state: unknown, _title: string, path: string) => { window.location.pathname = path; },
+        replaceState: () => {},
+      },
+    });
+    runtime.window = runtime;
+    vi.stubGlobal("document", doc);
+    runInNewContext(mode === "GA" ? buildGaBootstrap("G-ZQJ4LRG4GN") : buildGtmBootstrap("GTM-WFLBH83M", "G-ZQJ4LRG4GN"), runtime);
+    expect(scripts).toHaveLength(1);
+    expect(runtime["ga-disable-G-ZQJ4LRG4GN"]).toBe(false);
+    vi.mocked(window.localStorage.setItem).mockImplementation(() => { throw new Error("Read-only storage"); });
+    const { trackSignup } = await import("../ga4-events");
+    trackSignup("email");
+    expect(window.__warranteeConsentStorageFailed).toBe(true);
+    window.history.pushState(null, "", "/en/pricing");
+    expect(commands.filter(command => command[0] === "event")).toHaveLength(0);
+    expect(runtime["ga-disable-G-ZQJ4LRG4GN"]).toBe(true);
+    expect(scripts).toHaveLength(1);
+  });
 
   it("queues GTM context and the GA4 event when GTM is configured", async () => {
     process.env.NEXT_PUBLIC_GTM_ID = "GTM-TEST";

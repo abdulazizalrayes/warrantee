@@ -1,5 +1,9 @@
 # Warrantee Takeover Audit Remediation
 
+## Current Handover Pointer - 2026-11-08
+
+Use [operational status](OPERATIONAL_STATUS.md#current-release-evidence---2026-11-08) for the dated released baseline, completed PR #45 follow-ups, completed prior GA4 receipt, and unchanged postponements. The July candidate verdict, actions, and verification below are preserved historical evidence, not current pending instructions or authority to resume billing, OCR, recovery, paid services, Paperclip, or shared CRM work. Consult the associated regression/handover follow-up release PR closeout for subsequent verification and release outcomes; this baseline snapshot does not imply that later work remains incomplete.
+
 **Prepared:** 24 July 2026
 **Scope:** Warrantee and `warrantee.io` only
 **Source audit:** `docs/TAKEOVER_AUDIT_2026-07-24.md`

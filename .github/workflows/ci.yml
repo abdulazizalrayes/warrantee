@@ -72,6 +72,9 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium firefox webkit
+
       - name: Test
         run: npm test -- --passWithNoTests
 
@@ -86,9 +89,6 @@ jobs:
 
       - name: Agent Markdown release gate
         run: npm run qa:agent-markdown:local
-
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium firefox webkit
 
       - name: Verify CSP event-handler isolation
         run: npm run qa:security-headers

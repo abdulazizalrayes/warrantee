@@ -11,8 +11,9 @@ const forbiddenEvents = new Set(["view_search_results", "click", "form_start", "
 const reportableEvents = new Set([...eventNames, ...forbiddenEvents]);
 const marker = /qa-(?:redaction|token|fragment)|private-referrer|privacy-gate-synthetic/i;
 const privateKey = /(?:^|[._])(?:email|phone|full_name|allowed_domain|warranty_id|document_id|serial_number|password|token|message|reason|user_id|uid)$/i;
-const modes = ["denied", "marketing_only", "malformed", "analytics"];
-const phases = ["initial", "whatsapp", "scroll", "cta", "path", "query", "withdrawal", "withdrawn", "regrant", "regrant_path", "regrant_cta"];
+const modes = ["denied", "marketing_only", "malformed", "storage_unavailable", "storage_write_unavailable", "storage_readonly_grant", "withdrawal_write_failure", "analytics"];
+const phases = ["initial", "whatsapp", "scroll", "cta", "path", "query", "withdrawal", "withdrawn", "regrant", "regrant_path", "regrant_cta", "cross_tab_withdrawal", "cross_tab_withdrawn", "cross_tab_regrant", "cross_tab_path", "cross_tab_cta", "private_path", "private_ar_path"];
+const maskedPaths = new Set(["/en/approval/[id]", "/ar/verify/[id]"]);
 
 function decodedMarker(value) {
   let text = String(value);
@@ -28,12 +29,14 @@ function safeEvent(params) {
   const name = names.length === 1 ? names[0] : "";
   let locationSafe = false;
   let referrerSafe = true;
+  let privatePathMasked = false;
   try {
     const locations = params.getAll("dl");
     if (locations.length === 1) {
       const url = new URL(locations[0]);
+      privatePathMasked = maskedPaths.has(url.pathname);
       locationSafe = url.origin === "https://warrantee.io" && !url.username && !url.password &&
-        !url.search && !url.hash && ["/en/pricing", "/ar/pricing"].includes(url.pathname);
+        !url.search && !url.hash && (["/en/pricing", "/ar/pricing"].includes(url.pathname) || privatePathMasked);
     }
     for (const value of params.getAll("dr")) {
       if (!value) continue;
@@ -46,6 +49,7 @@ function safeEvent(params) {
     parsed: Boolean(name),
     expectedProperty: params.getAll("tid").length > 0 && params.getAll("tid").every((id) => id === measurementId),
     locationSafe,
+    privatePathMasked,
     referrerSafe,
     markerFree: ![...params].some(([key, value]) => decodedMarker(key) || decodedMarker(value)),
     privateFieldsAbsent: ![...params.keys()].some((key) => privateKey.test(key)),
@@ -53,7 +57,7 @@ function safeEvent(params) {
   };
 }
 
-const invalidEvent = () => ({ event: "unexpected", parsed: false, expectedProperty: false, locationSafe: false, referrerSafe: false, markerFree: false, privateFieldsAbsent: false, allowedEvent: false });
+const invalidEvent = () => ({ event: "unexpected", parsed: false, expectedProperty: false, locationSafe: false, privatePathMasked: false, referrerSafe: false, markerFree: false, privateFieldsAbsent: false, allowedEvent: false });
 
 // Never return raw URLs, arbitrary event names, parameter values, or request bodies.
 export function parseCollectorEvents(requestUrl, body = "") {
@@ -84,7 +88,7 @@ export function createCaseState(mode) {
   return {
     mode, phase: "initial", events: [], collectorRequests: 0, writesBlocked: 0, externalBlocked: 0,
     scriptLoads: 0, bootstrapReads: 0, guardFailures: 0, pageErrors: 0, lastActivity: Date.now(),
-    initialScriptLoads: 0, finalScriptLoads: 0, actionsCompleted: false,
+    initialScriptLoads: 0, finalScriptLoads: 0, actionsCompleted: false, storageFailureObserved: false, healthyDocument: false,
   };
 }
 
@@ -139,28 +143,36 @@ export function summarizeCase(state) {
   const count = (phase, event) => counts[phase][event] || 0;
   const phaseCount = (phase) => Object.values(counts[phase]).reduce((sum, value) => sum + value, 0);
   const analytics = state.mode === "analytics";
+  const consented = analytics || state.mode === "withdrawal_write_failure";
   const checks = {
     actionsCompleted: state.actionsCompleted,
     bootstrapObserved: state.bootstrapReads > 0,
     noGuardFailures: state.guardFailures === 0,
     noPageErrors: state.pageErrors === 0,
+    healthyDocument: state.healthyDocument,
     collectorsParsed: state.events.every((entry) => entry.parsed),
     exactProperty: state.events.every((entry) => entry.expectedProperty),
     privateValuesAbsent: state.events.every((entry) => entry.markerFree && entry.privateFieldsAbsent),
     locationsSanitized: state.events.every((entry) => entry.locationSafe && entry.referrerSafe),
     onlyExpectedEvents: state.events.every((entry) => entry.allowedEvent),
-    deniedModesQuiet: analytics || (state.collectorRequests === 0 && state.scriptLoads === 0),
-    initialPageViewExactlyOnce: !analytics || count("initial", "page_view") === 1,
-    whatsappExactlyOnce: !analytics || state.events.filter((entry) => entry.event === "whatsapp_click").length === 1 && count("whatsapp", "whatsapp_click") === 1,
-    customCtaExactlyOnce: !analytics || count("cta", "funnel_cta_click") === 1,
-    pathPageViewExactlyOnce: !analytics || count("path", "page_view") === 1,
-    scrollObserved: !analytics || state.events.some((entry) => entry.event === "scroll"),
+    deniedModesQuiet: consented || (state.collectorRequests === 0 && state.scriptLoads === 0),
+    initialPageViewExactlyOnce: !consented || count("initial", "page_view") === 1,
+    whatsappExactlyOnce: !consented || state.events.filter((entry) => entry.event === "whatsapp_click").length === 1 && count("whatsapp", "whatsapp_click") === 1,
+    customCtaExactlyOnce: !consented || count("cta", "funnel_cta_click") === 1,
+    pathPageViewExactlyOnce: !consented || count("path", "page_view") === 1,
+    scrollObserved: !consented || state.events.some((entry) => entry.event === "scroll"),
     queryOnlyNoPageView: count("query", "page_view") === 0,
     withdrawnQuiet: phaseCount("withdrawal") === 0 && phaseCount("withdrawn") === 0,
-    regrantNoTagReload: !analytics || state.initialScriptLoads > 0 && state.initialScriptLoads === state.finalScriptLoads,
+    regrantNoTagReload: !consented || state.initialScriptLoads > 0 && state.initialScriptLoads === state.finalScriptLoads,
     regrantNoDuplicatePageView: count("regrant", "page_view") === 0,
     regrantPathExactlyOnce: !analytics || count("regrant_path", "page_view") === 1,
     regrantCtaExactlyOnce: !analytics || count("regrant_cta", "funnel_cta_click") === 1,
+    crossTabWithdrawalQuiet: phaseCount("cross_tab_withdrawal") === 0 && phaseCount("cross_tab_withdrawn") === 0,
+    crossTabRegrantNoDuplicatePageView: count("cross_tab_regrant", "page_view") === 0,
+    crossTabPathExactlyOnce: !analytics || count("cross_tab_path", "page_view") === 1,
+    crossTabCtaExactlyOnce: !analytics || count("cross_tab_cta", "funnel_cta_click") === 1,
+    privatePathsMasked: !analytics || ["private_path", "private_ar_path"].every(phase => count(phase, "page_view") === 1 && state.events.filter(entry => entry.phase === phase && entry.event === "page_view").every(entry => entry.privatePathMasked)),
+    storageFailureExercised: !(state.mode.startsWith("storage_") || state.mode === "withdrawal_write_failure") || state.storageFailureObserved,
   };
   return {
     mode: state.mode,
@@ -223,7 +235,12 @@ export async function runAnalyticsPrivacyGate({ baseUrl, candidateBootstrap = fa
         await context.routeWebSocket("**/*", (socket) => { state.externalBlocked++; socket.close(); });
         await context.addInitScript(({ mode }) => {
           try {
-            if (!localStorage.getItem("__warranteePrivacyGateSeeded")) {
+            if (mode === "storage_unavailable") {
+              Object.defineProperty(window, "localStorage", { configurable: true, get() { throw new DOMException("Synthetic storage denial", "SecurityError"); } });
+            } else if (mode === "storage_write_unavailable" || mode === "storage_readonly_grant") {
+              if (mode === "storage_readonly_grant") localStorage.setItem("warrantee_cookie_consent", JSON.stringify({ necessary: true, analytics: true, marketing: false }));
+              Object.defineProperty(Storage.prototype, "setItem", { configurable: true, value() { throw new DOMException("Synthetic storage write denial", "QuotaExceededError"); } });
+            } else if (mode !== "withdrawal_write_failure" && !localStorage.getItem("__warranteePrivacyGateSeeded")) {
               localStorage.setItem("warrantee_cookie_consent", JSON.stringify({ necessary: true, analytics: mode === "malformed" ? "false" : mode === "analytics", marketing: mode === "malformed" ? "false" : mode === "marketing_only", timestamp: new Date().toISOString() }));
               localStorage.setItem("__warranteePrivacyGateSeeded", "1");
             }
@@ -240,7 +257,28 @@ export async function runAnalyticsPrivacyGate({ baseUrl, candidateBootstrap = fa
         });
         if (response?.status() !== 200) throw new Error("pricing_document_not_ready");
         await page.waitForFunction(() => typeof window.gtag === "function");
+        if (mode === "storage_unavailable") state.storageFailureObserved = await page.evaluate(() => {
+          try { window.localStorage.getItem("warrantee_cookie_consent"); return false; } catch { return true; }
+        });
+        if (mode === "storage_write_unavailable" || mode === "storage_readonly_grant") {
+          state.storageFailureObserved = await page.evaluate(() => {
+            try { localStorage.setItem("__warranteeBlockedWriteProbe", "1"); return false; } catch { return true; }
+          });
+          if (mode === "storage_write_unavailable") await page.getByRole("button", { name: "Accept All", exact: true }).click();
+        }
+        if (mode === "withdrawal_write_failure") {
+          // Keep the primary banner open while another tab grants consent.
+          await page.getByRole("button", { name: "Reject All", exact: true }).waitFor();
+          const sibling = await context.newPage();
+          const siblingResponse = await sibling.goto(`${origin}/auth.md`, { waitUntil: "domcontentloaded" });
+          if (siblingResponse?.status() !== 200) throw new Error("consent_sibling_document_not_ready");
+          await sibling.evaluate(() => localStorage.setItem("warrantee_cookie_consent", JSON.stringify({ analytics: true, marketing: false })));
+          await page.waitForFunction(id => window[`ga-disable-${id}`] === false, measurementId);
+          await sibling.close();
+        }
         await quiesce(page, state, settleMs);
+        state.healthyDocument = await page.locator('[data-testid="pricing-card-personal-free"]').count() === 1;
+        if (!state.healthyDocument) throw new Error("pricing_document_not_healthy");
         state.initialScriptLoads = state.scriptLoads;
         state.phase = "whatsapp";
         await clickSynthetic(page, 'a[href*="wa.me"]');
@@ -257,6 +295,20 @@ export async function runAnalyticsPrivacyGate({ baseUrl, candidateBootstrap = fa
         state.phase = "query";
         await historyPath(page, "/ar/pricing", true);
         await quiesce(page, state, settleMs);
+        if (mode === "withdrawal_write_failure") {
+          await page.evaluate(() => Object.defineProperty(Storage.prototype, "setItem", { configurable: true, value() { throw new DOMException("Synthetic withdrawal write denial", "QuotaExceededError"); } }));
+          state.storageFailureObserved = await page.evaluate(() => {
+            try { localStorage.setItem("__warranteeBlockedWriteProbe", "1"); return false; } catch { return true; }
+          });
+          state.phase = "withdrawal";
+          await page.getByRole("button", { name: /^(Reject All|\u0631\u0641\u0636 \u0627\u0644\u0643\u0644)$/ }).click();
+          await page.waitForFunction(id => window[`ga-disable-${id}`] === true && window.__warranteeConsentStorageFailed === true, measurementId);
+          await quiesce(page, state, settleMs);
+          state.phase = "withdrawn";
+          await historyPath(page, "/en/pricing");
+          await clickSynthetic(page, '[data-testid="pricing-card-personal-free"] a');
+          await quiesce(page, state, settleMs);
+        }
         if (mode === "analytics") {
           state.phase = "withdrawal";
           await consent(page, false);
@@ -275,8 +327,40 @@ export async function runAnalyticsPrivacyGate({ baseUrl, candidateBootstrap = fa
           state.phase = "regrant_cta";
           await clickSynthetic(page, '[data-testid="pricing-card-personal-free"] a');
           await quiesce(page, state, settleMs);
+          // A second same-origin document must trigger a real browser storage event.
+          const sibling = await context.newPage();
+          sibling.on("pageerror", () => { state.pageErrors++; });
+          const siblingResponse = await sibling.goto(`${origin}/auth.md`, { waitUntil: "domcontentloaded" });
+          if (siblingResponse?.status() !== 200) throw new Error("consent_sibling_document_not_ready");
+          await quiesce(page, state, settleMs);
+          state.phase = "cross_tab_withdrawal";
+          await sibling.evaluate(() => localStorage.setItem("warrantee_cookie_consent", JSON.stringify({ analytics: false, marketing: false })));
+          await page.waitForFunction(id => window[`ga-disable-${id}`] === true, measurementId);
+          await quiesce(page, state, settleMs);
+          state.phase = "cross_tab_withdrawn";
+          await historyPath(page, "/en/pricing");
+          await clickSynthetic(page, '[data-testid="pricing-card-personal-free"] a');
+          await quiesce(page, state, settleMs);
+          state.phase = "cross_tab_regrant";
+          await sibling.evaluate(() => localStorage.setItem("warrantee_cookie_consent", JSON.stringify({ analytics: true, marketing: false })));
+          await page.waitForFunction(id => window[`ga-disable-${id}`] === false, measurementId);
+          await quiesce(page, state, settleMs);
+          state.phase = "cross_tab_path";
+          await historyPath(page, "/ar/pricing");
+          await quiesce(page, state, settleMs);
+          state.phase = "cross_tab_cta";
+          await clickSynthetic(page, '[data-testid="pricing-card-personal-free"] a');
+          await quiesce(page, state, settleMs);
+          await sibling.close();
+          state.phase = "private_path";
+          await historyPath(page, "/en/approval/qa-token-private-record");
+          await quiesce(page, state, settleMs);
+          state.phase = "private_ar_path";
+          await historyPath(page, "/ar/verify/qa-token-private-record");
+          await quiesce(page, state, settleMs);
         }
         state.finalScriptLoads = state.scriptLoads;
+        state.healthyDocument = await page.locator('[data-testid="pricing-card-personal-free"]').count() === 1;
         state.actionsCompleted = true;
       } catch {
         state.actionsCompleted = false;

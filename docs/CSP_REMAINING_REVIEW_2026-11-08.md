@@ -1,6 +1,12 @@
 # Remaining CSP and provider-header review
 
-## Latest Release Reconciliation - 2026-11-08
+## Current Evidence Pointer - 2026-11-08
+
+The script enforcement and four PR #45 follow-ups are complete within the scope recorded in [operational status](OPERATIONAL_STATUS.md#current-release-evidence---2026-11-08). The earlier deployed GA4 receipt is also complete; no additional real collector event is required. Style-attribute migration, opaque provider ownership, untested scopes, and all owner postponements remain separate. This report's inventory and pre-release instructions below are dated history, not current pending implementation work.
+
+## Historical PR #42 Release Reconciliation - 2026-11-08
+
+The pre-deployment GA4 checkpoint below was subsequently completed in PR #43; see the current evidence pointer rather than repeating it.
 
 Recorded release evidence: PR #42 merged to main `961e911663286d28d4af85df9a106a129c3ed667`, deployed as `dpl_8fonqoJLZrqqiqKaD8ek6kgbsQUY`. CI `42465567801`, CodeQL `42465568079`, and Production Security Gate `42465831058` all passed: 354 unit tests, 236 E2E passes, and 92 intentional skips (not executed coverage). Release checks record 50 sitemap pages, 240 hashes, 56 EN/AR views, Sentry unresolved issues 0, and persistent QA records 0.
 
