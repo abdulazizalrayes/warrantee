@@ -1,8 +1,30 @@
 # Warrantee GA4 Receipt Reconciliation - 2026-11-07
 
+## Latest Release Reconciliation - 2026-11-08
+
+**PRE-DEPLOYMENT VERIFICATION CHECKPOINT AS OF 2026-11-08.** Recorded prior release: PR #42 merged to main `961e911663286d28d4af85df9a106a129c3ed667`, production deployment `dpl_8fonqoJLZrqqiqKaD8ek6kgbsQUY`. CI `42465567801`, CodeQL `42465568079`, and Production Security Gate `42465831058` all passed. Coverage: 354 unit tests, 236 E2E passes, and 92 intentional skips (not executed coverage). Release checks record 50 sitemap pages, 240 hashes, 56 EN/AR views, Sentry unresolved issues 0, and persistent QA records 0.
+
+Durable prior-release evidence: [PR #42 release record](https://github.com/abdulazizalrayes/warrantee/pull/42#issuecomment-6719739042). The final GA4 outcome after the next code deployment will be linked in that release PR's closeout once its PR number is assigned; a documentation-only redeployment is not required to record it.
+
+The November 7 source-path transport/reporting receipt below remains valid historical evidence, but is not receipt from the deployed bundle. At this checkpoint, one controlled consented QA event's actual transport and correct-property GA4 reporting receipt have not yet been verified after the next code deployment. The release PR closeout must record the timestamp, event, property, and QA classification before claiming that verification. This dated checkpoint does not assert the status of a later deployment. No customer demand, activation, key-event, or payment claim follows from controlled QA traffic.
+
+All owner postponements in `docs/BACKLOG.md` remain unchanged, including backup/restore task 5, tasks 6-10, billing/payment activation, ClamAV deployment, independent paid pentest, public npm publication, Vercel Pro, and other explicitly postponed historical scope.
+
+## Custom-Payload Privacy Contract - 2026-11-08
+
+- `src/lib/analytics-payload.ts` defines event-specific fields and registered value vocabularies. The browser filters before dataLayer, direct gtag events, and server beacons; the funnel API validates independently with the same contract.
+- Custom payloads omit document/warranty IDs, team domains, raw OCR errors, free-text subjects, unregistered fields, and arbitrary nested values. Existing purchase-item metadata is reconstructed from approved fields; this does not activate billing or payments.
+- Event destinations and first-party funnel paths omit queries, fragments, and record IDs. Referrers retain HTTP(S) origins only. Direct gtag events receive internally computed sanitized page-location/referrer overrides; callers cannot supply their own routing destination or classification.
+- Only registered campaign codes are retained in custom analytics. New campaign or event values require a privacy-reviewed contract update. Existing link attribution/navigation remains unchanged; this is not a global URL rewrite.
+- Server classification uses the request user agent transiently without storing its raw value. Existing first-party authenticated actor linkage, authorization, origin checks, rate limits, and database response behavior are preserved.
+- Automatic GTM pageview/enhanced-measurement collection and GTM-forwarded WhatsApp tag URL context were not reconfigured or comprehensively verified here. Helper filtering does not prove all Google collection is free of personal data. No GTM container publication or account setting change is included.
+- QA receipt verification must click an actual deployed pricing CTA, not replace or transpile its analytics module. Permit at most one correctly routed, QA-labelled custom request to Google; locally fulfill other collector requests and all application writes. Confirm HTTP transport separately from correct-property Realtime receipt. Do not create a signup, lead, payment, or message to manufacture the event.
+
+## Historical Source-Path Verification - 2026-11-07
+
 ## Status And Identity
 
-**PASS: routing and correct-property GA4 receipt. Release verification pending.** No GTM publication, real form submission, or message was performed. The controlled source-path test is not yet proof that the production bundle contains the correction.
+**Historical PASS: routing and correct-property GA4 source-path receipt.** Release verification was pending at this checkpoint; PR #42 now supersedes that release-pending status. The next code deployment's receipt is covered by the dated checkpoint above and its subsequent release PR closeout. No GTM publication, real form submission, or message was performed in this historical test. The controlled source-path test alone is not proof that the production bundle contains the correction.
 
 - Governing source: `CLAUDE.md`. Warrantee account `abdulaziz.alrayes@gmail.com`; GA4 measurement ID `G-ZQJ4LRG4GN`; web container `GTM-WFLBH83M`.
 - Parent verified regular-Chrome GA4 account `Warrantee` / `388923325`, property `Warrantee.io` / `530040415`. Oct 10-Nov 6, All Users without filters: 33 events, 7 users; only session_start 10, page_view 9, first_visit 7, user_engagement 6, scroll 1. No custom event rows. This historical report is not evidence that the local patch reached production.
@@ -56,7 +78,7 @@ Only the first custom collect request matching the exact measurement ID, `funnel
 - Final observation: exactly 1 allowed actual custom collect request and 1 HTTP 204 response. Disposable browser/context closed; no task-owned tabs remain.
 - Google 204 is collector transport evidence, **not GA4 reporting/UI receipt**. Parent is independently checking the correct property's Realtime view. Production deployment still has not changed.
 
-## Remaining Parent Verification
+## Historical Parent Receipt And Current Remaining Verification
 
 The parent independently observed GA4 Realtime in regular Chrome, authenticated
 as the authorized owner, on property `530040415`: baseline zero events became
@@ -66,6 +88,6 @@ No key event was recorded. This confirms reporting receipt for the controlled
 test, not customer demand or a deployed-bundle verification.
 
 1. Confirm final local routing comparison and preserve consent/dedup boundaries.
-2. Complete normal reviewed release gates separately; this worker does not authorize a commit or deploy.
+2. Normal reviewed release gates are now recorded for PR #42 in the latest release section above; this documentation task authorizes no commit or deploy.
 3. After an authorized release, observe one controlled consented QA CTA transport and correct-property GA4 receipt, including timestamp/event/QA classification. Standard pageviews and gtag/dataLayer queues are insufficient.
 4. Keep task 1 pending until receipt is observed. Do not use synthetic traffic as activation, demand, qualified leads, or payment evidence.

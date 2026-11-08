@@ -1,8 +1,16 @@
 # Remaining CSP and provider-header review
 
-Implementation update: the candidate described in `docs/CSP_ENFORCEMENT_2026-11-08.md` supersedes the earlier inventory-only status below. Deployment and release verification must be recorded separately; the historical review is not current release proof.
+## Latest Release Reconciliation - 2026-11-08
 
-Warrantee only. This is not a new production deployment or a completed strict-CSP migration.
+Recorded release evidence: PR #42 merged to main `961e911663286d28d4af85df9a106a129c3ed667`, deployed as `dpl_8fonqoJLZrqqiqKaD8ek6kgbsQUY`. CI `42465567801`, CodeQL `42465568079`, and Production Security Gate `42465831058` all passed: 354 unit tests, 236 E2E passes, and 92 intentional skips (not executed coverage). Release checks record 50 sitemap pages, 240 hashes, 56 EN/AR views, Sentry unresolved issues 0, and persistent QA records 0.
+
+The deployed implementation in `docs/CSP_ENFORCEMENT_2026-11-08.md` supersedes the inventory-only requirements below for its recorded scope. Durable evidence: [PR #42 release record](https://github.com/abdulazizalrayes/warrantee/pull/42#issuecomment-6719739042). These release snapshots do not establish complete XSS defense or independent penetration testing.
+
+GA4 pre-deployment verification checkpoint as of 2026-11-08: verify one controlled consented QA event's actual transport and correct-property reporting receipt after the next code deployment. Final outcome to be linked in that release PR's closeout once its PR number is assigned; no documentation-only redeployment is required. Inline-style migration, opaque provider-script ownership, and untested boundaries are not closed by the script-CSP release. All owner postponements in `docs/BACKLOG.md` remain in force, including backup/restore task 5 and tasks 6-10.
+
+## Historical Pre-Release Review (Preserved)
+
+Warrantee only. The sections below retain the earlier review and its then-current status; their candidate/pending wording is superseded only where the release record above establishes completion.
 
 ## Provider-header disposition
 
@@ -26,7 +34,7 @@ References:
 - https://nextjs.org/docs/app/guides/content-security-policy
 - https://developers.google.com/tag-platform/security/guides/csp
 
-## Required work before enforcement
+## Historical Required Work Before Enforcement
 
 1. Bind route-specific trusted hashes to final static HTML in the Vercel build adapter, then prove deployed headers match that exact artifact and rollback atomically.
 2. Inventory client-inserted GA/GTM bootstrap scripts and the published container; test consent ordering without adding unsafe-eval.
@@ -34,4 +42,4 @@ References:
 4. Keep inline-style allowance until attribute-to-class replacements have visual regression evidence. Nonces do not authorize style attributes.
 5. Test candidate policy on EN/AR cold loads, navigation, authenticated pages, analytics, and provider-injected content before enforcement.
 
-These are unresolved implementation/verification requirements, not owner access steps and not a validated exploit. Do not represent the inventory tool as a production fix. Current production retains the verified event-attribute block from PR 41. Backup restore testing and other owner-postponed work remain postponed.
+At the time of this review these were unresolved implementation/verification requirements, not owner access steps or a validated exploit. PR #42 now supplies the recorded script-enforcement implementation and release checks above; the inventory tool alone remains insufficient production proof. The historical production baseline was the verified event-attribute block from PR 41. Inline-style work, opaque-provider boundaries, and other untested scopes remain separate. Backup restore testing and other owner-postponed work remain postponed.

@@ -1,5 +1,16 @@
 # Warrantee Approved Backlog
 
+## Latest Release Reconciliation - 2026-11-08
+
+Recorded release evidence:
+
+- PASS: PR #42 merged to main `961e911663286d28d4af85df9a106a129c3ed667`, production deployment `dpl_8fonqoJLZrqqiqKaD8ek6kgbsQUY`.
+- PASS: CI `42465567801`, CodeQL `42465568079`, and Production Security Gate `42465831058`. Reported coverage: 354 unit tests and 236 E2E tests passed; 92 intentional skips are not executed coverage.
+- PASS within the recorded release checks: 50 sitemap pages, 240 hashes, 56 EN/AR views; Sentry unresolved issues 0 and persistent QA records 0. These snapshots are not proof of customer demand, exhaustive security, or recovery.
+- Durable release evidence: [PR #42 release record](https://github.com/abdulazizalrayes/warrantee/pull/42#issuecomment-6719739042).
+- GA4 pre-deployment verification checkpoint as of 2026-11-08: the next code deployment still requires one controlled consented QA event's actual transport and correct-property reporting receipt. Earlier source-path receipt is not deployed-bundle proof. The final outcome will be linked in that release PR's closeout once its PR number is assigned; no documentation-only redeployment is required to record it.
+- All owner postponements below remain in force, including task 5 backup/restore and tasks 6-10. This documentation reconciliation resumes none of them and authorizes no source, build, commit, push, or deployment action.
+
 ## Owner Decision - 2026-11-08
 
 - Database backup/restore test (task 5) is POSTPONED by the owner. Do not resume credential searches, enable temporary access, change SSL enforcement, create roles, reset passwords, or provision paid resources to complete it without renewed approval.
@@ -7,13 +18,13 @@
 - Owner-authorized guidance request sent to support@supabase.com from the verified Warrantee owner account abdulaziz.alrayes@gmail.com. Gmail sent message/thread ID: 1a1ba0bdbfd39f64. The inquiry requests a no-additional-cost, passwordless supported export/download path and explicitly prohibits production changes or paid activation. Response and provider ticket number remain pending.
 - This update is local documentation only; no production deployment or configuration change is required or authorized.
 
-Last updated: 2026-11-07
+Last updated: 2026-11-08
 
 Scope: Warrantee / warrantee.io only.
 
-## Current Status / Superseded Records - 2026-11-07
+## Prior Reconciliation - 2026-11-07 (Release Snapshot Superseded Above)
 
-`CLAUDE.md` governs project operations. This current reconciliation supersedes the historical priorities, prices, release snapshots, and time-based plans below; those entries remain intact as dated records, not permission to resume postponed work.
+`CLAUDE.md` governs project operations. The latest release section above supersedes this dated release snapshot. The operational boundaries here supersede conflicting historical priorities, prices, and time-based plans below; those entries remain intact as dated records, not permission to resume postponed work.
 
 ### Current Evidence Baseline
 
@@ -30,11 +41,11 @@ Scope: Warrantee / warrantee.io only.
 
 | # | Task | Status | Completion Boundary |
 | --- | --- | --- | --- |
-| 1 | Analytics receipt | SOURCE PATH VERIFIED; RELEASE PENDING | Exactly one controlled QA event reached the correct GA4 Realtime property; verify the released bundle separately. |
+| 1 | Analytics receipt | PRE-DEPLOYMENT VERIFICATION CHECKPOINT AS OF 2026-11-08 | Earlier controlled source-path QA receipt and PR #42 release are recorded. Verify actual transport and correct-property receipt after the next code deployment; final outcome to be linked in that release PR's closeout. |
 | 2 | Aggregate activation | VERIFIED WITH CLASSIFICATION LIMITS | Four current-window candidates, three onboarding flags, zero attributed warranties or recent sign-ins; not seven verified customers. |
 | 3 | Documentation reconciliation | UPDATED | Current notices supersede conflicting historical schedules without deleting history. |
-| 4 | ZAP triage | TRIAGED | No current exploitable assigned defect validated; CSP/provider-header hardening and untested boundaries remain documented. |
-| 5 | Backup/recovery | METADATA VERIFIED; RESTORE UNTESTED | Eight completed provider backups; no isolated restore proof, independent-copy proof, or measured RPO/RTO. |
+| 4 | ZAP triage | TRIAGED; CSP RELEASED | PR #42 CSP release supersedes candidate status; provider-header disposition and untested boundaries remain documented. No independent pentest claim. |
+| 5 | Backup/recovery | POSTPONED; RESTORE UNTESTED | Eight completed provider backups; no full isolated database restore proof, independent-copy proof, or measured RPO/RTO. Owner's November 8 postponement controls. |
 
 ### Current Postponements
 
