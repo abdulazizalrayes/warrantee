@@ -43,7 +43,7 @@ describe("operational hardening", () => {
 
     expect(nextConfig).toContain('key: "Content-Security-Policy"');
     expect(nextConfig).not.toContain("Content-Security-Policy-Report-Only");
-    expect(nextConfig).toContain("https://static.cloudflareinsights.com");
+    expect(readProjectFile("src/lib/csp-policy.mjs")).toContain("https://static.cloudflareinsights.com");
     expect(readiness).toContain('"content-security-policy"');
     expect(readiness).toContain('csp: "enforced"');
     expect(proxy).toContain("hasSupabaseClientConfig");

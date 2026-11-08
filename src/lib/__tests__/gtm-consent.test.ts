@@ -1,5 +1,6 @@
 import { runInNewContext } from "node:vm";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { buildGtmBootstrap } from "../analytics-bootstrap.mjs";
 
 vi.mock("next/script", () => ({ default: () => null }));
 
@@ -13,7 +14,9 @@ describe("GTM consent bootstrap", () => {
     vi.stubEnv("NEXT_PUBLIC_GTM_ID", "GTM-WFLBH83M");
     const { default: GoogleTagManager } = await import("../../components/GoogleTagManager");
     const element = GoogleTagManager()!;
-    const source = element.props.children[0].props.children;
+    expect(element.props.children[0].props.src).toBe("/agent-bootstrap/analytics/gtm.js");
+    expect(element.props.children[0].props.children).toBeUndefined();
+    const source = buildGtmBootstrap("GTM-WFLBH83M");
     const insertBefore = vi.fn();
     const listeners: Record<string, () => void> = {};
     const storage = { value: saved };

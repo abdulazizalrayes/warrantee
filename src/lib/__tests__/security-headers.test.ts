@@ -13,7 +13,7 @@ describe("application security headers", () => {
     }));
     expect(directives.get("script-src-attr")).toBe("'none'");
     expect(directives.get("script-src")).toContain("'self'");
-    expect(directives.get("script-src")).toContain("'unsafe-inline'");
+    expect(directives.get("script-src")).not.toContain("'unsafe-inline'");
     expect(directives.get("script-src")).not.toContain("'unsafe-hashes'");
     expect(directives.get("object-src")).toBe("'none'");
     expect(directives.get("frame-ancestors")).toBe("'none'");

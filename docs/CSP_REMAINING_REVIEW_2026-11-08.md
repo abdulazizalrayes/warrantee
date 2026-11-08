@@ -1,5 +1,7 @@
 # Remaining CSP and provider-header review
 
+Implementation update: the candidate described in `docs/CSP_ENFORCEMENT_2026-11-08.md` supersedes the earlier inventory-only status below. Deployment and release verification must be recorded separately; the historical review is not current release proof.
+
 Warrantee only. This is not a new production deployment or a completed strict-CSP migration.
 
 ## Provider-header disposition

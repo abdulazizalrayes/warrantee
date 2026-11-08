@@ -11,6 +11,8 @@ const config = [
       "node_modules/**",
       "playwright-report/**",
       "test-results/**",
+      "public/web-mcp.js",
+      "public/agent-bootstrap/**",
       "supabase/.temp/**",
       "supabase/migrations 2/**",
       "tests/e2e 2/**",
