@@ -3,6 +3,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join, relative } from "node:path";
 import { pathToFileURL } from "node:url";
 import { load } from "cheerio";
+import { trustedInlineStyleHashes } from "./csp-finalize-build.mjs";
 
 export function inspectHtml(html) {
   const $ = load(html);
@@ -19,7 +20,7 @@ export function inspectHtml(html) {
       if (/^on[a-z]+$/i.test(name)) eventAttributes++;
     }
   });
-  return { hashes: [...hashes].sort(), styleAttributes, eventAttributes };
+  return { hashes: [...hashes].sort(), styleHashes: trustedInlineStyleHashes(html), styleAttributes, eventAttributes };
 }
 
 export function auditBuild(root = ".next/server/app") {

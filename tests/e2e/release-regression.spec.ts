@@ -36,11 +36,13 @@ type SemanticAudit = {
 };
 
 async function settleLayout(page: Page) {
-  await page.addStyleTag({
-    content: "*,*::before,*::after{animation-duration:0s!important;animation-delay:0s!important;transition-duration:0s!important;scroll-behavior:auto!important}",
-  });
+  await page.emulateMedia({ reducedMotion: "reduce" });
   await page.evaluate(async () => {
     await document.fonts?.ready;
+    for (const animation of document.getAnimations()) {
+      if (animation.effect?.getComputedTiming().iterations === Infinity) animation.cancel();
+      else animation.finish();
+    }
     window.scrollTo(0, 0);
   });
 }

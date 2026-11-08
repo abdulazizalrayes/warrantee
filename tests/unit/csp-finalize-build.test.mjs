@@ -7,12 +7,13 @@ import path from "node:path";
 import { createServer } from "node:net";
 import { afterEach, describe, expect, it } from "vitest";
 import { finalizeBuild, inlineHashes } from "../../scripts/csp-finalize-build.mjs";
+import { documentCspHeaderSource, trustedStyleHashes } from "../../src/lib/csp-styles.mjs";
 
 const dirs = [];
 const temp = () => { const dir = mkdtempSync(path.join(tmpdir(), "warrantee-csp-")); dirs.push(dir); return dir; };
 const json = (file) => JSON.parse(readFileSync(file, "utf8"));
 const put = (root, file, value) => { mkdirSync(path.dirname(path.join(root, file)), { recursive: true }); writeFileSync(path.join(root, file), typeof value === "string" ? value : JSON.stringify(value)); };
-const policy = "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com; script-src-attr 'none'; style-src 'self' 'unsafe-inline'";
+const policy = `default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; style-src-attr 'unsafe-inline'; style-src-elem 'self' ${trustedStyleHashes.join(" ")}`;
 const { getRouteCacheKey } = createRequire(import.meta.url)("next/dist/server/lib/route-cache-key");
 function fixture() {
   const root = path.join(temp(), ".next");
@@ -28,6 +29,21 @@ function fixture() {
 afterEach(() => { for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true }); });
 
 describe("final-build CSP binding", () => {
+  it("binds reviewed final styles, preserves HTML and refuses unknown style elements", () => {
+    const root = fixture();
+    const manifest = json(path.join(root, "routes-manifest.json"));
+    put(root, "routes-manifest.json", manifest);
+    const html = '<div style="width:33%"></div><style>@keyframes spin { to { transform: rotate(360deg); } }</style>';
+    put(root, "server/app/index.html", html);
+    const result = finalizeBuild(root);
+    expect(readFileSync(path.join(root, "server/app/index.html"), "utf8")).toBe(html);
+    const proof = json(path.join(root, "csp-finalization.json"));
+    expect(proof.binding.html.find(r => r.route === "/").styleHashes).toEqual([trustedStyleHashes[2]]);
+    expect(json(result.artifactPath).routes["/"].policy).toContain(trustedStyleHashes[2]);
+    expect(finalizeBuild(root, { check: true }).checked).toBe(true);
+    put(root, "server/app/index.html", html + "<style>body{display:none}</style>");
+    expect(() => finalizeBuild(root, { check: true })).toThrow("Unreviewed");
+  });
   it("hashes original script text through a structured parser, preserving entities and normalizing newlines", () => {
     const source = "\nwindow.a='&amp;';\n";
     expect(inlineHashes(`<script>${source.replaceAll("\n", "\r\n")}</script><script src='/x'></script>`)).toEqual([
@@ -241,7 +257,11 @@ describe("real Next startup integration", () => {
     put(root, "app/page.js", "export default function Page() { return <><h1>One</h1><script dangerouslySetInnerHTML={{__html:'window.one=1;'}} /></> }");
     put(root, "app/two/page.js", "export default function Page() { return <><h1>Two</h1><script dangerouslySetInnerHTML={{__html:'window.two=2;'}} /></> }");
     put(root, "app/catalog/[slug]/page.js", "export function generateStaticParams(){ return [{slug:'a b'},{slug:'c+d'},{slug:'عربي'}] } export default function Page(){return <h1>Encoded route</h1>}");
-    put(root, "next.config.mjs", `export default { async headers() { return [{source:'/:path*', headers:[{key:'Content-Security-Policy',value:${JSON.stringify(policy)}}]}] } }`);
+    const certificatePaths = ["/api/certificates/generate", "/api/warranties/fixture/certificate", "/api/v1/warranties/verify/fixture/certificate"];
+    for (const route of certificatePaths) {
+      put(root, `app${route}/route.js`, `import { randomBytes } from 'node:crypto'; export const dynamic='force-dynamic'; export async function GET(){const nonce=randomBytes(24).toString('base64');return new Response('<style nonce="'+nonce+'">body{color:green}</style>',{headers:{'Content-Type':'text/html','Cache-Control':'no-store','Content-Security-Policy':"default-src 'none'; style-src-attr 'unsafe-inline'; style-src-elem 'nonce-"+nonce+"'"}})}`);
+    }
+    put(root, "next.config.mjs", `export default { async headers() { return [{source:${JSON.stringify(documentCspHeaderSource)}, headers:[{key:'Content-Security-Policy',value:${JSON.stringify(policy)}}]}] } }`);
     const cli = path.resolve("node_modules/next/dist/bin/next");
     const env = { PATH: process.env.PATH, HOME: root, NODE_ENV: "production", NEXT_TELEMETRY_DISABLED: "1", CI: "1" };
     const build = spawnSync(process.execPath, [cli, "build", "--webpack"], { cwd: root, env, encoding: "utf8", timeout: 120000 });
@@ -263,6 +283,17 @@ describe("real Next startup integration", () => {
       }
       expect(ready, logs).toBe(true);
       const rules = json(path.join(dist, "routes-manifest.json")).headers;
+      for (const route of certificatePaths) {
+        const response = await fetch(`http://127.0.0.1:${port}${route}`);
+        const csp = response.headers.get("content-security-policy");
+        const nonce = csp.match(/'nonce-([^']+)'/)[1];
+        expect(response.status).toBe(200);
+        expect(csp).toBe(`default-src 'none'; style-src-attr 'unsafe-inline'; style-src-elem 'nonce-${nonce}'`);
+        expect(await response.text()).toContain(`<style nonce="${nonce}">`);
+        expect(response.headers.get("cache-control")).toContain("no-store");
+        const again = await fetch(`http://127.0.0.1:${port}${route}`);
+        expect(again.headers.get("content-security-policy")).not.toBe(csp);
+      }
       for (const route of ["/", "/two", "/catalog/a%20b", "/catalog/c%2Bd", "/catalog/%D8%B9%D8%B1%D8%A8%D9%8A"]) {
         const response = await fetch(`http://127.0.0.1:${port}${route}`);
         const expected = rules.findLast((rule) => new RegExp(rule.regex).test(route)).headers[0].value;

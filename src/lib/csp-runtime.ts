@@ -35,6 +35,7 @@ export function getDocumentCsp(pathname: string, basePolicy: string) {
   }
   const policy = basePolicy.split(";").map((part) => {
     const directive = part.trim();
+    if (directive.startsWith("style-src-elem ")) return `${directive} 'nonce-${nonce}'`;
     if (!directive.startsWith("script-src ")) return directive;
     const sources = directive.split(/\s+/).filter((source) => source !== "'unsafe-inline'");
     return [...sources, `'nonce-${nonce}'`, ...hashes].join(" ");

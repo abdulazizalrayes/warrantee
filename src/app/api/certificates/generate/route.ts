@@ -6,6 +6,9 @@ import { resolveWarrantyAccessOrClause } from "@/lib/warranty-access";
 import { escapeHtml } from "@/lib/html-escape";
 import { certificateRateLimit, getClientIp, getRateLimitHeaders } from "@/lib/rate-limit";
 import { isValidUUID } from "@/lib/validation";
+import { createCertificateStyleCsp, withCertificateCsp } from "@/lib/certificate-style-csp";
+
+export const POST = withCertificateCsp(handlePost);
 
 function getSupabaseAdmin() {
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
@@ -24,7 +27,7 @@ function generateCertificateNumber(): string {
   return prefix + "-" + timestamp + "-" + random;
 }
 
-function generateCertificateHTML(warranty: any, company: any, locale: string = "en"): string {
+function generateCertificateHTML(warranty: any, company: any, locale: string, styleNonce: string): string {
   const safeLocale = locale === "ar" ? "ar" : "en";
   const isAr = safeLocale === "ar";
   const dir = isAr ? "rtl" : "ltr";
@@ -70,7 +73,7 @@ function generateCertificateHTML(warranty: any, company: any, locale: string = "
     '<html dir="' + dir + '" lang="' + lang + '">',
     "<head>",
     '<meta charset="UTF-8">',
-    "<style>",
+    `<style nonce="${styleNonce}">`,
     "* { margin: 0; padding: 0; box-sizing: border-box; }",
     "body { font-family: " + fontFamily + ", sans-serif; background: #f8f9fa; padding: 40px; direction: " + dir + "; }",
     ".certificate { max-width: 800px; margin: 0 auto; background: white; border: 3px solid #1A1A2E; border-radius: 12px; padding: 48px; position: relative; overflow: hidden; }",
@@ -133,7 +136,7 @@ function generateCertificateHTML(warranty: any, company: any, locale: string = "
   return parts.join("\n");
 }
 
-export async function POST(request: Request) {
+async function handlePost(request: Request) {
   try {
     const ip = getClientIp(request);
     const supabase = await createSupabaseServerClient();
@@ -182,10 +185,12 @@ export async function POST(request: Request) {
         .eq("id", warrantyId);
     }
 
+    const styleCsp = createCertificateStyleCsp("default-src 'none'; style-src 'unsafe-inline'; sandbox");
     const html = generateCertificateHTML(
       { ...warranty, certificate_number: certNumber },
       warranty.companies,
       safeLocale,
+      styleCsp.nonce,
     );
     const safeFileNumber = encodeURIComponent(String(certNumber));
 
@@ -193,7 +198,8 @@ export async function POST(request: Request) {
       headers: {
         "Content-Type": "text/html; charset=utf-8",
         "Content-Disposition": "inline; filename=\"warranty-certificate-" + safeFileNumber + ".html\"",
-        "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; sandbox",
+        "Content-Security-Policy": styleCsp.policy,
+        "Cache-Control": "private, no-store",
         "X-Content-Type-Options": "nosniff",
       },
     });

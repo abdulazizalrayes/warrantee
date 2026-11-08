@@ -212,6 +212,20 @@ async function validatePage(entry) {
   if (!legacySidecarResponse.headers.get("vary")?.toLowerCase().includes("accept")) {
     fail(entry.pathname, "legacy-sidecar-vary", legacySidecarResponse.headers.get("vary"));
   }
+  for (const [label, response] of [
+    ["markdown-head", markdownHeadResponse],
+    ["direct-sidecar-head", directHead],
+    ["legacy-sidecar", legacySidecarResponse],
+  ]) {
+    if (response.headers.get("access-control-allow-origin") !== "*") {
+      fail(entry.pathname, `${label}-cors`, response.headers.get("access-control-allow-origin"));
+    }
+  }
+  for (const response of [markdownResponse, markdownHeadResponse, directResponse, directHead, legacySidecarResponse]) {
+    if (response.headers.has("access-control-allow-credentials")) {
+      fail(entry.pathname, "public-cors-credentials", response.headers.get("access-control-allow-credentials"));
+    }
+  }
 
   measurements.push({ htmlBytes: Buffer.byteLength(html), markdownBytes: Buffer.byteLength(markdown) });
 }

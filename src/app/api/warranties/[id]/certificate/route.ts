@@ -3,8 +3,12 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { resolveWarrantyAccessOrClause } from "@/lib/warranty-access";
 import { escapeHtml } from "@/lib/html-escape";
 import QRCode from "qrcode";
+import { createCertificateStyleCsp, withCertificateCsp } from "@/lib/certificate-style-csp";
+import { contentSecurityPolicy } from "@/lib/csp-policy.mjs";
 
-export async function GET(
+export const GET = withCertificateCsp(handleGet);
+
+async function handleGet(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -68,11 +72,13 @@ export async function GET(
   }
 
   // Default: HTML
-  const html = await buildHtml(warranty_data, isAr, isActive, verifyUrl, locale);
+  const styleCsp = createCertificateStyleCsp(contentSecurityPolicy);
+  const html = await buildHtml(warranty_data, isAr, isActive, verifyUrl, locale, styleCsp.nonce);
   return new NextResponse(html, {
     headers: {
       "Content-Type": "text/html; charset=utf-8",
       "Cache-Control": "no-store",
+      "Content-Security-Policy": styleCsp.policy,
     },
   });
 }
@@ -266,7 +272,8 @@ async function buildHtml(
   isAr: boolean,
   isActive: boolean,
   verifyUrl: string,
-  locale: string
+  locale: string,
+  styleNonce: string
 ): Promise<string> {
   const productName = escapeHtml(warranty.product_name);
   const referenceNumber = escapeHtml(warranty.reference_number);
@@ -288,7 +295,7 @@ async function buildHtml(
   return `<!DOCTYPE html>
 <html dir="${isAr ? "rtl" : "ltr"}" lang="${locale}">
 <head><meta charset="UTF-8"><title>${isAr ? "شهادة ضمان" : "Warranty Certificate"}</title>
-<style>
+<style nonce="${styleNonce}">
   body { font-family: ${fontFamily}; margin: 0; padding: 40px; background: #fff; color: #1A1A2E; }
   .cert { max-width: 800px; margin: 0 auto; border: 3px solid #4169E1; border-radius: 16px; padding: 40px; }
   .header { text-align: center; border-bottom: 2px solid #e5e7eb; padding-bottom: 24px; margin-bottom: 24px; }
