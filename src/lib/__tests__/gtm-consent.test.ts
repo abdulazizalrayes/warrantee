@@ -10,7 +10,7 @@ describe("GTM consent bootstrap", () => {
     vi.resetModules();
   });
 
-  async function bootstrap(saved: string | null) {
+  async function bootstrap(saved: string | null, options: { writable?: boolean; memoryDenied?: boolean } = {}) {
     vi.stubEnv("NEXT_PUBLIC_GTM_ID", "GTM-WFLBH83M");
     const { default: GoogleTagManager } = await import("../../components/GoogleTagManager");
     const element = GoogleTagManager()!;
@@ -19,11 +19,12 @@ describe("GTM consent bootstrap", () => {
     const source = buildGtmBootstrap("GTM-WFLBH83M", "G-ZQJ4LRG4GN");
     const insertBefore = vi.fn();
     const listeners: Record<string, () => void> = {};
-    const storage = { value: saved };
+    const storage = { value: saved, writable: options.writable ?? true };
     const window = {
       dataLayer: [] as unknown[],
+      __warranteeConsentStorageFailed: options.memoryDenied ?? false,
       location: { pathname: "/en/pricing" },
-      localStorage: { getItem: () => storage.value },
+      localStorage: { getItem: () => storage.value, setItem: (_key: string, value: string) => { if (!storage.writable) throw new Error('Storage read-only'); storage.value = value; } },
       addEventListener: (event: string, callback: () => void) => { listeners[event] = callback; },
     };
     runInNewContext(source, {
@@ -65,5 +66,30 @@ describe("GTM consent bootstrap", () => {
     expect(insertBefore).toHaveBeenCalledOnce();
     expect(window.dataLayer.some((entry) => (entry as { event?: string }).event === "gtm.js")).toBe(true);
     expect(window.dataLayer.some((entry) => (entry as ArrayLike<unknown>)[0] === "config")).toBe(false);
+  });
+
+  it("does not let a readable but unpersistable initial grant authorize GTM", async () => {
+    const { window, insertBefore } = await bootstrap(JSON.stringify({ analytics: true, marketing: true }), { writable: false });
+    expect(insertBefore).not.toHaveBeenCalled();
+    expect(window.__warranteeConsentStorageFailed).toBe(true);
+    expect((window as unknown as Record<string, unknown>)["ga-disable-G-ZQJ4LRG4GN"]).toBe(true);
+  });
+
+  it("requires an explicit successful save and memory clear before recovering, and never reloads GTM", async () => {
+    const granted = JSON.stringify({ analytics: true, marketing: false });
+    const { window, storage, listeners, insertBefore } = await bootstrap(granted);
+    expect(insertBefore).toHaveBeenCalledOnce();
+    window.__warranteeConsentStorageFailed = true;
+    listeners.warrantee_cookie_consent_updated();
+    expect((window as unknown as Record<string, unknown>)["ga-disable-G-ZQJ4LRG4GN"]).toBe(true);
+    listeners.warrantee_cookie_consent_updated();
+    expect(insertBefore).toHaveBeenCalledOnce();
+    storage.writable = true;
+    window.localStorage.setItem("warrantee_cookie_consent", granted);
+    window.__warranteeConsentStorageFailed = false;
+    listeners.warrantee_cookie_consent_updated();
+    listeners.warrantee_cookie_consent_updated();
+    expect((window as unknown as Record<string, unknown>)["ga-disable-G-ZQJ4LRG4GN"]).toBe(false);
+    expect(insertBefore).toHaveBeenCalledOnce();
   });
 });

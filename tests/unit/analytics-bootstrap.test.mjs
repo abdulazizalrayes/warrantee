@@ -7,14 +7,15 @@ import { runInNewContext } from "node:vm";
 import { buildGaBootstrap, buildGtmBootstrap } from "../../src/lib/analytics-bootstrap.mjs";
 import { generateAnalyticsBootstrap } from "../../scripts/generate-analytics-bootstrap.mjs";
 
-function execute(source, saved = null, existingGtag) {
+function execute(source, saved = null, existingGtag, options = {}) {
   const scripts = [];
   const listeners = {};
-  const storage = { value: saved };
+  const storage = { value: saved, writable: options.writable ?? true };
   const window = {
     dataLayer: [],
     gtag: existingGtag,
-    localStorage: { getItem: () => storage.value },
+    __warranteeConsentStorageFailed: options.memoryDenied ?? false,
+    localStorage: { getItem: () => storage.value, setItem: (_key, value) => { if (!storage.writable) throw new Error('Storage read-only'); storage.value = value; } },
     location: { href: "https://warrantee.io/en/pricing?token=private#private", pathname: "/en/pricing" },
     URL,
     history: {
@@ -145,6 +146,58 @@ for (const [name, builder, id] of [
     state.window.localStorage.getItem = () => { throw new Error('Storage unavailable'); };
     state.update();
     assert.equal(state.window['ga-disable-G-ZQJ4LRG4GN'], true);
+    assert.equal(state.scripts.length, 1);
+  });
+
+  test(`${name} does not initially load tags from a grant in read-only storage`, () => {
+    const granted = JSON.stringify({ analytics: true, marketing: true });
+    const state = execute(builder(id), granted, undefined, { writable: false });
+    assert.equal(state.storage.value, granted, 'the old stored grant remains readable');
+    assert.equal(state.window.__warranteeConsentStorageFailed, true);
+    assert.equal(state.window['ga-disable-G-ZQJ4LRG4GN'], true);
+    assert.equal(state.scripts.length, 0);
+    const consent = state.window.dataLayer.filter(command => command[0] === 'consent').at(-1)[2];
+    for (const value of Object.values(consent)) assert.equal(value, 'denied');
+    state.window.history.pushState({}, '', '/ar/pricing');
+    assert.equal(state.window.dataLayer.filter(command => command[0] === 'event').length, 0);
+  });
+
+  test(`${name} keeps memory denial authoritative over a stored grant until explicitly cleared`, () => {
+    const granted = JSON.stringify({ analytics: true, marketing: false });
+    const state = execute(builder(id), granted, undefined, { memoryDenied: true });
+    state.update();
+    state.dispatch('storage', { key: 'warrantee_cookie_consent' });
+    assert.equal(state.scripts.length, 0);
+    assert.equal(state.window['ga-disable-G-ZQJ4LRG4GN'], true);
+    state.window.localStorage.setItem('warrantee_cookie_consent', granted);
+    state.window.__warranteeConsentStorageFailed = false;
+    state.update();
+    state.update();
+    assert.equal(state.window['ga-disable-G-ZQJ4LRG4GN'], false);
+    assert.equal(state.scripts.length, 1);
+  });
+
+  test(`${name} revokes a prior grant on failed persistence and re-enables without duplicate load only after explicit recovery`, () => {
+    const granted = JSON.stringify({ analytics: true, marketing: false });
+    const state = execute(builder(id), granted);
+    assert.equal(state.scripts.length, 1);
+    state.storage.writable = false;
+    state.update();
+    assert.equal(state.storage.value, granted);
+    assert.equal(state.window.__warranteeConsentStorageFailed, true);
+    assert.equal(state.window['ga-disable-G-ZQJ4LRG4GN'], true);
+    state.window.history.pushState({}, '', '/ar/pricing');
+    assert.equal(state.window.dataLayer.filter(command => command[0] === 'event').length, 0);
+    state.storage.writable = true;
+    state.update();
+    assert.equal(state.window['ga-disable-G-ZQJ4LRG4GN'], true, 'writable storage alone cannot clear the memory denial');
+    state.window.localStorage.setItem('warrantee_cookie_consent', granted);
+    state.window.__warranteeConsentStorageFailed = false;
+    state.update();
+    state.update();
+    state.window.history.pushState({}, '', '/en/pricing');
+    assert.equal(state.window['ga-disable-G-ZQJ4LRG4GN'], false);
+    assert.equal(state.window.dataLayer.filter(command => command[0] === 'event' && command[1] === 'page_view').length, 1);
     assert.equal(state.scripts.length, 1);
   });
 }

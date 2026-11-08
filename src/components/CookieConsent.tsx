@@ -24,31 +24,45 @@ export default function CookieConsent() {
   });
 
   useEffect(() => {
-    const saved = localStorage.getItem('warrantee_cookie_consent');
-    const parsed = readStoredCookieConsent(saved);
+    try {
+      const saved = localStorage.getItem('warrantee_cookie_consent');
+      const parsed = readStoredCookieConsent(saved);
 
-    if (!saved) {
-      setShowBanner(true);
-      return;
+      if (!saved) {
+        setShowBanner(true);
+        return;
+      }
+
+      if (!parsed) {
+        localStorage.removeItem('warrantee_cookie_consent');
+        setShowBanner(true);
+        return;
+      }
+
+      setConsent({
+        necessary: true,
+        analytics: parsed.analytics,
+        marketing: parsed.marketing,
+        timestamp: parsed.timestamp || '',
+      });
+    } catch {
+      // Unavailable storage must not crash the page or authorize optional tracking.
+      window.__warranteeConsentStorageFailed = true;
+      window.dispatchEvent(new CustomEvent('warrantee_cookie_consent_updated'));
     }
-
-    if (!parsed) {
-      localStorage.removeItem('warrantee_cookie_consent');
-      setShowBanner(true);
-      return;
-    }
-
-    setConsent({
-      necessary: true,
-      analytics: parsed.analytics,
-      marketing: parsed.marketing,
-      timestamp: parsed.timestamp || '',
-    });
   }, []);
 
   const saveConsent = (state: ConsentState) => {
     const finalState = { ...state, timestamp: new Date().toISOString() };
-    localStorage.setItem('warrantee_cookie_consent', JSON.stringify(finalState));
+    try {
+      localStorage.setItem('warrantee_cookie_consent', JSON.stringify(finalState));
+    } catch {
+      window.__warranteeConsentStorageFailed = true;
+      try { localStorage.removeItem('warrantee_cookie_consent'); } catch { /* Keep the in-memory denial if storage is read-only. */ }
+      window.dispatchEvent(new CustomEvent('warrantee_cookie_consent_updated'));
+      return;
+    }
+    window.__warranteeConsentStorageFailed = false;
     setShowBanner(false);
     if (finalState.analytics && typeof window !== 'undefined' && (window as any).gtag) {
       (window as any).gtag('consent', 'update', {

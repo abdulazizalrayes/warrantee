@@ -5,6 +5,12 @@ export interface StoredCookieConsent {
   timestamp?: string;
 }
 
+declare global {
+  interface Window {
+    __warranteeConsentStorageFailed?: boolean;
+  }
+}
+
 export const defaultCookieConsent: StoredCookieConsent = {
   necessary: true,
   analytics: false,
