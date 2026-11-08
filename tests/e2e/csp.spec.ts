@@ -11,6 +11,10 @@ for (const locale of ["en", "ar"]) {
     expect(scripts).not.toContain("unsafe-inline");
     expect(scripts).not.toContain("nonce-");
     expect(scripts).toContain("sha256-");
+    const styles = policy.split(";").find((part) => part.trim().startsWith("style-src-elem "))!;
+    expect(styles).toContain("'self'");
+    expect(styles).not.toContain("unsafe-inline");
+    expect(policy).toContain("style-src-attr 'unsafe-inline'");
     await page.getByRole("button", { name: locale === "ar" ? "تخصيص" : "Customize", exact: true }).click();
     const toggle = page.getByRole("switch").first();
     const before = await toggle.getAttribute("aria-checked");
@@ -27,9 +31,18 @@ for (const locale of ["en", "ar"]) {
       button.setAttribute("onclick", "window.__warranteeInjectedHandlerExecuted=true");
       document.body.appendChild(button);
       button.click();
+      const target = document.createElement("div");
+      target.id = "csp-style-probe";
+      target.setAttribute("style", "width:37px");
+      document.body.appendChild(target);
+      const style = document.createElement("style");
+      style.textContent = "#csp-style-probe{display:none}";
+      document.head.appendChild(style);
     });
     expect(await page.evaluate(() => (window as unknown as Record<string, unknown>).__warranteeInjectedScriptExecuted)).toBeUndefined();
     expect(await page.evaluate(() => (window as unknown as Record<string, unknown>).__warranteeInjectedHandlerExecuted)).toBeUndefined();
+    await expect(page.locator("#csp-style-probe")).toHaveCSS("display", "block");
+    await expect(page.locator("#csp-style-probe")).toHaveCSS("width", "37px");
   });
 }
 
@@ -44,6 +57,8 @@ test("dynamic passport uses fresh nonces and cannot share cached HTML", async ({
   expect(nonce).not.toBe("attacker-value");
   expect(nonce).not.toBe(extract(second.headers()["content-security-policy"]));
   expect(first.headers()["cache-control"]).toContain("no-store");
+  expect(first.headers()["content-security-policy"]).toContain(`style-src-elem 'self'`);
+  expect(first.headers()["content-security-policy"].split(";").find(part => part.trim().startsWith("style-src-elem "))).toContain(`'nonce-${nonce}'`);
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await page.route("**/api/verify/**", (route) => route.fulfill({ status: 404, contentType: "application/json", body: '{"error":"Not found"}' }));

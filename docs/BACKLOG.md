@@ -1,5 +1,12 @@
 # Warrantee Approved Backlog
 
+## Current Follow-Up - 2026-11-08
+
+- Deployed-bundle GA4 receipt completed after the historical checkpoint below: [PR #43 receipt](https://github.com/abdulazizalrayes/warrantee/pull/43#issuecomment-6720187401). No further real collector event is required by this follow-up.
+- Main CodeQL recovery passed on `856fd38b917e66ef5f41def62a6ba97c1e260d43`, run `42472943388`. OCR alerts #25-#27 were subsequently dismissed as verified fixture-only false positives, with evidence in PR #44. A green scan does not establish exhaustive security.
+- Approved remaining polish: automatic Google privacy/consent verification, standalone Markdown CORS parity, non-visual style-element CSP hardening, and explicit ESM Vitest configuration. Implementation and verification boundaries: `docs/PRIVACY_CORS_CSP_FOLLOWUP_2026-11-08.md`; deployment evidence belongs in the release PR closeout.
+- Preserve every owner postponement, especially database recovery task 5 and tasks 6-10. The new follow-up numbering does not resume these historical tasks.
+
 ## Latest Release Reconciliation - 2026-11-08
 
 Recorded release evidence:

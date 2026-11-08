@@ -18,8 +18,8 @@ export function readStoredCookieConsent(storageValue: string | null): StoredCook
     const parsed = JSON.parse(storageValue) as Partial<StoredCookieConsent>;
     return {
       necessary: true,
-      analytics: Boolean(parsed.analytics),
-      marketing: Boolean(parsed.marketing),
+      analytics: parsed.analytics === true,
+      marketing: parsed.marketing === true,
       timestamp: parsed.timestamp,
     };
   } catch {

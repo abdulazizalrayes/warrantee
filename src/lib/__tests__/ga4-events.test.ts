@@ -55,6 +55,7 @@ describe("browser analytics dispatch", () => {
       },
       dataLayer,
       gtag,
+      localStorage: { getItem: () => JSON.stringify({ analytics: true, marketing: false }) },
     });
     vi.stubGlobal("document", {
       referrer: "",
@@ -168,6 +169,16 @@ describe("browser analytics dispatch", () => {
     );
   });
 
+  it("does not duplicate bootstrap pageviews in direct GA mode", async () => {
+    delete process.env.NEXT_PUBLIC_GTM_ID;
+    process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID = "G-TEST";
+    const { gtag, sendBeacon } = stubAnalyticsGlobals();
+    const { trackPageView } = await import("../ga4-events");
+    trackPageView("home", { locale: "en" });
+    expect(gtag).not.toHaveBeenCalled();
+    expect(sendBeacon).toHaveBeenCalledOnce();
+  });
+
   it("emits a dedicated privacy-safe WhatsApp click event", async () => {
     process.env.NEXT_PUBLIC_GTM_ID = "GTM-TEST";
     const { dataLayer, gtag, sendBeacon } = stubAnalyticsGlobals();
@@ -261,4 +272,18 @@ describe("browser analytics dispatch", () => {
     expect(body.metadata).not.toHaveProperty("page_location");
     expect(body.metadata).not.toHaveProperty("send_to");
   });
+
+  it.each([null, "invalid", JSON.stringify({ analytics: false, marketing: true }), JSON.stringify({ analytics: "false" })])(
+    "does not queue Google events without explicit analytics consent (%s)", async (consent) => {
+      process.env.NEXT_PUBLIC_GTM_ID = "GTM-TEST";
+      process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID = "G-TEST";
+      const { dataLayer, gtag, sendBeacon } = stubAnalyticsGlobals();
+      window.localStorage.getItem = () => consent as string;
+      const { trackFunnelCtaClick } = await import("../ga4-events");
+      trackFunnelCtaClick("pricing_plan_cta", "/en/auth");
+      expect(gtag).not.toHaveBeenCalled();
+      expect(dataLayer).toEqual([]);
+      expect(sendBeacon).toHaveBeenCalledOnce();
+    },
+  );
 });

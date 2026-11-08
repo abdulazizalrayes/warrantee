@@ -49,6 +49,6 @@ describe("external analytics component selection", () => {
     expect(defaultCookieConsent.analytics).toBe(false);
     expect(defaultCookieConsent.marketing).toBe(false);
     expect(buildGaBootstrap("G-ZQJ4LRG4GN")).toContain("analytics: false, marketing: false");
-    expect(buildGtmBootstrap("GTM-WFLBH83M")).toContain("analytics:false,marketing:false");
+    expect(buildGtmBootstrap("GTM-WFLBH83M", "G-ZQJ4LRG4GN")).toContain("analytics:false,marketing:false");
   });
 });

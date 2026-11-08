@@ -1,4 +1,11 @@
-## CURRENT STATUS / SUPERSEDED RECORDS - 2026-11-07
+## CURRENT FOLLOW-UP / SUPERSEDED RECORDS - 2026-11-08
+
+- Current release baseline before this follow-up: main `856fd38b917e66ef5f41def62a6ba97c1e260d43`, Vercel `dpl_7phE2yR62vYr2Jhe2kNUfDQvDngH`. Main CI `42472944096` and CodeQL `42472943388` passed. Three medium OCR alerts were validated as synthetic-test false positives, not repaired production vulnerabilities; [triage evidence](https://github.com/abdulazizalrayes/warrantee/pull/44#issuecomment-6720754173). Open CodeQL alerts were zero at the follow-up checkpoint.
+- The deployed-bundle GA4 receipt is already complete: one owner-authorized QA pricing CTA reached the correct property, with `traffic_class=qa`, count 1. [Receipt evidence](https://github.com/abdulazizalrayes/warrantee/pull/43#issuecomment-6720187401). Do not repeat a real collector event for routine verification.
+- This follow-up covers only automatic Google privacy/consent, standalone Markdown CORS parity, style-element CSP, and the Vite configuration compatibility notice. Source/build checks are not final deployment proof; see `docs/PRIVACY_CORS_CSP_FOLLOWUP_2026-11-08.md` and the release PR closeout for exact verified scope.
+- All owner postponements below remain unchanged. No billing, backup/restore, OCR activation/private corpus, ClamAV, paid pentest, npm publication, paid hosting, growth send, shared CRM, or other-company work is resumed.
+
+## HISTORICAL STATUS - 2026-11-07
 
 `CLAUDE.md` governs. This notice and `docs/BACKLOG.md` supersede conflicting historical status, pricing, priorities, and schedules below without erasing the dated records. Earlier uses of "now", "current", or "production" describe their historical snapshot, not today's live state.
 

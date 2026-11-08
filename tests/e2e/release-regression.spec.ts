@@ -36,19 +36,27 @@ type SemanticAudit = {
 };
 
 async function settleLayout(page: Page) {
-  await page.addStyleTag({
-    content: "*,*::before,*::after{animation-duration:0s!important;animation-delay:0s!important;transition-duration:0s!important;scroll-behavior:auto!important}",
-  });
+  await page.emulateMedia({ reducedMotion: "reduce" });
   await page.evaluate(async () => {
     await document.fonts?.ready;
+    for (const animation of document.getAnimations()) {
+      if (animation.effect?.getComputedTiming().iterations === Infinity) animation.cancel();
+      else animation.finish();
+    }
     window.scrollTo(0, 0);
   });
 }
 
 async function settleResponsiveState(page: Page) {
-  await page.evaluate(() => new Promise<void>((resolve) => {
-    requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
-  }));
+  await page.evaluate(async () => {
+    await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    // Resizing starts sidebar transitions after the initial page stabilization.
+    for (const animation of document.getAnimations()) {
+      if (animation.effect?.getComputedTiming().iterations === Infinity) animation.cancel();
+      else animation.finish();
+    }
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+  });
 }
 
 async function auditSemantics(page: Page): Promise<SemanticAudit> {
@@ -206,6 +214,22 @@ async function attachAudit(testInfo: TestInfo, name: string, value: unknown) {
 test.describe("takeover-grade public release contract", () => {
   test.beforeEach(({}, testInfo) => {
     test.skip(testInfo.project.name !== "chromium", "The width matrix runs once in desktop Chromium.");
+  });
+
+  for (const locale of ["en", "ar"]) test(`${locale} responsive stabilization finishes the real sidebar transition without injected CSS`, async ({ page }) => {
+    await page.setViewportSize({ width: 768, height: 1000 });
+    await expectHealthyPage(page, `/${locale}`);
+    await settleLayout(page);
+    await page.evaluate(() => {
+      const probe = document.createElement("aside");
+      probe.id = "responsive-stability-probe";
+      probe.className = "fixed left-0 w-64 transform transition-transform duration-300 -translate-x-full lg:translate-x-0";
+      document.body.appendChild(probe);
+      return getComputedStyle(probe).transform;
+    });
+    await page.setViewportSize({ width: 1024, height: 1000 });
+    await settleResponsiveState(page);
+    expect(await page.locator("#responsive-stability-probe").evaluate(element => element.getBoundingClientRect().left)).toBeGreaterThanOrEqual(-1);
   });
 
   for (const path of publicPaths) {

@@ -953,10 +953,12 @@
       "layer": "integrations",
       "kind": "analytics",
       "status": "active",
-      "responsibility": "Consent-aware measurement with event-specific custom-payload allowlists, categorical paths, and independently sanitized server funnel records. Automatic GTM collection is a separate verification boundary.",
+      "responsibility": "Strict analytics-consent opt-in with Google opt-out on withdrawal, shared canonical path/origin-only referrer sanitizers, single-owner sanitized SPA pageviews, and independently sanitized server funnel records. Published GTM and GA4 stream configuration remain external verification boundaries; enhanced history/search/link/form/video/download collection must stay disabled.",
       "code_refs": [
         "src/lib/ga4-events.ts",
         "src/lib/analytics-payload.ts",
+        "src/lib/analytics-context.mjs",
+        "src/lib/analytics-bootstrap.mjs",
         "src/app/api/funnel/events/route.ts",
         "src/components/PageViewTracker.tsx"
       ]
@@ -2693,11 +2695,13 @@
     },
     {
       "name": "Browser hardening",
-      "implementation": "HSTS, final-build per-route script hashes for static HTML, per-request script nonces for dynamic documents, same-origin generated analytics/WebMCP bootstraps, frame denial, no-sniff, strict referrer policy, permissions policy, and protected noindex behavior. The private CSP manifest must be finalized and packaged with Proxy before release.",
+      "implementation": "HSTS, final-build per-route script hashes for static HTML, reviewed style-element hashes and dynamic nonces, same-origin generated analytics/WebMCP bootstraps, frame denial, no-sniff, strict referrer policy, permissions policy, and protected noindex behavior. Existing inline style attributes remain explicitly allowed for layout compatibility. The private CSP manifest must be finalized and packaged with Proxy before release.",
       "code_refs": [
         "next.config.ts",
         "src/proxy.ts",
         "src/lib/csp-runtime.ts",
+        "src/lib/csp-styles.mjs",
+        "src/lib/certificate-style-csp.ts",
         "scripts/csp-finalize-build.mjs",
         "scripts/check-csp-package.mjs"
       ]

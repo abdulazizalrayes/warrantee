@@ -2,6 +2,7 @@
 // Usage: import { trackSignup, trackUpgrade, trackClaim } from "@/lib/ga4-events";
 
 import { getBrowserTrafficClass } from "@/lib/traffic-classification";
+import { readStoredCookieConsent } from "@/lib/cookie-consent";
 import {
   sanitizeAnalyticsPath,
   sanitizeAnalyticsPayload,
@@ -113,7 +114,12 @@ function emitEvent(event: string, payload: Record<string, unknown>) {
     page_referrer: sanitizeAnalyticsReferrer(typeof document === "undefined" ? null : document.referrer) || "",
   };
 
-  if (process.env.NEXT_PUBLIC_GTM_ID) {
+  let analyticsAllowed = false;
+  try {
+    analyticsAllowed = typeof window !== "undefined" && readStoredCookieConsent(window.localStorage.getItem("warrantee_cookie_consent"))?.analytics === true;
+  } catch { /* Unavailable storage must not authorize external collection. */ }
+
+  if (analyticsAllowed && process.env.NEXT_PUBLIC_GTM_ID) {
     pushDataLayer(event, classifiedPayload);
     if (event !== "page_view" && !gtmForwardedEvents.has(event)) {
       // GTM's Google tag does not configure gtag's default destination group.
@@ -124,7 +130,8 @@ function emitEvent(event: string, payload: Record<string, unknown>) {
           : {}),
       });
     }
-  } else if (process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID) {
+  } else if (analyticsAllowed && process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID && event !== "page_view") {
+    // The bootstrap owns initial and sanitized SPA pageviews in both modes.
     gtag("event", event, directPayload);
   }
 

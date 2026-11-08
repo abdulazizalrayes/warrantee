@@ -32,6 +32,14 @@ describe("final-build document CSP", () => {
     const { getDocumentCsp } = await import("../csp-runtime");
     expect(() => getDocumentCsp("/en", base)).toThrow("unavailable");
   });
+  it("authorizes dynamic style elements with the same request nonce, preserving attributes", async () => {
+    setup();
+    const { getDocumentCsp } = await import("../csp-runtime");
+    const result = getDocumentCsp("/en/admin/login", `${base}; style-src-elem 'self'; style-src-attr 'unsafe-inline'`);
+    expect(result.policy).toContain(`style-src-elem 'self' 'nonce-${result.nonce}'`);
+    expect(result.policy).toContain("style-src-attr 'unsafe-inline'");
+    expect(result.policy).toContain(`script-src 'self' 'nonce-${result.nonce}'`);
+  });
   it("does not treat inherited object keys as static routes", async () => {
     setup();
     const { getDocumentCsp } = await import("../csp-runtime");

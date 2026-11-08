@@ -4,6 +4,9 @@ import QRCode from "qrcode";
 import { escapeHtml } from "@/lib/html-escape";
 import { getClientIp, getRateLimitHeaders, publicLookupRateLimit } from "@/lib/rate-limit";
 import { maskPublicSerialNumber, PUBLIC_WARRANTY_STATUSES } from "@/lib/public-warranty";
+import { createCertificateStyleCsp, withCertificateCsp } from "@/lib/certificate-style-csp";
+
+export const GET = withCertificateCsp(handleGet);
 
 const VERIFICATION_SELECT =
   "id, reference_number, product_name, product_name_ar, serial_number, status, start_date, end_date, category, seller_name, created_at";
@@ -64,7 +67,7 @@ function resolveLocale(request: NextRequest) {
   return requestedLocale === "ar" ? "ar" : "en";
 }
 
-export async function GET(
+async function handleGet(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -128,13 +131,14 @@ export async function GET(
     ? "'IBM Plex Sans Arabic', 'Noto Sans Arabic', Tahoma, sans-serif"
     : "Arial, Helvetica, sans-serif";
 
+  const styleCsp = createCertificateStyleCsp("default-src 'none'; img-src data:; style-src 'unsafe-inline'; base-uri 'none'; frame-ancestors 'none'");
   const html = `<!DOCTYPE html>
 <html dir="${isAr ? "rtl" : "ltr"}" lang="${locale}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>${isAr ? "شهادة ضمان موثقة" : "Verified Warranty Certificate"}</title>
-  <style>
+  <style nonce="${styleCsp.nonce}">
     * { box-sizing: border-box; }
     body { margin: 0; padding: 32px; background: #fbfbfd; color: #1d1d1f; font-family: ${fontFamily}; }
     .certificate { max-width: 840px; margin: 0 auto; background: #fff; border: 1px solid rgba(0,0,0,.08); border-radius: 18px; padding: 40px; box-shadow: 0 18px 60px rgba(0,0,0,.08); }
@@ -201,7 +205,7 @@ export async function GET(
       "Content-Type": "text/html; charset=utf-8",
       "Cache-Control": "no-store",
       "Content-Disposition": `inline; filename="warranty-${data.id}-certificate.html"`,
-      "Content-Security-Policy": "default-src 'none'; img-src data:; style-src 'unsafe-inline'; base-uri 'none'; frame-ancestors 'none'",
+      "Content-Security-Policy": styleCsp.policy,
       "Referrer-Policy": "no-referrer",
       "X-Content-Type-Options": "nosniff",
       "X-Robots-Tag": "noindex",

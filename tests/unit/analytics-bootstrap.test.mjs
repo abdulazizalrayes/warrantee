@@ -15,10 +15,16 @@ function execute(source, saved = null, existingGtag) {
     dataLayer: [],
     gtag: existingGtag,
     localStorage: { getItem: () => storage.value },
-    location: { href: "https://warrantee.io/en/pricing" },
+    location: { href: "https://warrantee.io/en/pricing?token=private#private", pathname: "/en/pricing" },
+    URL,
+    history: {
+      pushState(_state, _unused, value) { window.location.pathname = new URL(value, window.location.href).pathname; return 'preserved'; },
+      replaceState(_state, _unused, value) { window.location.pathname = new URL(value, window.location.href).pathname; },
+    },
     addEventListener: (name, callback) => { listeners[name] = callback; },
     document: {
       title: "Pricing",
+      referrer: "https://reference.example.invalid/private?email=private@example.invalid",
       createElement: () => ({}),
       head: { appendChild: (script) => scripts.push(script) },
       getElementsByTagName: () => [{ parentNode: { insertBefore: (script) => scripts.push(script) } }],
@@ -26,12 +32,12 @@ function execute(source, saved = null, existingGtag) {
   };
   window.window = window;
   runInNewContext(source, window);
-  return { window, scripts, storage, update: () => listeners.warrantee_cookie_consent_updated() };
+  return { window, scripts, storage, update: () => listeners.warrantee_cookie_consent_updated(), dispatch: (name, event) => listeners[name](event) };
 }
 
 for (const [name, builder, id] of [
   ["GA", buildGaBootstrap, "G-ZQJ4LRG4GN"],
-  ["GTM", buildGtmBootstrap, "GTM-WFLBH83M"],
+  ["GTM", (id) => buildGtmBootstrap(id, "G-ZQJ4LRG4GN"), "GTM-WFLBH83M"],
 ]) {
   test(`${name} rejects unsafe and wrong-kind identifiers`, () => {
     for (const value of [undefined, null, "", "G-ABC';alert(1)//", "GTM-X</script>", "G-X\n", " GTM-X", "GTM-abc", "GT-X", "G-X?secret=value"]) {
@@ -42,15 +48,17 @@ for (const [name, builder, id] of [
   });
 
   test(`${name} defaults denied and preserves one-time loading and withdrawal`, () => {
-    for (const saved of [null, "malformed", JSON.stringify({ analytics: false, marketing: false })]) {
+    for (const saved of [null, "null", "[]", "malformed", JSON.stringify({ analytics: false, marketing: false })]) {
       const state = execute(builder(id), saved);
       assert.equal(state.scripts.length, 0);
-      assert.equal(state.window.dataLayer[0][0], "consent");
-      assert.equal(state.window.dataLayer[0][1], "default");
-      assert.equal(state.window.dataLayer[0][2].analytics_storage, "denied");
+      const initial = state.window.dataLayer.find(command => command[0] === "consent");
+      assert.equal(initial[1], "default");
+      assert.equal(initial[2].analytics_storage, "denied");
+      assert.equal(state.window['ga-disable-G-ZQJ4LRG4GN'], true);
       state.storage.value = JSON.stringify({ analytics: true, marketing: false });
       state.update();
       state.update();
+      assert.equal(state.window['ga-disable-G-ZQJ4LRG4GN'], false);
       assert.equal(state.scripts.length, 1);
       assert.equal(state.scripts[0].async, true);
       assert.equal(state.scripts[0].src, name === "GA"
@@ -58,6 +66,7 @@ for (const [name, builder, id] of [
         : `https://www.googletagmanager.com/gtm.js?id=${id}`);
       state.storage.value = JSON.stringify({ analytics: false, marketing: false });
       state.update();
+      assert.equal(state.window['ga-disable-G-ZQJ4LRG4GN'], true);
       assert.equal(state.scripts.length, 1);
       const last = state.window.dataLayer.at(-1);
       assert.equal(last[1], "update");
@@ -67,16 +76,44 @@ for (const [name, builder, id] of [
       if (name === "GA") {
         assert.equal(configs[0][1], id);
         assert.equal(configs[0][2].send_page_view, true);
-        assert.equal(configs[0][2].page_title, "Pricing");
-        assert.equal(configs[0][2].page_location, state.window.location.href);
       }
+      const context = state.window.dataLayer.filter(command => command[0] === "set").at(-1)[1];
+      assert.equal(context.page_location, "https://warrantee.io/en/pricing");
+      assert.equal(context.page_referrer, "https://reference.example.invalid");
+      assert.equal(context.page_title, "Warrantee");
     }
   });
 
-  test(`${name} preserves marketing-only and saved analytics consent behavior`, () => {
-    assert.equal(execute(builder(id), JSON.stringify({ analytics: false, marketing: true })).scripts.length,
-      name === "GTM" ? 1 : 0);
+  test(`${name} requires analytics consent even when marketing consent is present`, () => {
+    assert.equal(execute(builder(id), JSON.stringify({ analytics: false, marketing: true })).scripts.length, 0);
+    assert.equal(execute(builder(id), JSON.stringify({ analytics: "false", marketing: "true" })).scripts.length, 0);
     assert.equal(execute(builder(id), JSON.stringify({ analytics: true, marketing: false })).scripts.length, 1);
+  });
+
+  test(`${name} records only sanitized pathname changes while consent is granted`, () => {
+    const state = execute(builder(id), JSON.stringify({ analytics: true, marketing: false }));
+    const pageviews = () => state.window.dataLayer.filter(command => command[0] === 'event' && command[1] === 'page_view');
+    assert.equal(pageviews().length, 0, 'the Google tag alone owns the initial pageview');
+    assert.equal(state.window.history.pushState({}, '', '/en/pricing?token=secret'), 'preserved');
+    state.dispatch('hashchange');
+    assert.equal(pageviews().length, 0);
+    state.window.history.pushState({}, '', '/ar/pricing?email=secret#secret');
+    assert.equal(pageviews().length, 1);
+    assert.equal(pageviews()[0][2].page_location, 'https://warrantee.io/ar/pricing');
+    assert.equal(pageviews()[0][2].page_referrer, 'https://reference.example.invalid');
+    assert.equal(pageviews()[0][2].send_to, 'G-ZQJ4LRG4GN');
+    state.storage.value = JSON.stringify({ analytics: false });
+    state.update();
+    state.window.history.pushState({}, '', '/en/dashboard/warranties/private-id');
+    state.dispatch('popstate');
+    assert.equal(pageviews().length, 1);
+    state.storage.value = JSON.stringify({ analytics: true });
+    state.update();
+    state.window.history.replaceState({}, '', '/en/dashboard/warranties/another-private-id');
+    assert.equal(pageviews().length, 2);
+    assert.equal(pageviews()[1][2].page_location, 'https://warrantee.io/en/[other]');
+    assert.equal(state.scripts.length, 1);
+    assert.ok(!JSON.stringify(pageviews()).includes('private-id'));
   });
 
   test(`${name} preserves the original global gtag replacement behavior`, () => {
@@ -86,7 +123,37 @@ for (const [name, builder, id] of [
     if (name === "GA") assert.notEqual(actual, existing);
     else assert.equal(actual, existing);
   });
+
+  test(`${name} revalidates cross-tab consent without loading duplicate tags`, () => {
+    const state = execute(builder(id), JSON.stringify({ analytics: true }));
+    state.storage.value = JSON.stringify({ analytics: false });
+    state.dispatch('storage', { key: 'unrelated' });
+    assert.equal(state.window['ga-disable-G-ZQJ4LRG4GN'], false);
+    state.dispatch('storage', { key: 'warrantee_cookie_consent' });
+    assert.equal(state.window['ga-disable-G-ZQJ4LRG4GN'], true);
+    state.storage.value = JSON.stringify({ analytics: true });
+    state.dispatch('storage', { key: 'warrantee_cookie_consent' });
+    assert.equal(state.window['ga-disable-G-ZQJ4LRG4GN'], false);
+    state.storage.value = null;
+    state.dispatch('storage', { key: null });
+    assert.equal(state.window['ga-disable-G-ZQJ4LRG4GN'], true);
+    assert.equal(state.scripts.length, 1);
+  });
+
+  test(`${name} fails closed if consent storage becomes unavailable`, () => {
+    const state = execute(builder(id), JSON.stringify({ analytics: true }));
+    state.window.localStorage.getItem = () => { throw new Error('Storage unavailable'); };
+    state.update();
+    assert.equal(state.window['ga-disable-G-ZQJ4LRG4GN'], true);
+    assert.equal(state.scripts.length, 1);
+  });
 }
+
+test('GTM requires the known GA destination to enforce its opt-out boundary', () => {
+  for (const ga of [undefined, '', 'GTM-ABC', 'G-ABC?private=value']) {
+    assert.throws(() => buildGtmBootstrap('GTM-WFLBH83M', ga), /Invalid public analytics identifier/);
+  }
+});
 
 test("generator writes deterministic public-only artifacts and clears stale enabled output", async () => {
   const outputDirectory = await mkdtemp(join(tmpdir(), "warrantee-analytics-test-"));
@@ -94,7 +161,7 @@ test("generator writes deterministic public-only artifacts and clears stale enab
     const env = { NEXT_PUBLIC_GTM_ID: "GTM-WFLBH83M", NEXT_PUBLIC_GA_MEASUREMENT_ID: "G-ZQJ4LRG4GN", PRIVATE_SECRET: "never-render-this" };
     await generateAnalyticsBootstrap({ env, outputDirectory });
     assert.equal(await readFile(join(outputDirectory, "ga.js"), "utf8"), buildGaBootstrap(env.NEXT_PUBLIC_GA_MEASUREMENT_ID));
-    assert.equal(await readFile(join(outputDirectory, "gtm.js"), "utf8"), buildGtmBootstrap(env.NEXT_PUBLIC_GTM_ID));
+    assert.equal(await readFile(join(outputDirectory, "gtm.js"), "utf8"), buildGtmBootstrap(env.NEXT_PUBLIC_GTM_ID, env.NEXT_PUBLIC_GA_MEASUREMENT_ID));
     await assert.rejects(generateAnalyticsBootstrap({ env: { NEXT_PUBLIC_GA_MEASUREMENT_ID: "G-VALID", NEXT_PUBLIC_GTM_ID: "GTM-X';unsafe" }, outputDirectory }));
     assert.equal(await readFile(join(outputDirectory, "ga.js"), "utf8"), buildGaBootstrap(env.NEXT_PUBLIC_GA_MEASUREMENT_ID));
     await generateAnalyticsBootstrap({ env: {}, outputDirectory });

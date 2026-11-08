@@ -4,6 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
 import { load } from "cheerio";
+import { trustedStyleHashes } from "../src/lib/csp-styles.mjs";
 
 const require = createRequire(import.meta.url);
 const { getRouteCacheKey } = require("next/dist/server/lib/route-cache-key");
@@ -28,7 +29,21 @@ export function inlineHashes(html) {
   return [...hashes].sort();
 }
 
-function policyFor(headers, route, hashes) {
+export function trustedInlineStyleHashes(html) {
+  const $ = load(html, { sourceCodeLocationInfo: true });
+  const hashes = new Set();
+  $("style").each((_, element) => {
+    const location = element.sourceCodeLocation;
+    if (!location?.startTag || !location.endTag) throw new Error("Unterminated style in final HTML");
+    const text = html.slice(location.startTag.endOffset, location.endTag.startOffset).replace(/\r\n?/g, "\n");
+    const hash = `'sha256-${createHash("sha256").update(text).digest("base64")}'`;
+    if (!trustedStyleHashes.includes(hash)) throw new Error("Unreviewed inline style in final HTML");
+    hashes.add(hash);
+  });
+  return [...hashes].sort();
+}
+
+function policyFor(headers, route, hashes, styleHashes = []) {
   let policy;
   for (const rule of headers) {
     if (rule.has?.length || rule.missing?.length) {
@@ -49,6 +64,13 @@ function policyFor(headers, route, hashes) {
     throw new Error("Require one script-src and no overriding script-src-elem");
   }
   const tokens = scripts[0].split(/\s+/).slice(1).filter((s) => s !== "'unsafe-inline'");
+  const styles = directives.filter((s) => /^style-src-elem\s/i.test(s));
+  if (styles.length > 1 || (styles.length && /'unsafe-inline'|'unsafe-eval'|\*/.test(styles[0]))) {
+    throw new Error("Invalid production style element policy");
+  }
+  if (styleHashes.some((hash) => !styles[0]?.split(/\s+/).includes(hash))) {
+    throw new Error("Final style hash is not authorized by the reviewed element policy");
+  }
   if (tokens.includes("'none'") || tokens.some((s) => s.startsWith("'nonce-"))) {
     throw new Error("Nonce/none base policies are unsupported");
   }
@@ -121,9 +143,10 @@ function createFinalized(dist, manifest, baseHeaders) {
     const file = candidates[0];
     const bytes = readFileSync(path.join(server, file));
     const hashes = inlineHashes(new TextDecoder("utf-8", { fatal: true }).decode(bytes));
-    const csp = policyFor(baseHeaders, pathname, hashes);
+    const styleHashes = trustedInlineStyleHashes(new TextDecoder("utf-8", { fatal: true }).decode(bytes));
+    const csp = policyFor(baseHeaders, pathname, hashes, styleHashes);
     if (Buffer.byteLength(csp) > 12000) throw new Error(`Oversize CSP for ${route}`);
-    records.push({ route, pathname, file, sha256: digest(bytes), hashes, csp });
+    records.push({ route, pathname, file, sha256: digest(bytes), hashes, styleHashes, csp });
   }
   if (!records.length) throw new Error("No immutable HTML routes found");
   const covered = new Set(records.map((r) => r.file));
@@ -134,7 +157,8 @@ function createFinalized(dist, manifest, baseHeaders) {
     const bytes = readFileSync(file);
     const route = `/${status}`;
     const hashes = inlineHashes(new TextDecoder("utf-8", { fatal: true }).decode(bytes));
-    records.push({ route, pathname: route, file: `pages/${status}.html`, sha256: digest(bytes), hashes, csp: policyFor(baseHeaders, route, hashes) });
+    const styleHashes = trustedInlineStyleHashes(new TextDecoder("utf-8", { fatal: true }).decode(bytes));
+    records.push({ route, pathname: route, file: `pages/${status}.html`, sha256: digest(bytes), hashes, styleHashes, csp: policyFor(baseHeaders, route, hashes, styleHashes) });
   }
   const publicRecords = records;
   const generated = publicRecords.map(({ pathname, csp }) => ({
@@ -147,7 +171,7 @@ function createFinalized(dist, manifest, baseHeaders) {
     buildIdSha256: digest(buildId),
     prerenderSha256: digest(prerenderBytes),
     appRoutesSha256: digest(appRoutesBytes),
-    html: records.map(({ route, file, sha256, hashes }) => ({ route, file, sha256, hashes })),
+    html: records.map(({ route, file, sha256, hashes, styleHashes }) => ({ route, file, sha256, hashes, styleHashes })),
     baseHeaders,
     baseManifestSha256: digest(JSON.stringify({ ...manifest, headers: baseHeaders, [marker]: undefined })),
   };

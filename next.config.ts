@@ -3,6 +3,7 @@ import { withSentryConfig } from "@sentry/nextjs/config";
 import { resolve } from "node:path";
 
 import { contentSecurityPolicy } from "./src/lib/csp-policy.mjs";
+import { documentCspHeaderSource } from "./src/lib/csp-styles.mjs";
 
 const nextConfig: NextConfig = {
   ...(process.env.NEXT_ADAPTER_PATH
@@ -105,8 +106,11 @@ const nextConfig: NextConfig = {
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
           { key: "X-XSS-Protection", value: "1; mode=block" },
-          { key: "Content-Security-Policy", value: contentSecurityPolicy },
         ],
+      },
+      {
+        source: documentCspHeaderSource,
+        headers: [{ key: "Content-Security-Policy", value: contentSecurityPolicy }],
       },
       {
         source: "/api/:path*",
@@ -114,6 +118,14 @@ const nextConfig: NextConfig = {
           { key: "Access-Control-Allow-Origin", value: "https://warrantee.io" },
           { key: "Access-Control-Allow-Methods", value: "GET, POST, PUT, DELETE, OPTIONS" },
           { key: "Access-Control-Allow-Headers", value: "Content-Type, Authorization, x-api-key, Idempotency-Key" },
+        ],
+      },
+      {
+        source: "/api/agent-markdown",
+        headers: [
+          // Node response sending preserves configured headers over route-handler headers.
+          { key: "Access-Control-Allow-Origin", value: "*" },
+          { key: "Access-Control-Allow-Methods", value: "GET, HEAD" },
         ],
       },
     ];

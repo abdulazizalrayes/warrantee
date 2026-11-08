@@ -16,21 +16,24 @@ describe("GTM consent bootstrap", () => {
     const element = GoogleTagManager()!;
     expect(element.props.children[0].props.src).toBe("/agent-bootstrap/analytics/gtm.js");
     expect(element.props.children[0].props.children).toBeUndefined();
-    const source = buildGtmBootstrap("GTM-WFLBH83M");
+    const source = buildGtmBootstrap("GTM-WFLBH83M", "G-ZQJ4LRG4GN");
     const insertBefore = vi.fn();
     const listeners: Record<string, () => void> = {};
     const storage = { value: saved };
     const window = {
       dataLayer: [] as unknown[],
+      location: { pathname: "/en/pricing" },
       localStorage: { getItem: () => storage.value },
       addEventListener: (event: string, callback: () => void) => { listeners[event] = callback; },
     };
     runInNewContext(source, {
       window,
       document: {
+        referrer: "https://reference.example.invalid/private?email=redaction@example.invalid",
         getElementsByTagName: () => [{ parentNode: { insertBefore } }],
         createElement: () => ({}),
       },
+      URL,
     });
     return { window, storage, listeners, insertBefore };
   }
@@ -39,7 +42,7 @@ describe("GTM consent bootstrap", () => {
     "does not load GTM without consent (%s)", async (saved) => {
       const { window, insertBefore } = await bootstrap(saved);
       expect(insertBefore).not.toHaveBeenCalled();
-      expect(Array.from(window.dataLayer[0] as ArrayLike<unknown>)).toEqual([
+      expect(Array.from(window.dataLayer.find(entry => (entry as ArrayLike<unknown>)[0] === "consent") as ArrayLike<unknown>)).toEqual([
         "consent", "default", expect.objectContaining({ analytics_storage: "denied" }),
       ]);
     }

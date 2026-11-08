@@ -27,6 +27,11 @@ const patterns = [
 
 const allowlist = [
   {
+    file: ".github/workflows/ci.yml",
+    patterns: new Set(["127.0.0.1"]),
+    reason: "The privacy browser gate starts and probes an isolated CI-only production build, not a published site URL.",
+  },
+  {
     file: "tests/unit/csp-finalize-build.test.mjs",
     patterns: new Set(["127.0.0.1"]),
     reason: "The CSP integration fixture binds and verifies an isolated local Next.js test server only.",
