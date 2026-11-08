@@ -84,7 +84,10 @@ jobs:
         run: npm run qa:agent-markdown:local
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install --with-deps chromium firefox webkit
+
+      - name: Verify CSP event-handler isolation
+        run: npm run qa:security-headers
 
       - name: Create disposable QA identity
         run: npm run qa:user:ensure
