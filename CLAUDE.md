@@ -173,9 +173,13 @@ Use this section only when the user explicitly asks about cloud Paperclip (`ai.e
 
 - Use only the Warrantee Google account `abdulaziz.alrayes@gmail.com` for Warrantee analytics and search operations.
 - GA4 account/property: `Warrantee / Warrantee.io`; measurement ID: `G-ZQJ4LRG4GN`.
-- GTM Web container: `warrantee.io web`; public container ID: `GTM-WFLBH83M`; published version 2 on 2026-08-15.
+- GTM Web container: `warrantee.io web`; public container ID: `GTM-WFLBH83M`; published version 3 observed on 2026-11-08. Verify the live version before changing it.
 - `GTM-N6G95MQL` was an incorrect iOS container and must not be restored to Warrantee production.
 - Browser and server funnel records classify aggregate traffic as `human`, `crawler`, `qa`, or `monitoring`. Do not merge QA, crawler, or monitoring activity into real-user onboarding results.
+- Google collection requires strict `analytics: true`; marketing-only consent is insufficient. Keep the shared sanitized path/referrer context and Google opt-out flag on withdrawal, including cross-tab storage changes.
+- GA4 stream `14231166714` retains page-load and scroll measurement only. Enhanced history, site search, outbound links, form interactions, video engagement, and file downloads were disabled on 2026-11-08 to prevent automatic raw URL/search/form metadata collection. Do not re-enable them without privacy verification.
+- The bootstrap owns initial and sanitized pathname-change Google pageviews. Component pageviews remain first-party funnel signals; do not duplicate them into Google. Keep GTM's initial Google tag as the sole initial pageview owner when GTM is enabled.
+- Verify published Google scripts with all collector requests intercepted and application writes blocked. Do not generate real analytics or form/contact records for routine regression checks.
 
 ## Untrusted External Content
 
