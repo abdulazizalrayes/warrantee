@@ -1,9 +1,13 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs/config";
+import { resolve } from "node:path";
 
 import { contentSecurityPolicy } from "./src/lib/csp-policy.mjs";
 
 const nextConfig: NextConfig = {
+  ...(process.env.NEXT_ADAPTER_PATH
+    ? { adapterPath: resolve("scripts/csp-platform-adapter.mjs") }
+    : {}),
   reactStrictMode: true,
   serverExternalPackages: ["@napi-rs/canvas", "pdfjs-dist", "tesseract.js"],
   outputFileTracingIncludes: {

@@ -10,6 +10,7 @@ Scope: Warrantee / warrantee.io / abdulazizalrayes/warrantee only. Candidate imp
 - Proxy reads a private packaged map, applies static hash policies, and forwards fresh cryptographic nonces to Next.js rendering on dynamic document requests. Incoming nonce/CSP headers are replaced. Dynamic documents are private/no-store; missing or unfinished manifests fail closed with 503.
 - Existing supported locale routes and fixed editorial slugs are prebuilt so cached fallback HTML cannot retain an old request nonce. This changes build strategy, not translation quality or search eligibility. INDEXED_LOCALES, sitemap, canonical/hreflang rules, and beta noindex status are unchanged. Unknown editorial slugs remain 404.
 - The private map is explicitly included in the Node Proxy NFT and validated in Vercel's filePathMap. It is not a public resource. Vercel output keeps finalized HTML bytes unchanged.
+- Hosted adapter builds finalize before Vercel packages the Node Proxy. A delegating adapter preserves the provider hooks, binds the map to that build ID, explicitly includes the finalized private asset, and removes only its obsolete placeholder digest. Both legacy HTML and adapter route-cache output layouts are validated; a failed or incomplete package blocks deployment.
 - Inline style attributes remain allowed for existing layout compatibility. This release does not claim a style-attribute migration, independent pentest, or elimination of all injection risks.
 
 ## Verification Before Publishing
