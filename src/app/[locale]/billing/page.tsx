@@ -159,7 +159,7 @@ export default function BillingPage() {
 
   const handlePlanRequest = (planId: string) => {
     const intent = planId === "enterprise" ? "enterprise" : "professional-access";
-    window.location.href = `/${locale}/contact?intent=${intent}`;
+    router.push(`/${locale}/contact?intent=${intent}`);
   };
 
   const formatDate = (d: string | null) => {

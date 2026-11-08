@@ -2,6 +2,12 @@
 // Usage: import { trackSignup, trackUpgrade, trackClaim } from "@/lib/ga4-events";
 
 import { getBrowserTrafficClass } from "@/lib/traffic-classification";
+import {
+  sanitizeAnalyticsPath,
+  sanitizeAnalyticsPayload,
+  sanitizeAnalyticsReferrer,
+  serverFunnelEvents,
+} from "@/lib/analytics-payload";
 
 declare global {
   interface Window {
@@ -22,21 +28,6 @@ function pushDataLayer(event: string, payload: Record<string, unknown>) {
   }
 }
 
-const serverTrackedEvents = new Set([
-  "page_view",
-  "auth_intent",
-  "funnel_cta_click",
-  "whatsapp_click",
-  "signup_submit",
-  "sign_up",
-  "contact_form_submit",
-  "seller_application_submit",
-  "onboarding_completed",
-  "activation_started",
-  "activation_milestone",
-  "onboarding_template_selected",
-]);
-
 const gtmForwardedEvents = new Set(["whatsapp_click"]);
 
 export const campaignParamKeys = [
@@ -47,18 +38,6 @@ export const campaignParamKeys = [
   "utm_term",
   "ref",
 ] as const;
-
-function sanitizeServerPayload(payload: Record<string, unknown>) {
-  const entries: Array<[string, string | number | boolean | null]> = [];
-  for (const [key, value] of Object.entries(payload)) {
-    if (value === null || typeof value === "boolean" || typeof value === "number") {
-      entries.push([key, value]);
-    } else if (typeof value === "string") {
-      entries.push([key, value.slice(0, 160)]);
-    }
-  }
-  return Object.fromEntries(entries);
-}
 
 export function readCampaignParams() {
   if (typeof window === "undefined") return {};
@@ -96,16 +75,13 @@ export function appendCampaignParams(destination: string) {
 }
 
 function sendServerFunnelEvent(event: string, payload: Record<string, unknown>) {
-  if (typeof window === "undefined" || !serverTrackedEvents.has(event)) return;
+  if (typeof window === "undefined" || !serverFunnelEvents.has(event)) return;
 
   const body = JSON.stringify({
     event,
-    path: window.location.pathname,
-    referrer: document.referrer || null,
-    metadata: sanitizeServerPayload({
-      ...readCampaignParams(),
-      ...payload,
-    }),
+    path: sanitizeAnalyticsPath(window.location.pathname),
+    referrer: sanitizeAnalyticsReferrer(document.referrer),
+    metadata: payload,
   });
 
   try {
@@ -126,9 +102,15 @@ function sendServerFunnelEvent(event: string, payload: Record<string, unknown>) 
 }
 
 function emitEvent(event: string, payload: Record<string, unknown>) {
-  const classifiedPayload = {
+  const classifiedPayload = sanitizeAnalyticsPayload(event, {
+    ...readCampaignParams(),
     ...payload,
-    traffic_class: getBrowserTrafficClass(),
+  }, getBrowserTrafficClass());
+  if (!classifiedPayload) return;
+  const directPayload = {
+    ...classifiedPayload,
+    page_location: `https://warrantee.io${sanitizeAnalyticsPath(typeof window === "undefined" ? null : window.location.pathname) || "/[other]"}`,
+    page_referrer: sanitizeAnalyticsReferrer(typeof document === "undefined" ? null : document.referrer) || "",
   };
 
   if (process.env.NEXT_PUBLIC_GTM_ID) {
@@ -136,14 +118,14 @@ function emitEvent(event: string, payload: Record<string, unknown>) {
     if (event !== "page_view" && !gtmForwardedEvents.has(event)) {
       // GTM's Google tag does not configure gtag's default destination group.
       gtag("event", event, {
-        ...classifiedPayload,
+        ...directPayload,
         ...(process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID
           ? { send_to: process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID }
           : {}),
       });
     }
   } else if (process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID) {
-    gtag("event", event, classifiedPayload);
+    gtag("event", event, directPayload);
   }
 
   sendServerFunnelEvent(event, classifiedPayload);
