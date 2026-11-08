@@ -214,6 +214,7 @@ export default function ReportsPage() {
     if (!hasExportableData) return;
 
     trackReportExport({ locale, source: "reports_hub", report_type: activeReport, time_range: timeRange });
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- Native navigation preserves cookie-authenticated CSV attachment downloads.
     window.location.href = `/api/export?format=csv&type=${exportType}`;
   };
 
