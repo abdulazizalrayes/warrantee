@@ -46,6 +46,7 @@ const pageText = {
       endDate: 'End Date',
     },
     menu: {
+      actions: 'Warranty actions',
       view: 'View Details',
       editDraft: 'Edit Draft',
       deleteDraft: 'Delete Draft',
@@ -84,6 +85,7 @@ const pageText = {
       endDate: '\u062a\u0627\u0631\u064a\u062e \u0627\u0644\u0627\u0646\u062a\u0647\u0627\u0621',
     },
     menu: {
+      actions: '\u0625\u062c\u0631\u0627\u0621\u0627\u062a \u0627\u0644\u0636\u0645\u0627\u0646',
       view: '\u0639\u0631\u0636 \u0627\u0644\u062a\u0641\u0627\u0635\u064a\u0644',
       editDraft: '\u062a\u0639\u062f\u064a\u0644 \u0627\u0644\u0645\u0633\u0648\u062f\u0629',
       deleteDraft: '\u062d\u0630\u0641 \u0627\u0644\u0645\u0633\u0648\u062f\u0629',
@@ -441,6 +443,7 @@ function WarrantiesPageInner() {
                     <td className="py-4 px-6 text-[14px] text-[#86868b]">{formatDate(warranty.end_date || warranty.warranty_end_date)}</td>
                     <td className="py-4 px-6">
                       <button
+                        aria-label={t.menu.actions}
                         onClick={(event) => {
                           event.stopPropagation();
                           setContextMenu({ id: warranty.id, x: event.clientX, y: event.clientY, status: warranty.status });
@@ -474,6 +477,7 @@ function WarrantiesPageInner() {
                     </div>
                   </div>
                   <button
+                    aria-label={t.menu.actions}
                     onClick={(event) => {
                       event.stopPropagation();
                       setContextMenu({ id: warranty.id, x: event.clientX, y: event.clientY, status: warranty.status });
