@@ -1,4 +1,4 @@
-import { existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { closeSync, constants, existsSync, fstatSync, lstatSync, mkdirSync, openSync, readdirSync, readSync, writeFileSync } from "node:fs";
 import { resolve, join } from "node:path";
 import type { Page, TestInfo } from "@playwright/test";
 import publicManifest from "../../src/generated/agent-markdown-pages.json" with { type: "json" };
@@ -67,11 +67,10 @@ export function validateSafeDirectory(directory = evidenceDirectory): boolean {
     const entries = readdirSync(directory);
     if (!entries.includes("summary.json") || entries.length > limits.images + 1) return false;
     for (const name of entries) {
+      if (name !== "summary.json" && !/^public-[0-7]\.png$/.test(name)) return false;
       const file = join(directory, name);
-      const stat = lstatSync(file);
-      if (!stat.isFile() || stat.isSymbolicLink()) return false;
-      if (stat.size > (name === "summary.json" ? limits.jsonBytes : limits.imageBytes)) return false;
-      const bytes = readFileSync(file);
+      const bytes = readBoundedRegularFile(file, name === "summary.json" ? limits.jsonBytes : limits.imageBytes);
+      if (!bytes) return false;
       if (name === "summary.json") {
         if (bytes.length > limits.jsonBytes) return false;
         const data = JSON.parse(bytes.toString());
@@ -87,6 +86,29 @@ export function validateSafeDirectory(directory = evidenceDirectory): boolean {
     }
     return true;
   } catch { return false; }
+}
+
+function readBoundedRegularFile(file: string, maximum: number): Buffer | null {
+  let descriptor: number | undefined;
+  try {
+    if (!constants.O_NOFOLLOW || !constants.O_NONBLOCK) return null;
+    descriptor = openSync(file, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
+    const before = fstatSync(descriptor);
+    if (!before.isFile() || before.size > maximum) return null;
+    const bytes = Buffer.alloc(maximum + 1);
+    let length = 0;
+    while (length < bytes.length) {
+      const count = readSync(descriptor, bytes, length, bytes.length - length, length);
+      if (count === 0) break;
+      length += count;
+    }
+    const after = fstatSync(descriptor);
+    const named = lstatSync(file);
+    if (length > maximum || length !== before.size || before.size !== after.size || before.mtimeMs !== after.mtimeMs
+      || named.isSymbolicLink() || named.dev !== after.dev || named.ino !== after.ino) return null;
+    return bytes.subarray(0, length);
+  } catch { return null; }
+  finally { if (descriptor !== undefined) closeSync(descriptor); }
 }
 
 function validNumber(value: unknown): boolean { return typeof value === "number" && Number.isInteger(value) && value >= 0 && value <= 100000; }

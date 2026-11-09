@@ -1,12 +1,24 @@
-import { describe, expect, it } from "vitest";
-import { mkdtempSync, readFileSync, readdirSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { appendFileSync, mkdtempSync, readFileSync, readdirSync, renameSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { basename, dirname, join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import type { Page, TestInfo } from "@playwright/test";
 import type { TestCase, TestResult } from "@playwright/test/reporter";
 import SafeEvidenceReporter from "../e2e/safe-evidence-reporter";
 import { captureSafePublicFailure, isBoundedPng, isSafePublicUrl, limits, numericAudit, routeAlias, validateSafeDirectory, writeSafeImage } from "../e2e/safe-evidence";
+
+const reads = vi.hoisted(() => ({ before: undefined as undefined | (() => void), observed: undefined as undefined | ((bytes: Buffer) => void) }));
+vi.mock("node:fs", async importOriginal => {
+  const actual = await importOriginal<typeof import("node:fs")>();
+  return { ...actual, readSync(descriptor: number, buffer: Buffer, offset: number, length: number, position: number) {
+    reads.before?.();
+    const count = actual.readSync(descriptor, buffer, offset, length, position);
+    reads.observed?.(buffer.subarray(offset, offset + count));
+    return count;
+  } };
+});
+afterEach(() => { reads.before = undefined; reads.observed = undefined; });
 
 const marker = "PRIVATE-marker@example.invalid?token=secret";
 const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScLttAAAAABJRU5ErkJggg==", "base64");
@@ -16,6 +28,45 @@ function temporary(run: (directory: string) => void) {
 }
 
 describe("safe QA evidence", () => {
+  it("reads the opened descriptor and rejects a pathname swapped during the read", () => temporary(directory => {
+    const summary = JSON.stringify({ counts: { passed: 0, failed: 1, flaky: 0, skipped: 0 }, records: [], globalErrors: 0, runStatus: "failed" });
+    const target = join(directory, "summary.json");
+    const outside = join(dirname(directory), `${basename(directory)}-private.txt`);
+    writeFileSync(target, summary);
+    writeFileSync(outside, marker);
+    let swapped = false;
+    const observed: Buffer[] = [];
+    reads.observed = bytes => observed.push(Buffer.from(bytes));
+    reads.before = () => {
+      reads.before = undefined;
+      renameSync(target, join(directory, "opened.json"));
+      symlinkSync(outside, target);
+      swapped = true;
+    };
+    try {
+      expect(validateSafeDirectory(directory)).toBe(false);
+      expect(swapped).toBe(true);
+      expect(Buffer.concat(observed).toString()).toBe(summary);
+      expect(Buffer.concat(observed).toString()).not.toContain(marker);
+    } finally { rmSync(outside, { force: true }); }
+  }));
+
+  it("bounds a regular file that grows after its descriptor metadata check", () => temporary(directory => {
+    const target = join(directory, "summary.json");
+    writeFileSync(target, "{}");
+    let bytesRead = 0;
+    reads.observed = bytes => { bytesRead += bytes.length; };
+    reads.before = () => { reads.before = undefined; appendFileSync(target, Buffer.alloc(limits.jsonBytes * 2)); };
+    expect(validateSafeDirectory(directory)).toBe(false);
+    expect(bytesRead).toBe(limits.jsonBytes + 1);
+  }));
+
+  it("accepts valid JSON exactly at the published byte cap", () => temporary(directory => {
+    const summary = JSON.stringify({ counts: { passed: 0, failed: 1, flaky: 0, skipped: 0 }, records: [], globalErrors: 0, runStatus: "failed" });
+    writeFileSync(join(directory, "summary.json"), summary.padEnd(limits.jsonBytes));
+    expect(validateSafeDirectory(directory)).toBe(true);
+  }));
+
   it.each(["en", "ar"])("keeps only numeric semantic counts for a registered %s protected route", locale => {
     const reporter = new SafeEvidenceReporter();
     reporter.onTestEnd({
@@ -151,16 +202,17 @@ describe("safe QA evidence", () => {
   it("real Playwright retry-pass exits 1 and reporter never emits raw evidence", () => temporary(directory => {
     const reporter = resolve("tests/e2e/safe-evidence-reporter.ts");
     const playwright = resolve("node_modules/@playwright/test/index.mjs");
-    writeFileSync(join(directory, "playwright.config.ts"), `export default { testDir: '.', retries: 2, failOnFlakyTests: true, workers: 1, projects:[{name:${JSON.stringify(marker)}}], reporter: [[${JSON.stringify(reporter)}]] };`);
+    writeFileSync(join(directory, "playwright.config.ts"), `export default { testDir: '.', retries: 2, failOnFlakyTests: true, workers: 1, projects:[{name:process.env.WARRANTEE_EVIDENCE_MARKER}], reporter: [[${JSON.stringify(reporter)}]] };`);
     writeFileSync(join(directory, "control.spec.ts"), `import { test, expect } from ${JSON.stringify(playwright)};
-      test(${JSON.stringify(marker)}, async ({}, info) => {
-        console.log(${JSON.stringify(marker)}); console.error(${JSON.stringify(marker)});
-        await info.attach('semantic-audit', {body: JSON.stringify({duplicateIds:[${JSON.stringify(marker)}],mainCount:1}), contentType:'application/json'});
-        await info.attach('geometry-390', {body: JSON.stringify({outsideViewport:[${JSON.stringify(marker)}],horizontalOverflow:2,private:${JSON.stringify(marker)}}), contentType:'application/json'});
-        await info.attach('browser-errors', {body:${JSON.stringify(marker)},contentType:'text/plain'});
-        expect(info.retry, ${JSON.stringify(marker)}).toBeGreaterThan(0);
+      const marker = process.env.WARRANTEE_EVIDENCE_MARKER;
+      test(marker, async ({}, info) => {
+        console.log(marker); console.error(marker);
+        await info.attach('semantic-audit', {body: JSON.stringify({duplicateIds:[marker],mainCount:1}), contentType:'application/json'});
+        await info.attach('geometry-390', {body: JSON.stringify({outsideViewport:[marker],horizontalOverflow:2,private:marker}), contentType:'application/json'});
+        await info.attach('browser-errors', {body:marker,contentType:'text/plain'});
+        expect(info.retry, marker).toBeGreaterThan(0);
       });`);
-    const result = spawnSync(process.execPath, [resolve("node_modules/@playwright/test/cli.js"), "test", "--config", join(directory, "playwright.config.ts")], { cwd: directory, encoding: "utf8", timeout: 30000, env: { ...process.env, CI: "1" } });
+    const result = spawnSync(process.execPath, [resolve("node_modules/@playwright/test/cli.js"), "test", "--config", join(directory, "playwright.config.ts")], { cwd: directory, encoding: "utf8", timeout: 30000, env: { ...process.env, CI: "1", WARRANTEE_EVIDENCE_MARKER: marker } });
     expect(result.status).toBe(1);
     expect(result.stdout + result.stderr).not.toContain(marker);
     expect(result.stdout).not.toBe("");
@@ -177,9 +229,10 @@ describe("safe QA evidence", () => {
     const reporter = resolve("tests/e2e/safe-evidence-reporter.ts");
     const playwright = resolve("node_modules/@playwright/test/index.mjs");
     writeFileSync(join(directory, "playwright.config.ts"), `export default {testDir:'.',workers:1,reporter:[[${JSON.stringify(reporter)}]]${mode === "setup" ? ",globalSetup:'./setup.ts'" : ""}};`);
-    writeFileSync(join(directory, "control.spec.ts"), mode === "collection" ? `throw new Error(${JSON.stringify(marker)});` : `import {test} from ${JSON.stringify(playwright)}; test('static control',async()=>{});`);
-    if (mode === "setup") writeFileSync(join(directory, "setup.ts"), `export default async function(){throw new Error(${JSON.stringify(marker)});}`);
-    const result = spawnSync(process.execPath, [resolve("node_modules/@playwright/test/cli.js"), "test", "--config", join(directory, "playwright.config.ts")], { cwd: directory, encoding: "utf8", timeout: 30000, env: { ...process.env, CI: "1" } });
+    writeFileSync(join(directory, "control.spec.ts"), mode === "collection" ? "throw new Error(process.env.WARRANTEE_EVIDENCE_MARKER);" : `import {test} from ${JSON.stringify(playwright)}; test('static control',async()=>{});`);
+    if (mode === "setup") writeFileSync(join(directory, "setup.ts"), "export default async function(){throw new Error(process.env.WARRANTEE_EVIDENCE_MARKER);}");
+    const injectedMarker = mode === "setup" ? `${marker}'\"</script>\n\u2028` : marker;
+    const result = spawnSync(process.execPath, [resolve("node_modules/@playwright/test/cli.js"), "test", "--config", join(directory, "playwright.config.ts")], { cwd: directory, encoding: "utf8", timeout: 30000, env: { ...process.env, CI: "1", WARRANTEE_EVIDENCE_MARKER: injectedMarker } });
     expect(result.status).toBe(1);
     expect(result.stdout + result.stderr).not.toContain(marker);
     const output = JSON.parse(result.stdout.trim());
