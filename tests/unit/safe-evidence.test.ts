@@ -4,6 +4,8 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import type { Page, TestInfo } from "@playwright/test";
+import type { TestCase, TestResult } from "@playwright/test/reporter";
+import SafeEvidenceReporter from "../e2e/safe-evidence-reporter";
 import { captureSafePublicFailure, isBoundedPng, isSafePublicUrl, limits, numericAudit, routeAlias, validateSafeDirectory, writeSafeImage } from "../e2e/safe-evidence";
 
 const marker = "PRIVATE-marker@example.invalid?token=secret";
@@ -14,6 +16,25 @@ function temporary(run: (directory: string) => void) {
 }
 
 describe("safe QA evidence", () => {
+  it.each(["en", "ar"])("keeps only numeric semantic counts for a registered %s protected route", locale => {
+    const reporter = new SafeEvidenceReporter();
+    reporter.onTestEnd({
+      title: `/${locale}/warranties ${marker}`, expectedStatus: "passed",
+      location: { file: resolve("tests/e2e/release-regression.spec.ts"), line: 400 },
+      parent: { project: () => ({ name: "chromium" }) },
+    } as unknown as TestCase, {
+      status: "failed", attachments: [{ name: "semantic-audit", contentType: "application/json", body: Buffer.from(JSON.stringify({
+        duplicateIds: [marker], unnamedControls: [marker, marker], unlabelledFields: [], mainCount: 1, h1Count: 1, private: marker,
+      })) }],
+    } as unknown as TestResult);
+    const records = (reporter as unknown as { records: unknown[] }).records;
+    expect(records).toEqual([{
+      file: "release-regression.spec.ts", line: 400, project: "chromium", route: `/${locale}/warranties`,
+      audits: [{ duplicateIds: 1, unnamedControls: 2, unlabelledFields: 0, mainCount: 1, h1Count: 1 }],
+    }]);
+    expect(JSON.stringify(records)).not.toContain(marker);
+  });
+
   it("requires exact canonical allowlisted public URLs", () => {
     expect(isSafePublicUrl("https://warrantee.io/en/pricing", ["/en/pricing"])).toBe(true);
     for (const value of ["https://warrantee.io/en/pricing?token=x", "https://warrantee.io/en/pricing#x", "https://warrantee.io/en/auth", "https://warrantee.io/en/dashboard", "https://evil.invalid/en/pricing", "https://user@warrantee.io/en/pricing", "http://warrantee.io/en/pricing", "https://warrantee.io/en/%70ricing"]) {

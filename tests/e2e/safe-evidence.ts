@@ -21,10 +21,6 @@ export function routeAlias(title: string): string {
   return safeRoutes.includes(token) ? token : "unknown";
 }
 
-export function isPublicRouteAlias(route: string): boolean {
-  return publicRoutes.includes(route);
-}
-
 export function isSafePublicUrl(value: string, allowedPaths: readonly string[], expectedOrigin = "https://warrantee.io"): boolean {
   try {
     const url = new URL(value);

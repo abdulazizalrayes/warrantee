@@ -1,7 +1,7 @@
 import { rmSync, writeFileSync } from "node:fs";
 import { basename, resolve } from "node:path";
 import type { FullConfig, FullResult, Reporter, Suite, TestCase, TestResult } from "@playwright/test/reporter";
-import { evidenceDirectory, isPublicRouteAlias, limits, numericAudit, prepareSafeDirectory, routeAlias, safeFiles, safeProjects, validateSafeDirectory } from "./safe-evidence.ts";
+import { evidenceDirectory, limits, numericAudit, prepareSafeDirectory, routeAlias, safeFiles, safeProjects, validateSafeDirectory } from "./safe-evidence.ts";
 
 export default class SafeEvidenceReporter implements Reporter {
   private globalErrors = 0;
@@ -23,7 +23,7 @@ export default class SafeEvidenceReporter implements Reporter {
     for (const attachment of result.attachments) {
       if (audits.length >= 16) break;
       if (!attachment.body || attachment.contentType !== "application/json") continue;
-      if (attachment.name === "semantic-audit" && !isPublicRouteAlias(route)) continue;
+      if (attachment.name === "semantic-audit" && route === "unknown") continue;
       const audit = numericAudit(attachment.name, attachment.body);
       if (audit) audits.push(audit);
     }
