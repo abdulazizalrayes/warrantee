@@ -63,6 +63,12 @@ Use the normal CI workflow for the complete authenticated matrix and disposable-
 - Exact project-locked Vercel preview build completed locally; CSP package audit passed for 1,023 HTML files and 315 routing rules. No provider configuration or secret bindings were changed.
 - These are local pre-publish results, not proof of protected-preview, authenticated CI, CodeQL, deployment, or production-security completion. Those outcomes belong in the release PR closeout; intentional skips must remain explicit.
 
+### First Hosted Checkpoint
+
+PR #47 preview `dpl_BEjPbYzDbShkMjTPEHsEJ8z87HHP` at source `50a0d44c93ea426154fcc71a7a051dc45be04feb` passed the protected hosted audit: 50 public pages/Markdown companions, 240 authorized inline-script hashes, 50 unchanged semantic HTML trees, fresh dynamic nonces, three public bootstraps, no exposed private CSP map, and 56 EN/AR browser views with zero browser errors/overflow. Negotiation, HEAD, languages, canonical/alternate headers and sidecar noindex checks all passed. Final-head and production checks remain required after this documentation checkpoint.
+
+The first managed CodeQL run `42567965225` passed Actions and JavaScript analysis, but Python initialization failed while downloading GitHub's CodeQL bundle with HTTP 504, before analysis. No code finding was reported; open alert inventory was zero. GitHub rejected retry of this managed dynamic workflow. This evidence checkpoint triggers a fresh scan; it does not waive the failed gate or declare Python analysis complete. Final run identifiers and outcomes belong in the PR closeout.
+
 ## Preserved Postponements
 
 Database backup/restore and credential searches; private OCR corpus, OCR/provider activation and deferred legacy Vision review; billing/payments; ClamAV deployment; paid independent pentest; public npm publication; Vercel Pro/paid hosting; physical/accessibility and field-performance audits; manual SEO rechecks; growth/outreach pilots; shared CRM/mailbox restrictions; Paperclip and other-company work remain postponed. Preserve historical scope-reduction and entity-profile postponements. No training/content-use policy change is included. Local tests and this five-item scope do not resume or close any postponed item.
