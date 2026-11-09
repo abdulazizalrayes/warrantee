@@ -7,9 +7,9 @@
     "domain": "https://warrantee.io",
     "repository": "https://github.com/abdulazizalrayes/warrantee",
     "branch": "main",
-    "mapped_from_commit": "9e17ce3559c7b38f997062e72ec4c9893758817c",
-    "generated_at": "2026-11-08",
-    "refresh_scope": "Runtime versions verified against package-lock.json and Node engine contract against package.json; existing architecture retained. Current release evidence: docs/OPERATIONAL_STATUS.md#current-release-evidence---2026-11-08. This is not a fresh provider inventory or a release of the regression/handover follow-up.",
+    "mapped_from_commit": "0243310ecbe92a513462b6ae0225a76f16f170bd",
+    "generated_at": "2026-11-09",
+    "refresh_scope": "Scoped update for latest-request-only document search, fail-on-flaky CI and bounded sanitized QA artifacts. Existing runtime/provider architecture retained; no fresh provider or database inventory is claimed. Source checkpoint and final release record: docs/SEARCH_QA_HARDENING_2026-11-09.md.",
     "classification": "internal engineering documentation; no secrets or customer records",
     "human_view": "docs/WARRANTEE_ARCHITECTURE_MAP.html",
     "agent_view": "docs/warrantee-architecture-map.json",
@@ -1007,9 +1007,12 @@
       "layer": "delivery",
       "kind": "quality_gate",
       "status": "active",
-      "responsibility": "Dependency install, loopback guard, migration integrity, CLI package, type-check, lint, unit tests, build, agent Markdown, E2E, and QA cleanup.",
+      "responsibility": "Dependency install, source/security/build/browser gates, fail-on-flaky E2E, bounded sanitized failure evidence, and QA cleanup. Raw authenticated traces and private payloads are not uploaded.",
       "code_refs": [
-        ".github/workflows/ci.yml"
+        ".github/workflows/ci.yml",
+        "playwright.config.ts",
+        "tests/e2e/safe-evidence-reporter.ts",
+        "tests/e2e/safe-evidence.ts"
       ]
     },
     {
@@ -2724,7 +2727,8 @@
       "Public /api/health with database and CRM checks",
       "Privacy-safe activity_log funnel events",
       "api_usage_events and agent usage logs",
-      "GitHub CI and scheduled Production Security Gates"
+      "GitHub CI and scheduled Production Security Gates",
+      "Bounded sanitized CI failure metrics and eligible anonymous public screenshots, with one-day artifact retention"
     ],
     "test_layers": [
       {
