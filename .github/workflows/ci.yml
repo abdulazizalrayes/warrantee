@@ -110,6 +110,20 @@ jobs:
       - name: E2E smoke gate
         run: npm run test:e2e
 
+      - name: Validate bounded safe QA evidence
+        id: safe-evidence
+        if: failure() && hashFiles('qa-safe-artifacts/summary.json') != ''
+        run: node --input-type=module -e 'import { validateSafeDirectory } from "./tests/e2e/safe-evidence.ts"; if (!validateSafeDirectory()) process.exit(1)'
+
+      - name: Upload bounded safe QA evidence
+        if: failure() && steps.safe-evidence.outcome == 'success'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: qa-safe-artifacts
+          path: qa-safe-artifacts/
+          retention-days: 1
+          if-no-files-found: error
+
       - name: Remove disposable QA identity and artifacts
         if: always()
         run: npm run qa:user:cleanup

@@ -37,6 +37,16 @@ const allowlist = [
     reason: "The CSP integration fixture binds and verifies an isolated local Next.js test server only.",
   },
   {
+    file: "tests/e2e/safe-evidence.ts",
+    patterns: new Set(["localhost", "127.0.0.1", "::1"]),
+    reason: "The CI-only evidence helper accepts the exact configured isolated test origin, never a published loopback link.",
+  },
+  {
+    file: "tests/unit/safe-evidence.test.ts",
+    patterns: new Set(["127.0.0.1"]),
+    reason: "The safe-evidence regression exercises an anonymous isolated browser fixture without contacting production.",
+  },
+  {
     file: "playwright.config.ts",
     patterns: new Set(["127.0.0.1"]),
     reason: "Playwright starts an isolated local server when E2E_BASE_URL is not set.",

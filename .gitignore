@@ -24,3 +24,5 @@ tests/e2e 2/
 /public/web-mcp.js
 /public/agent-bootstrap/
 /.warrantee-csp/
+/.warrantee-local/
+/qa-safe-artifacts/
