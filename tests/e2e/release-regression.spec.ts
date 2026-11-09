@@ -234,6 +234,17 @@ async function auditGeometry(page: Page) {
       }
     }
 
+    for (const action of document.querySelectorAll<HTMLElement>('a[href^="/api/documents/"][href$="/download"]')) {
+      const row = action.parentElement;
+      const content = row?.querySelector<HTMLElement>("div.flex-1");
+      if (content && content.scrollWidth - content.clientWidth > 1) overflowingContainers.push("document-row-content");
+      if (row) {
+        const bounds = row.getBoundingClientRect();
+        const actionBounds = action.getBoundingClientRect();
+        if (actionBounds.left < bounds.left - 1 || actionBounds.right > bounds.right + 1) overflowingContainers.push("document-row-action");
+      }
+    }
+
     for (const container of document.querySelectorAll<HTMLElement>("[data-testid]")) {
       if (!isRendered(container)) continue;
       const containerRect = container.getBoundingClientRect();
