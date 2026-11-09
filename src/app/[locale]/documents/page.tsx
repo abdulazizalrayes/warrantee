@@ -35,14 +35,16 @@ export default function DocumentsPage() {
       setLoading(false);
       return;
     }
+    const controller = new AbortController();
     const fetchDocs = async () => {
       setLoading(true);
       try {
         const query = new URLSearchParams();
         if (search.trim()) query.set('q', search.trim());
         query.set('limit', '200');
-        const response = await fetch(`/api/documents?${query.toString()}`, { cache: 'no-store' });
+        const response = await fetch(`/api/documents?${query.toString()}`, { cache: 'no-store', signal: controller.signal });
         const payload = await response.json().catch(() => ({}));
+        if (controller.signal.aborted) return;
 
         if (!response.ok) {
           throw new Error(payload?.error || 'Failed to load documents');
@@ -51,13 +53,15 @@ export default function DocumentsPage() {
         setDocs((payload?.data || []) as DocRow[]);
         setFetchError('');
       } catch (error) {
+        if (controller.signal.aborted) return;
         setDocs([]);
         setFetchError(error instanceof Error ? error.message : 'Failed to load documents');
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       }
     };
     fetchDocs();
+    return () => controller.abort();
   }, [user, authLoading, search]);
 
   const getFileIcon = (type: string | null) => {
@@ -182,6 +186,7 @@ export default function DocumentsPage() {
                     href={buildDocumentDownloadHref(doc.id)}
                     target="_blank"
                     rel="noopener noreferrer"
+                    aria-label={isRTL ? '\u0639\u0631\u0636 \u0627\u0644\u0645\u0633\u062a\u0646\u062f' : 'View document'}
                     onClick={() => trackDocumentView({
                       locale,
                       document_id: doc.id,

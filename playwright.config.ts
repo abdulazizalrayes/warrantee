@@ -24,17 +24,18 @@ export default defineConfig({
   testDir: "./tests/e2e",
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
+  failOnFlakyTests: Boolean(process.env.CI),
   retries: process.env.CI ? 2 : 0,
   workers: 2,
   reporter: process.env.CI
-    ? [["github"], ["html", { open: "never" }]]
+    ? [["./tests/e2e/safe-evidence-reporter.ts"]]
     : [["list"], ["html", { open: "never" }]],
   use: {
     baseURL,
     serviceWorkers: "block",
-    trace: "retain-on-failure",
-    screenshot: "only-on-failure",
-    video: "retain-on-failure",
+    trace: process.env.CI ? "off" : "retain-on-failure",
+    screenshot: process.env.CI ? "off" : "only-on-failure",
+    video: process.env.CI ? "off" : "retain-on-failure",
   },
   webServer: useExternalTarget
     ? undefined
