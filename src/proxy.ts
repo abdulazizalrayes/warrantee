@@ -16,6 +16,7 @@ import type { NextRequest } from "next/server";
 import { NextRequest as DocumentRequest } from "next/server";
 import { getDocumentCsp } from "@/lib/csp-runtime";
 import { contentSecurityPolicy } from "@/lib/csp-policy.mjs";
+import { isolatedSupabaseOrigin } from "@/lib/isolated-test-origin.mjs";
 
 const LOCALE_PREFIX_RE = new RegExp(`^/(${LOCALE_PREFIX_PATTERN})(/|$)`);
 
@@ -48,16 +49,25 @@ function applyNoIndexHeader(response: NextResponse) {
   return response;
 }
 
-function buildNoIndexRedirect(request: NextRequest, pathname: string) {
-  const response = NextResponse.redirect(buildCleanRedirectUrl(request, pathname));
-  applySecurityHeaders(response);
-  return applyNoIndexHeader(response);
+function preserveSessionState(target: NextResponse, source?: NextResponse) {
+  source?.cookies.getAll().forEach(cookie => target.cookies.set(cookie));
+  for (const name of ['cache-control', 'expires', 'pragma']) {
+    const value = source?.headers.get(name);
+    if (value) target.headers.set(name, value);
+  }
+  return target;
 }
 
-function buildNoIndexAuthRedirect(request: NextRequest, locale: string) {
+function buildNoIndexRedirect(request: NextRequest, pathname: string, sessionResponse?: NextResponse) {
+  const response = NextResponse.redirect(buildCleanRedirectUrl(request, pathname));
+  applySecurityHeaders(response);
+  return preserveSessionState(applyNoIndexHeader(response), sessionResponse);
+}
+
+function buildNoIndexAuthRedirect(request: NextRequest, locale: string, sessionResponse?: NextResponse) {
   const response = NextResponse.redirect(buildAuthRedirectUrl(request, locale));
   applySecurityHeaders(response);
-  return applyNoIndexHeader(response);
+  return preserveSessionState(applyNoIndexHeader(response), sessionResponse);
 }
 
 function getAuthRedirectTarget(request: NextRequest) {
@@ -251,7 +261,7 @@ async function handleRequest(request: NextRequest) {
         getAll() {
           return request.cookies.getAll();
         },
-        setAll(cookiesToSet) {
+        setAll(cookiesToSet, cacheHeaders) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value),
           );
@@ -260,10 +270,11 @@ async function handleRequest(request: NextRequest) {
           cookiesToSet.forEach(({ name, value, options }) =>
             response.cookies.set(name, value, {
               ...options,
-              sameSite: "strict",
+              sameSite: "lax",
               secure: true,
             }),
           );
+          Object.entries(cacheHeaders).forEach(([name, value]) => response.headers.set(name, value));
         },
       },
     },
@@ -275,9 +286,8 @@ async function handleRequest(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   if ((isProtectedAppArea || isAdminArea || isApprovalArea) && !user) {
-    const denied = buildNoIndexAuthRedirect(request, locale);
-    if (process.env.WARRANTEE_ISOLATED_E2E === '1' && process.env.NEXT_PUBLIC_APP_URL === 'http://127.0.0.1:3100' &&
-        process.env.NEXT_PUBLIC_SUPABASE_URL === 'http://127.0.0.1:54321' && !process.env.VERCEL && !process.env.VERCEL_ENV) {
+    const denied = buildNoIndexAuthRedirect(request, locale, response);
+    if (isolatedSupabaseOrigin()) {
       const errorKind = authLookupError?.name === 'AuthSessionMissingError' ? 'no_session' : authLookupError ? 'auth_failure' : 'none';
       denied.headers.set('x-warrantee-isolated-auth', `${request.cookies.getAll().some(cookie => /^sb-.*auth-token(?:\.\d+)?$/.test(cookie.name)) ? 'cookie' : 'no_cookie'}:${errorKind}`);
     }
@@ -293,7 +303,7 @@ async function handleRequest(request: NextRequest) {
 
     if (isAdminArea) {
       if (!profile || !["admin", "super_admin"].includes(profile.role)) {
-        return buildNoIndexRedirect(request, "/" + locale + "/dashboard");
+        return buildNoIndexRedirect(request, "/" + locale + "/dashboard", response);
       }
     }
 
@@ -312,7 +322,7 @@ async function handleRequest(request: NextRequest) {
             .maybeSingle();
 
       if (!isGlobalApprover && !approvalMembership) {
-        return buildNoIndexRedirect(request, "/" + locale + "/dashboard");
+        return buildNoIndexRedirect(request, "/" + locale + "/dashboard", response);
       }
     }
   }
@@ -326,7 +336,7 @@ async function handleRequest(request: NextRequest) {
     const isExplicitSignupIntent = requestedAuthTab === "signup";
 
     if (!pathname.includes("/auth/callback") && !isExplicitSignupIntent) {
-      return buildNoIndexRedirect(request, "/" + locale + "/dashboard");
+      return buildNoIndexRedirect(request, "/" + locale + "/dashboard", response);
     }
   }
 
