@@ -9,14 +9,18 @@ function readProjectFile(relativePath: string) {
 }
 
 describe("operational hardening", () => {
-  it("serializes workflows that use the shared disposable production QA identity", () => {
+  it("keeps individual funnel rows out of the generic admin activity feed", () => {
+    expect(readProjectFile("src/app/[locale]/admin/page.tsx")).toContain(".from('activity_log').select('*').neq('entity_type', 'funnel_event')");
+  });
+  it("keeps ordinary CI off production QA while retaining the existing scheduled identity lock", () => {
     const ci = readProjectFile(".github/workflows/ci.yml");
     const productionSecurity = readProjectFile(".github/workflows/production-security.yml");
 
-    for (const workflow of [ci, productionSecurity]) {
-      expect(workflow).toContain("group: warrantee-production-qa-identity");
-      expect(workflow).toContain("cancel-in-progress: false");
-    }
+    expect(productionSecurity).toContain("group: warrantee-production-qa-identity");
+    expect(productionSecurity).toContain("cancel-in-progress: false");
+    expect(ci).not.toContain("secrets.SUPABASE_SERVICE_ROLE_KEY");
+    expect(ci).not.toContain("qa:user:ensure");
+    expect(ci).toContain("run-isolated-signup-journey.mjs --run");
   });
 
   it("keeps dashboard, seller, billing, and email ingestion off broken summary RPCs", () => {
@@ -134,7 +138,8 @@ describe("operational hardening", () => {
     expect(migration).toContain("perform pg_advisory_xact_lock");
     expect(migration).toContain("message = 'warranty_limit_reached'");
     expect(migration).toContain("before insert on public.warranties");
-    expect(oauthCallback).toContain('"complete_business_onboarding"');
+    expect(oauthCallback).toContain("resumeOAuthSignupSetup");
+    expect(readProjectFile("src/lib/server/oauth-signup-setup.ts")).toContain('"resume_oauth_signup_setup"');
   });
 
   it("keeps the Supabase-backed health route on Node runtime without uptime leakage", () => {
@@ -374,12 +379,15 @@ describe("operational hardening", () => {
     expect(ga4Events).toContain("readCampaignParams");
     expect(ga4Events).toContain("new URLSearchParams(window.location.search)");
     expect(funnelRoute).toContain("sanitizeAnalyticsPayload(event, body.metadata, classifyTrafficUserAgent(userAgent))");
-    expect(growthReadiness).toContain("utm_source");
-    expect(growthReadiness).toContain("utm_campaign");
+    expect(growthReadiness).toContain("analytics-payload.test.ts");
+    expect(growthReadiness).toContain("funnel-events-route.test.ts");
+    expect(growthReadiness).toContain("ga4-events.test.ts");
     expect(adminPage).toContain("campaignFunnelCounts");
     expect(adminPage).toContain("campaignBreakdown");
-    expect(adminPage).toContain("metadata.utm_source");
-    expect(adminPage).toContain("metadata.utm_campaign");
+    const activationReport = readProjectFile("src/lib/server/activation-report.ts");
+    expect(activationReport).toContain("metadata->>utm_source");
+    expect(activationReport).toContain("metadata->>utm_campaign");
+    expect(adminPage).toContain("/api/admin/activation");
     expect(adminPage).toContain('max-w-[1600px] mx-auto flex flex-col lg:flex-row');
     expect(adminPage).toContain('lg:hidden w-full min-w-0 overflow-x-auto');
     expect(adminPage).toContain("/api/admin/agent-concierge/report?days=30&limit=50&page=1");
@@ -473,8 +481,11 @@ describe("operational hardening", () => {
 
     expect(authContext).toContain('`${origin}/auth/callback?next=');
     expect(authContext).not.toContain('`${origin}/${safeLocale}/auth/callback?next=');
-    expect(callback).toContain("upsertCrmContact");
-    expect(callback).toContain('source: "signup"');
+    expect(callback).toContain("enqueueAuthFollowupJobs");
+    expect(callback).not.toContain("await upsertCrmContact");
+    const followups = readProjectFile("src/lib/server/auth-followup-jobs.ts");
+    expect(followups).toContain("upsertCrmContact");
+    expect(followups).toContain('source: "signup"');
   });
 
   it("keeps public contact details out of fallback query URLs", () => {

@@ -22,6 +22,8 @@
     "test:e2e:business": "playwright test tests/e2e/business-workflows.spec.ts",
     "test:e2e:operational": "OPERATIONAL_E2E=1 playwright test tests/e2e/operational-workflows.spec.ts --project=chromium",
     "test:e2e:ui": "playwright test --ui",
+    "qa:signup-isolation": "node scripts/run-isolated-signup-journey.mjs --check && node --test tests/isolated/contracts.test.mjs",
+    "qa:signup-journey": "node scripts/run-isolated-signup-journey.mjs --run",
     "warrantee:cli": "node tools/warrantee/cli.mjs",
     "warrantee:mcp": "node tools/warrantee/mcp-server.mjs",
     "pack:cli": "npm pack ./packages/warrantee-cli --dry-run",

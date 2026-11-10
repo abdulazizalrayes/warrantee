@@ -346,6 +346,11 @@
       "file": "20260904120000_harden_untrusted_content_telemetry.sql",
       "sha256": "0b99ec330a566117f9d12f16b00f0a73a9a86087fd4ffdf2fe40511eeb2a2555",
       "productionState": "applied"
+    },
+    {
+      "file": "20261110151140_manual_warranty_creation_transaction.sql",
+      "sha256": "cefb03de662a9ba04d05979a6a5e16c978e38dc66a02466913fc76834daa1ea3",
+      "productionState": "applied"
     }
   ]
 }

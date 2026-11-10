@@ -8,7 +8,7 @@ import { getDictionary, DIRECTION } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth-context";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
-import { resolveWarrantyAccessOrClause } from "@/lib/warranty-access";
+import { buildWarrantyAccessOrClause, getWarrantyCompanyAccess } from "@/lib/warranty-access";
 
 interface DashboardStats {
   active_warranties: number;
@@ -46,7 +46,7 @@ export default function DashboardPage() {
   const dict = getDictionary(locale);
   const isRTL = locale === "ar";
   const direction = DIRECTION[locale as Locale];
-  const { user, profile, loading: authLoading } = useAuth();
+  const { user, profile, loading: authLoading, profileLoading, profileError, refreshProfile } = useAuth();
   const supabase = createSupabaseBrowserClient();
 
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -55,37 +55,50 @@ export default function DashboardPage() {
   const [expiringWarranties, setExpiringWarranties] = useState<RecentWarranty[]>([]);
   const [loading, setLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
+  const [loadError, setLoadError] = useState(false);
+  const [retry, setRetry] = useState(0);
+  const [hasProof, setHasProof] = useState(false);
+  const [canReviewApprovals, setCanReviewApprovals] = useState(false);
 
   useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
-    if (authLoading) return;
+    if (authLoading || profileLoading) return;
     if (!user) { router.push(`/${locale}/auth`); return; }
-    if (profile && !profile.onboarding_completed) { router.push(`/${locale}/onboarding`); return; }
+    if (profileError || !profile) return;
+    if (!profile.onboarding_completed) { router.push(`/${locale}/onboarding`); return; }
 
+    let current = true;
+    const controller = new AbortController();
+    let timeout: ReturnType<typeof setTimeout>;
+    setLoading(true);
+    setLoadError(false);
+    setStats(null);
+    setRecentWarranties([]);
+    setRecentActivity([]);
+    setExpiringWarranties([]);
+    setHasProof(false);
+    setCanReviewApprovals(false);
     const fetchDashboardData = async () => {
-      setLoading(true);
-      const warrantyAccess = await resolveWarrantyAccessOrClause(supabase, user.id);
+      const companyAccess = await getWarrantyCompanyAccess(supabase, user.id);
+      if (controller.signal.aborted) throw new Error("Dashboard request cancelled");
+      const warrantyAccess = buildWarrantyAccessOrClause(user.id, companyAccess.viewCompanyIds);
       const today = new Date().toISOString().slice(0, 10);
       const soon = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-      const safeCount = async (
-        label: string,
-        query: PromiseLike<{ count: number | null; error: { message: string } | null }>
-      ) => {
-        const { count, error } = await query;
-        if (error) {
-          console.warn(`[Dashboard] ${label} count unavailable:`, error.message);
-          return 0;
-        }
+      const read = async (query: PromiseLike<{ data?: unknown; count?: number | null; error: unknown }>) => {
+        const result = await query;
+        if (result.error) throw new Error("Dashboard data unavailable");
+        return result;
+      };
+      const count = async (query: PromiseLike<{ count: number | null; error: unknown }>) => {
+        const { count } = await read(query);
         return count ?? 0;
       };
-      const { data: visibleWarrantyRows, error: visibleWarrantyError } = await supabase
+      const { data: visibleWarrantyRows } = await read(supabase
         .from("warranties")
         .select("id")
-        .or(warrantyAccess);
-      if (visibleWarrantyError) {
-        console.warn("[Dashboard] warranty scope unavailable:", visibleWarrantyError.message);
-      }
+        .or(warrantyAccess)
+        .abortSignal(controller.signal));
       const visibleWarrantyIds = ((visibleWarrantyRows || []) as Array<{ id: string }>).map((warranty) => warranty.id);
 
       const [
@@ -95,78 +108,83 @@ export default function DashboardPage() {
         expiringSoon,
         openClaims,
         unreadNotifications,
+        proof,
+        approverMembership,
       ] = await Promise.all([
-        safeCount(
-          "active warranties",
+        count(
           supabase
             .from("warranties")
             .select("id", { count: "exact", head: true })
             .or(warrantyAccess)
-            .eq("status", "active")
+            .eq("status", "active").abortSignal(controller.signal)
         ),
-        safeCount(
-          "total warranties",
+        count(
+          supabase
+            .from("warranties")
+            .select("id", { count: "exact", head: true })
+            .or(warrantyAccess).abortSignal(controller.signal)
+        ),
+        count(
           supabase
             .from("warranties")
             .select("id", { count: "exact", head: true })
             .or(warrantyAccess)
+            .eq("status", "pending_approval").abortSignal(controller.signal)
         ),
-        safeCount(
-          "pending approvals",
-          supabase
-            .from("warranties")
-            .select("id", { count: "exact", head: true })
-            .or(warrantyAccess)
-            .eq("status", "pending_approval")
-        ),
-        safeCount(
-          "expiring warranties",
+        count(
           supabase
             .from("warranties")
             .select("id", { count: "exact", head: true })
             .or(warrantyAccess)
             .eq("status", "active")
             .gte("end_date", today)
-            .lte("end_date", soon)
+            .lte("end_date", soon).abortSignal(controller.signal)
         ),
-        safeCount(
-          "open claims",
+        count(
           visibleWarrantyIds.length
             ? supabase
               .from("warranty_claims")
               .select("id", { count: "exact", head: true })
               .in("warranty_id", visibleWarrantyIds)
-              .not("status", "in", "(approved,rejected,resolved,closed)")
+              .not("status", "in", "(approved,rejected,resolved,closed)").abortSignal(controller.signal)
             : Promise.resolve({ count: 0, error: null })
         ),
-        safeCount(
-          "unread notifications",
+        count(
           supabase
             .from("notifications")
             .select("id", { count: "exact", head: true })
             .eq("user_id", user.id)
-            .eq("is_read", false)
+            .eq("is_read", false).abortSignal(controller.signal)
         ),
+        read(supabase.from("warranty_documents")
+          .select("warranty_id, warranties!inner(id)")
+          .or(warrantyAccess, { referencedTable: "warranties" })
+          .is("deleted_at", null)
+          .limit(1).abortSignal(controller.signal)),
+        companyAccess.mutateCompanyIds.length && !companyAccess.administerCompanyIds.length
+          ? read(supabase.from("company_members").select("company_id")
+            .eq("user_id", user.id).eq("is_active", true).eq("role", "approver")
+            .in("company_id", companyAccess.mutateCompanyIds).limit(1).abortSignal(controller.signal))
+          : Promise.resolve({ data: [] }),
       ]);
 
-      setStats({
+      const nextStats = {
         active_warranties: activeWarranties,
         expiring_soon: expiringSoon,
         pending_approval: pendingApproval,
         total_warranties: totalWarranties,
         open_claims: openClaims,
         unread_notifications: unreadNotifications,
-      });
+      };
 
-      const { data: warranties } = await supabase
+      const { data: warranties } = await read(supabase
         .from("warranties")
         .select("id, product_name, product_name_ar, status, end_date, reference_number, seller_name, created_at")
         .or(warrantyAccess)
         .order("created_at", { ascending: false })
-        .limit(5);
-      if (warranties) setRecentWarranties(warranties as RecentWarranty[]);
+        .limit(5).abortSignal(controller.signal));
 
-      const { data: expiring } = await supabase
+      const { data: expiring } = await read(supabase
         .from("warranties")
         .select("id, product_name, product_name_ar, status, end_date, reference_number, seller_name, created_at")
         .or(warrantyAccess)
@@ -174,15 +192,46 @@ export default function DashboardPage() {
         .gte("end_date", today)
         .lte("end_date", soon)
         .order("end_date", { ascending: true })
-        .limit(5);
-      if (expiring) setExpiringWarranties((expiring as RecentWarranty[]).slice(0, 5));
+        .limit(5).abortSignal(controller.signal));
 
-      const { data: activity } = await supabase.from("activity_log").select("id, action, entity_type, entity_id, metadata, created_at").eq("actor_id", user.id).order("created_at", { ascending: false }).limit(8);
-      if (activity) setRecentActivity(activity as RecentActivity[]);
-      setLoading(false);
+      const { data: activity } = await read(supabase.from("activity_log").select("id, action, entity_type, entity_id, metadata, created_at").eq("actor_id", user.id).order("created_at", { ascending: false }).limit(8).abortSignal(controller.signal));
+      return {
+        stats: nextStats,
+        warranties: (warranties || []) as RecentWarranty[],
+        expiring: (expiring || []) as RecentWarranty[],
+        activity: (activity || []) as RecentActivity[],
+        hasProof: Array.isArray(proof.data) && proof.data.length > 0,
+        canReviewApprovals: profile.role === "admin" || profile.role === "super_admin"
+          || companyAccess.administerCompanyIds.length > 0 || (Array.isArray(approverMembership.data) && approverMembership.data.length > 0),
+      };
     };
-    fetchDashboardData();
-  }, [user, profile, authLoading, locale, router, supabase]);
+    // Bound the entire load, including access resolution, which has no abort parameter.
+    const deadline = new Promise<never>((_, reject) => {
+      timeout = setTimeout(() => {
+        controller.abort();
+        reject(new Error("Dashboard request timed out"));
+      }, 12000);
+    });
+    void Promise.race([fetchDashboardData(), deadline]).then((data) => {
+      if (!current) return;
+      setStats(data.stats);
+      setRecentWarranties(data.warranties);
+      setExpiringWarranties(data.expiring);
+      setRecentActivity(data.activity);
+      setHasProof(data.hasProof);
+      setCanReviewApprovals(data.canReviewApprovals);
+    }).catch(() => {
+      if (current) setLoadError(true);
+    }).finally(() => {
+      clearTimeout(timeout);
+      if (current) setLoading(false);
+    });
+    return () => {
+      current = false;
+      controller.abort();
+      clearTimeout(timeout);
+    };
+  }, [user, profile, authLoading, profileLoading, profileError, locale, router, supabase, retry]);
 
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
@@ -225,13 +274,31 @@ export default function DashboardPage() {
   const formatDate = (dateStr: string) => new Date(dateStr).toLocaleDateString(isRTL ? "ar-SA" : "en-US", { month: "short", day: "numeric", year: "numeric" });
   const daysUntilExpiry = (endDate: string) => { const now = new Date(); const end = new Date(endDate); return Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)); };
 
-  if (!mounted || authLoading || loading) {
+  if (mounted && !authLoading && !profileLoading && user && (profileError || !profile)) {
+    return (
+      <div dir={direction} className="py-12 text-center">
+        <p role="alert" className="text-[15px] text-[#1d1d1f]">{isRTL ? "تعذّر تحميل ملف حسابك." : "We could not load your profile."}</p>
+        <button type="button" onClick={() => void refreshProfile()} className="mt-4 rounded-lg border border-[#d2d2d7] px-4 py-2">{isRTL ? "إعادة المحاولة" : "Retry"}</button>
+      </div>
+    );
+  }
+
+  if (!mounted || authLoading || profileLoading || !user || !profile?.onboarding_completed || loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="text-center">
+        <div role="status" className="text-center">
           <div className="animate-spin rounded-full h-10 w-10 border-2 border-[#1A1A2E] border-t-transparent mx-auto mb-4"></div>
-          <p className="text-[15px] text-[#86868b]">{dict.common.loading}</p>
+          <p className="text-[15px] text-[#86868b]">{profileLoading ? (isRTL ? "جارٍ تحميل ملف حسابك..." : "Loading your profile...") : dict.common.loading}</p>
         </div>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div dir={direction} className="py-12 text-center">
+        <p role="alert" className="text-[15px] text-[#1d1d1f]">{isRTL ? "تعذّر تحميل لوحة التحكم. حاول مرة أخرى." : "We could not load your dashboard. Please try again."}</p>
+        <button type="button" onClick={() => setRetry((value) => value + 1)} className="mt-4 rounded-lg border border-[#d2d2d7] px-4 py-2">{isRTL ? "إعادة المحاولة" : "Retry"}</button>
       </div>
     );
   }
@@ -289,16 +356,16 @@ export default function DashboardPage() {
               href: `/${locale}/warranties/new`,
             },
             {
-              done: recentWarranties.length > 0,
+              done: hasProof,
               title: isRTL ? "أرفق الإثبات" : "Attach proof",
               body: isRTL ? "اربط الفاتورة أو الشهادة بالضمان." : "Link invoice or certificate evidence.",
               href: recentWarranties[0]?.id ? `/${locale}/warranties/${recentWarranties[0].id}` : `/${locale}/warranties/new`,
             },
             {
-              done: (stats?.open_claims || 0) > 0 || (stats?.pending_approval || 0) > 0,
-              title: isRTL ? "راجع القرارات" : "Review decisions",
-              body: isRTL ? "تابع المطالبات والموافقات المفتوحة." : "Watch open claims and approvals.",
-              href: `/${locale}/approval`,
+              done: false,
+              title: canReviewApprovals ? (isRTL ? "راجع القرارات" : "Review decisions") : (isRTL ? "تابع ضماناتك" : "Track your warranties"),
+              body: canReviewApprovals ? (isRTL ? "تابع المطالبات والموافقات المفتوحة." : "Watch open claims and approvals.") : (isRTL ? "راجع التغطية وتواريخ انتهاء الضمانات." : "Review coverage and warranty expiry dates."),
+              href: canReviewApprovals ? `/${locale}/approval` : `/${locale}/warranties`,
             },
           ].map((item) => (
             <Link key={item.title} href={item.href} className="rounded-2xl border border-[#d2d2d7]/50 bg-[#fbfbfd] p-4 transition hover:border-[#0071e3]/30 hover:bg-[#f5f5f7]">

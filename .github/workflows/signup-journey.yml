@@ -1,0 +1,43 @@
+name: Isolated Signup Journey
+
+on:
+  push:
+    branches: [main, codex/signup-first-warranty-reliability]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: isolated-signup-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  signup-journey:
+    name: Real Local Signup to First Warranty
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      WARRANTEE_ISOLATED_E2E: '1'
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - name: Install locked dependencies without persistent cache
+        run: npm ci
+      - name: Verify isolated bootstrap and state guards
+        run: |
+          node scripts/run-isolated-signup-journey.mjs --check
+          node --test tests/isolated/contracts.test.mjs
+      - name: Install Chromium
+        run: npx --no-install playwright install --with-deps chromium
+      - name: Run actual disposable Supabase and Next journey
+        run: node scripts/run-isolated-signup-journey.mjs --run
+      # Deliberately no artifacts, caches, repository secrets, remote database,
+      # service-account seeding, deployments, or downstream workflow dispatches.

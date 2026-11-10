@@ -2,23 +2,30 @@ import { expect, type Page, type TestInfo } from "@playwright/test";
 
 export function watchForPageErrors(page: Page, testInfo: TestInfo) {
   const errors: string[] = [];
+  const boundaries = new Set<string>();
+  const httpChecks = new Set<string>();
 
   page.on("response", (response) => {
     const status = response.status();
     const url = response.url();
     if (status >= 500 || (status >= 400 && !/\/favicon\./i.test(url))) {
       errors.push(`http.${status}: ${response.request().method()} ${url}`);
+      boundaries.add(status >= 500 ? 'server_http' : 'client_http');
+      const relation = ['activity_log', 'warranty_claims', 'company_members', 'warranty_documents', 'warranties', 'notifications', 'profiles', 'subscriptions', 'companies'].find(name => new URL(url).pathname === `/rest/v1/${name}`);
+      if (relation) httpChecks.add(`${status}:${relation}`);
     }
   });
 
   page.on("pageerror", (error) => {
     errors.push(`pageerror: ${error.message}`);
+    boundaries.add('page_error');
   });
 
   page.on("console", (message) => {
     if (message.type() !== "error") return;
     const text = message.text();
     if (/ResizeObserver loop/i.test(text)) return;
+    boundaries.add(/Content Security Policy|violates.*directive|Refused to execute/i.test(text) ? 'csp' : 'console_error');
     const location = message.location();
     const source = location.url ? ` at ${location.url}:${location.lineNumber}:${location.columnNumber}` : "";
     errors.push(`console.error: ${text}${source}`);
@@ -26,6 +33,9 @@ export function watchForPageErrors(page: Page, testInfo: TestInfo) {
 
   return {
     async assertClean() {
+      if (process.env.E2E_SUITE === 'isolated-regression' && errors.length) {
+        throw new Error(`isolated_browser_boundaries:${[...boundaries].sort().join(',')};isolated_http_checks:${[...httpChecks].sort().join(',')}`);
+      }
       await testInfo.attach("browser-errors", {
         body: Buffer.from(errors.join("\n") || "No browser errors captured."),
         contentType: "text/plain",

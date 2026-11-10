@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, codex/signup-first-warranty-reliability]
   pull_request:
     branches: [main]
 
@@ -13,9 +13,8 @@ permissions:
   contents: read
 
 concurrency:
-  # Both production-backed workflows use the same disposable QA identity.
-  group: warrantee-production-qa-identity
-  cancel-in-progress: false
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -23,21 +22,20 @@ jobs:
     runs-on: ubuntu-24.04
 
     env:
-      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-      NEXT_PUBLIC_GTM_ID: ${{ secrets.NEXT_PUBLIC_GTM_ID }}
+      # Build-time placeholders only; browser/backend proof runs in the real
+      # disposable stack below, never against a repository Supabase secret.
+      NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: local-build-placeholder-not-a-credential
+      NEXT_PUBLIC_GTM_ID: GTM-WFLBH83M
       NEXT_PUBLIC_GA_MEASUREMENT_ID: G-ZQJ4LRG4GN
-      NEXT_PUBLIC_SENTRY_DSN: ${{ secrets.NEXT_PUBLIC_SENTRY_DSN }}
-      SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
-      SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
-      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-      E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
-      E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
+      NEXT_TELEMETRY_DISABLED: '1'
+      WARRANTEE_DISABLE_SENTRY_NEXT_CONFIG: '1'
       RATE_LIMIT_ALLOW_MEMORY_FALLBACK: "1"
 
     steps:
       - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
 
       - name: Set up Node.js
         uses: actions/setup-node@v6
@@ -87,9 +85,6 @@ jobs:
       - name: Verify final CSP artifact and Proxy trace
         run: npm run qa:csp-build
 
-      - name: Agent Markdown release gate
-        run: npm run qa:agent-markdown:local
-
       - name: Verify CSP event-handler isolation
         run: npm run qa:security-headers
 
@@ -101,33 +96,81 @@ jobs:
           node -e 'let ready = false; for (let i = 0; i < 120; i++) { try { const r = await fetch("http://127.0.0.1:3111/en/pricing"); if (r.ok) { ready = true; break; } } catch {} await new Promise(r => setTimeout(r, 500)); } if (!ready) process.exit(1)'
           npm run qa:analytics-privacy -- http://127.0.0.1:3111 --chromium
 
-      - name: Create disposable QA identity
-        run: npm run qa:user:ensure
-
-      - name: Require authenticated E2E configuration
-        run: npm run qa:e2e-env
-
-      - name: E2E smoke gate
-        run: npm run test:e2e
-
-      - name: Validate bounded safe QA evidence
-        id: safe-evidence
-        if: failure() && hashFiles('qa-safe-artifacts/summary.json') != ''
-        run: node --input-type=module -e 'import { validateSafeDirectory } from "./tests/e2e/safe-evidence.ts"; if (!validateSafeDirectory()) process.exit(1)'
-
-      - name: Upload bounded safe QA evidence
-        if: failure() && steps.safe-evidence.outcome == 'success'
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+  isolated-regression:
+    name: Full required legacy regression on real local Auth and Postgres
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      WARRANTEE_ISOLATED_E2E: '1'
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@v6
         with:
-          name: qa-safe-artifacts
-          path: qa-safe-artifacts/
-          retention-days: 1
-          if-no-files-found: error
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Install Chromium
+        run: npx --no-install playwright install --with-deps chromium
+      - name: Verify isolated source guards
+        run: |
+          node scripts/run-isolated-signup-journey.mjs --check
+          node tests/isolated/legacy-bootstrap.mjs --check
+          node --test tests/isolated/contracts.test.mjs
+      - name: Run every required legacy contract on the canonical local schema
+        run: |
+          node scripts/run-isolated-signup-journey.mjs --run -- \
+            env E2E_SUITE=isolated-regression ISOLATED_MIN_CASES=246 bash -e -c '
+              export AGENT_MARKDOWN_BASE_URL=http://127.0.0.1:3100
+              export AGENT_READINESS_BASE_URL=http://127.0.0.1:3100
+              for check in agent-markdown:check qa:agent-markdown qa:agent-readiness; do
+                if npm run "$check"; then
+                  printf "ISOLATED_PREFLIGHT {\"check\":\"%s\",\"status\":\"passed\"}\n" "$check"
+                else
+                  printf "ISOLATED_PREFLIGHT {\"check\":\"%s\",\"status\":\"failed\"}\n" "$check"
+                  exit 1
+                fi
+              done
+              exec node node_modules/@playwright/test/cli.js test --config=playwright.config.ts
+            '
+      # The runner supplies canonical legacy schema and fresh local-only
+      # credentials. Runtime egress guards, marker checks, zero skips/retries,
+      # sanitized counters and disposable cleanup are owned by that runner.
+      # These are the same three checks as qa:agent-markdown:local, reusing the
+      # already-ready server instead of polling health with a placeholder key.
+      # Signup-to-first-warranty persistence is required separately by
+      # signup-journey.yml; populated listing mocks do not prove authorization.
+      # operational-workflows.spec.ts was already a separate destructive opt-in;
+      # OCR/scanner/payment/cron/provider proof is not claimed by this lane.
 
-      - name: Remove disposable QA identity and artifacts
-        if: always()
-        run: npm run qa:user:cleanup
-
-      - name: Verify no persistent QA identity remains
-        if: always()
-        run: npm run qa:user:verify-clean
+  synthetic-ui:
+    name: Synthetic browser recovery (no backend proof)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      E2E_SUITE: synthetic-ui
+      ISOLATED_MIN_CASES: '18'
+      WARRANTEE_SYNTHETIC_UI_E2E: '1'
+      WARRANTEE_ISOLATED_E2E: '1'
+      E2E_BASE_URL: http://127.0.0.1:3100
+      NEXT_PUBLIC_APP_URL: http://127.0.0.1:3100
+      NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: local-build-placeholder-not-a-credential
+      NEXT_TELEMETRY_DISABLED: '1'
+      WARRANTEE_DISABLE_SENTRY_NEXT_CONFIG: '1'
+      RATE_LIMIT_ALLOW_MEMORY_FALLBACK: '1'
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Install Chromium
+        run: npx --no-install playwright install --with-deps chromium
+      - name: Run explicitly synthetic browser recovery and geometry
+        run: npx --no-install playwright test --config=playwright.config.ts

@@ -1,4 +1,5 @@
 export type WarrantyTemplateId =
+  | "personal_purchase"
   | "equipment_service"
   | "contractor_handover"
   | "electronics_retail"
@@ -15,6 +16,17 @@ export type WarrantyTemplate = {
 };
 
 export const WARRANTY_TEMPLATES: readonly WarrantyTemplate[] = [
+  {
+    id: "personal_purchase",
+    label: { en: "My personal purchase", ar: "مشترياتي الشخصية" },
+    description: {
+      en: "Keep a receipt, seller details, and warranty dates for something you own.",
+      ar: "احتفظ بالفاتورة وبيانات البائع وتواريخ ضمان منتج تملكه.",
+    },
+    category: "other",
+    defaultDurationMonths: 12,
+    suggestedFields: ["product_name", "seller_details", "invoice_reference", "coverage_dates"],
+  },
   {
     id: "equipment_service",
     label: { en: "Equipment dealer or service team", ar: "مورد معدات أو فريق صيانة" },
@@ -71,6 +83,12 @@ export const WARRANTY_TEMPLATES: readonly WarrantyTemplate[] = [
     suggestedFields: ["model_number", "serial_number", "batch_reference", "seller_details"],
   },
 ] as const;
+
+export function getOnboardingWarrantyTemplates(accountType: string | null | undefined) {
+  return WARRANTY_TEMPLATES.filter((template) => accountType === "business"
+    ? template.id !== "personal_purchase"
+    : template.id === "personal_purchase");
+}
 
 export function getWarrantyTemplate(value: string | null | undefined) {
   return WARRANTY_TEMPLATES.find((template) => template.id === value) || null;

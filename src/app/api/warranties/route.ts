@@ -6,15 +6,9 @@ import {
   resolveWarrantyAccessOrClause,
   buildBuyerWarrantyAccessOrClause,
   buildSellerWarrantyAccessOrClause,
-  buildWarrantyOwnershipInsert,
 } from "@/lib/warranty-access";
-import { isWarrantyLimitError, warrantyLimitResponseBody } from "@/lib/warranty-entitlements";
-
-function generateReferenceNumber() {
-  const timestamp = Date.now().toString(36).toUpperCase();
-  const random = Math.random().toString(36).slice(2, 6).toUpperCase();
-  return `WR-${timestamp}-${random}`;
-}
+import { warrantyLimitResponseBody } from "@/lib/warranty-entitlements";
+import { createManualWarranty, resolveManualWarrantyBinding, validateManualIdempotencyKey, WarrantyCreationError } from "@/lib/server/warranty-creation";
 
 export async function GET(request: NextRequest) {
   try {
@@ -133,6 +127,10 @@ export async function POST(request: NextRequest) {
     } catch {
       return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
     }
+    if (!body || typeof body !== "object" || Array.isArray(body)) {
+      return NextResponse.json({ error: "JSON body must be an object" }, { status: 400 });
+    }
+    const idempotencyKey = validateManualIdempotencyKey(request.headers.get("idempotency-key"));
 
     const required = [
       ["product_name", body.product_name],
@@ -175,16 +173,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Sanitize string fields
-    const requestedStatus =
-      typeof body.status === "string" && isOneOf(body.status, VALID_WARRANTY_STATUSES)
-        ? body.status
-        : "active";
+    const requestedStatus = body.status ?? "active";
+    if (!["active", "draft", "pending_approval"].includes(requestedStatus)) {
+      return NextResponse.json({ error: "New warranties must be active, draft, or pending_approval" }, { status: 400 });
+    }
+    const binding = await resolveManualWarrantyBinding(supabase, user.id, body.issuer_company_id);
 
     const sanitizedBody = {
       reference_number:
         typeof body.reference_number === "string" && body.reference_number.trim().length > 0
           ? sanitizeString(body.reference_number, 60)
-          : generateReferenceNumber(),
+          : undefined,
       product_name: sanitizeString(body.product_name, 200),
       product_name_ar: body.product_name_ar ? sanitizeString(body.product_name_ar, 200) : undefined,
       sku: body.sku ? sanitizeString(body.sku, 100) : undefined,
@@ -208,9 +207,8 @@ export async function POST(request: NextRequest) {
       language:
         body.language === "ar" || body.language === "en" ? body.language : undefined,
       purchase_price: body.purchase_price,
-      source: body.source ? sanitizeString(body.source, 50) : "manual",
       coverage_type: body.coverage_type ? sanitizeString(body.coverage_type, 50) : "standard",
-      ...buildWarrantyOwnershipInsert(user.id),
+      issuer_company_id: binding.companyId,
       status: requestedStatus,
     };
 
@@ -219,32 +217,26 @@ export async function POST(request: NextRequest) {
       Object.entries(sanitizedBody).filter(([, v]) => v !== undefined)
     );
 
-    const { data, error } = await supabase
-      .from("warranties")
-      .insert(cleanBody)
-      .select()
-      .single();
-
-    if (error) {
-      if (isWarrantyLimitError(error)) {
-        return NextResponse.json(warrantyLimitResponseBody(), { status: 409 });
-      }
-      console.warn("Warranty insert error:", error.message);
-      return NextResponse.json({ error: "Internal server error" }, { status: 500 });
-    }
-
-    // Audit log — non-blocking
-    supabase.from("activity_log").insert({
-      actor_id: user.id,
-      entity_type: "warranty",
-      entity_id: data.id,
-      action: "created",
-      new_state: { status: data.status, product_name: data.product_name },
-    }).then(() => {});
-
-    return NextResponse.json({ data }, { status: 201 });
+    const outcome = await createManualWarranty(supabase, {
+      warranty: cleanBody, idempotencyKey, userAgent: request.headers.get("user-agent"),
+    });
+    return NextResponse.json(outcome, {
+      status: 201,
+      headers: outcome.idempotent_replay ? { "Idempotency-Replayed": "true" } : {},
+    });
   } catch (err) {
-    console.warn("Warranties POST error:", err);
+    if (err instanceof WarrantyCreationError) {
+      return NextResponse.json({ error: err.message, code: err.code }, {
+        status: err.status,
+        headers: err.code === "IDEMPOTENCY_IN_PROGRESS" ? { "Retry-After": "5" } : {},
+      });
+    }
+    if (err && typeof err === "object" &&
+      (("message" in err && err.message === "warranty_limit_reached") ||
+        ("details" in err && typeof err.details === "string" && err.details.includes("warranty_limit_reached")))) {
+      return NextResponse.json(warrantyLimitResponseBody(), { status: 409 });
+    }
+    console.warn("Warranties POST failed");
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
