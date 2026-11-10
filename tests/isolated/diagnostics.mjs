@@ -26,7 +26,9 @@ function failureCoordinates(value) {
   const confirmationState = ['callback_rejected', 'verification_rejected', 'sign_in', 'dashboard', 'onboarding', 'other'].includes(value.confirmationState) ? value.confirmationState : undefined;
   const transit = Object.fromEntries(['callbackSeen', 'callbackCookieSet', 'hasAuthCookie', 'authRedirect', 'cookieApplicable', 'cookieVerified', 'profileReadable'].filter(key => typeof value[key] === 'boolean').map(key => [key, value[key]]));
   const boundaries = Array.isArray(value.boundaries) ? [...new Set(value.boundaries.filter(value => ['client_http', 'server_http', 'page_error', 'csp', 'console_error'].includes(value)))].slice(0, 5) : [];
-  return { category: value.category, ...(boundaries.length ? { boundaries } : {}), ...(confirmationState ? { confirmationState, ...transit } : {}), ...(file && Number.isSafeInteger(value.line) && value.line > 0 && value.line < 100000
+  const httpChecks = Array.isArray(value.httpChecks) ? value.httpChecks.filter(item => /^([45][0-9]{2}):(activity_log|warranty_claims|company_members|warranty_documents|warranties|notifications|profiles|subscriptions|companies)$/.test(item)).slice(0, 10) : [];
+  const proxyState = /^(?:cookie|no_cookie):(?:no_session|auth_failure|none)$/.test(value.proxyState || '') ? value.proxyState : undefined;
+  return { category: value.category, ...(boundaries.length ? { boundaries } : {}), ...(httpChecks.length ? { httpChecks } : {}), ...(confirmationState ? { confirmationState, ...transit, ...(proxyState ? { proxyState } : {}) } : {}), ...(file && Number.isSafeInteger(value.line) && value.line > 0 && value.line < 100000
     && Number.isSafeInteger(value.column) && value.column >= 0 && value.column < 100000
     ? { file, line: value.line, column: value.column } : {}) };
 }
@@ -50,7 +52,9 @@ export function safeBrowserFailure(error) {
   const confirmationState = text.match(/\bisolated_confirmation_destination:(callback_rejected|verification_rejected|sign_in|dashboard|onboarding|other)\b/)?.[1];
   const transit = Object.fromEntries([...text.matchAll(/;(callbackSeen|callbackCookieSet|hasAuthCookie|authRedirect|cookieApplicable|cookieVerified|profileReadable)=(true|false)\b/g)].map(match => [match[1], match[2] === 'true']));
   const boundaries = text.match(/\bisolated_browser_boundaries:([a-z_,]+)/)?.[1].split(',');
-  return failureCoordinates({ category, file, line, column, confirmationState, ...transit, boundaries });
+  const httpChecks = text.match(/\bisolated_http_checks:([a-z_,:0-9]+)/)?.[1].split(',');
+  const proxyState = text.match(/;proxyState=((?:cookie|no_cookie):(?:no_session|auth_failure|none))\b/)?.[1];
+  return failureCoordinates({ category, file, line, column, confirmationState, ...transit, boundaries, httpChecks, proxyState });
 }
 
 export function safeDiagnostics(step, output) {

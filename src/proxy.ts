@@ -271,10 +271,17 @@ async function handleRequest(request: NextRequest) {
 
   const {
     data: { user },
+    error: authLookupError,
   } = await supabase.auth.getUser();
 
   if ((isProtectedAppArea || isAdminArea || isApprovalArea) && !user) {
-    return buildNoIndexAuthRedirect(request, locale);
+    const denied = buildNoIndexAuthRedirect(request, locale);
+    if (process.env.WARRANTEE_ISOLATED_E2E === '1' && process.env.NEXT_PUBLIC_APP_URL === 'http://127.0.0.1:3100' &&
+        process.env.NEXT_PUBLIC_SUPABASE_URL === 'http://127.0.0.1:54321' && !process.env.VERCEL && !process.env.VERCEL_ENV) {
+      const errorKind = authLookupError?.name === 'AuthSessionMissingError' ? 'no_session' : authLookupError ? 'auth_failure' : 'none';
+      denied.headers.set('x-warrantee-isolated-auth', `${request.cookies.getAll().some(cookie => /^sb-.*auth-token(?:\.\d+)?$/.test(cookie.name)) ? 'cookie' : 'no_cookie'}:${errorKind}`);
+    }
+    return denied;
   }
 
   if ((isAdminArea || isApprovalArea) && user) {

@@ -3,6 +3,7 @@ import { expect, type Page, type TestInfo } from "@playwright/test";
 export function watchForPageErrors(page: Page, testInfo: TestInfo) {
   const errors: string[] = [];
   const boundaries = new Set<string>();
+  const httpChecks = new Set<string>();
 
   page.on("response", (response) => {
     const status = response.status();
@@ -10,6 +11,8 @@ export function watchForPageErrors(page: Page, testInfo: TestInfo) {
     if (status >= 500 || (status >= 400 && !/\/favicon\./i.test(url))) {
       errors.push(`http.${status}: ${response.request().method()} ${url}`);
       boundaries.add(status >= 500 ? 'server_http' : 'client_http');
+      const relation = ['activity_log', 'warranty_claims', 'company_members', 'warranty_documents', 'warranties', 'notifications', 'profiles', 'subscriptions', 'companies'].find(name => new URL(url).pathname === `/rest/v1/${name}`);
+      if (relation) httpChecks.add(`${status}:${relation}`);
     }
   });
 
@@ -31,7 +34,7 @@ export function watchForPageErrors(page: Page, testInfo: TestInfo) {
   return {
     async assertClean() {
       if (process.env.E2E_SUITE === 'isolated-regression' && errors.length) {
-        throw new Error(`isolated_browser_boundaries:${[...boundaries].sort().join(',')}`);
+        throw new Error(`isolated_browser_boundaries:${[...boundaries].sort().join(',')};isolated_http_checks:${[...httpChecks].sort().join(',')}`);
       }
       await testInfo.attach("browser-errors", {
         body: Buffer.from(errors.join("\n") || "No browser errors captured."),

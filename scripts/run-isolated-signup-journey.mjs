@@ -147,7 +147,7 @@ try {
   started = true;
   console.log('Starting disposable GoTrue/Postgres/PostgREST/storage and local Mailpit');
   await command(cli[0], [...cli.slice(1), 'start', '--workdir', temporary, '--exclude',
-    'realtime,imgproxy,postgres-meta,studio,edge-runtime,logflare,vector,supavisor'], { step: 'stack_start' });
+    'imgproxy,postgres-meta,studio,edge-runtime,logflare,vector,supavisor'], { step: 'stack_start' });
   const status = JSON.parse(await command(cli[0], [...cli.slice(1), 'status', '--workdir', temporary, '--output', 'json'], { step: 'stack_status' }));
   assertLoopback(status.API_URL, SUPABASE_URL);
   assertLoopback(status.INBUCKET_URL, MAIL_URL);
