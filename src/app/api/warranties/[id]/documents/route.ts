@@ -209,35 +209,52 @@ export async function POST(
       return NextResponse.json({ error: "Uploaded file was not found in storage" }, { status: 400 });
     }
 
-    const result = await insertDocumentMetadata({
-      supabase,
-      warrantyId,
-      userId: user.id,
-      safeFileName,
-      fileType,
-      fileSize,
-      filePath,
-      fileHash,
-      declaredKind,
-      sourceContext,
+    const { data: result, error } = await supabase.rpc("finalize_warranty_document", {
+      p_document: {
+        warranty_id: warrantyId,
+        file_name: safeFileName,
+        file_type: fileType,
+        file_size: fileSize,
+        file_url: filePath,
+        storage_path: filePath,
+        file_hash: fileHash,
+        uploaded_by: user.id,
+        document_kind: inferWarrantyDocumentKind(safeFileName, declaredKind),
+        provenance_status: "recorded",
+        security_status: "pending_scan",
+        security_metadata: { scanner: "not_configured", state: "queued" },
+        evidence_metadata: {
+          source_context: sourceContext,
+          original_file_name: safeFileName,
+          content_type: fileType,
+          bytes: fileSize,
+        },
+      },
     });
 
-    if (result.error || !result.data) {
-      await supabase.storage.from(WARRANTY_DOCUMENTS_BUCKET).remove([filePath]);
-      return NextResponse.json({ error: result.error?.message || "Failed to record document" }, { status: 500 });
+    if (error || typeof result?.data?.id !== "string" || !result.data.id) {
+      // The RPC may have committed before its response was lost. Keep the object
+      // and fail closed; only the atomic RPC may decide whether a row exists.
+      const status = error?.code === "42501" ? 403
+        : error?.message === "DOCUMENT_BODY_MISMATCH" ? 409
+          : ["INVALID_DOCUMENT_INPUT", "INVALID_STORAGE_PATH", "STORAGE_OBJECT_NOT_FOUND"].includes(error?.message || "") ? 400
+            : !error || ["PGRST202", "42883"].includes(error.code) ? 503 : 500;
+      return NextResponse.json({ error: "Could not confirm document finalization" }, { status });
     }
 
+    const document = result.data;
     return NextResponse.json(
       {
-        ...result.data,
+        ...document,
+        idempotent_replay: result.idempotent_replay === true,
         provenance: {
-          file_hash: fileHash,
-          storage_path: filePath,
-          uploaded_at: result.uploadedAt,
-          document_kind: result.documentKind,
-          provenance_status: result.schemaMode === "rich" ? "recorded" : "legacy",
-          security_status: result.schemaMode === "rich" ? "pending_scan" : "legacy_untracked",
-          source_context: sourceContext,
+          file_hash: document.file_hash,
+          storage_path: document.storage_path,
+          uploaded_at: document.uploaded_at,
+          document_kind: document.document_kind,
+          provenance_status: document.provenance_status,
+          security_status: document.security_status,
+          source_context: document.evidence_metadata?.source_context,
         },
       },
       { status: 201 }
