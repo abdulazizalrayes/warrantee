@@ -7,9 +7,9 @@
     "domain": "https://warrantee.io",
     "repository": "https://github.com/abdulazizalrayes/warrantee",
     "branch": "main",
-    "mapped_from_commit": "0243310ecbe92a513462b6ae0225a76f16f170bd",
-    "generated_at": "2026-11-09",
-    "refresh_scope": "Scoped update for latest-request-only document search, fail-on-flaky CI and bounded sanitized QA artifacts. Existing runtime/provider architecture retained; no fresh provider or database inventory is claimed. Source checkpoint and final release record: docs/SEARCH_QA_HARDENING_2026-11-09.md.",
+    "mapped_from_commit": "93d7fe18813da598b1f40a5e036bc34ed1e39b4b",
+    "generated_at": "2026-11-10",
+    "refresh_scope": "Approved signup-to-first-warranty reliability: signed OAuth intent, profile recovery, account-specific setup, controlled OCR input, resumable tab drafts, transactional company-bound creation/idempotency, durable auth follow-up jobs and privacy-safe complete-window activation reporting. Source checkpoint: docs/SIGNUP_FIRST_WARRANTY_RELIABILITY_2026-11-10.md. Deployment outcomes require final release evidence.",
     "classification": "internal engineering documentation; no secrets or customer records",
     "human_view": "docs/WARRANTEE_ARCHITECTURE_MAP.html",
     "agent_view": "docs/warrantee-architecture-map.json",
@@ -70,13 +70,13 @@
     },
     "inventory_counts": {
       "page_files": 59,
-      "route_handlers": 115,
+      "route_handlers": 116,
       "layouts": 30,
       "database_tables": 51,
-      "migration_files": 69,
+      "migration_files": 70,
       "scheduled_jobs": 3,
-      "github_workflows": 4,
-      "e2e_spec_files": 11
+      "github_workflows": 5,
+      "e2e_spec_files": 13
     }
   },
   "layers": [
@@ -314,12 +314,15 @@
       "layer": "experience",
       "kind": "web_surface",
       "status": "active",
-      "responsibility": "Login, signup, OAuth, magic link, password login, forgot password, reset, and callback handling.",
+      "responsibility": "Login, signup, signed flow-bound OAuth intent, durable single-completion Business setup with retry, safe callbacks, retryable profile/session states, password recovery and durable non-blocking signup follow-up jobs.",
       "code_refs": [
         "src/app/[locale]/auth/page.tsx",
         "src/app/[locale]/forgot-password/page.tsx",
         "src/app/[locale]/reset-password/page.tsx",
-        "src/app/auth/callback/route.ts"
+        "src/app/auth/callback/route.ts",
+        "src/lib/server/oauth-flow-intent.ts",
+        "src/lib/server/oauth-signup-setup.ts",
+        "src/lib/server/auth-followup-jobs.ts"
       ]
     },
     {
@@ -541,12 +544,16 @@
       "layer": "domain",
       "kind": "domain_service",
       "status": "active",
-      "responsibility": "Create, read, update, archive, transfer, submit, issue, and bulk-import warranties.",
+      "responsibility": "Create, read, update, archive, transfer, submit, issue, and bulk-import warranties. Manual creation uses an RLS-bound transaction for company membership, approval state, stable idempotency replay and authoritative activation evidence.",
       "code_refs": [
         "src/app/api/warranties/route.ts",
         "src/app/api/warranties/[id]/route.ts",
         "src/app/api/warranties/bulk-import/route.ts",
-        "src/lib/warranties.ts"
+        "src/lib/warranties.ts",
+        "src/lib/server/warranty-creation.ts",
+        "src/lib/warranty-creation.ts",
+        "src/lib/warranty-creation-draft.ts",
+        "supabase/migrations/20261110151140_manual_warranty_creation_transaction.sql"
       ]
     },
     {
@@ -568,7 +575,7 @@
       "layer": "domain",
       "kind": "domain_service",
       "status": "active",
-      "responsibility": "Company-authorized submit, approve, and reject transitions with compare-and-set semantics.",
+      "responsibility": "Company-authorized submit, approve, and reject transitions with compare-and-set semantics and a database guard against direct unapproved issuance or issuer rebinding.",
       "code_refs": [
         "src/app/api/warranties/[id]/submit/route.ts",
         "src/app/api/warranties/[id]/approve/route.ts",
@@ -594,7 +601,7 @@
       "layer": "domain",
       "kind": "domain_service",
       "status": "active",
-      "responsibility": "Validate, upload, hash, scan, quarantine, authorize, download, and record warranty documents and claim attachments through baseline checks and an optional self-hosted ClamAV service.",
+      "responsibility": "Validate, upload, hash, scan, quarantine, authorize, download, and record warranty documents and claim attachments through baseline checks and an optional self-hosted ClamAV service. Signed-upload metadata finalization is an RLS-bound idempotent transaction keyed by warranty and storage path.",
       "code_refs": [
         "src/app/api/documents/route.ts",
         "src/app/api/documents/[id]/download/route.ts",
@@ -1007,7 +1014,7 @@
       "layer": "delivery",
       "kind": "quality_gate",
       "status": "active",
-      "responsibility": "Dependency install, source/security/build/browser gates, fail-on-flaky E2E, bounded sanitized failure evidence, and QA cleanup. Raw authenticated traces and private payloads are not uploaded.",
+      "responsibility": "Dependency install, source/security/build/browser gates, disposable local Auth/Postgres/Storage/SMTP journey verification, fail-on-flaky E2E and bounded sanitized counters. CI cannot seed production QA identities; raw authenticated traces and private payloads are not uploaded. Legacy suites remain a release blocker until their isolated prerequisites are verified.",
       "code_refs": [
         ".github/workflows/ci.yml",
         "playwright.config.ts",
@@ -1971,6 +1978,10 @@
     ],
     "platform_routes": [
       {
+        "path": "/api/admin/activation",
+        "access": "live platform-admin role; privacy-safe complete-window activation aggregates, no raw records"
+      },
+      {
         "path": "/[locale]/owner/brief.txt",
         "access": "authenticated platform-admin categorical operational brief"
       },
@@ -2021,7 +2032,7 @@
       "name": "Operational data retention",
       "schedule": "30 2 * * *",
       "path": "/api/cron/data-retention",
-      "purpose": "Bound retention of raw ingestion/OCR, API usage, and webhook processing data."
+      "purpose": "Bound retention of raw ingestion/OCR, API usage, and webhook processing data; recover durable auth follow-up jobs without blocking sign-in."
     }
   ],
   "flows": [
