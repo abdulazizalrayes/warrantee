@@ -7,8 +7,9 @@ import { usePathname, useRouter } from 'next/navigation';
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
 import Link from 'next/link';
 import { getContentLocale, normalizeLocale } from '@/lib/i18n';
-import { filterRealFunnelEvents, isPaidSubscriptionSignal } from '@/lib/growth-analytics';
+import { isPaidSubscriptionSignal } from '@/lib/growth-analytics';
 import { PROFESSIONAL_PRICE_SAR } from '@/lib/plan-config';
+import type { ActivationReport } from '@/lib/server/activation-report';
 
 const supabase = createSupabaseBrowserClient();
 
@@ -58,10 +59,6 @@ interface Stats {
   warrantiesByCategory: { category: string; count: number }[];
   claimsByStatus: { status: string; count: number }[];
   revenueByMonth: { month: string; amount: number }[];
-  completedOnboarding: number;
-  newUsers30d: number;
-  newWarranties30d: number;
-  warrantyCreators: number;
 }
 
 type CreatedAtRow = { created_at?: string | null };
@@ -89,16 +86,12 @@ const emptyStats: Stats = {
   ingestionSuccess: 0, ingestionTotal: 0,
   recentActivity: [], usersByMonth: [], warrantiesByCategory: [], claimsByStatus: [],
   revenueByMonth: [],
-  completedOnboarding: 0, newUsers30d: 0, newWarranties30d: 0, warrantyCreators: 0,
 };
 
 const qaSourcePrefixes = ['qa_', 'test_', 'seed_'];
-const qaEmailFragments = ['test', 'qa', 'demo', 'example.com', 'abdulaziz'];
-
 const isLikelyQaEmail = (email?: string | null) => {
-  const normalized = String(email || '').toLowerCase();
-  if (!normalized) return false;
-  return normalized.endsWith('@warrantee.io') || qaEmailFragments.some((fragment) => normalized.includes(fragment));
+  const domain = String(email || '').trim().toLowerCase().split('@')[1];
+  return ['warrantee.io', 'example.com', 'example.org', 'example.net'].includes(domain);
 };
 
 const isLikelyInternalUser = (user: UserAdminRow & { id?: string | null }) => {
@@ -120,12 +113,6 @@ const isLikelyQaWarranty = (warranty: any, excludedUserIds: Set<string>) => {
   return qaSourcePrefixes.some((prefix) => source.startsWith(prefix))
     || source.includes('_diag')
     || getWarrantyActorIds(warranty).some((id) => excludedUserIds.has(String(id)));
-};
-
-const getRecentCutoffIso = (days: number) => {
-  const cutoff = new Date();
-  cutoff.setDate(cutoff.getDate() - days);
-  return cutoff.toISOString();
 };
 
 const buildAdminStats = ({
@@ -181,10 +168,6 @@ const buildAdminStats = ({
   });
   const revenueByMonth = Object.entries(revMap).sort().map(([month, amount]) => ({ month: month.substring(5), amount }));
 
-  const cutoff30d = getRecentCutoffIso(30);
-  const creatorIds = new Set<string>();
-  warranties.forEach((warranty: any) => getWarrantyActorIds(warranty).forEach((id) => creatorIds.add(String(id))));
-
   return {
     totalUsers: users.length,
     totalWarranties: warranties.length,
@@ -206,10 +189,6 @@ const buildAdminStats = ({
     warrantiesByCategory,
     claimsByStatus,
     revenueByMonth,
-    completedOnboarding: users.filter((x: UserAdminRow) => Boolean(x.onboarding_completed)).length,
-    newUsers30d: users.filter((x: CreatedAtRow) => Boolean(x.created_at && x.created_at >= cutoff30d)).length,
-    newWarranties30d: warranties.filter((x: CreatedAtRow) => Boolean(x.created_at && x.created_at >= cutoff30d)).length,
-    warrantyCreators: creatorIds.size,
   };
 };
 
@@ -462,11 +441,11 @@ export default function AdminPage() {
   const [ingestions, setIngestions] = useState<any[]>([]);
   const [revenueEvents, setRevenueEvents] = useState<any[]>([]);
   const [subscriptions, setSubscriptions] = useState<any[]>([]);
-  const [funnelEvents, setFunnelEvents] = useState<any[]>([]);
+  const [activationReport, setActivationReport] = useState<ActivationReport | null>(null);
+  const [activationError, setActivationError] = useState(false);
   const [agentConciergeReport, setAgentConciergeReport] = useState<AgentConciergeReport | null>(null);
   const [agentConciergeLoading, setAgentConciergeLoading] = useState(false);
   const [agentConciergeError, setAgentConciergeError] = useState('');
-  const [excludedUserIds, setExcludedUserIds] = useState<string[]>([]);
   const [systemConfig, setSystemConfig] = useState<any[]>([]);
   const [extensionPolicies, setExtensionPolicies] = useState<any[]>([]);
   const [extensionPoliciesLoading, setExtensionPoliciesLoading] = useState(false);
@@ -522,15 +501,27 @@ export default function AdminPage() {
   };
 
   // ─── DATA LOADING ─────────────────────────────────────
+  const loadActivationReport = async () => {
+    setActivationReport(null);
+    setActivationError(false);
+    try {
+      const response = await fetch('/api/admin/activation', { cache: 'no-store' });
+      const report = await response.json();
+      if (!response.ok || report.complete !== true) throw new Error('Incomplete activation report');
+      setActivationReport(report as ActivationReport);
+    } catch {
+      setActivationError(true);
+    }
+  };
+
   const loadAllData = async () => {
     const now = new Date().toISOString();
-    const [usersR, warranR, compR, claimR, actR, funnelR, tickR, fraudR, ingR, revR, subsR] = await Promise.all([
+    const [usersR, warranR, compR, claimR, actR, tickR, fraudR, ingR, revR, subsR] = await Promise.all([
       supabase.from('profiles').select('*').order('created_at', { ascending: false }).limit(200),
       supabase.from('warranties').select('*').is('deleted_at', null).order('created_at', { ascending: false }).limit(200),
       supabase.from('companies').select('*').order('created_at', { ascending: false }).limit(200),
       supabase.from('warranty_claims').select('*').is('deleted_at', null).order('created_at', { ascending: false }).limit(200),
-      supabase.from('activity_log').select('*').order('created_at', { ascending: false }).limit(30),
-      supabase.from('activity_log').select('*').eq('entity_type', 'funnel_event').order('created_at', { ascending: false }).limit(100),
+      supabase.from('activity_log').select('*').neq('entity_type', 'funnel_event').order('created_at', { ascending: false }).limit(30),
       supabase.from('support_tickets').select('*').order('created_at', { ascending: false }).limit(200),
       supabase.from('fraud_signals').select('*').order('created_at', { ascending: false }).limit(100),
       supabase
@@ -540,6 +531,7 @@ export default function AdminPage() {
         .limit(200),
       supabase.from('revenue_events').select('*').order('created_at', { ascending: false }).limit(200),
       supabase.from('subscriptions').select('*').order('created_at', { ascending: false }).limit(100),
+      loadActivationReport(),
     ]);
 
     const u = usersR.data || []; const w = warranR.data || []; const co = compR.data || [];
@@ -548,7 +540,6 @@ export default function AdminPage() {
 
     setUsers(u); setWarranties(w); setCompanies(co); setClaims(cl);
     setTickets(tk); setFraudSignals(fr); setIngestions(ig); setRevenueEvents(rv); setSubscriptions(sb);
-    setFunnelEvents(funnelR.data || []);
 
     const allStats = buildAdminStats({
       users: u, warranties: w, companies: co, claims: cl, tickets: tk, fraudSignals: fr,
@@ -560,7 +551,6 @@ export default function AdminPage() {
         .map((user: { id?: string | null }) => String(user.id))
         .filter(Boolean)
     );
-    setExcludedUserIds(Array.from(excludedUsers));
     const realUsers = u.filter((user: UserAdminRow & { id?: string | null }) => !excludedUsers.has(String(user.id)));
     const realUserIds = new Set<string>(realUsers.map((user: { id?: string | null }) => String(user.id)).filter(Boolean));
     const realWarranties = w.filter((warranty: any) => !isLikelyQaWarranty(warranty, excludedUsers));
@@ -870,81 +860,45 @@ export default function AdminPage() {
     audit: locale === 'ar' ? 'فحص سجل التدقيق والعمليات عالية المخاطر.' : 'Inspect the audit trail and high-risk operations.',
   } as Record<TabId, string>)[activeTab];
   const activeStats = growthLens === 'real' ? realStats : stats;
-  const excludedCounts = {
-    users: Math.max(stats.totalUsers - realStats.totalUsers, 0),
-    warranties: Math.max(stats.totalWarranties - realStats.totalWarranties, 0),
-    claims: Math.max(stats.totalClaims - realStats.totalClaims, 0),
-  };
-  const funnelBase = Math.max(activeStats.totalUsers, 1);
+  const activationStock = activationReport?.stock[growthLens];
+  const activationHints = activationReport?.hints[growthLens];
+  const funnelBase = activationStock?.accounts || 0;
   const funnelStages = [
-    { label: text.signedUp, value: activeStats.totalUsers, pct: 100, color: '#3B82F6' },
+    { label: text.signedUp, value: activationStock?.accounts, color: '#3B82F6' },
     {
-      label: text.completedOnboarding,
-      value: activeStats.completedOnboarding,
-      pct: Math.round((activeStats.completedOnboarding / funnelBase) * 100),
+      label: locale === 'ar' ? 'حُسم الإعداد (يشمل التخطي)' : 'Setup resolved (includes skipped)',
+      value: activationStock?.setupResolved,
       color: '#10B981',
     },
     {
-      label: text.activated,
-      value: activeStats.warrantyCreators,
-      pct: Math.round((activeStats.warrantyCreators / funnelBase) * 100),
+      label: text.warrantyCreators,
+      value: activationStock?.creatorUsers,
       color: '#0071e3',
     },
-    {
-      label: text.claimEngaged,
-      value: activeStats.totalClaims,
-      pct: Math.round((activeStats.totalClaims / funnelBase) * 100),
-      color: '#F59E0B',
-    },
-    {
-      label: text.payingSignals,
-      value: activeStats.activeSubscriptions,
-      pct: Math.round((activeStats.activeSubscriptions / funnelBase) * 100),
-      color: '#8B5CF6',
-    },
   ];
-  const visibleFunnelEvents = growthLens === 'real'
-    ? filterRealFunnelEvents(funnelEvents, new Set(excludedUserIds))
-    : funnelEvents;
-  const excludedFunnelEventCount = Math.max(funnelEvents.length - visibleFunnelEvents.length, 0);
-  const serverFunnelCounts = Object.entries(
-    visibleFunnelEvents.reduce((acc: Record<string, number>, event: any) => {
-      const action = event.action || 'unknown';
-      acc[action] = (acc[action] || 0) + 1;
-      return acc;
-    }, {})
-  ).sort((a, b) => b[1] - a[1]);
-  const campaignFunnelCounts = Object.values(
-    visibleFunnelEvents.reduce((acc: Record<string, {
-      source: string;
-      medium: string;
-      campaign: string;
-      count: number;
-      actions: Record<string, number>;
-    }>, event: any) => {
-      const metadata = (event.metadata || {}) as Record<string, unknown>;
-      const source = typeof metadata.utm_source === 'string' ? metadata.utm_source : '';
-      const medium = typeof metadata.utm_medium === 'string' ? metadata.utm_medium : '';
-      const campaign = typeof metadata.utm_campaign === 'string' ? metadata.utm_campaign : '';
-      if (!source && !medium && !campaign) return acc;
-
-      const key = [source || 'unknown', medium || 'unknown', campaign || 'unknown'].join('|');
-      if (!acc[key]) {
-        acc[key] = {
-          source: source || EM_DASH,
-          medium: medium || EM_DASH,
-          campaign: campaign || EM_DASH,
-          count: 0,
-          actions: {},
-        };
-      }
-
-      const action = event.action || 'unknown';
-      acc[key].count += 1;
-      acc[key].actions[action] = (acc[key].actions[action] || 0) + 1;
-      return acc;
-    }, {})
-  ).sort((a, b) => b.count - a.count);
+  const excludedFunnelEventCount = activationReport?.excluded.events || 0;
+  const serverFunnelCounts = activationHints?.actions || [];
+  const campaignFunnelCounts = activationHints?.campaigns || [];
+  const activationScope = activationReport
+    ? `${activationReport.period.since} <= UTC < ${activationReport.period.until}`
+    : activationError
+      ? (locale === 'ar' ? 'التقرير غير متاح؛ لم تُرجع أعداد كاملة.' : 'Report unavailable; no complete counts returned.')
+      : (locale === 'ar' ? 'جارٍ تحميل التقرير الكامل...' : 'Loading complete report...');
+  const activationCoverage = (
+    <div className="mt-3 space-y-2 text-xs text-gray-500" aria-live="polite">
+      <p className="break-words" dir="ltr">{activationScope}</p>
+      {activationReport && <>
+        <p>{locale === 'ar'
+          ? 'نافذة أحداث كاملة لمدة 30 يوما. مخزون الحسابات والضمانات تاريخي بالحالة الحالية؛ ليس مجموعة تسجيل أو قمع تحويل.'
+          : 'Complete 30-day event window. Account and warranty stock is historical retained state, not a signup cohort or conversion funnel.'}</p>
+        <p>{locale === 'ar'
+          ? 'إشارات العميل ليست إجراءات مؤكدة. يشمل حسم الإعداد التخطي. المنشئون حسب created_by فقط؛ المسودات مستبعدة. تصنيف البشر تقديري.'
+          : 'Client hints are not verified actions. Setup resolved includes skipped. Creators use created_by only; drafts excluded. Human classification is heuristic.'}</p>
+        <p>{locale === 'ar' ? 'إشارات الإعداد: مكتمل / متخطى / غير معروف' : 'Setup hints: completed / skipped / unknown'}: {activationHints?.setup.completed} / {activationHints?.setup.skipped} / {activationHints?.setup.unknown}. {locale === 'ar' ? 'ضمانات بلا منشئ معروف (كل السجلات)' : 'Warranties without a known creator (all stock)'}: {activationReport.stock.all.unattributedWarranties}.</p>
+        <details><summary>{locale === 'ar' ? 'حدود التغطية' : 'Coverage gaps'}</summary><ul className="mt-2 space-y-1">{activationReport.gaps.map((gap) => <li key={gap}>{gap}</li>)}</ul></details>
+      </>}
+    </div>
+  );
   const agentConciergeStatusCounts = Object.fromEntries(
     (agentConciergeReport?.breakdown.statuses || []).map(({ key, value }) => [key, value])
   );
@@ -1103,7 +1057,7 @@ export default function AdminPage() {
                     <h3 className="text-sm font-semibold text-gray-200">{text.growthLens}</h3>
                     <p className="mt-1 text-xs text-gray-500">
                       {growthLens === 'real'
-                        ? `${text.qaExcluded}: ${excludedCounts.users} ${text.usersTab}, ${excludedCounts.warranties} ${text.warrantiesTab}, ${excludedCounts.claims} ${text.claimsTab}.`
+                        ? `${locale === 'ar' ? 'مستبعد من تقارير التفعيل' : 'Excluded from activation reports'}: ${activationReport?.excluded.accounts ?? EM_DASH} ${text.usersTab}, ${activationReport?.excluded.warranties ?? EM_DASH} ${text.warrantiesTab}.`
                         : locale === 'ar' ? 'يعرض كل النشاط التشغيلي بما في ذلك الاختبار والفريق.' : 'Shows all operational activity, including QA and internal team records.'}
                     </p>
                   </div>
@@ -1120,48 +1074,50 @@ export default function AdminPage() {
                     ))}
                   </div>
                 </div>
+                {activationCoverage}
                 <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-                  <SparkNumber label={text.completedOnboarding} value={activeStats.completedOnboarding} icon="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" color="#10B981" />
-                  <SparkNumber label={text.warrantyCreators} value={activeStats.warrantyCreators} icon="M17 20h5v-2a4 4 0 00-4-4h-1M9 20H4v-2a4 4 0 014-4h1m0-4a4 4 0 118 0 4 4 0 01-8 0z" color="#3B82F6" />
-                  <SparkNumber label={text.newUsers30d} value={activeStats.newUsers30d} icon="M12 4v16m8-8H4" color="#8B5CF6" />
-                  <SparkNumber label={text.newWarranties30d} value={activeStats.newWarranties30d} icon="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" color="#0071e3" />
+                  <SparkNumber label={locale === 'ar' ? 'حُسم الإعداد (تاريخي)' : 'Setup resolved (stock)'} value={activationStock?.setupResolved ?? EM_DASH} icon="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" color="#10B981" />
+                  <SparkNumber label={text.warrantyCreators} value={activationStock?.creatorUsers ?? EM_DASH} icon="M17 20h5v-2a4 4 0 00-4-4h-1M9 20H4v-2a4 4 0 014-4h1m0-4a4 4 0 118 0 4 4 0 01-8 0z" color="#3B82F6" />
+                  <SparkNumber label={text.newUsers30d} value={activationStock?.newAccounts30d ?? EM_DASH} icon="M12 4v16m8-8H4" color="#8B5CF6" />
+                  <SparkNumber label={text.newWarranties30d} value={activationStock?.newWarranties30d ?? EM_DASH} icon="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" color="#0071e3" />
                 </div>
               </section>
 
               <section className="rounded-xl border border-[#1a1a3a] bg-[#0e0e20] p-5">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                   <div>
-                    <h3 className="text-sm font-semibold text-gray-200">{text.conversionFunnel}</h3>
+                    <h3 className="text-sm font-semibold text-gray-200">{locale === 'ar' ? 'مخزون الحسابات المؤهلة' : 'Eligible account stock'}</h3>
                     <p className="mt-1 text-xs text-gray-500">
                       {locale === 'ar'
-                        ? 'يركز على التحول من التسجيل إلى أول قيمة تشغيلية.'
-                        : 'Tracks movement from signup to first operating value.'}
+                        ? 'نسبة من مخزون الحسابات الحالي، وليست نسبة تحويل لمدة 30 يوما.'
+                        : 'Share of current account stock, not a 30-day conversion rate.'}
                     </p>
                   </div>
                   <span className="text-[10px] uppercase tracking-[0.2em] text-[#0071e3]/70">
                     {growthLens === 'real' ? text.realCustomersOnly : text.allActivity}
                   </span>
                 </div>
-                <div className="mt-5 grid gap-3 lg:grid-cols-5">
+                <div className="mt-5 grid gap-3 lg:grid-cols-3">
                   {funnelStages.map((stage) => (
                     <div key={stage.label} className="rounded-lg border border-[#1a1a3a] bg-[#12122a] p-4">
                       <div className="flex items-center justify-between gap-3">
                         <p className="text-xs font-medium text-gray-300">{stage.label}</p>
-                        <p className="text-lg font-bold text-white">{stage.value.toLocaleString()}</p>
+                        <p className="text-lg font-bold text-white">{stage.value?.toLocaleString() ?? EM_DASH}</p>
                       </div>
                       <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#1a1a3a]">
                         <div
                           className="h-full rounded-full transition-all"
-                          style={{ width: `${Math.min(stage.pct, 100)}%`, backgroundColor: stage.color }}
+                          style={{ width: `${funnelBase && stage.value !== undefined ? (stage.value / funnelBase) * 100 : 0}%`, backgroundColor: stage.color }}
                         />
                       </div>
-                      <p className="mt-2 text-[10px] text-gray-500">{stage.pct}%</p>
+                      <p className="mt-2 text-[10px] text-gray-500">{funnelBase && stage.value !== undefined ? `${Math.round((stage.value / funnelBase) * 100)}%` : EM_DASH}</p>
                     </div>
                   ))}
                 </div>
               </section>
 
               {/* KPI Cards */}
+              <p className="text-xs text-gray-500">{locale === 'ar' ? 'المؤشرات التشغيلية أدناه من أحدث السجلات المحدودة؛ ليست إجماليات كاملة.' : 'Operational metrics below use capped recent records; they are not complete totals.'}</p>
               <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-3">
                 <SparkNumber label={text.totalUsers} value={activeStats.totalUsers} sub={`${activeStats.consumerUsers}C / ${activeStats.businessUsers}B`} icon="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" color="#3B82F6" />
                 <SparkNumber label={text.totalWarranties} value={activeStats.totalWarranties} sub={`${activeStats.activeWarranties} ${text.active}`} icon="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" color="#0071e3" />
@@ -1243,11 +1199,11 @@ export default function AdminPage() {
               <section className="rounded-xl border border-[#1a1a3a] bg-[#0e0e20] p-5">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                   <div>
-                    <h3 className="text-sm font-semibold text-gray-200">{text.serverFunnel}</h3>
+                    <h3 className="text-sm font-semibold text-gray-200">{locale === 'ar' ? 'إشارات رحلة العميل (30 يوما)' : 'Client journey hints (30d)'}</h3>
                     <p className="mt-1 text-xs text-gray-500">
                       {locale === 'ar'
-                        ? 'أحداث مسجلة من الخادم بدون أسماء أو بريد أو رسائل.'
-                        : 'Server-recorded events without names, emails, or message bodies.'}
+                        ? 'أحداث محفوظة على الخادم، وليست إجراءات مؤكدة.'
+                        : 'Server-stored client signals, not verified actions.'}
                     </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
@@ -1264,19 +1220,24 @@ export default function AdminPage() {
                       ))}
                     </div>
                     <span className="rounded-full border border-[#2a2a4a] bg-[#12122a] px-3 py-1 text-xs text-gray-400">
-                      {visibleFunnelEvents.length.toLocaleString()} {locale === 'ar' ? 'حدث' : 'events'}
+                      {activationHints?.total.toLocaleString() ?? EM_DASH} {locale === 'ar' ? 'إشارة' : 'hints'}
                       {growthLens === 'real' && excludedFunnelEventCount > 0
                         ? ` (${excludedFunnelEventCount.toLocaleString()} ${locale === 'ar' ? 'مستبعد' : 'excluded'})`
                         : ''}
                     </span>
                   </div>
                 </div>
+                {activationCoverage}
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <SparkNumber label={locale === 'ar' ? 'أول إنشاء مؤكد (نطاقات، 30 يوما)' : 'Verified first creation (scopes, 30d)'} value={activationReport?.verified.firstWarrantyCreatedScopes ?? EM_DASH} icon="M9 12l2 2 4-4" color="#10B981" />
+                  <SparkNumber label={locale === 'ar' ? 'أول إصدار مؤكد (نطاقات، 30 يوما)' : 'Verified first issuance (scopes, 30d)'} value={activationReport?.verified.firstWarrantyIssuedScopes ?? EM_DASH} icon="M9 12l2 2 4-4" color="#3B82F6" />
+                </div>
 
                 {serverFunnelCounts.length === 0 ? (
-                  <p className="mt-6 text-sm text-gray-500">{text.noFunnelEvents}</p>
+                  <p className="mt-6 text-sm text-gray-500">{activationReport ? text.noFunnelEvents : activationScope}</p>
                 ) : (
                   <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                    {serverFunnelCounts.slice(0, 8).map(([action, count]) => (
+                    {serverFunnelCounts.map(({ action, count }) => (
                       <div key={action} className="rounded-lg border border-[#1a1a3a] bg-[#12122a] p-4">
                         <p className="truncate text-xs font-medium text-gray-400">{action}</p>
                         <p className="mt-2 text-2xl font-bold text-white">{count.toLocaleString()}</p>
@@ -1302,10 +1263,10 @@ export default function AdminPage() {
                 </div>
 
                 {campaignFunnelCounts.length === 0 ? (
-                  <p className="mt-6 text-sm text-gray-500">{text.noCampaignAttribution}</p>
+                  <p className="mt-6 text-sm text-gray-500">{activationReport ? text.noCampaignAttribution : activationScope}</p>
                 ) : (
                   <div className="mt-5 grid gap-3 lg:grid-cols-3">
-                    {campaignFunnelCounts.slice(0, 6).map((campaign) => {
+                    {campaignFunnelCounts.map((campaign) => {
                       const topAction = Object.entries(campaign.actions).sort((a, b) => b[1] - a[1])[0];
                       return (
                         <div key={`${campaign.source}-${campaign.medium}-${campaign.campaign}`} className="rounded-lg border border-[#1a1a3a] bg-[#12122a] p-4">
@@ -1409,38 +1370,27 @@ export default function AdminPage() {
 
               <section className="rounded-xl border border-[#1a1a3a] bg-[#0e0e20] overflow-hidden">
                 <div className="border-b border-[#1a1a3a] px-5 py-4">
-                  <h3 className="text-sm font-semibold text-gray-200">{text.recentActivity}</h3>
+                  <h3 className="text-sm font-semibold text-gray-200">{locale === 'ar' ? 'إجماليات إشارات العميل (30 يوما)' : 'Client hint totals (30d)'}</h3>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead className="bg-[#12122a] text-[11px] uppercase tracking-wide text-gray-500">
                       <tr>
                         <th className="px-4 py-3 text-left">{text.action}</th>
-                        <th className="px-4 py-3 text-left">{text.source}</th>
-                        <th className="px-4 py-3 text-left">{text.campaign}</th>
-                        <th className="px-4 py-3 text-left">Path</th>
-                        <th className="px-4 py-3 text-left">{text.date}</th>
+                        <th className="px-4 py-3 text-left">{locale === 'ar' ? 'عدد الإشارات' : 'Hint count'}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[#1a1a3a]">
-                      {visibleFunnelEvents.length === 0 ? (
+                      {serverFunnelCounts.length === 0 ? (
                         <tr>
-                          <td colSpan={5} className="px-4 py-8 text-center text-sm text-gray-500">{text.noFunnelEvents}</td>
+                          <td colSpan={2} className="px-4 py-8 text-center text-sm text-gray-500">{activationReport ? text.noFunnelEvents : activationScope}</td>
                         </tr>
-                      ) : visibleFunnelEvents.map((event) => {
-                        const metadata = (event.metadata || {}) as Record<string, any>;
-                        const source = metadata.utm_source || metadata.ref || (event.actor_id ? (locale === 'ar' ? 'مستخدم مسجل' : 'Signed-in user') : (locale === 'ar' ? 'زائر' : 'Visitor'));
-                        const campaign = metadata.utm_campaign || EM_DASH;
-                        return (
-                          <tr key={event.id} className="hover:bg-[#12122a]/60">
-                            <td className="px-4 py-3 text-sm font-medium text-gray-200">{event.action}</td>
-                            <td className="max-w-[180px] truncate px-4 py-3 text-xs text-gray-400">{source}</td>
-                            <td className="max-w-[220px] truncate px-4 py-3 text-xs text-gray-500">{campaign}</td>
-                            <td className="max-w-[280px] truncate px-4 py-3 text-xs text-gray-500">{metadata.path || EM_DASH}</td>
-                            <td className="px-4 py-3 text-xs text-gray-500">{fmtDateTime(event.created_at)}</td>
-                          </tr>
-                        );
-                      })}
+                      ) : serverFunnelCounts.map(({ action, count }) => (
+                        <tr key={action} className="hover:bg-[#12122a]/60">
+                          <td className="px-4 py-3 text-sm font-medium text-gray-200">{action}</td>
+                          <td className="px-4 py-3 text-xs text-gray-400">{count.toLocaleString()}</td>
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
                 </div>

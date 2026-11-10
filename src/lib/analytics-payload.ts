@@ -8,7 +8,7 @@ type Payload = Record<string, unknown>;
 const record = (value: unknown): Payload => value !== null && typeof value === "object" && !Array.isArray(value)
   ? value as Payload : {};
 const member = (value: unknown, values: readonly string[]) => typeof value === "string" && values.includes(value);
-const templates = ["equipment_service", "contractor_handover", "electronics_retail", "appliance_retail", "manufacturer", "none"];
+const templates = ["personal_purchase", "equipment_service", "contractor_handover", "electronics_retail", "appliance_retail", "manufacturer", "none"];
 const plans = ["personal-free", "business-free", "pro", "enterprise", "free"];
 const plan = (value: unknown) => value === "professional" ? "pro" : member(value, plans) ? value as string : undefined;
 const statuses = ["draft", "pending_approval", "active", "approved", "rejected", "expired", "claimed", "cancelled"];
@@ -54,7 +54,11 @@ export const serverFunnelEvents = new Set([
   "page_view", "auth_intent", "funnel_cta_click", "whatsapp_click", "signup_submit", "sign_up",
   "contact_form_submit", "seller_application_submit", "onboarding_completed", "activation_started",
   "activation_milestone", "onboarding_template_selected",
+  "auth_journey", "onboarding_journey", "warranty_journey",
 ]);
+
+export const authoritativeActivationMilestones = new Set(["first_warranty_created", "first_warranty_issued"]);
+const journeyReasons = ["network", "timeout", "unauthorized", "validation", "unavailable", "upload", "unknown"];
 
 function industry(value: unknown): string | undefined {
   const labels = [
@@ -128,13 +132,28 @@ export function sanitizeAnalyticsPayload(event: string, value: unknown, trafficC
       break;
     }
     case "whatsapp_click": fixed("contact", "warrantee_whatsapp"); enumField("location", ["footer", "contact_page"]); break;
-    case "onboarding_completed": fixed("activation", "first_run_onboarding_completed"); template(); booleanField("notifications_enabled"); break;
+    case "onboarding_completed":
+      fixed("activation", "first_run_onboarding_completed"); template(); booleanField("notifications_enabled");
+      enumField("completion_mode", ["completed", "skipped"]); enumField("account_type", ["consumer", "business"]); break;
     case "activation_started": fixed("activation", "first_warranty_path_started"); template(); enumField("source", ["onboarding"]); break;
     case "activation_milestone":
-      fixed("activation"); enumField("milestone", ["template_selected", "first_warranty_created", "certificate_opened", "passport_opened"]);
+      fixed("activation"); enumField("milestone", ["template_selected", "certificate_opened", "passport_opened"]);
       if (output.milestone) output.event_label = output.milestone;
       template(); enumField("source", ["onboarding"]); break;
     case "onboarding_template_selected": fixed("activation", "industry_template_selected"); template(); break;
+    case "auth_journey":
+      fixed("authentication"); enumField("stage", ["started", "confirmed", "failed"]);
+      enumField("method", ["email", "password", "google", "apple"]);
+      enumField("outcome", ["success", "failure", "pending"]); enumField("reason", journeyReasons);
+      enumField("account_type", ["consumer", "business"]); break;
+    case "onboarding_journey":
+      fixed("activation"); enumField("stage", ["opened", "step_completed", "save_failed"]);
+      integerField("step", 0, 3); enumField("outcome", ["success", "failure", "pending"]);
+      enumField("reason", journeyReasons); enumField("account_type", ["consumer", "business"]); break;
+    case "warranty_journey":
+      fixed("activation"); enumField("stage", ["form_opened", "step_completed", "save_started", "save_failed", "attachment_failed", "draft_resumed"]);
+      integerField("step", 1, 4); enumField("outcome", ["success", "failure", "pending"]);
+      enumField("reason", journeyReasons); enumField("account_type", ["consumer", "business"]); break;
     case "purchase": {
       fixed("conversion", "plan_upgrade"); output.currency = "SAR";
       if (typeof input.value === "number" && Number.isFinite(input.value) && input.value >= 0 && input.value <= 1e9) output.value = input.value;

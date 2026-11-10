@@ -79,6 +79,7 @@ function sendServerFunnelEvent(event: string, payload: Record<string, unknown>) 
   if (typeof window === "undefined" || !serverFunnelEvents.has(event)) return;
 
   const body = JSON.stringify({
+    event_id: globalThis.crypto?.randomUUID?.(),
     event,
     path: sanitizeAnalyticsPath(window.location.pathname),
     referrer: sanitizeAnalyticsReferrer(document.referrer),
@@ -91,12 +92,22 @@ function sendServerFunnelEvent(event: string, payload: Record<string, unknown>) 
       if (sent) return;
     }
 
-    void fetch("/api/funnel/events", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body,
-      keepalive: true,
-    });
+    const send = async (retry: boolean): Promise<void> => {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 5000);
+      try {
+        const response = await fetch("/api/funnel/events", {
+          method: "POST", headers: { "Content-Type": "application/json" }, body,
+          keepalive: true, signal: controller.signal,
+        });
+        if (response.status >= 500 && retry) await send(false);
+      } catch {
+        if (retry) await send(false);
+      } finally {
+        clearTimeout(timer);
+      }
+    };
+    void send(true);
   } catch {
     // Client analytics should never block the user journey.
   }
@@ -217,6 +228,35 @@ export function trackOnboardingCompleted(metadata: Record<string, unknown> = {})
     event_label: "first_run_onboarding_completed",
     ...metadata,
   });
+}
+
+type JourneyMetadata = {
+  locale?: unknown;
+  step?: number;
+  outcome?: "success" | "failure" | "pending";
+  reason?: "network" | "timeout" | "unauthorized" | "validation" | "unavailable" | "upload" | "unknown";
+  account_type?: "consumer" | "business";
+};
+
+export function trackAuthJourney(
+  stage: "started" | "confirmed" | "failed",
+  metadata: JourneyMetadata & { method?: "email" | "password" | "google" | "apple" } = {},
+) {
+  emitEvent("auth_journey", { ...metadata, stage });
+}
+
+export function trackOnboardingJourney(
+  stage: "opened" | "step_completed" | "save_failed",
+  metadata: JourneyMetadata = {},
+) {
+  emitEvent("onboarding_journey", { ...metadata, stage });
+}
+
+export function trackWarrantyJourney(
+  stage: "form_opened" | "step_completed" | "save_started" | "save_failed" | "attachment_failed" | "draft_resumed",
+  metadata: JourneyMetadata = {},
+) {
+  emitEvent("warranty_journey", { ...metadata, stage });
 }
 
 export function trackActivationStarted(metadata: Record<string, unknown> = {}) {

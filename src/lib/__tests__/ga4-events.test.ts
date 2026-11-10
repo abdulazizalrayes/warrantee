@@ -70,6 +70,34 @@ describe("browser analytics dispatch", () => {
     return { dataLayer, gtag, sendBeacon };
   }
 
+  it.each(["reject", "unavailable"])("retries bounded first-party %s once with the same identifier", async failure => {
+    const { sendBeacon } = stubAnalyticsGlobals();
+    sendBeacon.mockReturnValue(false);
+    const fetcher = vi.fn();
+    if (failure === "reject") fetcher.mockRejectedValueOnce(new Error("Synthetic network failure"));
+    else fetcher.mockResolvedValueOnce({ status: 503 });
+    fetcher.mockResolvedValueOnce({ status: 201 });
+    vi.stubGlobal("fetch", fetcher);
+    const { trackWarrantyJourney } = await import("../ga4-events");
+    trackWarrantyJourney("save_started", { locale: "en", account_type: "consumer" });
+    await vi.waitFor(() => expect(fetcher).toHaveBeenCalledTimes(2));
+    const first = fetcher.mock.calls[0][1];
+    const second = fetcher.mock.calls[1][1];
+    expect(second.body).toBe(first.body);
+    expect(JSON.parse(first.body).event_id).toMatch(/^[a-f0-9-]{36}$/);
+    expect(first.signal).toBeInstanceOf(AbortSignal);
+  });
+
+  it("does not retry a rejected first-party validation request", async () => {
+    const { sendBeacon } = stubAnalyticsGlobals();
+    sendBeacon.mockReturnValue(false);
+    const fetcher = vi.fn().mockResolvedValue({ status: 400 });
+    vi.stubGlobal("fetch", fetcher);
+    const { trackWarrantyJourney } = await import("../ga4-events");
+    trackWarrantyJourney("save_failed", { reason: "validation" });
+    await vi.waitFor(() => expect(fetcher).toHaveBeenCalledOnce());
+  });
+
   it("latches failed grant persistence and requires explicit successful recovery", async () => {
     process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID = "G-TEST";
     const { dataLayer, gtag } = stubAnalyticsGlobals();

@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
 const state = vi.hoisted(() => ({
-  insert: vi.fn(), auth: vi.fn(), createClient: vi.fn(), rateAllowed: true,
+  insert: vi.fn(), auth: vi.fn(), createClient: vi.fn(), existing: vi.fn(), rateAllowed: true,
 }));
 vi.mock("@supabase/supabase-js", () => ({ createClient: state.createClient }));
 vi.mock("@/lib/supabase/server", () => ({ createServerSupabaseClient: async () => ({ auth: { getUser: state.auth } }) }));
@@ -25,7 +25,8 @@ beforeEach(() => {
   state.auth.mockResolvedValue({ data: { user: { id: "unit-test-authenticated-actor" } } });
   state.createClient.mockReturnValue({ from: (table: string) => {
     expect(table).toBe("activity_log");
-    return { insert: state.insert };
+    const query = { select: vi.fn(() => query), eq: vi.fn(() => query), maybeSingle: state.existing };
+    return { insert: state.insert, select: query.select };
   } });
   vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://warrantee.io");
   vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://unit-test.invalid");
@@ -83,12 +84,40 @@ describe("server funnel independent privacy validation", () => {
     expect(state.auth).not.toHaveBeenCalled();
     expect(state.insert).not.toHaveBeenCalled();
   });
-  it("keeps database-error response semantics without logging submitted metadata", async () => {
+  it("reports storage failure truthfully without logging submitted metadata", async () => {
     state.insert.mockResolvedValue({ error: { message: "unit-test storage failure" } });
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     try {
-      expect((await POST(request({ event: "page_view", metadata: { email: "private@example.test" } }))).status).toBe(202);
+      const response = await POST(request({ event: "page_view", metadata: { email: "private@example.test" } }));
+      expect(response.status).toBe(503);
+      expect(await response.json()).toEqual({ accepted: false, retryable: true });
       expect(JSON.stringify(warn.mock.calls)).not.toContain("private");
     } finally { warn.mockRestore(); }
+  });
+  it("rejects browser-claimed authoritative successes before database access", async () => {
+    for (const milestone of ["first_warranty_created", "first_warranty_issued"]) {
+      expect((await POST(request({ event: "activation_milestone", metadata: { milestone } }))).status).toBe(400);
+    }
+    expect((await POST(request({ event: "warranty_created" }))).status).toBe(400);
+    expect(state.insert).not.toHaveBeenCalled();
+  });
+  it("requires a real session for private journey events and bounds request sizes", async () => {
+    state.auth.mockResolvedValue({ data: { user: null } });
+    expect((await POST(request({ event: "warranty_journey", metadata: { stage: "form_opened" } }))).status).toBe(401);
+    expect((await POST(request({ event: "page_view", metadata: { ignored: "x".repeat(17000) } }))).status).toBe(413);
+    expect((await POST(request({ event: "page_view", event_id: "invalid" }))).status).toBe(400);
+    expect(state.insert).not.toHaveBeenCalled();
+  });
+  it("deduplicates transport retries only for the same actor and event", async () => {
+    state.insert.mockResolvedValue({ error: { code: "23505" } });
+    state.existing.mockResolvedValue({ data: { actor_id: "unit-test-authenticated-actor", action: "warranty_journey", entity_type: "funnel_event" } });
+    const event = { event: "warranty_journey", event_id: "12345678-1234-4234-8234-123456789abc", metadata: { stage: "save_started" } };
+    const replay = await POST(request(event));
+    expect(replay.status).toBe(200);
+    expect(await replay.json()).toEqual({ accepted: true, duplicate: true });
+    state.existing.mockResolvedValue({ data: { actor_id: "another-actor", action: "warranty_journey", entity_type: "funnel_event" } });
+    expect((await POST(request(event))).status).toBe(409);
+    state.existing.mockResolvedValue({ data: { actor_id: "unit-test-authenticated-actor", action: "sign_up", entity_type: "funnel_event" } });
+    expect((await POST(request(event))).status).toBe(409);
   });
 });

@@ -18,7 +18,7 @@ describe("event-specific analytics payloads", () => {
     ["whatsapp_click", { location: "footer" }, { location: "footer" }],
     ["onboarding_completed", { template: "electronics_retail", notifications_enabled: true }, { template: "electronics_retail", notifications_enabled: true }],
     ["activation_started", { template: "equipment_service", source: "onboarding" }, { template: "equipment_service", source: "onboarding" }],
-    ["activation_milestone", { milestone: "first_warranty_created", template: "none", source: "onboarding" }, { milestone: "first_warranty_created", template: "none", source: "onboarding" }],
+    ["activation_milestone", { milestone: "template_selected", template: "none", source: "onboarding" }, { milestone: "template_selected", template: "none", source: "onboarding" }],
     ["onboarding_template_selected", { template: "manufacturer" }, { template: "manufacturer" }],
     ["purchase", { value: 15, currency: "private", items: [{ item_name: "pro", price: 15, item_category: "private", item_id: "private-item", extra: { email: "private" } }] }, { currency: "SAR", value: 15, items: [{ item_name: "pro", item_category: "subscription", price: 15 }] }],
     ["claim_submitted", {}, { event_category: "conversion", event_label: "warranty_claim" }],
@@ -46,6 +46,18 @@ describe("event-specific analytics payloads", () => {
   it("never accepts fields solely because they are valid for another event", () => {
     expect(sanitizeAnalyticsPayload("claim_submitted", { subject: "general", action: "approve", template: "manufacturer", items: [] }, "human"))
       .toEqual({ event_category: "conversion", event_label: "warranty_claim", traffic_class: "human" });
+  });
+  it("records bounded journey stages without private text or client-claimed activation", () => {
+    expect(sanitizeAnalyticsPayload("warranty_journey", {
+      stage: "save_failed", step: 3, outcome: "failure", reason: "network", account_type: "consumer",
+      product_name: "private product", email: "private@example.test", error: "private error",
+    }, "qa")).toEqual({ event_category: "activation", stage: "save_failed", step: 3, outcome: "failure", reason: "network", account_type: "consumer", traffic_class: "qa" });
+    expect(sanitizeAnalyticsPayload("warranty_journey", { reason: "private error", stage: "private" }, "human"))
+      .toEqual({ event_category: "activation", traffic_class: "human" });
+    expect(sanitizeAnalyticsPayload("onboarding_completed", { completion_mode: "skipped", template: "personal_purchase" }, "human"))
+      .toMatchObject({ completion_mode: "skipped", template: "personal_purchase" });
+    expect(sanitizeAnalyticsPayload("activation_milestone", { milestone: "first_warranty_created" }, "human"))
+      .not.toHaveProperty("milestone");
   });
   it("rejects free-text subjects, domains, OCR errors, query templates and malformed enum values", () => {
     for (const [event, input] of [

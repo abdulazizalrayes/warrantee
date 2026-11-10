@@ -1,4 +1,5 @@
 import { readFileSync, existsSync } from "node:fs";
+import { spawnSync } from "node:child_process";
 
 const checks = [];
 
@@ -32,30 +33,17 @@ function anyFileContains(paths, snippets) {
   };
 }
 
-const funnelClient = fileContains("src/lib/ga4-events.ts", [
-  "funnel_cta_click",
-  "signup_submit",
-  "sign_up",
-  "seller_application_submit",
-  "onboarding_completed",
-  "sendServerFunnelEvent",
-  "readCampaignParams",
-  "appendCampaignParams",
-  "utm_source",
-  "utm_campaign",
-]);
-assertCheck("client and server funnel events are wired", funnelClient.ok, funnelClient);
-
-const funnelServer = fileContains("src/app/api/funnel/events/route.ts", [
-  "allowedEvents",
-  "isTrustedSameOriginRequest",
-  "activity_log",
-  "funnel_event",
-  "sanitizeMetadata",
-  "utm_source",
-  "utm_campaign",
-]);
-assertCheck("server funnel endpoint is privacy-safe and origin-guarded", funnelServer.ok, funnelServer);
+const contracts = spawnSync(process.execPath, [
+  "node_modules/vitest/vitest.mjs", "run", "--maxWorkers=1",
+  "src/lib/__tests__/analytics-payload.test.ts",
+  "src/lib/__tests__/ga4-events.test.ts",
+  "src/lib/__tests__/funnel-events-route.test.ts",
+  "src/lib/__tests__/activation-report.test.ts",
+  "src/lib/__tests__/activation-route.test.ts",
+], { encoding: "utf8", timeout: 120000, maxBuffer: 1024 * 1024 });
+assertCheck("funnel privacy, consent, transport and origin contracts execute", contracts.status === 0, {
+  reason: contracts.status === 0 ? undefined : "Focused behavioral tests failed; run the funnel contract tests for details.",
+});
 
 const marketingPageViews = anyFileContains([
   "src/app/[locale]/page.tsx",
@@ -78,16 +66,7 @@ const campaignCarryThrough = anyFileContains([
 ]);
 assertCheck("internal CTAs preserve campaign attribution into conversion paths", campaignCarryThrough.ok, campaignCarryThrough);
 
-const cleanFunnelReporting = anyFileContains([
-  "src/lib/growth-analytics.ts",
-  "src/app/[locale]/admin/page.tsx",
-], [
-  "filterRealFunnelEvents",
-  "traffic_class",
-  "visibleFunnelEvents",
-  "excludedFunnelEventCount",
-]);
-assertCheck("admin funnel separates real people from QA crawlers and monitoring", cleanFunnelReporting.ok, cleanFunnelReporting);
+assertCheck("admin activation uses complete aggregate scans with excluded synthetic traffic", contracts.status === 0);
 
 const crmReconciliation = anyFileContains([
   "scripts/reconcile-twenty-leads.mjs",
