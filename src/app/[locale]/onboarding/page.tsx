@@ -392,7 +392,7 @@ export default function OnboardingPage() {
               disabled={loading}
               className="text-[13px] text-[#86868b] hover:text-[#1d1d1f] transition-colors"
             >
-              {isAr ? "\u062a\u062e\u0637\u064a \u0627\u0644\u0625\u0639\u062f\u0627\u062d" : "Skip for now"}
+              {isAr ? "\u062a\u062e\u0637\u064a \u0627\u0644\u0625\u0639\u062f\u0627\u062f" : "Skip for now"}
             </button>
           </div>
         )}
