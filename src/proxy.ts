@@ -367,6 +367,9 @@ export async function proxy(request: NextRequest) {
   headers.delete("x-nonce");
   if (documentCsp.nonce) headers.set("x-nonce", documentCsp.nonce);
   const response = await handleRequest(new DocumentRequest(request, { headers }));
+  if (response.headers.has('x-warrantee-isolated-auth')) {
+    response.headers.set('x-warrantee-isolated-input', request.cookies.getAll().some(cookie => /^sb-.*auth-token(?:\.\d+)?$/.test(cookie.name)) ? 'cookie' : 'no_cookie');
+  }
   response.headers.set("Content-Security-Policy", documentCsp.policy);
   if (documentCsp.nonce) response.headers.set("Cache-Control", "private, no-store");
   return response;

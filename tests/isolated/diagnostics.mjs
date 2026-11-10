@@ -24,7 +24,7 @@ function failureCoordinates(value) {
   if (!value || !['locator_ambiguous', 'timeout', 'network', 'assertion', 'unknown'].includes(value.category)) return undefined;
   const file = browserSourceFile(value.file);
   const confirmationState = ['callback_rejected', 'verification_rejected', 'sign_in', 'dashboard', 'onboarding', 'other'].includes(value.confirmationState) ? value.confirmationState : undefined;
-  const transit = Object.fromEntries(['callbackSeen', 'callbackCookieSet', 'hasAuthCookie', 'authRedirect', 'cookieApplicable', 'cookieVerified', 'profileReadable'].filter(key => typeof value[key] === 'boolean').map(key => [key, value[key]]));
+  const transit = Object.fromEntries(['callbackSeen', 'callbackCookieSet', 'hasAuthCookie', 'authRedirect', 'cookieApplicable', 'cookieVerified', 'profileReadable', 'proxyInputCookie', 'browserSentCookie', 'explicitCookieAccepted'].filter(key => typeof value[key] === 'boolean').map(key => [key, value[key]]));
   const boundaries = Array.isArray(value.boundaries) ? [...new Set(value.boundaries.filter(value => ['client_http', 'server_http', 'page_error', 'csp', 'console_error'].includes(value)))].slice(0, 5) : [];
   const httpChecks = Array.isArray(value.httpChecks) ? value.httpChecks.filter(item => /^([45][0-9]{2}):(activity_log|warranty_claims|company_members|warranty_documents|warranties|notifications|profiles|subscriptions|companies)$/.test(item)).slice(0, 10) : [];
   const proxyState = /^(?:cookie|no_cookie):(?:no_session|auth_failure|none)$/.test(value.proxyState || '') ? value.proxyState : undefined;
@@ -50,7 +50,7 @@ export function safeBrowserFailure(error) {
     }
   }
   const confirmationState = text.match(/\bisolated_confirmation_destination:(callback_rejected|verification_rejected|sign_in|dashboard|onboarding|other)\b/)?.[1];
-  const transit = Object.fromEntries([...text.matchAll(/;(callbackSeen|callbackCookieSet|hasAuthCookie|authRedirect|cookieApplicable|cookieVerified|profileReadable)=(true|false)\b/g)].map(match => [match[1], match[2] === 'true']));
+  const transit = Object.fromEntries([...text.matchAll(/;(callbackSeen|callbackCookieSet|hasAuthCookie|authRedirect|cookieApplicable|cookieVerified|profileReadable|proxyInputCookie|browserSentCookie|explicitCookieAccepted)=(true|false)\b/g)].map(match => [match[1], match[2] === 'true']));
   const boundaries = text.match(/\bisolated_browser_boundaries:([a-z_,]+)/)?.[1].split(',');
   const httpChecks = text.match(/\bisolated_http_checks:([a-z_,:0-9]+)/)?.[1].split(',');
   const proxyState = text.match(/;proxyState=((?:cookie|no_cookie):(?:no_session|auth_failure|none))\b/)?.[1];

@@ -128,11 +128,16 @@ export async function signupAndConfirm(page: Page, scenario: Scenario, failFirst
     return false;
   }, { timeout: 20_000, message: 'Local SMTP must contain a real loopback confirmation link' }).toBe(true);
   await assertDisposableBackend();
-  const transit = { callbackSeen: false, callbackCookieSet: false, proxyState: 'unknown' };
+  const transit = { callbackSeen: false, callbackCookieSet: false, proxyState: 'unknown', proxyInputCookie: false, browserSentCookie: false };
   const watchCallback = async (response: import('@playwright/test').Response) => {
     const headers = await response.allHeaders();
     const proxy = headers['x-warrantee-isolated-auth'];
     if (/^(?:cookie|no_cookie):(?:no_session|auth_failure|none)$/.test(proxy || '')) transit.proxyState = proxy;
+    if (proxy) {
+      transit.proxyInputCookie = headers['x-warrantee-isolated-input'] === 'cookie';
+      const requestHeaders = await response.request().allHeaders();
+      transit.browserSentCookie = /(?:^|;\s*)sb-[^=;]*auth-token(?:\.\d+)?=/.test(requestHeaders.cookie || '');
+    }
     if (new URL(response.url()).pathname !== '/auth/callback') return;
     transit.callbackSeen = true;
     transit.callbackCookieSet = /sb-[^=;\s]*auth-token/.test(headers['set-cookie'] || '');
@@ -154,6 +159,7 @@ export async function signupAndConfirm(page: Page, scenario: Scenario, failFirst
     const applicable = await page.context().cookies(`${APP_URL}/${scenario.locale}/dashboard`);
     let cookieVerified = false;
     let profileReadable = false;
+    let explicitCookieAccepted = false;
     try {
       const client = await signedInClient(page.context());
       const verified = await client.auth.getUser();
@@ -163,7 +169,12 @@ export async function signupAndConfirm(page: Page, scenario: Scenario, failFirst
         profileReadable = !ownProfile.error && Boolean(ownProfile.data);
       }
     } catch { /* Only bounded flags leave the disposable diagnostic. */ }
-    throw new Error(`isolated_confirmation_destination:${state};callbackSeen=${transit.callbackSeen};callbackCookieSet=${transit.callbackCookieSet};hasAuthCookie=${cookies.some(cookie => /^sb-.*auth-token(?:\.\d+)?$/.test(cookie.name))};authRedirect=${destination.searchParams.has('redirect')};cookieApplicable=${applicable.some(cookie => /^sb-.*auth-token(?:\.\d+)?$/.test(cookie.name))};cookieVerified=${cookieVerified};profileReadable=${profileReadable};proxyState=${transit.proxyState}`);
+    try {
+      const probe = await page.request.get(`/${scenario.locale}/dashboard`, { maxRedirects: 0,
+        headers: { Cookie: applicable.map(cookie => `${cookie.name}=${cookie.value}`).join('; ') } });
+      explicitCookieAccepted = probe.status() === 200;
+    } catch { /* The probe stays inside the same guarded local account. */ }
+    throw new Error(`isolated_confirmation_destination:${state};callbackSeen=${transit.callbackSeen};callbackCookieSet=${transit.callbackCookieSet};hasAuthCookie=${cookies.some(cookie => /^sb-.*auth-token(?:\.\d+)?$/.test(cookie.name))};authRedirect=${destination.searchParams.has('redirect')};cookieApplicable=${applicable.some(cookie => /^sb-.*auth-token(?:\.\d+)?$/.test(cookie.name))};cookieVerified=${cookieVerified};profileReadable=${profileReadable};proxyState=${transit.proxyState};proxyInputCookie=${transit.proxyInputCookie};browserSentCookie=${transit.browserSentCookie};explicitCookieAccepted=${explicitCookieAccepted}`);
   } finally { page.off('response', watchCallback); }
   const admin = await localAdmin();
   const { data: profile, error } = await admin.from('profiles').select('*').eq('email', email).single();
