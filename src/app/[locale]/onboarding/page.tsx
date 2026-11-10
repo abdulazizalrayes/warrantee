@@ -1,93 +1,124 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { useAuth } from "@/lib/auth-context";
 import { Shield, Phone, ChevronRight, ChevronLeft, Check, Sparkles, BriefcaseBusiness } from "lucide-react";
 import Link from "next/link";
-import { trackActivationStarted, trackOnboardingCompleted, trackOnboardingTemplateSelected } from "@/lib/ga4-events";
-import { WARRANTY_TEMPLATES } from "@/lib/warranty-templates";
+import { trackActivationStarted, trackOnboardingCompleted, trackOnboardingJourney, trackOnboardingTemplateSelected } from "@/lib/ga4-events";
+import { getOnboardingWarrantyTemplates } from "@/lib/warranty-templates";
 
 export default function OnboardingPage() {
   const { locale } = useParams() ?? {};
   const router = useRouter();
   const supabase = createSupabaseBrowserClient();
-  const { user, refreshProfile } = useAuth();
+  const { user, profile, loading: authLoading, profileLoading, profileError, refreshProfile } = useAuth();
   const isAr = locale === "ar";
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [feedbackSent, setFeedbackSent] = useState(false);
+  const openedFor = useRef<string | null>(null);
   const [form, setForm] = useState({
     phone: "",
     notify_expiry: true,
     notify_claims: true,
     notify_newsletter: false,
     language: locale as string,
-    template: "equipment_service",
+    template: "",
   });
+  const accountType = profile?.account_type === "business" ? "business" : "consumer";
+  const templates = getOnboardingWarrantyTemplates(accountType);
+  const selectedTemplate = templates.find((template) => template.id === form.template) || templates[0];
+
+  useEffect(() => {
+    if (authLoading || profileLoading) return;
+    if (!user) { router.replace(`/${locale}/auth`); return; }
+    if (!profile || profileError || openedFor.current === user.id) return;
+    openedFor.current = user.id;
+    trackOnboardingJourney("opened", { locale, account_type: accountType });
+  }, [accountType, authLoading, locale, profile, profileError, profileLoading, router, user]);
 
   const userName = user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split("@")[0] || "";
 
   const steps = [
-    { icon: BriefcaseBusiness, title: isAr ? "\u0646\u0642\u0637\u0629 \u0627\u0644\u0628\u062f\u0627\u064a\u0629" : "Starting point", sub: isAr ? "\u0627\u062e\u062a\u0631 \u0627\u0644\u0646\u0645\u0648\u0630\u062c \u0627\u0644\u0623\u0642\u0631\u0628 \u0644\u0639\u0645\u0644\u0643" : "Choose the closest workflow template" },
-    { icon: Phone, title: isAr ? "بيانات التواصل" : "Contact details", sub: isAr ? "أضف رقمك واختر اللغة المفضلة" : "Add your number and preferred language" },
+    { icon: accountType === "business" ? BriefcaseBusiness : Shield, title: isAr ? "نقطة البداية" : "Starting point", sub: accountType === "business" ? (isAr ? "اختر النموذج الأقرب لعملك" : "Choose the closest workflow template") : (isAr ? "احتفظ بضمانات مشترياتك في مكان واحد" : "Keep your purchase warranties in one place") },
+    { icon: Phone, title: isAr ? "بيانات التواصل" : "Contact details", sub: isAr ? "رقم الجوال اختياري. اختر اللغة المفضلة" : "Your number is optional. Choose your preferred language" },
     { icon: Sparkles, title: isAr ? "جاهز!" : "All set!", sub: isAr ? "أنشئ أول ضمان" : "Create your first warranty" },
   ];
 
   const handleSubmit = async () => {
-    if (!user) return;
+    if (!user || !profile || loading) return;
     setLoading(true);
     setError("");
+    const controller = new AbortController();
+    let timeout: ReturnType<typeof setTimeout> | undefined = undefined;
+    const deadline = new Promise<never>((_, reject) => {
+      timeout = setTimeout(() => { controller.abort(); reject(new Error("Setup save timed out")); }, 8000);
+    });
     try {
-      const { error } = await supabase.from("profiles").update({
-        full_name: userName,
-        phone: form.phone || null,
+      const { data, error } = await Promise.race([supabase.from("profiles").update({
+        full_name: profile.full_name || userName,
+        phone: form.phone.trim() || profile.phone || null,
         email_notifications: form.notify_expiry || form.notify_claims || form.notify_newsletter,
         push_notifications: form.notify_expiry || form.notify_claims,
         preferred_locale: form.language,
         preferred_language: form.language,
         onboarding_completed: true,
-      }).eq("id", user.id);
+      }).eq("id", user.id).select("id").abortSignal(controller.signal).single(), deadline]);
       if (error) throw error;
+      if (!data) throw new Error("Profile update was not confirmed");
+      clearTimeout(timeout);
+      trackOnboardingJourney("step_completed", { locale, step: 1, outcome: "success", account_type: accountType });
       trackOnboardingCompleted({
         locale,
-        template: form.template,
+        template: selectedTemplate.id,
+        completion_mode: "completed",
         notifications_enabled: form.notify_expiry || form.notify_claims || form.notify_newsletter,
       });
       await refreshProfile();
       setStep(2);
-    } catch (e) {
-      console.error(e);
+    } catch {
+      trackOnboardingJourney("save_failed", { locale, step: 1, outcome: "failure", reason: controller.signal.aborted ? "timeout" : "unavailable", account_type: accountType });
       setError(isAr ? "\u062a\u0639\u0630\u0651\u0631 \u062d\u0641\u0638 \u0627\u0644\u0625\u0639\u062f\u0627\u062f\u0627\u062a. \u062d\u0627\u0648\u0644 \u0645\u0631\u0629 \u0623\u062e\u0631\u0649." : "We could not save your setup. Please try again.");
     } finally {
+      clearTimeout(timeout);
       setLoading(false);
     }
   };
 
   const handleSkip = async () => {
-    if (!user || loading) return;
+    if (!user || !profile || loading) return;
     setLoading(true);
     setError("");
+    const controller = new AbortController();
+    let timeout: ReturnType<typeof setTimeout> | undefined = undefined;
+    const deadline = new Promise<never>((_, reject) => {
+      timeout = setTimeout(() => { controller.abort(); reject(new Error("Setup save timed out")); }, 8000);
+    });
     try {
-      const { error } = await supabase.from("profiles").update({
+      const { data, error } = await Promise.race([supabase.from("profiles").update({
         onboarding_completed: true,
         preferred_locale: form.language,
         preferred_language: form.language,
-      }).eq("id", user.id);
+      }).eq("id", user.id).select("id").abortSignal(controller.signal).single(), deadline]);
       if (error) throw error;
+      if (!data) throw new Error("Profile update was not confirmed");
+      clearTimeout(timeout);
       trackOnboardingCompleted({
         locale,
-        template: form.template,
+        template: selectedTemplate.id,
+        completion_mode: "skipped",
         notifications_enabled: false,
       });
       await refreshProfile();
       router.push(`/${locale}/dashboard`);
       router.refresh();
-    } catch (e) {
-      console.error(e);
+    } catch {
+      trackOnboardingJourney("save_failed", { locale, step, outcome: "failure", reason: controller.signal.aborted ? "timeout" : "unavailable", account_type: accountType });
       setError(isAr ? "تعذّر تخطي الإعداد. حاول مرة أخرى." : "We could not skip setup. Please try again.");
     } finally {
+      clearTimeout(timeout);
       setLoading(false);
     }
   };
@@ -101,6 +132,17 @@ export default function OnboardingPage() {
     });
     if (response.ok) setFeedbackSent(true);
   };
+
+  if (authLoading || profileLoading || !user) {
+    return <div dir={isAr ? "rtl" : "ltr"} role="status" className="p-8 text-center">{isAr ? "جارٍ تحميل حسابك..." : "Loading your account..."}</div>;
+  }
+
+  if (profileError || !profile) {
+    return <div dir={isAr ? "rtl" : "ltr"} className="p-8 text-center">
+      <p role="alert">{isAr ? "تعذّر تحميل ملف حسابك." : "We could not load your profile."}</p>
+      <button type="button" onClick={() => void refreshProfile()} className="mt-4 rounded-lg border px-4 py-2">{isAr ? "إعادة المحاولة" : "Retry"}</button>
+    </div>;
+  }
 
   return (
     <div dir={isAr ? "rtl" : "ltr"} className="min-h-screen bg-[#f5f5f7]">
@@ -174,28 +216,30 @@ export default function OnboardingPage() {
           {step === 1 && (
             <div className="space-y-6">
               <div>
-                <label htmlFor="onboarding-phone" className="block text-[13px] font-medium text-[#86868b] mb-2">{isAr ? "\u0631\u0642\u0645 \u0627\u0644\u062c\u0648\u0627\u0644" : "Mobile Number"}</label>
+                <label htmlFor="onboarding-phone" className="block text-[13px] font-medium text-[#86868b] mb-2">{isAr ? "رقم الجوال (اختياري)" : "Mobile Number (optional)"}</label>
                 <input
                   id="onboarding-phone"
                   name="phone"
                   type="tel"
+                  disabled={loading}
                   autoComplete="tel"
+                  aria-describedby="onboarding-phone-hint"
                   value={form.phone}
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
                   placeholder={isAr ? "+966 5x xxx xxxx" : "+966 5x xxx xxxx"}
                   className="w-full px-4 py-3 rounded-xl bg-[#f5f5f7] border-0 text-[15px] text-[#1d1d1f] placeholder:text-[#86868b]/60 focus:outline-none focus:ring-2 focus:ring-[#007aff] transition-all"
                   dir="ltr"
                 />
-                <p className="text-[12px] text-[#86868b] mt-2">{isAr ? "اختياري — لإكمال بيانات الحساب والتواصل." : "Optional — used for account and service contact details."}</p>
+                <p id="onboarding-phone-hint" className="text-[12px] text-[#86868b] mt-2">{isAr ? "اختياري — لإكمال بيانات الحساب والتواصل." : "Optional — used for account and service contact details."}</p>
               </div>
               <div>
-                <label className="block text-[13px] font-medium text-[#86868b] mb-2">{isAr ? "\u0627\u0644\u0644\u063a\u0629 \u0627\u0644\u0645\u0641\u0636\u0644\u0629" : "Preferred Language"}</label>
-                <div className="flex gap-3">
+                <p id="onboarding-language-label" className="block text-[13px] font-medium text-[#86868b] mb-2">{isAr ? "اللغة المفضلة" : "Preferred Language"}</p>
+                <div role="group" aria-labelledby="onboarding-language-label" className="flex gap-3">
                   {[{ val: "en", label: "English", icon: "\ud83c\uddec\ud83c\udde7" }, { val: "ar", label: "\u0627\u0644\u0639\u0631\u0628\u064a\u0629", icon: "\ud83c\uddf8\ud83c\udde6" }].map((lang) => (
                     <button
                       type="button"
-                      role="radio"
-                      aria-checked={form.language === lang.val}
+                      disabled={loading}
+                      aria-pressed={form.language === lang.val}
                       key={lang.val}
                       onClick={() => setForm({ ...form, language: lang.val })}
                       className={"flex-1 py-3 px-4 rounded-xl text-[15px] font-medium transition-all duration-200 " + (form.language === lang.val ? "bg-[#1A1A2E] text-white shadow-lg" : "bg-[#f5f5f7] text-[#1d1d1f] hover:bg-[#e8e8ed]")}
@@ -209,13 +253,15 @@ export default function OnboardingPage() {
           )}
 
           {step === 0 && (
-            <div className="grid gap-3 sm:grid-cols-2">
-              {WARRANTY_TEMPLATES.map((template) => {
-                const selected = form.template === template.id;
+            <div role="group" aria-label={isAr ? "نقطة البداية" : "Starting point"} className="grid gap-3 sm:grid-cols-2">
+              {templates.map((template) => {
+                const selected = selectedTemplate.id === template.id;
                 return (
                   <button
                     key={template.id}
                     type="button"
+                    disabled={loading}
+                    aria-pressed={selected}
                     onClick={() => {
                       setForm({ ...form, template: template.id });
                       trackOnboardingTemplateSelected(template.id, { locale });
@@ -243,8 +289,8 @@ export default function OnboardingPage() {
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Link
-                  href={"/" + locale + "/warranties/new?template=" + encodeURIComponent(form.template) + "&activation=1"}
-                  onClick={() => trackActivationStarted({ locale, template: form.template, source: "onboarding" })}
+                  href={"/" + locale + "/warranties/new?template=" + encodeURIComponent(selectedTemplate.id) + "&activation=1"}
+                  onClick={() => trackActivationStarted({ locale, template: selectedTemplate.id, source: "onboarding" })}
                   className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-[#1A1A2E] text-white text-[15px] font-medium hover:opacity-90 transition-opacity"
                 >
                   {isAr ? "\u0623\u0636\u0641 \u0636\u0645\u0627\u0646" : "Add Warranty"}
@@ -299,7 +345,7 @@ export default function OnboardingPage() {
           <div className="flex items-center justify-between">
             <button
               onClick={() => setStep(Math.max(0, step - 1))}
-              disabled={step === 0}
+              disabled={step === 0 || loading}
               className="flex items-center gap-2 px-5 py-2.5 rounded-full text-[15px] font-medium text-[#86868b] hover:text-[#1d1d1f] hover:bg-white hover:ring-1 hover:ring-[#d2d2d7]/40 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:ring-0 transition-all"
             >
               <ChevronLeft className="w-4 h-4" />
@@ -308,7 +354,11 @@ export default function OnboardingPage() {
 
             {step < 1 ? (
               <button
-                onClick={() => setStep(step + 1)}
+                disabled={loading}
+                onClick={() => {
+                  trackOnboardingJourney("step_completed", { locale, step: 0, outcome: "success", account_type: accountType });
+                  setStep(step + 1);
+                }}
                 className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#1A1A2E] text-white text-[15px] font-medium hover:opacity-90 transition-all"
               >
                 {isAr ? "\u0627\u0644\u062a\u0627\u0644\u064a" : "Next"}
@@ -321,7 +371,7 @@ export default function OnboardingPage() {
                 className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#30d158] text-white text-[15px] font-medium hover:opacity-90 disabled:opacity-60 transition-all"
               >
                 {loading ? (
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span role="status" className="flex items-center gap-2"><span aria-hidden="true" className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />{isAr ? "جارٍ الحفظ..." : "Saving..."}</span>
                 ) : (
                   <>
                     {isAr ? "\u0625\u0643\u0645\u0627\u0644 \u0627\u0644\u0625\u0639\u062f\u0627\u062f" : "Complete Setup"}
