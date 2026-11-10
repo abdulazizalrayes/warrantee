@@ -97,6 +97,8 @@ The positive controls above defeat each supplied claim; there is no ranked confi
 
 The exact final-candidate fresh signup and full CI results remain release-blocking. No production migration or deployment is implied by the checkpoints above. The canonical pending migration hash is `cefb03de662a9ba04d05979a6a5e16c978e38dc66a02466913fc76834daa1ea3`; its production application and deployment identifiers must be recorded only after the required gates pass.
 
+The subsequent final-commit run rejected ambiguous recovery-alert locators: Next's accessibility route announcer also has the alert role. The fixtures now require the operation-specific setup/creation error instead of an arbitrary alert. Excluding that announcer from signup checks also exposed missing alert semantics on the visible login/signup error boxes. Both boxes now announce errors with `role="alert"`, without changing visual classes or copy. The older green flow remains persistence evidence, not proof that its generic signup-alert assertion observed the intended error. A new clean complete journey run is required; failed runs are not waived as flakes.
+
 ## Rollback
 
 Revalidate the company/project and exact current deployment before any rollback. The previously verified baseline was main `93d7fe18813da598b1f40a5e036bc34ed1e39b4b` and Vercel deployment `dpl_3znhhs1dFKDEFxbz5zuPhSdoDqUm`; do not assume an old alias remains current. Promote a complete known-good deployment rather than mixing CSP/build artifacts. Additive database objects can remain when rolling application code back; do not drop audit evidence, idempotency outcomes, jobs or customer data as rollback cleanup. Document any required forward correction separately.
