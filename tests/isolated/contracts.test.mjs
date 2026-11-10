@@ -162,7 +162,9 @@ test('legacy canonical expansion validates added columns and rejects missing sou
 test('workflow has no secrets, caches, persisted artifacts, production QA or dispatch to other workflows', () => {
   const workflow = readFileSync(resolve(root, '.github/workflows/signup-journey.yml'), 'utf8');
   assert.match(workflow, /ubuntu-24\.04/);
-  assert.match(workflow, /codex\/signup-first-warranty-reliability/);
+  assert.match(workflow, /push:\n\s+branches: \[main\]/);
+  assert.match(workflow, /pull_request:\n\s+branches: \[main\]/);
+  assert.doesNotMatch(workflow, /branches:.*codex\//);
   assert.doesNotMatch(workflow, /secrets\.|actions\/cache|upload-artifact|download-artifact|qa:user:|gh workflow|repository_dispatch|pull_request_target|cache:\s*["']?npm/);
   assert.match(workflow, /persist-credentials: false/);
   const runner = readFileSync(resolve(root, 'scripts/run-isolated-signup-journey.mjs'), 'utf8');
