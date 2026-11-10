@@ -26,6 +26,7 @@ test('browser failures expose only registered source coordinates and fixed categ
   assert.deepEqual(safeBrowserFailure({ message: 'timeout private', location: { file: '/tests/e2e/private-value.spec.ts', line: 12, column: 3 } }), { category: 'timeout' });
   assert.deepEqual(safeBrowserFailure({ message: 'isolated_confirmation_destination:callback_rejected' }), { category: 'unknown', confirmationState: 'callback_rejected' });
   assert.deepEqual(safeBrowserFailure({ message: 'Error: isolated_confirmation_destination:sign_in' }), { category: 'unknown', confirmationState: 'sign_in' });
+  assert.deepEqual(safeBrowserFailure({ message: 'Error: isolated_browser_boundaries:csp,client_http,private' }), { category: 'unknown', boundaries: ['csp', 'client_http'] });
   assert.deepEqual(safeBrowserFailure({ message: 'Error: isolated_confirmation_destination:sign_in;callbackSeen=true;callbackCookieSet=false;hasAuthCookie=false;authRedirect=true;private=secret' }), { category: 'unknown', confirmationState: 'sign_in', callbackSeen: true, callbackCookieSet: false, hasAuthCookie: false, authRedirect: true });
   assert.deepEqual(safeBrowserFailure({ message: 'isolated_confirmation_destination:private-token' }), { category: 'unknown' });
   assert.deepEqual(safeTestOutput('ISOLATED_PREFLIGHT {"check":"qa:agent-markdown","status":"failed","private":"secret"}\nISOLATED_PREFLIGHT {"check":"secret","status":"failed"}\nISOLATED_ERROR {"category":"network","private":"secret"}'), [

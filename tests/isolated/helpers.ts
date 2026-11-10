@@ -129,10 +129,10 @@ export async function signupAndConfirm(page: Page, scenario: Scenario, failFirst
   }, { timeout: 20_000, message: 'Local SMTP must contain a real loopback confirmation link' }).toBe(true);
   await assertDisposableBackend();
   const transit = { callbackSeen: false, callbackCookieSet: false };
-  const watchCallback = (response: import('@playwright/test').Response) => {
+  const watchCallback = async (response: import('@playwright/test').Response) => {
     if (new URL(response.url()).pathname !== '/auth/callback') return;
     transit.callbackSeen = true;
-    transit.callbackCookieSet = /sb-[^=;\s]*auth-token/.test(response.headers()['set-cookie'] || '');
+    transit.callbackCookieSet = /sb-[^=;\s]*auth-token/.test((await response.allHeaders())['set-cookie'] || '');
   };
   page.on('response', watchCallback);
   await page.goto(confirmation!);
@@ -148,7 +148,19 @@ export async function signupAndConfirm(page: Page, scenario: Scenario, failFirst
           : destination.pathname === `/${scenario.locale}/onboarding` ? 'onboarding'
             : 'other';
     const cookies = await page.context().cookies();
-    throw new Error(`isolated_confirmation_destination:${state};callbackSeen=${transit.callbackSeen};callbackCookieSet=${transit.callbackCookieSet};hasAuthCookie=${cookies.some(cookie => /^sb-.*auth-token(?:\.\d+)?$/.test(cookie.name))};authRedirect=${destination.searchParams.has('redirect')}`);
+    const applicable = await page.context().cookies(`${APP_URL}/${scenario.locale}/dashboard`);
+    let cookieVerified = false;
+    let profileReadable = false;
+    try {
+      const client = await signedInClient(page.context());
+      const verified = await client.auth.getUser();
+      cookieVerified = !verified.error && Boolean(verified.data.user);
+      if (verified.data.user) {
+        const ownProfile = await client.from('profiles').select('id').eq('id', verified.data.user.id).single();
+        profileReadable = !ownProfile.error && Boolean(ownProfile.data);
+      }
+    } catch { /* Only bounded flags leave the disposable diagnostic. */ }
+    throw new Error(`isolated_confirmation_destination:${state};callbackSeen=${transit.callbackSeen};callbackCookieSet=${transit.callbackCookieSet};hasAuthCookie=${cookies.some(cookie => /^sb-.*auth-token(?:\.\d+)?$/.test(cookie.name))};authRedirect=${destination.searchParams.has('redirect')};cookieApplicable=${applicable.some(cookie => /^sb-.*auth-token(?:\.\d+)?$/.test(cookie.name))};cookieVerified=${cookieVerified};profileReadable=${profileReadable}`);
   } finally { page.off('response', watchCallback); }
   const admin = await localAdmin();
   const { data: profile, error } = await admin.from('profiles').select('*').eq('email', email).single();

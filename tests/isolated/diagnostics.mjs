@@ -24,8 +24,9 @@ function failureCoordinates(value) {
   if (!value || !['locator_ambiguous', 'timeout', 'network', 'assertion', 'unknown'].includes(value.category)) return undefined;
   const file = browserSourceFile(value.file);
   const confirmationState = ['callback_rejected', 'verification_rejected', 'sign_in', 'dashboard', 'onboarding', 'other'].includes(value.confirmationState) ? value.confirmationState : undefined;
-  const transit = Object.fromEntries(['callbackSeen', 'callbackCookieSet', 'hasAuthCookie', 'authRedirect'].filter(key => typeof value[key] === 'boolean').map(key => [key, value[key]]));
-  return { category: value.category, ...(confirmationState ? { confirmationState, ...transit } : {}), ...(file && Number.isSafeInteger(value.line) && value.line > 0 && value.line < 100000
+  const transit = Object.fromEntries(['callbackSeen', 'callbackCookieSet', 'hasAuthCookie', 'authRedirect', 'cookieApplicable', 'cookieVerified', 'profileReadable'].filter(key => typeof value[key] === 'boolean').map(key => [key, value[key]]));
+  const boundaries = Array.isArray(value.boundaries) ? [...new Set(value.boundaries.filter(value => ['client_http', 'server_http', 'page_error', 'csp', 'console_error'].includes(value)))].slice(0, 5) : [];
+  return { category: value.category, ...(boundaries.length ? { boundaries } : {}), ...(confirmationState ? { confirmationState, ...transit } : {}), ...(file && Number.isSafeInteger(value.line) && value.line > 0 && value.line < 100000
     && Number.isSafeInteger(value.column) && value.column >= 0 && value.column < 100000
     ? { file, line: value.line, column: value.column } : {}) };
 }
@@ -47,8 +48,9 @@ export function safeBrowserFailure(error) {
     }
   }
   const confirmationState = text.match(/\bisolated_confirmation_destination:(callback_rejected|verification_rejected|sign_in|dashboard|onboarding|other)\b/)?.[1];
-  const transit = Object.fromEntries([...text.matchAll(/;(callbackSeen|callbackCookieSet|hasAuthCookie|authRedirect)=(true|false)\b/g)].map(match => [match[1], match[2] === 'true']));
-  return failureCoordinates({ category, file, line, column, confirmationState, ...transit });
+  const transit = Object.fromEntries([...text.matchAll(/;(callbackSeen|callbackCookieSet|hasAuthCookie|authRedirect|cookieApplicable|cookieVerified|profileReadable)=(true|false)\b/g)].map(match => [match[1], match[2] === 'true']));
+  const boundaries = text.match(/\bisolated_browser_boundaries:([a-z_,]+)/)?.[1].split(',');
+  return failureCoordinates({ category, file, line, column, confirmationState, ...transit, boundaries });
 }
 
 export function safeDiagnostics(step, output) {
