@@ -12,6 +12,7 @@ const widths = [320, 390, 768, 1024, 1280, 1440, 1920];
 const user = { id: userId, aud: "authenticated", role: "authenticated", email: "synthetic@example.invalid", app_metadata: {}, user_metadata: { full_name: "Synthetic UI User" }, created_at: "2026-01-01T00:00:00Z" };
 const profile = { ...user, full_name: "Synthetic UI User", account_type: "consumer", role: "user", onboarding_completed: true, preferred_language: "en" };
 let server: Server;
+let backendWrites = 0;
 const pageErrors = new WeakMap<Page, string[]>();
 
 test.describe("synthetic mocked signup UI recovery (NOT auth or persistence proof)", () => {
@@ -30,7 +31,7 @@ test.describe("synthetic mocked signup UI recovery (NOT auth or persistence proo
       res.setHeader("Content-Type", "application/json");
       if (req.method === "OPTIONS") { res.end(); return; }
       const path = new URL(req.url!, backend).pathname;
-      if (req.method !== "GET") { res.writeHead(405); res.end('{"error":"Synthetic backend forbids writes"}'); return; }
+      if (req.method !== "GET") { backendWrites++; res.writeHead(405); res.end('{"error":"Synthetic backend forbids writes"}'); return; }
       if (path === "/auth/v1/user") res.end(JSON.stringify(user));
       else if (path === "/rest/v1/profiles") res.end(JSON.stringify(profile));
       else if (path.startsWith("/rest/v1/")) res.end("[]");
@@ -73,6 +74,49 @@ test.describe("synthetic mocked signup UI recovery (NOT auth or persistence proo
   for (const locale of ["en", "ar"] as const) {
     const next = locale === "en" ? "Next" : "التالي";
     const createSuccess = locale === "en" ? "Warranty Created Successfully!" : "\u062a\u0645 \u0625\u0646\u0634\u0627\u0621 \u0627\u0644\u0636\u0645\u0627\u0646 \u0628\u0646\u062c\u0627\u062d!";
+
+    test(`${locale}: Business setup auth error exposes a safe retry link without executing callback or private writes`, async ({ page }, info) => {
+      const callbackRequests: string[] = [];
+      const privateWrites: string[] = [];
+      const writesBefore = backendWrites;
+      page.on("request", request => {
+        const path = new URL(request.url()).pathname;
+        // The shared fixture fulfills first-party telemetry without server writes.
+        if (!["GET", "HEAD", "OPTIONS"].includes(request.method()) && path !== "/api/funnel/events") privateWrites.push(path);
+      });
+      await page.route("**/auth/callback**", route => {
+        callbackRequests.push(route.request().url());
+        return route.abort("blockedbyclient");
+      });
+      const retry = page.getByRole("link", { name: locale === "en" ? "Retry Business setup" : "إعادة محاولة إعداد الشركة", exact: true });
+      const flow = "33333333-3333-4333-8333-333333333333";
+      const destination = `/${locale}/warranties/new`;
+      const params = new URLSearchParams({ error: "business_setup_error", tab: "signup", account: "business", redirect: destination, signup_flow: flow });
+      await page.goto(`/${locale}/auth?${params}`);
+      await expect(page.getByText(locale === "en"
+        ? "You signed in, but the Business workspace could not be prepared. Try again or contact us."
+        : "تم تسجيل الدخول، لكن تعذر إعداد مساحة الشركة. أعد المحاولة أو تواصل معنا.", { exact: true })).toBeVisible();
+      await expect(retry).toBeVisible();
+      await expect(retry).toHaveAttribute("href", `/auth/callback?${new URLSearchParams({ retry_setup: "1", next: destination, signup_flow: flow })}`);
+      const href = new URL((await retry.getAttribute("href"))!, process.env.E2E_BASE_URL!);
+      expect(href.origin).toBe(process.env.E2E_BASE_URL);
+      expect(href.pathname).toBe("/auth/callback");
+      await geometryMatrix(page, info, "auth-business-setup-retry");
+      // Inspect only: following this link would execute setup, not a UI contract.
+      params.set("redirect", "https://untrusted.example.invalid/private");
+      params.set("signup_flow", "invalid-synthetic-flow");
+      await page.goto(`/${locale}/auth?${params}`);
+      await expect(retry).toHaveAttribute("href", `/auth/callback?${new URLSearchParams({ retry_setup: "1", next: `/${locale}/dashboard` })}`);
+      params.set("error", "business_setup_expired");
+      await page.goto(`/${locale}/auth?${params}`);
+      await expect(page.getByText(locale === "en"
+        ? "The Business setup request expired. Contact us to continue."
+        : "انتهت صلاحية إعداد مساحة الشركة. تواصل معنا للمتابعة.", { exact: true })).toBeVisible();
+      await expect(retry).toHaveCount(0);
+      expect(callbackRequests, "No retry callback navigation or prefetch").toEqual([]);
+      expect(privateWrites, "No browser private mutations or authentication requests").toEqual([]);
+      expect(backendWrites, "No server-side synthetic backend mutations").toBe(writesBefore);
+    });
 
     test(`${locale}: rejected network save unlocks identical idempotent retry and suppresses duplicate clicks`, async ({ page }, info) => {
       const attempts: { body: string | null; key: string | undefined }[] = [];
@@ -284,6 +328,14 @@ async function geometryMatrix(page: Page, info: TestInfo, stage: string) {
       for (let i = 0; i < boxes.length; i++) for (let j = i + 1; j < boxes.length; j++) {
         const a = boxes[i], b = boxes[j];
         if (a.element.contains(b.element) || b.element.contains(a.element)) continue;
+        // The empty signup password field deliberately contains its reveal icon.
+        const field = a.element.id === "signup-password" ? a : b.element.id === "signup-password" ? b : null;
+        const reveal = field === a ? b : a;
+        if (field && field.element instanceof HTMLInputElement && field.element.type === "password" && field.element.value === ""
+          && reveal.element.matches("button[type='button'][aria-label='Show password']")
+          && field.element.parentElement === reveal.element.parentElement
+          && reveal.rect.left >= field.rect.left && reveal.rect.right <= field.rect.right
+          && reveal.rect.top >= field.rect.top && reveal.rect.bottom <= field.rect.bottom) continue;
         if (Math.min(a.rect.right, b.rect.right) - Math.max(a.rect.left, b.rect.left) > 1
           && Math.min(a.rect.bottom, b.rect.bottom) - Math.max(a.rect.top, b.rect.top) > 1) failures.push(`overlapping controls: ${a.element.id || a.element.textContent} / ${b.element.id || b.element.textContent}`);
       }
