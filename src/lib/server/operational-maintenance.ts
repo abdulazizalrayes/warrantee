@@ -1,4 +1,5 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { processAuthFollowupJobs } from "@/lib/server/auth-followup-jobs";
 
 export async function runDailyOperationalMaintenance() {
   const supabase = createSupabaseAdminClient();
@@ -24,6 +25,14 @@ export async function runDailyOperationalMaintenance() {
     .map((result) => result.error?.message)
     .filter(Boolean);
 
+  let authFollowups: { completed: number; retried: number; failed: number } | null = null;
+  try {
+    authFollowups = await processAuthFollowupJobs(supabase);
+    if (authFollowups.failed > 0) errors.push("auth_followup_requires_review");
+  } catch {
+    errors.push("auth_followup_worker_unavailable");
+  }
+
   return {
     status: errors.length ? "degraded" : "ok",
     idempotencyRecordsDeleted: idempotencyCleanup.data?.length || 0,
@@ -31,6 +40,7 @@ export async function runDailyOperationalMaintenance() {
     staleJobsRecovered: recovery.data || 0,
     rollupsRefreshed: rollups.data || 0,
     reconciliationFindingsTouched: reconciliation.data || 0,
+    authFollowups,
     errors,
   };
 }

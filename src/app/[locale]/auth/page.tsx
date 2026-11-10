@@ -14,6 +14,7 @@ import {
   EyeOff,
   LockKeyhole,
   Mail,
+  RefreshCw,
   ShieldCheck,
   Sparkles,
   UserRound,
@@ -21,7 +22,10 @@ import {
 import { DIRECTION, getDictionary, normalizeLocale } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth-context";
 import { PageViewTracker } from "@/components/PageViewTracker";
-import { trackAuthIntent, trackSignup, trackSignupSubmit } from "@/lib/ga4-events";
+import { trackAuthIntent, trackAuthJourney, trackSignup, trackSignupSubmit } from "@/lib/ga4-events";
+import { prepareOAuthSignup } from "@/lib/auth-request";
+import { resolveSafeAuthRedirect } from "@/lib/auth-redirect";
+import { buildOAuthSetupRetryPath } from "@/lib/oauth-setup-recovery";
 
 type AuthTab = "login" | "signup";
 
@@ -32,7 +36,7 @@ export default function AuthPage() {
   const dict = getDictionary(locale);
   const isRTL = locale === "ar";
   const direction = DIRECTION[locale];
-  const { user, signInWithGoogle, signInWithApple, signInWithMagicLink, signInWithPassword, signUp, signOut, loading: authLoading } = useAuth();
+  const { user, signInWithGoogle, signInWithApple, signInWithMagicLink, signInWithPassword, signUp, signOut, authError, loading: authLoading } = useAuth();
   const [activeTab, setActiveTab] = useState<AuthTab>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -49,14 +53,12 @@ export default function AuthPage() {
     tab: string | null;
     redirect: string | null;
     account: string | null;
-  }>({ error: null, tab: null, redirect: null, account: null });
+    signupFlow: string | null;
+  }>({ error: null, tab: null, redirect: null, account: null, signupFlow: null });
   const errorFromUrl = urlState.error;
   const requestedTab = urlState.tab;
   const requestedRedirect = urlState.redirect;
-  const nextPath =
-    requestedRedirect && requestedRedirect.startsWith("/") && !requestedRedirect.startsWith("//")
-      ? requestedRedirect
-      : `/${locale}/dashboard`;
+  const nextPath = resolveSafeAuthRedirect(requestedRedirect, `/${locale}/dashboard`);
 
   useEffect(() => {
     setActiveTab(requestedTab === "signup" ? "signup" : "login");
@@ -74,82 +76,117 @@ export default function AuthPage() {
       tab: currentSearchParams.get("tab"),
       redirect: currentSearchParams.get("redirect"),
       account: currentSearchParams.get("account"),
+      signupFlow: currentSearchParams.get("signup_flow"),
     });
   }, []);
 
   const handleMagicLink = async (e: React.FormEvent) => {
     e.preventDefault(); setLoading(true); setMessage(""); setErrorMsg("");
-    trackAuthIntent("magic_link_start", "email", { locale, tab: activeTab });
-    const { error } = await signInWithMagicLink(email, locale, nextPath);
-    if (error) { setErrorMsg(error); } else { setMessage(isRTL ? "\u062a\u0645 \u0625\u0631\u0633\u0627\u0644 \u0631\u0627\u0628\u0637 \u0633\u062d\u0631\u064a \u0625\u0644\u0649 \u0628\u0631\u064a\u062f\u0643 \u0627\u0644\u0625\u0644\u0643\u062a\u0631\u0648\u0646\u064a" : "Magic link sent to your email! Check your inbox."); }
-    setLoading(false);
+    try {
+      trackAuthIntent("magic_link_start", "email", { locale, tab: activeTab });
+      trackAuthJourney("started", { method: "email", locale, outcome: "pending" });
+      const { error } = await signInWithMagicLink(email, locale, nextPath);
+      if (error) {
+        setErrorMsg(error);
+        trackAuthJourney("failed", { method: "email", locale, outcome: "failure", reason: "unavailable" });
+      } else {
+        setMessage(isRTL ? "\u062a\u0645 \u0625\u0631\u0633\u0627\u0644 \u0631\u0627\u0628\u0637 \u0633\u062d\u0631\u064a \u0625\u0644\u0649 \u0628\u0631\u064a\u062f\u0643 \u0627\u0644\u0625\u0644\u0643\u062a\u0631\u0648\u0646\u064a" : "Magic link sent to your email! Check your inbox.");
+      }
+    } catch {
+      setErrorMsg(isRTL ? "تعذر طلب رابط الدخول. حاول مرة أخرى." : "Could not request a sign-in link. Please retry.");
+      trackAuthJourney("failed", { method: "email", locale, outcome: "failure", reason: "network" });
+    } finally { setLoading(false); }
   };
   const handlePasswordLogin = async (e: React.FormEvent) => {
     e.preventDefault(); setLoading(true); setMessage(""); setErrorMsg("");
-    trackAuthIntent("password_start", "password", { locale, tab: activeTab });
-    const { error } = await signInWithPassword(email, password);
-    if (error) { setErrorMsg(error); }
-    else {
-      router.push(nextPath);
-      router.refresh();
-    }
-    setLoading(false);
+    try {
+      trackAuthIntent("password_start", "password", { locale, tab: activeTab });
+      trackAuthJourney("started", { method: "password", locale, outcome: "pending" });
+      const { error } = await signInWithPassword(email, password);
+      if (error) {
+        setErrorMsg(error);
+        trackAuthJourney("failed", { method: "password", locale, outcome: "failure", reason: "unauthorized" });
+      } else {
+        trackAuthJourney("confirmed", { method: "password", locale, outcome: "success" });
+        router.push(nextPath);
+        router.refresh();
+      }
+    } catch {
+      setErrorMsg(isRTL ? "تعذر تسجيل الدخول. حاول مرة أخرى." : "Could not sign in. Please retry.");
+      trackAuthJourney("failed", { method: "password", locale, outcome: "failure", reason: "network" });
+    } finally { setLoading(false); }
   };
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault(); setLoading(true); setMessage(""); setErrorMsg("");
-    trackSignupSubmit({ locale, account_type: accountType, has_company_name: Boolean(companyName) });
-    if (user) {
-      setErrorMsg(isRTL ? "\u0623\u0646\u062a \u0645\u0633\u062c\u0644 \u0627\u0644\u062f\u062e\u0648\u0644 \u062d\u0627\u0644\u064a\u0627. \u0633\u062c\u0644 \u0627\u0644\u062e\u0631\u0648\u062c \u0623\u0648\u0644\u0627 \u0644\u0625\u0646\u0634\u0627\u0621 \u062d\u0633\u0627\u0628 \u062c\u062f\u064a\u062f." : "You are already signed in. Sign out first to create a different account.");
-      setLoading(false);
-      return;
-    }
-    if (password.length < 8) { setErrorMsg(isRTL ? "\u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631 \u064a\u062c\u0628 \u0623\u0646 \u062a\u0643\u0648\u0646 8 \u0623\u062d\u0631\u0641 \u0639\u0644\u0649 \u0627\u0644\u0623\u0642\u0644" : "Password must be at least 8 characters"); setLoading(false); return; }
-    const { error } = await signUp(email, password, { full_name: fullName, account_type: accountType, company_name: accountType === "business" ? companyName : undefined }, locale, nextPath);
-    if (error) { setErrorMsg(error); } else {
-      trackSignup(accountType === "business" ? "business_email" : "consumer_email");
-      setMessage(isRTL ? "\u062a\u0645 \u0625\u0646\u0634\u0627\u0621 \u062d\u0633\u0627\u0628\u0643! \u062a\u062d\u0642\u0642 \u0645\u0646 \u0628\u0631\u064a\u062f\u0643 \u0627\u0644\u0625\u0644\u0643\u062a\u0631\u0648\u0646\u064a \u0644\u062a\u0623\u0643\u064a\u062f \u062d\u0633\u0627\u0628\u0643." : "Account created! Check your email to confirm your account.");
-    }
-    setLoading(false);
+    try {
+      trackSignupSubmit({ locale, account_type: accountType, has_company_name: Boolean(companyName) });
+      trackAuthJourney("started", { method: "email", locale, outcome: "pending", account_type: accountType });
+      if (user) {
+        setErrorMsg(isRTL ? "\u0623\u0646\u062a \u0645\u0633\u062c\u0644 \u0627\u0644\u062f\u062e\u0648\u0644 \u062d\u0627\u0644\u064a\u0627. \u0633\u062c\u0644 \u0627\u0644\u062e\u0631\u0648\u062c \u0623\u0648\u0644\u0627 \u0644\u0625\u0646\u0634\u0627\u0621 \u062d\u0633\u0627\u0628 \u062c\u062f\u064a\u062f." : "You are already signed in. Sign out first to create a different account.");
+        trackAuthJourney("failed", { method: "email", locale, outcome: "failure", reason: "unauthorized" });
+        return;
+      }
+      if (password.length < 8) {
+        setErrorMsg(isRTL ? "\u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631 \u064a\u062c\u0628 \u0623\u0646 \u062a\u0643\u0648\u0646 8 \u0623\u062d\u0631\u0641 \u0639\u0644\u0649 \u0627\u0644\u0623\u0642\u0644" : "Password must be at least 8 characters");
+        trackAuthJourney("failed", { method: "email", locale, outcome: "failure", reason: "validation" });
+        return;
+      }
+      const { error, confirmed } = await signUp(email, password, { full_name: fullName, account_type: accountType, company_name: accountType === "business" ? companyName : undefined }, locale, nextPath);
+      if (error) {
+        setErrorMsg(error);
+        trackAuthJourney("failed", { method: "email", locale, outcome: "failure", reason: "unavailable", account_type: accountType });
+      } else if (confirmed) {
+        trackSignup(accountType === "business" ? "business_email" : "consumer_email");
+        trackAuthJourney("confirmed", { method: "email", locale, outcome: "success", account_type: accountType });
+        router.push(nextPath);
+        router.refresh();
+      } else {
+        setMessage(isRTL ? "تحقق من بريدك الإلكتروني لمتابعة التسجيل." : "Check your email to continue signup.");
+      }
+    } catch {
+      setErrorMsg(isRTL ? "تعذر إكمال التسجيل. حاول مرة أخرى." : "Could not complete signup. Please retry.");
+      trackAuthJourney("failed", { method: "email", locale, outcome: "failure", reason: "network", account_type: accountType });
+    } finally { setLoading(false); }
   };
-  const prepareOAuthIntent = async () => {
+  const handleOAuth = async (provider: "google" | "apple") => {
+    setLoading(true); setMessage(""); setErrorMsg("");
     const isSignup = activeTab === "signup";
-    if (isSignup && accountType === "business" && !companyName.trim()) {
-      return isRTL ? "أدخل اسم الشركة قبل المتابعة." : "Enter the company name before continuing.";
+    try {
+      if (isSignup && user) {
+        setErrorMsg(isRTL ? "سجل الخروج أولا لإنشاء حساب جديد." : "Sign out first to create a different account.");
+        return;
+      }
+      if (isSignup && accountType === "business" && !companyName.trim()) {
+        setErrorMsg(isRTL ? "أدخل اسم الشركة قبل المتابعة." : "Enter the company name before continuing.");
+        return;
+      }
+      const flowId = await prepareOAuthSignup({
+        accountType: isSignup ? accountType : null,
+        companyName: isSignup && accountType === "business" ? companyName : null,
+        provider, next: nextPath,
+      });
+      trackAuthIntent("oauth_start", provider, { locale, tab: activeTab, account_type: isSignup ? accountType : undefined });
+      trackAuthJourney("started", { method: provider, locale, outcome: "pending", account_type: isSignup ? accountType : undefined });
+      const signIn = provider === "google" ? signInWithGoogle : signInWithApple;
+      const { error } = await signIn(locale, nextPath, flowId);
+      if (error) {
+        setErrorMsg(error);
+        trackAuthJourney("failed", { method: provider, locale, outcome: "failure", reason: "unavailable" });
+      }
+    } catch {
+      setErrorMsg(isRTL ? "تعذر بدء تسجيل الدخول. حاول مرة أخرى." : "Could not start authentication. Please retry.");
+      trackAuthJourney("failed", { method: provider, locale, outcome: "failure", reason: "network" });
+    } finally {
+      setLoading(false);
     }
-
-    const response = await fetch("/api/auth/oauth-intent", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(
-        isSignup
-          ? { accountType, companyName: accountType === "business" ? companyName : null }
-          : { accountType: null }
-      ),
-    });
-    if (response.ok) return null;
-    const payload = await response.json().catch(() => null);
-    return payload?.error || (isRTL ? "تعذر تجهيز التسجيل." : "Could not prepare signup.");
   };
-  const handleGoogleAuth = async () => {
-    setLoading(true); setMessage(""); setErrorMsg("");
-    const intentError = await prepareOAuthIntent();
-    if (intentError) { setErrorMsg(intentError); setLoading(false); return; }
-    trackAuthIntent("oauth_start", "google", { locale, tab: activeTab, account_type: activeTab === "signup" ? accountType : undefined });
-    const { error } = await signInWithGoogle(locale, nextPath);
-    if (error) { setErrorMsg(error); setLoading(false); }
-  };
-  const handleAppleAuth = async () => {
-    setLoading(true); setMessage(""); setErrorMsg("");
-    const intentError = await prepareOAuthIntent();
-    if (intentError) { setErrorMsg(intentError); setLoading(false); return; }
-    trackAuthIntent("oauth_start", "apple", { locale, tab: activeTab, account_type: activeTab === "signup" ? accountType : undefined });
-    const { error } = await signInWithApple(locale, nextPath);
-    if (error) { setErrorMsg(error); setLoading(false); }
-  };
+  const handleGoogleAuth = () => handleOAuth("google");
+  const handleAppleAuth = () => handleOAuth("apple");
   const handleSignOutForSignup = async () => {
     setLoading(true); setMessage(""); setErrorMsg("");
-    await signOut();
-    setLoading(false);
+    try { await signOut(); }
+    catch { setErrorMsg(isRTL ? "تعذر تسجيل الخروج. حاول مرة أخرى." : "Could not sign out. Please retry."); }
+    finally { setLoading(false); }
   };
   const isFormLoading = loading || authLoading;
   const trustPoints = isRTL
@@ -216,6 +253,7 @@ export default function AuthPage() {
 
           <section className="rounded-[28px] bg-white p-5 shadow-[0_20px_50px_rgba(29,29,31,0.08)] ring-1 ring-[#d2d2d7]/40 sm:p-7">
             <div className="mx-auto w-full max-w-md">
+              {authError && <p role="alert" className="mb-4 text-sm text-red-800">{isRTL ? "تعذر التحقق من الجلسة. حاول تسجيل الدخول مرة أخرى." : authError}</p>}
               <div className="mb-8 text-center">
                 <Link href={`/${locale}`} dir="ltr" className="mb-4 inline-flex items-center gap-1 text-[21px] font-semibold tracking-tight text-[#1d1d1f]">
                   Warrantee<span className="text-[#0071e3]">.</span>
@@ -237,10 +275,24 @@ export default function AuthPage() {
                     ? isRTL
                       ? "تم تسجيل الدخول، لكن تعذر إعداد مساحة الشركة. أعد المحاولة أو تواصل معنا."
                       : "You signed in, but the Business workspace could not be prepared. Try again or contact us."
+                    : errorFromUrl === "business_setup_expired"
+                    ? isRTL
+                      ? "انتهت صلاحية إعداد مساحة الشركة. تواصل معنا للمتابعة."
+                      : "The Business setup request expired. Contact us to continue."
                     : isRTL
                       ? "\u062d\u062f\u062b \u062e\u0637\u0623 \u0623\u062b\u0646\u0627\u0621 \u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062f\u062e\u0648\u0644. \u0627\u0644\u0631\u062c\u0627\u0621 \u0627\u0644\u0645\u062d\u0627\u0648\u0644\u0629 \u0645\u0631\u0629 \u0623\u062e\u0631\u0649."
                       : "An error occurred during sign in. Please try again."}
                 </div>
+              )}
+
+              {errorFromUrl === "business_setup_error" && user && (
+                <a
+                  href={buildOAuthSetupRetryPath(nextPath, urlState.signupFlow)}
+                  className="mb-4 inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-[#0071e3] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0077ED]"
+                >
+                  <RefreshCw size={16} aria-hidden="true" />
+                  {isRTL ? "إعادة محاولة إعداد الشركة" : "Retry Business setup"}
+                </a>
               )}
 
               {user && activeTab === "signup" && (

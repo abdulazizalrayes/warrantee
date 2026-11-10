@@ -1,22 +1,37 @@
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { NextRequest, NextResponse } from "next/server";
-import { sendEmail, welcomeEmail } from "@/lib/email";
-import { upsertCrmContact } from "@/lib/crm";
-import { getContentLocale, normalizeLocale, type Locale } from "@/lib/i18n";
+import { after, NextRequest, NextResponse } from "next/server";
+import { normalizeLocale, type Locale } from "@/lib/i18n";
 import {
   OAUTH_SIGNUP_INTENT_COOKIE,
-  parseOAuthSignupIntent,
 } from "@/lib/oauth-signup-intent";
 import { resolveSafeAuthRedirect } from "@/lib/auth-redirect";
+import { bindOAuthFlowIntentToUser, expireOAuthIntent, isNewOAuthSignup, readOAuthFlowIntent, setOAuthIntent } from "@/lib/server/oauth-flow-intent";
+import { enqueueAuthFollowupJobs, processAuthFollowupJobs } from "@/lib/server/auth-followup-jobs";
+import { OAuthSignupRegistrationError, resumeOAuthSignupSetup, type OAuthSetupStatus } from "@/lib/server/oauth-signup-setup";
+import { boundedAuthRequest } from "@/lib/auth-request";
+import { buildOAuthSetupErrorPath } from "@/lib/oauth-setup-recovery";
 
 function getLocaleFromPath(path: string | null): Locale {
   return normalizeLocale(path?.split("/").filter(Boolean)[0]);
 }
 
+async function enqueueFollowups(admin: ReturnType<typeof createSupabaseAdminClient>, userId: string, locale: string) {
+  await enqueueAuthFollowupJobs(admin, userId, locale);
+  // The durable queue is authoritative; after() is only a low-latency first attempt.
+  after(async () => {
+    try {
+      await processAuthFollowupJobs(admin, userId);
+    } catch {
+      console.error("Auth follow-up processing deferred to maintenance");
+    }
+  });
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams?.get("code");
+  const retrySetup = !code && searchParams.get("retry_setup") === "1";
   const requestedNext = searchParams?.get("next");
   const fallbackLocale = getLocaleFromPath(requestedNext);
   const next = resolveSafeAuthRedirect(
@@ -24,90 +39,71 @@ export async function GET(request: NextRequest) {
     `/${fallbackLocale}/dashboard`,
   );
 
-  if (!code) {
-    const missingCodeResponse = NextResponse.redirect(
-      new URL(`/${fallbackLocale}/auth?error=auth_callback_error`, origin),
+  const redirect = (path: string) => expireOAuthIntent(NextResponse.redirect(new URL(path, origin)));
+  const callbackError = `/${fallbackLocale}/auth?error=auth_callback_error`;
+  const expiredSetup = `/${fallbackLocale}/auth?error=business_setup_expired&tab=signup`;
+  if (!code && !retrySetup) return redirect(callbackError);
+  try {
+    const supabase = await createServerSupabaseClient();
+    if (code) {
+      const { error } = await boundedAuthRequest(() => supabase.auth.exchangeCodeForSession(code));
+      if (error) return redirect(callbackError);
+    }
+    const { data: { user }, error: userError } = await boundedAuthRequest(() => supabase.auth.getUser());
+    if (userError || !user) return redirect(callbackError);
+
+    // Explicit recovery reuses only the original signed intent or a durable job.
+    const signedIntent = readOAuthFlowIntent(
+      request.cookies.get(OAUTH_SIGNUP_INTENT_COOKIE)?.value,
+      searchParams.get("signup_flow"), next,
     );
-    missingCodeResponse.cookies.delete(OAUTH_SIGNUP_INTENT_COOKIE);
-    return missingCodeResponse;
-  }
-
-  const supabase = await createServerSupabaseClient();
-  const { error } = await supabase.auth.exchangeCodeForSession(code);
-  if (error) {
-    const exchangeErrorResponse = NextResponse.redirect(
-      new URL(`/${fallbackLocale}/auth?error=auth_callback_error`, origin),
-    );
-    exchangeErrorResponse.cookies.delete(OAUTH_SIGNUP_INTENT_COOKIE);
-    return exchangeErrorResponse;
-  }
-
-      const signupIntent = parseOAuthSignupIntent(
-        request.cookies.get(OAUTH_SIGNUP_INTENT_COOKIE)?.value
-      );
-
-      // Send welcome email to new users
+    const intent = retrySetup && signedIntent?.userId !== user.id ? null : signedIntent;
+    const setupError = buildOAuthSetupErrorPath(fallbackLocale, next, intent?.flowId);
+    let setupStatus: OAuthSetupStatus = "absent";
+    const oauthProvider = user.app_metadata.provider === "google" || user.app_metadata.provider === "apple";
+    if (oauthProvider) {
       try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        if (user) {
-          if (signupIntent?.accountType === "business" && signupIntent.companyName) {
-            const supabaseAdmin = createSupabaseAdminClient();
-            const { error: onboardingError } = await supabaseAdmin.rpc(
-              "complete_business_onboarding",
-              {
-                p_user_id: user.id,
-                p_company_name: signupIntent.companyName,
-              }
-            );
-            if (onboardingError) {
-              console.error("Business OAuth onboarding error:", onboardingError.message);
-              const failedResponse = NextResponse.redirect(
-                new URL(`/${fallbackLocale}/auth?error=business_setup_error&tab=signup`, origin)
-              );
-              failedResponse.cookies.delete(OAUTH_SIGNUP_INTENT_COOKIE);
-              return failedResponse;
-            }
+        setupStatus = await resumeOAuthSignupSetup(createSupabaseAdminClient(), user, intent);
+      } catch (error) {
+        // Until registration is durable, retain the signed intent for a retry.
+        if (error instanceof OAuthSignupRegistrationError) {
+          const remainingSeconds = intent ? Math.floor((intent.expiresAt - Date.now()) / 1000) : 0;
+          if (!intent || remainingSeconds <= 0) {
+            return redirect(expiredSetup);
           }
-
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("created_at, email, full_name")
-            .eq("id", user.id)
-            .single();
-
-          if (profile) {
-            const createdAt = new Date(profile.created_at);
-            const now = new Date();
-            const diffMinutes =
-              (now.getTime() - createdAt.getTime()) / (1000 * 60);
-
-            await upsertCrmContact({
-              email: profile.email || user.email || "",
-              firstname: profile.full_name || profile.email || user.email || "User",
-              lifecycleStage: "subscriber",
-              source: "signup",
-            }).catch((error) => {
-              console.warn("CRM signup sync error:", error);
-            });
-
-            // If profile was created within last 5 minutes, send welcome email
-            if (diffMinutes <= 5) {
-              const email = profile.email || user.email || "";
-              const name =
-                profile.full_name || email.split("@")[0] || "User";
-              const { subject, html } = welcomeEmail(name, getContentLocale(getLocaleFromPath(next)));
-              await sendEmail({ to: email, subject, html });
-            }
-          }
+          return setOAuthIntent(NextResponse.redirect(new URL(setupError, origin)), bindOAuthFlowIntentToUser(intent, user.id), remainingSeconds);
         }
-      } catch (e) {
-        // Don't block auth flow if welcome email fails
-        console.error("Welcome email error:", e);
+        return redirect(setupError);
       }
-
-      const successResponse = NextResponse.redirect(new URL(next, origin));
-      successResponse.cookies.delete(OAUTH_SIGNUP_INTENT_COOKIE);
-      return successResponse;
+    }
+    if (retrySetup && setupStatus === "absent") return redirect(expiredSetup);
+    if (searchParams.has("signup_flow") && !intent && setupStatus === "absent") {
+      return redirect(`/${fallbackLocale}/auth?error=signup_intent_error&tab=signup`);
+    }
+    const newSignup = intent && isNewOAuthSignup(user, intent);
+    if (newSignup || setupStatus === "completed" || setupStatus === "already_completed") {
+      const admin = createSupabaseAdminClient();
+      try {
+        await enqueueFollowups(admin, user.id, fallbackLocale);
+      } catch {
+        // Auth succeeded; enqueue failure must not be mislabeled as auth failure.
+        console.error("Auth follow-up enqueue failed");
+      }
+    } else if (!searchParams.has("signup_flow")) {
+      const created = Date.parse(user.created_at);
+      const confirmed = Date.parse(user.email_confirmed_at || "");
+      if (user.app_metadata.provider === "email" && created <= confirmed &&
+        confirmed <= Date.now() && Date.now() - confirmed < 60_000 &&
+        Date.now() - created < 5 * 60_000) {
+        try {
+          await enqueueFollowups(createSupabaseAdminClient(), user.id, fallbackLocale);
+        } catch {
+          console.error("Auth follow-up enqueue failed");
+        }
+      }
+    }
+    return redirect(next);
+  } catch {
+    return redirect(callbackError);
+  }
 }
