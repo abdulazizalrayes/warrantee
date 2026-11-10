@@ -16,7 +16,7 @@ import type { NextRequest } from "next/server";
 import { NextRequest as DocumentRequest } from "next/server";
 import { getDocumentCsp } from "@/lib/csp-runtime";
 import { contentSecurityPolicy } from "@/lib/csp-policy.mjs";
-import { isolatedSupabaseOrigin } from "@/lib/isolated-test-origin.mjs";
+import { authRedirectOrigin } from "@/lib/isolated-test-origin.mjs";
 
 const LOCALE_PREFIX_RE = new RegExp(`^/(${LOCALE_PREFIX_PATTERN})(/|$)`);
 
@@ -75,7 +75,7 @@ function getAuthRedirectTarget(request: NextRequest) {
 }
 
 function buildCleanRedirectUrl(request: NextRequest, pathname: string) {
-  const url = request.nextUrl.clone();
+  const url = new URL(authRedirectOrigin(request.url));
   url.pathname = pathname;
   url.search = "";
   return url;
@@ -224,8 +224,8 @@ async function handleRequest(request: NextRequest) {
     !pathname.startsWith("/auth/callback") &&
     pathname !== "/"
   ) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/en" + pathname;
+    const url = buildCleanRedirectUrl(request, "/en" + pathname);
+    url.search = request.nextUrl.search;
     return NextResponse.redirect(url, 301);
   }
 
@@ -282,16 +282,10 @@ async function handleRequest(request: NextRequest) {
 
   const {
     data: { user },
-    error: authLookupError,
   } = await supabase.auth.getUser();
 
   if ((isProtectedAppArea || isAdminArea || isApprovalArea) && !user) {
-    const denied = buildNoIndexAuthRedirect(request, locale, response);
-    if (isolatedSupabaseOrigin()) {
-      const errorKind = authLookupError?.name === 'AuthSessionMissingError' ? 'no_session' : authLookupError ? 'auth_failure' : 'none';
-      denied.headers.set('x-warrantee-isolated-auth', `${request.cookies.getAll().some(cookie => /^sb-.*auth-token(?:\.\d+)?$/.test(cookie.name)) ? 'cookie' : 'no_cookie'}:${errorKind}`);
-    }
-    return denied;
+    return buildNoIndexAuthRedirect(request, locale, response);
   }
 
   if ((isAdminArea || isApprovalArea) && user) {
@@ -367,9 +361,6 @@ export async function proxy(request: NextRequest) {
   headers.delete("x-nonce");
   if (documentCsp.nonce) headers.set("x-nonce", documentCsp.nonce);
   const response = await handleRequest(new DocumentRequest(request, { headers }));
-  if (response.headers.has('x-warrantee-isolated-auth')) {
-    response.headers.set('x-warrantee-isolated-input', request.cookies.getAll().some(cookie => /^sb-.*auth-token(?:\.\d+)?$/.test(cookie.name)) ? 'cookie' : 'no_cookie');
-  }
   response.headers.set("Content-Security-Policy", documentCsp.policy);
   if (documentCsp.nonce) response.headers.set("Cache-Control", "private, no-store");
   return response;

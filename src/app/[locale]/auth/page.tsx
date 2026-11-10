@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -23,10 +23,9 @@ import { DIRECTION, getDictionary, normalizeLocale } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth-context";
 import { PageViewTracker } from "@/components/PageViewTracker";
 import { trackAuthIntent, trackAuthJourney, trackSignup, trackSignupSubmit } from "@/lib/ga4-events";
-import { boundedAuthRequest, prepareOAuthSignup } from "@/lib/auth-request";
+import { prepareOAuthSignup } from "@/lib/auth-request";
 import { resolveSafeAuthRedirect } from "@/lib/auth-redirect";
 import { buildOAuthSetupRetryPath } from "@/lib/oauth-setup-recovery";
-import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 type AuthTab = "login" | "signup";
 
@@ -49,8 +48,6 @@ export default function AuthPage() {
   const [message, setMessage] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [authMode, setAuthMode] = useState<"magic" | "password">("magic");
-  const [urlReady, setUrlReady] = useState(false);
-  const manualAttempt = useRef(false);
   const [urlState, setUrlState] = useState<{
     error: string | null;
     tab: string | null;
@@ -81,26 +78,9 @@ export default function AuthPage() {
       account: currentSearchParams.get("account"),
       signupFlow: currentSearchParams.get("signup_flow"),
     });
-    setUrlReady(true);
   }, []);
 
-  useEffect(() => {
-    if (!urlReady || authLoading || authError || loading || activeTab !== 'login' ||
-        requestedTab === 'signup' || errorFromUrl || !requestedRedirect || manualAttempt.current) return;
-    let current = true;
-    const expectedUser = user?.id;
-    void (async () => {
-      try {
-        const { data, error } = await boundedAuthRequest(() => createSupabaseBrowserClient().auth.getUser());
-        // Re-enter after the browser has persisted the session, without stale route prefetch.
-        if (current && !manualAttempt.current && !error && data.user && (!expectedUser || data.user.id === expectedUser)) window.location.replace(nextPath);
-      } catch { /* A failed lookup leaves the explicit sign-in controls available. */ }
-    })();
-    return () => { current = false; };
-  }, [activeTab, authError, authLoading, errorFromUrl, loading, nextPath, requestedRedirect, requestedTab, urlReady, user]);
-
   const handleMagicLink = async (e: React.FormEvent) => {
-    manualAttempt.current = true;
     e.preventDefault(); setLoading(true); setMessage(""); setErrorMsg("");
     try {
       trackAuthIntent("magic_link_start", "email", { locale, tab: activeTab });
@@ -118,7 +98,6 @@ export default function AuthPage() {
     } finally { setLoading(false); }
   };
   const handlePasswordLogin = async (e: React.FormEvent) => {
-    manualAttempt.current = true;
     e.preventDefault(); setLoading(true); setMessage(""); setErrorMsg("");
     try {
       trackAuthIntent("password_start", "password", { locale, tab: activeTab });
@@ -138,7 +117,6 @@ export default function AuthPage() {
     } finally { setLoading(false); }
   };
   const handleSignUp = async (e: React.FormEvent) => {
-    manualAttempt.current = true;
     e.preventDefault(); setLoading(true); setMessage(""); setErrorMsg("");
     try {
       trackSignupSubmit({ locale, account_type: accountType, has_company_name: Boolean(companyName) });
@@ -171,7 +149,6 @@ export default function AuthPage() {
     } finally { setLoading(false); }
   };
   const handleOAuth = async (provider: "google" | "apple") => {
-    manualAttempt.current = true;
     setLoading(true); setMessage(""); setErrorMsg("");
     const isSignup = activeTab === "signup";
     try {

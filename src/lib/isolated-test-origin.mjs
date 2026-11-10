@@ -15,3 +15,9 @@ export function isolatedSupabaseOrigin(env = process.env) {
   }
   return database.origin;
 }
+
+/** @param {string} requestUrl @param {Record<string, string | undefined>} env */
+export function authRedirectOrigin(requestUrl, env = process.env) {
+  // NextURL normalizes loopback hosts; test cookies must stay on their verified origin.
+  return isolatedSupabaseOrigin(env) ? new URL(env.NEXT_PUBLIC_APP_URL).origin : new URL(requestUrl).origin;
+}

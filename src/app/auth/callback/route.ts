@@ -11,6 +11,7 @@ import { enqueueAuthFollowupJobs, processAuthFollowupJobs } from "@/lib/server/a
 import { OAuthSignupRegistrationError, resumeOAuthSignupSetup, type OAuthSetupStatus } from "@/lib/server/oauth-signup-setup";
 import { boundedAuthRequest } from "@/lib/auth-request";
 import { buildOAuthSetupErrorPath } from "@/lib/oauth-setup-recovery";
+import { authRedirectOrigin } from "@/lib/isolated-test-origin.mjs";
 
 function getLocaleFromPath(path: string | null): Locale {
   return normalizeLocale(path?.split("/").filter(Boolean)[0]);
@@ -29,7 +30,8 @@ async function enqueueFollowups(admin: ReturnType<typeof createSupabaseAdminClie
 }
 
 export async function GET(request: NextRequest) {
-  const { searchParams, origin } = new URL(request.url);
+  const { searchParams } = new URL(request.url);
+  const origin = authRedirectOrigin(request.url);
   const code = searchParams?.get("code");
   const retrySetup = !code && searchParams.get("retry_setup") === "1";
   const requestedNext = searchParams?.get("next");
