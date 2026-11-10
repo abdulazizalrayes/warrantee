@@ -314,7 +314,7 @@
       "layer": "experience",
       "kind": "web_surface",
       "status": "active",
-      "responsibility": "Login, signup, signed flow-bound OAuth intent, durable single-completion Business setup with retry, safe callbacks, retryable profile/session states, password recovery and durable non-blocking signup follow-up jobs.",
+      "responsibility": "Login, signup, signed flow-bound OAuth intent, durable single-completion Business setup with retry, safe callbacks not intercepted by locale redirects, preserved refresh cookies and no-cache headers, retryable profile/session states, password recovery and durable non-blocking signup follow-up jobs.",
       "code_refs": [
         "src/app/[locale]/auth/page.tsx",
         "src/app/[locale]/forgot-password/page.tsx",
@@ -961,7 +961,7 @@
       "layer": "integrations",
       "kind": "analytics",
       "status": "active",
-      "responsibility": "Strict analytics-consent opt-in with Google opt-out on withdrawal, shared canonical path/origin-only referrer sanitizers, single-owner sanitized SPA pageviews, and independently sanitized server funnel records. Published GTM and GA4 stream configuration remain external verification boundaries; enhanced history/search/link/form/video/download collection must stay disabled.",
+      "responsibility": "Strict analytics-consent opt-in with Google opt-out on withdrawal, shared canonical path/origin-only referrer sanitizers, single-owner sanitized SPA pageviews, and independently sanitized server funnel records. Telemetry has its own rate-limit namespace and cannot consume business API allowance; both caps remain unchanged. Published GTM and GA4 stream configuration remain external verification boundaries; enhanced history/search/link/form/video/download collection must stay disabled.",
       "code_refs": [
         "src/lib/ga4-events.ts",
         "src/lib/analytics-payload.ts",
@@ -1014,7 +1014,7 @@
       "layer": "delivery",
       "kind": "quality_gate",
       "status": "active",
-      "responsibility": "Dependency install, source/security/build/browser gates, disposable local Auth/Postgres/Storage/SMTP journey verification, fail-on-flaky E2E and bounded sanitized counters. CI cannot seed production QA identities; raw authenticated traces and private payloads are not uploaded. Legacy suites remain a release blocker until their isolated prerequisites are verified.",
+      "responsibility": "Dependency install, source/security/build/browser gates, disposable local Auth/Postgres/Storage/Realtime/SMTP journey verification, fail-on-flaky E2E and bounded sanitized counters. CI cannot seed production QA identities; raw authenticated traces and private payloads are not uploaded. Required legacy suites use canonical local contracts and a fresh local-only identity; every active case must pass with no skips. The isolated app origin is preserved across framework loopback-host normalization without changing production or preview origins.",
       "code_refs": [
         ".github/workflows/ci.yml",
         "playwright.config.ts",
