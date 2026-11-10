@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, codex/signup-first-warranty-reliability]
   pull_request:
     branches: [main]
 
