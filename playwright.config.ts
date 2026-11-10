@@ -48,6 +48,7 @@ export default defineConfig({
   forbidOnly: Boolean(process.env.CI),
   failOnFlakyTests: Boolean(process.env.CI),
   retries: guardedCI ? 0 : process.env.CI ? 2 : 0,
+  ...(guardedCI ? { maxFailures: 1 } : {}),
   workers: syntheticUI ? 1 : 2,
   reporter: guardedCI
     ? [["./tests/isolated/reporter.ts"]]

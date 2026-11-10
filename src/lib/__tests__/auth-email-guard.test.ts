@@ -33,6 +33,11 @@ describe("getAuthEmailSafetyError", () => {
   it("accepts normal business emails", () => {
     expect(getAuthEmailSafetyError("hello@warrantee.io")).toBeNull();
   });
+
+  it("checks isolated SMTP fixtures through the unchanged signup validator", () => {
+    expect(getAuthEmailSafetyError("synthetic@warrantee-isolated.test")).toBeNull();
+    expect(getAuthEmailSafetyError("synthetic@example.test")).not.toBeNull();
+  });
 });
 
 describe("buildAuthEmailErrorMessage", () => {

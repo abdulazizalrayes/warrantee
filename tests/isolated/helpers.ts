@@ -63,7 +63,7 @@ export async function observeLocalOnly(context: BrowserContext) {
 
 export async function signupAndConfirm(page: Page, scenario: Scenario, failFirst = false) {
   await assertDisposableBackend();
-  const email = `isolated-${randomUUID()}@example.test`;
+  const email = `isolated-${randomUUID()}@warrantee-isolated.test`;
   const name = `Synthetic ${scenario.account} ${scenario.locale}`;
   const company = `Synthetic local company ${randomUUID()}`;
   await page.goto(`/${scenario.locale}/auth?tab=signup&account=${scenario.account}`);
