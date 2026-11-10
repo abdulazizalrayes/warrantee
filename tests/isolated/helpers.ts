@@ -129,7 +129,18 @@ export async function signupAndConfirm(page: Page, scenario: Scenario, failFirst
   }, { timeout: 20_000, message: 'Local SMTP must contain a real loopback confirmation link' }).toBe(true);
   await assertDisposableBackend();
   await page.goto(confirmation!);
+  try {
   await expect(page).toHaveURL(new RegExp(`/${scenario.locale}/onboarding(?:\\?|$)`));
+  } catch {
+    const destination = new URL(page.url());
+    const error = destination.searchParams.get('error');
+    const state = error === 'auth_callback_error' ? 'callback_rejected'
+      : destination.pathname === `/${scenario.locale}/auth` ? 'sign_in'
+        : destination.pathname === `/${scenario.locale}/dashboard` ? 'dashboard'
+          : destination.pathname === `/${scenario.locale}/onboarding` ? 'onboarding'
+            : 'other';
+    throw new Error(`isolated_confirmation_destination:${state}`);
+  }
   const admin = await localAdmin();
   const { data: profile, error } = await admin.from('profiles').select('*').eq('email', email).single();
   expect(error).toBeNull();

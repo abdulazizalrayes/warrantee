@@ -23,7 +23,8 @@ export function browserSourceFile(value) {
 function failureCoordinates(value) {
   if (!value || !['locator_ambiguous', 'timeout', 'network', 'assertion', 'unknown'].includes(value.category)) return undefined;
   const file = browserSourceFile(value.file);
-  return { category: value.category, ...(file && Number.isSafeInteger(value.line) && value.line > 0 && value.line < 100000
+  const confirmationState = ['callback_rejected', 'sign_in', 'dashboard', 'onboarding', 'other'].includes(value.confirmationState) ? value.confirmationState : undefined;
+  return { category: value.category, ...(confirmationState ? { confirmationState } : {}), ...(file && Number.isSafeInteger(value.line) && value.line > 0 && value.line < 100000
     && Number.isSafeInteger(value.column) && value.column >= 0 && value.column < 100000
     ? { file, line: value.line, column: value.column } : {}) };
 }
@@ -44,7 +45,8 @@ export function safeBrowserFailure(error) {
       if (file) { line = Number(frame[2]); column = Number(frame[3]); break; }
     }
   }
-  return failureCoordinates({ category, file, line, column });
+  const confirmationState = text.match(/^isolated_confirmation_destination:(callback_rejected|sign_in|dashboard|onboarding|other)$/)?.[1];
+  return failureCoordinates({ category, file, line, column, confirmationState });
 }
 
 export function safeDiagnostics(step, output) {
@@ -69,6 +71,20 @@ export function safeDiagnostics(step, output) {
 export function safeTestOutput(output) {
   const lines = [];
   for (const line of output.split('\n')) {
+    if (line.startsWith('ISOLATED_PREFLIGHT ')) {
+      try {
+        const item = JSON.parse(line.slice('ISOLATED_PREFLIGHT '.length));
+        if (['agent-markdown:check', 'qa:agent-markdown', 'qa:agent-readiness'].includes(item.check) && ['passed', 'failed'].includes(item.status)) {
+          lines.push(`ISOLATED_PREFLIGHT ${JSON.stringify({ check: item.check, status: item.status })}`);
+        }
+      } catch { /* No arbitrary diagnostics leave the isolated process. */ }
+    }
+    if (line.startsWith('ISOLATED_ERROR ')) {
+      try {
+        const failure = failureCoordinates(JSON.parse(line.slice('ISOLATED_ERROR '.length)));
+        if (failure) lines.push(`ISOLATED_ERROR ${JSON.stringify(failure)}`);
+      } catch { /* No raw browser errors leave the process. */ }
+    }
     if (line.startsWith('{')) {
       try {
         const item = JSON.parse(line);

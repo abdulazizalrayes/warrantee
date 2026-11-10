@@ -24,6 +24,11 @@ test('browser failures expose only registered source coordinates and fixed categ
   assert.ok(output[0].includes('tests/isolated/helpers.ts'));
   assert.doesNotMatch(JSON.stringify(output), /private|token|temporary|message|stack/);
   assert.deepEqual(safeBrowserFailure({ message: 'timeout private', location: { file: '/tests/e2e/private-value.spec.ts', line: 12, column: 3 } }), { category: 'timeout' });
+  assert.deepEqual(safeBrowserFailure({ message: 'isolated_confirmation_destination:callback_rejected' }), { category: 'unknown', confirmationState: 'callback_rejected' });
+  assert.deepEqual(safeBrowserFailure({ message: 'isolated_confirmation_destination:private-token' }), { category: 'unknown' });
+  assert.deepEqual(safeTestOutput('ISOLATED_PREFLIGHT {"check":"qa:agent-markdown","status":"failed","private":"secret"}\nISOLATED_PREFLIGHT {"check":"secret","status":"failed"}\nISOLATED_ERROR {"category":"network","private":"secret"}'), [
+    'ISOLATED_PREFLIGHT {"check":"qa:agent-markdown","status":"failed"}', 'ISOLATED_ERROR {"category":"network"}',
+  ]);
 });
 const env = {
   WARRANTEE_ISOLATED_E2E: '1', NEXT_PUBLIC_APP_URL: APP_URL, E2E_BASE_URL: APP_URL,

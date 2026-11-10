@@ -125,9 +125,14 @@ jobs:
             env E2E_SUITE=isolated-regression ISOLATED_MIN_CASES=246 bash -e -c '
               export AGENT_MARKDOWN_BASE_URL=http://127.0.0.1:3100
               export AGENT_READINESS_BASE_URL=http://127.0.0.1:3100
-              npm run agent-markdown:check
-              npm run qa:agent-markdown
-              npm run qa:agent-readiness
+              for check in agent-markdown:check qa:agent-markdown qa:agent-readiness; do
+                if npm run "$check"; then
+                  printf "ISOLATED_PREFLIGHT {\"check\":\"%s\",\"status\":\"passed\"}\n" "$check"
+                else
+                  printf "ISOLATED_PREFLIGHT {\"check\":\"%s\",\"status\":\"failed\"}\n" "$check"
+                  exit 1
+                fi
+              done
               exec node node_modules/@playwright/test/cli.js test --config=playwright.config.ts
             '
       # The runner supplies canonical legacy schema and fresh local-only

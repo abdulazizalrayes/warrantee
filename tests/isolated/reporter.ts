@@ -1,4 +1,4 @@
-import type { FullResult, Reporter, Suite, TestCase, TestResult } from '@playwright/test/reporter';
+import type { FullResult, Reporter, Suite, TestCase, TestResult, TestError } from '@playwright/test/reporter';
 import { browserSourceFile, safeBrowserFailure } from './diagnostics.mjs';
 
 // No raw browser errors, emails, confirmation tokens, traces, or saved artifacts.
@@ -9,7 +9,10 @@ export default class IsolatedReporter implements Reporter {
   onBegin(_config: unknown, suite: Suite) { this.suite = suite; }
   onStdOut() {}
   onStdErr() {}
-  onError() { this.globalErrors++; }
+  onError(error: TestError) {
+    this.globalErrors++;
+    process.stdout.write(`ISOLATED_ERROR ${JSON.stringify(safeBrowserFailure(error))}\n`);
+  }
   onTestEnd(test: TestCase, result: TestResult) {
     process.stdout.write(`ISOLATED_CASE ${JSON.stringify({ line: test.location.line, status: result.status,
       file: browserSourceFile(test.location.file),
