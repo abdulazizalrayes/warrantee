@@ -7,6 +7,7 @@ import { APP_URL, SUPABASE_URL, MAIL_URL, assertDisposableBackend, assertLoopbac
 
 export type Scenario = { locale: 'en' | 'ar'; account: 'consumer' | 'business'; mode: 'completed' | 'skipped'; attachment?: boolean };
 export const text = (scenario: Scenario, en: string, ar: string) => scenario.locale === 'ar' ? ar : en;
+const browserSignals = new WeakMap<BrowserContext, { cspViolations: number; scriptErrors: number }>();
 
 export async function localAdmin() {
   await assertDisposableBackend();
@@ -29,7 +30,10 @@ export async function signedInClient(context: BrowserContext) {
 }
 
 export async function observeLocalOnly(context: BrowserContext) {
-  const observed = { external: 0, googleBlocked: 0, funnelFailures: 0, cspViolations: 0 };
+  const observed = { external: 0, googleBlocked: 0, funnelFailures: 0, cspViolations: 0, scriptErrors: 0 };
+  browserSignals.set(context, observed);
+  for (const page of context.pages()) page.on('pageerror', () => { observed.scriptErrors++; });
+  context.on('page', page => page.on('pageerror', () => { observed.scriptErrors++; }));
   await context.exposeBinding('__isolatedCspViolation', () => { observed.cspViolations++; });
   await context.addInitScript(() => {
     document.addEventListener('securitypolicyviolation', (event) => {
@@ -174,7 +178,10 @@ export async function signupAndConfirm(page: Page, scenario: Scenario, failFirst
         headers: { Cookie: applicable.map(cookie => `${cookie.name}=${cookie.value}`).join('; ') } });
       explicitCookieAccepted = probe.status() === 200;
     } catch { /* The probe stays inside the same guarded local account. */ }
-    throw new Error(`isolated_confirmation_destination:${state};callbackSeen=${transit.callbackSeen};callbackCookieSet=${transit.callbackCookieSet};hasAuthCookie=${cookies.some(cookie => /^sb-.*auth-token(?:\.\d+)?$/.test(cookie.name))};authRedirect=${destination.searchParams.has('redirect')};cookieApplicable=${applicable.some(cookie => /^sb-.*auth-token(?:\.\d+)?$/.test(cookie.name))};cookieVerified=${cookieVerified};profileReadable=${profileReadable};proxyState=${transit.proxyState};proxyInputCookie=${transit.proxyInputCookie};browserSentCookie=${transit.browserSentCookie};explicitCookieAccepted=${explicitCookieAccepted}`);
+    const signals = browserSignals.get(page.context());
+    const cookieVisible = await page.evaluate(() => /(?:^|;\s*)sb-[^=;]*auth-token(?:\.\d+)?=/.test(document.cookie));
+    const browserHydrated = await page.locator('form').count() > 0;
+    throw new Error(`isolated_confirmation_destination:${state};callbackSeen=${transit.callbackSeen};callbackCookieSet=${transit.callbackCookieSet};hasAuthCookie=${cookies.some(cookie => /^sb-.*auth-token(?:\.\d+)?$/.test(cookie.name))};authRedirect=${destination.searchParams.has('redirect')};cookieApplicable=${applicable.some(cookie => /^sb-.*auth-token(?:\.\d+)?$/.test(cookie.name))};cookieVerified=${cookieVerified};profileReadable=${profileReadable};proxyState=${transit.proxyState};proxyInputCookie=${transit.proxyInputCookie};browserSentCookie=${transit.browserSentCookie};explicitCookieAccepted=${explicitCookieAccepted};cspViolated=${Boolean(signals?.cspViolations)};browserScriptError=${Boolean(signals?.scriptErrors)};browserHydrated=${browserHydrated};cookieVisible=${cookieVisible}`);
   } finally { page.off('response', watchCallback); }
   const admin = await localAdmin();
   const { data: profile, error } = await admin.from('profiles').select('*').eq('email', email).single();

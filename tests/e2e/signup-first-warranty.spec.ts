@@ -148,7 +148,7 @@ for (const scenario of scenarios) {
       const activations = events.filter((row) => row.action === 'activation_milestone' && row.metadata.source === 'server_warranty_creation');
       expect(activations.filter((row) => row.metadata.milestone === 'first_warranty_created')).toHaveLength(trafficClass === 'human' ? 1 : 0);
       expect(activations.filter((row) => row.metadata.milestone === 'first_warranty_issued')).toHaveLength(0);
-      expect(observed).toMatchObject({ external: 0, googleBlocked: 0, funnelFailures: 0, cspViolations: 0 });
+      expect(observed).toMatchObject({ external: 0, googleBlocked: 0, funnelFailures: 0, cspViolations: 0, scriptErrors: 0 });
       expect(await page.evaluate(() => ({ ga: Boolean(window.gtag), layer: window.dataLayer?.length || 0 }))).toEqual({ ga: false, layer: 0 });
       if (scenario.locale === 'ar') {
         const loaded = await page.evaluate(async () => {
