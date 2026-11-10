@@ -69,7 +69,9 @@ for (const scenario of scenarios) {
       await assertDisposableBackend();
       console.log('ISOLATED_STAGE first_save');
       await create.click();
-      await expect(page.getByRole('alert')).toBeVisible();
+      await expect(page.getByRole('alert').filter({ hasText: text(scenario,
+        'Could not confirm the request. Check your connection and retry; the same request will be used without creating another warranty.',
+        'تعذر تأكيد الطلب. تحقق من الاتصال وأعد المحاولة؛ سيُستخدم الطلب نفسه دون إنشاء ضمان آخر.') })).toBeVisible();
       await expect(create).toBeEnabled();
       expect(lostResponse).toBe(true);
       expect(originalKey).toMatch(/^[a-f0-9-]{36}$/i);
