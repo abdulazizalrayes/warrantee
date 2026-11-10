@@ -5,6 +5,48 @@ export const DATABASE_CONTRACT_MINIMUMS = {
   'src/lib/__tests__/oauth-signup-setup-db.test.ts': 13,
 };
 
+const browserFiles = new Set([
+  'tests/e2e/signup-first-warranty.spec.ts', 'tests/e2e/signup-ui-recovery.spec.ts',
+  'tests/e2e/authenticated-core-flows.spec.ts', 'tests/e2e/authenticated-shell.spec.ts',
+  'tests/e2e/business-workflows.spec.ts', 'tests/e2e/public-routes.spec.ts',
+  'tests/e2e/protected-routes.spec.ts', 'tests/e2e/release-regression.spec.ts',
+  'tests/e2e/seo-agent-ready.spec.ts', 'tests/e2e/searchable-select.spec.ts',
+  'tests/e2e/header-footer.spec.ts', 'tests/e2e/csp.spec.ts',
+  'tests/e2e/helpers.ts', 'tests/isolated/helpers.ts', 'tests/isolated/guard.mjs',
+]);
+
+export function browserSourceFile(value) {
+  if (typeof value !== 'string') return undefined;
+  return [...browserFiles].find(file => value.replaceAll('\\', '/').endsWith(`/${file}`) || value === file);
+}
+
+function failureCoordinates(value) {
+  if (!value || !['locator_ambiguous', 'timeout', 'network', 'assertion', 'unknown'].includes(value.category)) return undefined;
+  const file = browserSourceFile(value.file);
+  return { category: value.category, ...(file && Number.isSafeInteger(value.line) && value.line > 0 && value.line < 100000
+    && Number.isSafeInteger(value.column) && value.column >= 0 && value.column < 100000
+    ? { file, line: value.line, column: value.column } : {}) };
+}
+
+export function safeBrowserFailure(error) {
+  const text = typeof error?.message === 'string' ? error.message : '';
+  const category = /strict mode violation/i.test(text) ? 'locator_ambiguous'
+    : /timeout|timed out/i.test(text) ? 'timeout'
+      : /ECONNREFUSED|ECONNRESET/i.test(text) ? 'network'
+        : /expect\(/i.test(text) ? 'assertion' : 'unknown';
+  const direct = error?.location;
+  let file = browserSourceFile(direct?.file);
+  let line = direct?.line;
+  let column = direct?.column;
+  if (!file && typeof error?.stack === 'string') {
+    for (const frame of error.stack.matchAll(/((?:tests\/e2e|tests\/isolated)\/[a-z-]+\.(?:ts|mjs)):(\d+):(\d+)/g)) {
+      file = browserSourceFile(frame[1]);
+      if (file) { line = Number(frame[2]); column = Number(frame[3]); break; }
+    }
+  }
+  return failureCoordinates({ category, file, line, column });
+}
+
 export function safeDiagnostics(step, output) {
   if (!steps.has(step)) throw new Error('Unregistered isolated diagnostic step');
   const diagnostics = [];
@@ -39,7 +81,9 @@ export function safeTestOutput(output) {
       try {
         const item = JSON.parse(line.slice('ISOLATED_CASE '.length));
         if (Number.isSafeInteger(item.line) && item.line > 0 && ['passed', 'failed', 'timedOut', 'skipped', 'interrupted'].includes(item.status)) {
-          lines.push(`ISOLATED_CASE ${JSON.stringify({ line: item.line, status: item.status })}`);
+          const file = browserSourceFile(item.file);
+          const failure = failureCoordinates(item.failure);
+          lines.push(`ISOLATED_CASE ${JSON.stringify({ line: item.line, status: item.status, ...(file ? { file } : {}), ...(failure ? { failure } : {}) })}`);
         }
       } catch { /* Raw output is never forwarded. */ }
     }

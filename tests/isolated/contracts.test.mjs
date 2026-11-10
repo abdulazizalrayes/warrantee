@@ -7,7 +7,7 @@ import { execFileSync } from 'node:child_process';
 import test from 'node:test';
 import { buildBootstrap, validateBaseAgainstTypes } from './bootstrap.mjs';
 import { APP_URL, SUPABASE_URL, MAIL_URL, assertIsolatedEnvironment, assertLoopback, assertDisposableBackend, maySnapshotSource } from './guard.mjs';
-import { DATABASE_CONTRACT_MINIMUMS, databaseTestSummary, safeDiagnostics, safeTestOutput, validateJourneySummary } from './diagnostics.mjs';
+import { DATABASE_CONTRACT_MINIMUMS, databaseTestSummary, safeDiagnostics, safeTestOutput, validateJourneySummary, safeBrowserFailure } from './diagnostics.mjs';
 import { assertFontSource } from './fonts.mjs';
 import { buildLegacyBootstrap } from './legacy-bootstrap.mjs';
 
@@ -16,6 +16,14 @@ test('snapshot preserves public discovery source while excluding private configu
   for (const file of ['src/app/.well-known/openapi.json/route.ts', 'public/.well-known/mcp.json', 'src/app/openapi.json/route.ts', 'package.json']) assert.equal(maySnapshotSource(file), true);
   for (const file of ['.env.local', '.vercel/project.json', '.git/config', '.warrantee-local/private.json', '.github/workflows/ci.yml', 'src/.private/config.ts', 'src/../private.ts', 'node_modules/package.json']) assert.equal(maySnapshotSource(file), false);
   assert.ok(readFileSync(resolve(root, 'src/app/openapi.json/route.ts'), 'utf8').includes('@/app/.well-known/openapi.json/route'));
+});
+test('browser failures expose only registered source coordinates and fixed categories', () => {
+  const failure = safeBrowserFailure({ message: 'expect(locator) private token', stack: 'private session\n at fn (/temporary/tests/isolated/helpers.ts:87:12)' });
+  assert.deepEqual(failure, { category: 'assertion', file: 'tests/isolated/helpers.ts', line: 87, column: 12 });
+  const output = safeTestOutput(`ISOLATED_CASE ${JSON.stringify({ line: 21, status: 'failed', file: '/temporary/tests/e2e/signup-first-warranty.spec.ts', failure: { ...failure, message: 'private token' } })}`);
+  assert.ok(output[0].includes('tests/isolated/helpers.ts'));
+  assert.doesNotMatch(JSON.stringify(output), /private|token|temporary|message|stack/);
+  assert.deepEqual(safeBrowserFailure({ message: 'timeout private', location: { file: '/tests/e2e/private-value.spec.ts', line: 12, column: 3 } }), { category: 'timeout' });
 });
 const env = {
   WARRANTEE_ISOLATED_E2E: '1', NEXT_PUBLIC_APP_URL: APP_URL, E2E_BASE_URL: APP_URL,

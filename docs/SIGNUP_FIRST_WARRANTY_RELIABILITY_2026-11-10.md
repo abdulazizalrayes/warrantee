@@ -64,6 +64,19 @@ The actual isolated service run requires Docker and the pinned CLI. Run it on th
 
 Before production, also require the production build, strict CSP artifact validation, public HTML/Markdown preservation checks, applicable seven-width EN/AR screenshots and geometry, fresh journey tests, hosted-preview checks and CodeQL. Do not waive a failed gate or call a retry-pass a clean run. Apply any additive database prerequisite only after isolated verification and before promoting code that requires it.
 
+## CodeQL Static Triage
+
+Review of the exact SARIF paths at `275b768`, against the authentication/tenant boundaries in `.github/SECURITY.md`, classified these four new alerts as `not_actionable` with high static confidence. This verdict is static evidence, not a claim of runtime provider verification. No CodeQL rules or security controls were disabled. Each alert has its own false-positive explanation in GitHub; all other findings remain independent.
+
+| Alert | Claimed Boundary | Counterevidence |
+| --- | --- | --- |
+| 32, insufficient password hash | `oauth-flow-intent.ts:22` | HMAC-SHA256 authenticates an allowlisted metadata object with a server-only high-entropy key. `FlowIntent` and `buildOAuthSignupIntent` contain no password. The reader verifies the MAC before parsing, then expiry, flow and destination. Supabase Auth owns password storage. This is not a password digest. |
+| 33, user-controlled bypass | Localized callback `route.ts:21` | Presence of `code` selects an attempted PKCE exchange, not authorization. Only successful Supabase exchange reaches a sanitized same-origin success redirect. Missing/failed exchange ends at the error route; deleting an intent cookie grants nothing. |
+| 34, user-controlled bypass | Auth page `page.tsx:288` | An error parameter controls link visibility only. The fixed same-origin retry target independently validates `getUser` and owner-bound signed/durable setup. No user ID or permission comes from displaying this link. |
+| 35, user-controlled bypass | Root callback `route.ts:48` | Exchange failure exits. Both successful exchange and explicit retry must pass the unconditional server-side `getUser` check before owner-bound setup RPCs. Missing code without retry is rejected. The query flag cannot choose another account or bypass authentication. |
+
+The positive controls above defeat each supplied claim; there is no ranked confirmed or unresolved triage queue for these four alerts. Fresh isolated journeys and the complete hosted checks are still required separately. Browser diagnostics now retain only registered source coordinates and fixed failure categories, never confirmation links, credentials or raw exception wording.
+
 ## Rollback
 
 Revalidate the company/project and exact current deployment before any rollback. The previously verified baseline was main `93d7fe18813da598b1f40a5e036bc34ed1e39b4b` and Vercel deployment `dpl_3znhhs1dFKDEFxbz5zuPhSdoDqUm`; do not assume an old alias remains current. Promote a complete known-good deployment rather than mixing CSP/build artifacts. Additive database objects can remain when rolling application code back; do not drop audit evidence, idempotency outcomes, jobs or customer data as rollback cleanup. Document any required forward correction separately.
