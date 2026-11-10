@@ -168,6 +168,10 @@ test('actual DB contracts gate requires every registered file and minimum, no sk
   assert.deepEqual(sanitized.failedCases[0], { file: Object.keys(DATABASE_CONTRACT_MINIMUMS)[0], assertionIndex: 1 });
   assert.deepEqual(sanitized.failedCases[6], { file: Object.keys(DATABASE_CONTRACT_MINIMUMS)[1], assertionIndex: 1 });
   assert.doesNotMatch(JSON.stringify(sanitized), /private|session|title|failureMessages/);
+  failures[0].assertionResults[0].failureMessages = ['Received: { "code": "42501", "message": "new row violates row-level security policy private sensitive session details" }'];
+  const categorized = databaseTestSummary(JSON.stringify({ ...report, success: false, testResults: failures }));
+  assert.deepEqual(categorized.failedCases[0], { file: Object.keys(DATABASE_CONTRACT_MINIMUMS)[0], assertionIndex: 1, sqlstate: '42501', category: 'row_security' });
+  assert.doesNotMatch(JSON.stringify(categorized), /private|sensitive|session|message|failureMessages/);
 });
 
 test('browser summaries enforce ten real journeys and the full legacy active-case minimum', () => {

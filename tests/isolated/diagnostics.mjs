@@ -70,7 +70,23 @@ export function databaseTestSummary(output) {
       let included = 0;
       for (let index = 0; index < result.assertionResults.length && included < 6 && failedCases.length < 12; index++) {
         if (result.assertionResults[index]?.status !== 'passed') {
-          failedCases.push({ file, assertionIndex: index + 1 });
+          const failure = (result.assertionResults[index]?.failureMessages || []).filter(value => typeof value === 'string').join('\n');
+          const permittedCodes = new Set(['42501', '42P01', '42703', '42883', '23502', '23503', '23505', '23514', '22P02', '22007', '22008', '22023', '40P01', 'P0001']);
+          const sqlstate = [...failure.matchAll(/["']?code["']?\s*:\s*["']([A-Z0-9]{5})["']/g)]
+            .map(match => match[1]).find(code => permittedCodes.has(code));
+          const categories = [
+            [/row-level security/i, 'row_security'],
+            [/permission denied for function/i, 'function_permission'],
+            [/permission denied for (?:table|schema)/i, 'relation_permission'],
+            [/does not exist/i, 'missing_schema'],
+            [/invalid input syntax/i, 'invalid_type'],
+            [/violates check constraint/i, 'check_constraint'],
+            [/duplicate key/i, 'duplicate_key'],
+            [/deadlock detected/i, 'deadlock'],
+            [/violates not-null/i, 'null_constraint'],
+          ];
+          const category = categories.find(([pattern]) => pattern.test(failure))?.[1];
+          failedCases.push({ file, assertionIndex: index + 1, ...(sqlstate ? { sqlstate } : {}), ...(category ? { category } : {}) });
           included++;
         }
       }
