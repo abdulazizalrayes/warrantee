@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { apiRateLimit, getClientIp, getRateLimitHeaders } from "@/lib/rate-limit";
+import { funnelEventRateLimit, getClientIp, getRateLimitHeaders } from "@/lib/rate-limit";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { isTrustedSameOriginRequest } from "@/lib/request-origin";
 import { classifyTrafficUserAgent } from "@/lib/traffic-classification";
@@ -22,7 +22,7 @@ function createSupabaseAdminClient() {
 
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request);
-  const rateLimitResult = await apiRateLimit(ip);
+  const rateLimitResult = await funnelEventRateLimit(ip);
   if (!rateLimitResult.success) {
     return NextResponse.json(
       { error: "Too many requests" },

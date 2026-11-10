@@ -7,7 +7,7 @@ const state = vi.hoisted(() => ({
 vi.mock("@supabase/supabase-js", () => ({ createClient: state.createClient }));
 vi.mock("@/lib/supabase/server", () => ({ createServerSupabaseClient: async () => ({ auth: { getUser: state.auth } }) }));
 vi.mock("@/lib/rate-limit", () => ({
-  apiRateLimit: async () => ({ success: state.rateAllowed }), getClientIp: () => "unit-test-ip", getRateLimitHeaders: () => ({}),
+  funnelEventRateLimit: async () => ({ success: state.rateAllowed }), getClientIp: () => "unit-test-ip", getRateLimitHeaders: () => ({}),
 }));
 import { POST } from "@/app/api/funnel/events/route";
 
