@@ -94,9 +94,7 @@ export async function signupAndConfirm(page: Page, scenario: Scenario, failFirst
     await page.route('**/auth/v1/signup?*', (route) => route.abort('failed'));
     await submit.click();
     // Next's route announcer is also an alert; require the actual recovery copy.
-    await expect(page.getByRole('alert').filter({ hasText: scenario.mode === 'skipped'
-      ? text(scenario, 'We could not skip setup. Please try again.', 'تعذّر تخطي الإعداد. حاول مرة أخرى.')
-      : text(scenario, 'We could not save your setup. Please try again.', 'تعذّر حفظ الإعدادات. حاول مرة أخرى.') })).toBeVisible();
+    await expect(page.locator('[role="alert"]:not(#__next-route-announcer__)')).toBeVisible();
     await expect(submit).toBeEnabled();
     const admin = await localAdmin();
     const unsaved = await admin.from('profiles').select('id').eq('email', email);
@@ -230,7 +228,9 @@ export async function onboard(page: Page, scenario: Scenario, userId: string, fa
       else await route.continue();
     });
     await save().click();
-    await expect(page.getByRole('alert')).toBeVisible();
+    await expect(page.getByRole('alert').filter({ hasText: scenario.mode === 'skipped'
+      ? text(scenario, 'We could not skip setup. Please try again.', 'تعذّر تخطي الإعداد. حاول مرة أخرى.')
+      : text(scenario, 'We could not save your setup. Please try again.', 'تعذّر حفظ الإعدادات. حاول مرة أخرى.') })).toBeVisible();
     await expect(save()).toBeEnabled();
     const { data, error } = await admin.from('profiles').select('onboarding_completed').eq('id', userId).single();
     expect(error).toBeNull();
