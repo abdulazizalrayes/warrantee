@@ -350,7 +350,7 @@
     {
       "file": "20261110151140_manual_warranty_creation_transaction.sql",
       "sha256": "cefb03de662a9ba04d05979a6a5e16c978e38dc66a02466913fc76834daa1ea3",
-      "productionState": "pending"
+      "productionState": "applied"
     }
   ]
 }
