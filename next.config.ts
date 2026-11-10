@@ -234,6 +234,8 @@ const nextConfig: NextConfig = {
 
     // Redirect locale-less paths with sub-paths to /en/ prefix
     for (const page of allPages) {
+      // The root auth callback owns PKCE and its path-bound signup intent.
+      if (page === "auth") continue;
       redirects.push({
         source: `/${page}/:path*`,
         destination: `/en/${page}/:path*`,
