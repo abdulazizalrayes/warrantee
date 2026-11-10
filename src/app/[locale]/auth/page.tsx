@@ -85,15 +85,15 @@ export default function AuthPage() {
   }, []);
 
   useEffect(() => {
-    if (!urlReady || authLoading || authError || loading || !user || activeTab !== 'login' ||
+    if (!urlReady || authLoading || authError || loading || activeTab !== 'login' ||
         requestedTab === 'signup' || errorFromUrl || !requestedRedirect || manualAttempt.current) return;
     let current = true;
-    const expectedUser = user.id;
+    const expectedUser = user?.id;
     void (async () => {
       try {
         const { data, error } = await boundedAuthRequest(() => createSupabaseBrowserClient().auth.getUser());
         // Re-enter after the browser has persisted the session, without stale route prefetch.
-        if (current && !error && data.user?.id === expectedUser) window.location.replace(nextPath);
+        if (current && !manualAttempt.current && !error && data.user && (!expectedUser || data.user.id === expectedUser)) window.location.replace(nextPath);
       } catch { /* A failed lookup leaves the explicit sign-in controls available. */ }
     })();
     return () => { current = false; };

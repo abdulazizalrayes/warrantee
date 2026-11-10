@@ -58,6 +58,17 @@ test('does not navigate while auth is uninitialized or absent', async () => {
   harness.loading = true; harness.user = null; mount(); await flush();
   expect(harness.lookup).not.toHaveBeenCalled(); expect(harness.replace).not.toHaveBeenCalled();
 });
+test('re-reads a late persisted session even if initial client state was empty', async () => {
+  harness.user = null;
+  harness.lookup.mockResolvedValue({ data: { user: { id: 'synthetic-user' } }, error: null });
+  mount(); await flush();
+  expect(harness.replace).toHaveBeenCalledExactlyOnceWith('/en/onboarding');
+});
+test('an initialized anonymous browser cannot continue without live verification', async () => {
+  harness.user = null;
+  harness.lookup.mockResolvedValue({ data: { user: null }, error: { name: 'AuthSessionMissingError' } });
+  mount(); await flush(); expect(harness.replace).not.toHaveBeenCalled();
+});
 test('a different verified identity cannot continue the captured user', async () => {
   harness.lookup.mockResolvedValue({ data: { user: { id: 'different-synthetic-user' } }, error: null });
   mount(); await flush(); expect(harness.replace).not.toHaveBeenCalled();
