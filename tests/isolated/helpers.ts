@@ -132,9 +132,10 @@ export async function signupAndConfirm(page: Page, scenario: Scenario, failFirst
     return false;
   }, { timeout: 20_000, message: 'Local SMTP must contain a real loopback confirmation link' }).toBe(true);
   await assertDisposableBackend();
-  const transit = { callbackSeen: false, callbackCookieSet: false, proxyState: 'unknown', proxyInputCookie: false, browserSentCookie: false };
+  const transit = { callbackSeen: false, callbackCookieSet: false, proxyState: 'unknown', proxyInputCookie: false, browserSentCookie: false, documentHtml: false };
   const watchCallback = async (response: import('@playwright/test').Response) => {
     const headers = await response.allHeaders();
+    if (response.request().isNavigationRequest()) transit.documentHtml = headers['content-type']?.includes('text/html') || false;
     const proxy = headers['x-warrantee-isolated-auth'];
     if (/^(?:cookie|no_cookie):(?:no_session|auth_failure|none)$/.test(proxy || '')) transit.proxyState = proxy;
     if (proxy) {
@@ -181,7 +182,10 @@ export async function signupAndConfirm(page: Page, scenario: Scenario, failFirst
     const signals = browserSignals.get(page.context());
     const cookieVisible = await page.evaluate(() => /(?:^|;\s*)sb-[^=;]*auth-token(?:\.\d+)?=/.test(document.cookie));
     const browserHydrated = await page.locator('form').count() > 0;
-    throw new Error(`isolated_confirmation_destination:${state};callbackSeen=${transit.callbackSeen};callbackCookieSet=${transit.callbackCookieSet};hasAuthCookie=${cookies.some(cookie => /^sb-.*auth-token(?:\.\d+)?$/.test(cookie.name))};authRedirect=${destination.searchParams.has('redirect')};cookieApplicable=${applicable.some(cookie => /^sb-.*auth-token(?:\.\d+)?$/.test(cookie.name))};cookieVerified=${cookieVerified};profileReadable=${profileReadable};proxyState=${transit.proxyState};proxyInputCookie=${transit.proxyInputCookie};browserSentCookie=${transit.browserSentCookie};explicitCookieAccepted=${explicitCookieAccepted};cspViolated=${Boolean(signals?.cspViolations)};browserScriptError=${Boolean(signals?.scriptErrors)};browserHydrated=${browserHydrated};cookieVisible=${cookieVisible}`);
+    const documentScripts = await page.locator('script[src*="/_next/"]').count() > 0;
+    const httpOnlyCookie = applicable.some(cookie => /^sb-.*auth-token(?:\.\d+)?$/.test(cookie.name) && cookie.httpOnly);
+    const sameAppOrigin = destination.origin === APP_URL;
+    throw new Error(`isolated_confirmation_destination:${state};callbackSeen=${transit.callbackSeen};callbackCookieSet=${transit.callbackCookieSet};hasAuthCookie=${cookies.some(cookie => /^sb-.*auth-token(?:\.\d+)?$/.test(cookie.name))};authRedirect=${destination.searchParams.has('redirect')};cookieApplicable=${applicable.some(cookie => /^sb-.*auth-token(?:\.\d+)?$/.test(cookie.name))};cookieVerified=${cookieVerified};profileReadable=${profileReadable};proxyState=${transit.proxyState};proxyInputCookie=${transit.proxyInputCookie};browserSentCookie=${transit.browserSentCookie};explicitCookieAccepted=${explicitCookieAccepted};cspViolated=${Boolean(signals?.cspViolations)};browserScriptError=${Boolean(signals?.scriptErrors)};browserHydrated=${browserHydrated};cookieVisible=${cookieVisible};documentScripts=${documentScripts};documentHtml=${transit.documentHtml};httpOnlyCookie=${httpOnlyCookie};sameAppOrigin=${sameAppOrigin}`);
   } finally { page.off('response', watchCallback); }
   const admin = await localAdmin();
   const { data: profile, error } = await admin.from('profiles').select('*').eq('email', email).single();
