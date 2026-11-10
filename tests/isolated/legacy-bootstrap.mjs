@@ -28,6 +28,7 @@ const migrations = {
   concierge: '20260830200356_agent_concierge_questions.sql',
   conciergeDeny: '20260830203311_agent_concierge_explicit_deny_policy.sql',
   untrusted: '20260904120000_harden_untrusted_content_telemetry.sql',
+  manual: '20261110151140_manual_warranty_creation_transaction.sql',
 };
 
 function section(source, start, end) {
@@ -78,6 +79,7 @@ export function buildLegacyBootstrap(root) {
     load('support'), load('tokens'), load('usage'), load('tokenScopes'),
     // Reapply current canonical policies, not the permissive historical ones.
     tenant,
+    statement(load('manual'), 'alter policy warranties_authenticated_read on public.warranties'),
     load('transition'),
     section(load('constraints'), 'alter table public.warranties\n  drop constraint', 'create index if not exists idx_webhook_events_status_updated_at'),
     load('growth'),

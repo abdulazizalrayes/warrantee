@@ -1,7 +1,7 @@
 const steps = new Set(['docker_preflight', 'cli_version', 'stack_init', 'stack_start', 'stack_status', 'database_identity', 'bootstrap', 'source_inventory', 'database_contracts', 'build', 'journey', 'cleanup']);
 const sourcePath = /(?:^|\s|\.\/)((?:src|scripts|tests)\/[\w\-./[\]]+\.(?:ts|tsx|js|mjs))(?::(\d+)(?::(\d+))?|\((\d+),(\d+)\))(?::|\s)/gm;
 export const DATABASE_CONTRACT_MINIMUMS = {
-  'src/lib/__tests__/warranty-creation-db.test.ts': 49,
+  'src/lib/__tests__/warranty-creation-db.test.ts': 50,
   'src/lib/__tests__/oauth-signup-setup-db.test.ts': 13,
 };
 

@@ -90,6 +90,19 @@ describe.skipIf(!isolated)("isolated transactional warranty creation", () => {
     expect(events.filter((event) => event.action === "warranty_created")).toHaveLength(1);
     expect(events.filter((event) => event.metadata?.milestone === "first_warranty_created")).toHaveLength(1);
   });
+  it("returns a newly inserted owned row without a stale same-table read-policy lookup", async () => {
+    const a = await actor();
+    const created = await a.client.from("warranties").insert({
+      ...input, reference_number: `SYN-${randomUUID()}`, source: "qa_e2e",
+      created_by: a.id, user_id: a.id, issuer_user_id: a.id,
+    }).select("id,created_by").single();
+    expect(created.error).toBeNull();
+    expect(created.data?.created_by).toBe(a.id);
+    const other = await actor();
+    const foreign = await other.client.from("warranties").select("id").eq("id", created.data!.id);
+    expect(foreign.error).toBeNull();
+    expect(foreign.data).toHaveLength(0);
+  });
   it("emits one first milestone under concurrent different submissions", async () => {
     const a = await actor();
     const results = await Promise.all(Array.from({ length: 6 }, (_, i) => create(a.client, `distinct-concurrent-${i}`)));

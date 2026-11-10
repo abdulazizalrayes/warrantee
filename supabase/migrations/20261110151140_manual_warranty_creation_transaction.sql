@@ -4,6 +4,17 @@
 alter table public.api_idempotency_records add column if not exists response_body jsonb;
 grant usage on schema private to authenticated;
 
+-- INSERT ... RETURNING checks SELECT policy against NEW. A STABLE helper that
+-- rereads warranties by ID cannot see that just-inserted row in its snapshot.
+-- Keep the exact existing actor/member authorization on the candidate row.
+alter policy warranties_authenticated_read on public.warranties
+using (
+  private.current_user_is_platform_admin()
+  or (select auth.uid()) in (user_id, created_by, recipient_user_id, buyer_id, seller_id, issuer_user_id)
+  or private.is_active_company_member(issuer_company_id)
+  or private.is_active_company_member(recipient_company_id)
+);
+
 -- Preserve existing permissive actor=self auditing, but reserve the whole funnel
 -- namespace for service writers and private definer triggers. HTTP filtering
 -- alone cannot prevent authenticated clients from forging backend milestones.

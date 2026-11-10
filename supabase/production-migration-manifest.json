@@ -349,7 +349,7 @@
     },
     {
       "file": "20261110151140_manual_warranty_creation_transaction.sql",
-      "sha256": "594d6d86513a5540ffda6f2b6a50d724a871aea4e98ddaa79bda341363989c85",
+      "sha256": "cefb03de662a9ba04d05979a6a5e16c978e38dc66a02466913fc76834daa1ea3",
       "productionState": "pending"
     }
   ]

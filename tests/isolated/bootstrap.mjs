@@ -141,7 +141,7 @@ export function buildBootstrap(root, runId) {
     profiles_authenticated_owner_read: 'optimize', profiles_authenticated_owner_update: 'optimize',
     companies_authenticated_read: 'tenant', companies_authenticated_insert: 'tenant',
     company_members_authenticated_company_read: 'tenant',
-    warranties_authenticated_read: 'tenant', warranties_authenticated_insert: 'tenant',
+    warranties_authenticated_read: 'manual', warranties_authenticated_insert: 'tenant',
     warranties_authenticated_update: 'tenant', warranties_authenticated_delete: 'tenant',
     warranty_documents_authenticated_read: 'tenant', warranty_documents_authenticated_insert: 'tenant',
     warranty_documents_storage_authenticated_read: 'tenant', warranty_documents_storage_authenticated_insert: 'tenant',
