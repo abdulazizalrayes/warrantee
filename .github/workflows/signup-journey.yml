@@ -2,7 +2,7 @@ name: Isolated Signup Journey
 
 on:
   push:
-    branches: ['codex/signup-first-warranty-reliability']
+    branches: [main]
   pull_request:
     branches: [main]
   workflow_dispatch:

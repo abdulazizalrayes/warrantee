@@ -23,8 +23,9 @@ export function browserSourceFile(value) {
 function failureCoordinates(value) {
   if (!value || !['locator_ambiguous', 'timeout', 'network', 'assertion', 'unknown'].includes(value.category)) return undefined;
   const file = browserSourceFile(value.file);
-  const confirmationState = ['callback_rejected', 'sign_in', 'dashboard', 'onboarding', 'other'].includes(value.confirmationState) ? value.confirmationState : undefined;
-  return { category: value.category, ...(confirmationState ? { confirmationState } : {}), ...(file && Number.isSafeInteger(value.line) && value.line > 0 && value.line < 100000
+  const confirmationState = ['callback_rejected', 'verification_rejected', 'sign_in', 'dashboard', 'onboarding', 'other'].includes(value.confirmationState) ? value.confirmationState : undefined;
+  const transit = Object.fromEntries(['callbackSeen', 'callbackCookieSet', 'hasAuthCookie', 'authRedirect'].filter(key => typeof value[key] === 'boolean').map(key => [key, value[key]]));
+  return { category: value.category, ...(confirmationState ? { confirmationState, ...transit } : {}), ...(file && Number.isSafeInteger(value.line) && value.line > 0 && value.line < 100000
     && Number.isSafeInteger(value.column) && value.column >= 0 && value.column < 100000
     ? { file, line: value.line, column: value.column } : {}) };
 }
@@ -45,8 +46,9 @@ export function safeBrowserFailure(error) {
       if (file) { line = Number(frame[2]); column = Number(frame[3]); break; }
     }
   }
-  const confirmationState = text.match(/\bisolated_confirmation_destination:(callback_rejected|sign_in|dashboard|onboarding|other)\b/)?.[1];
-  return failureCoordinates({ category, file, line, column, confirmationState });
+  const confirmationState = text.match(/\bisolated_confirmation_destination:(callback_rejected|verification_rejected|sign_in|dashboard|onboarding|other)\b/)?.[1];
+  const transit = Object.fromEntries([...text.matchAll(/;(callbackSeen|callbackCookieSet|hasAuthCookie|authRedirect)=(true|false)\b/g)].map(match => [match[1], match[2] === 'true']));
+  return failureCoordinates({ category, file, line, column, confirmationState, ...transit });
 }
 
 export function safeDiagnostics(step, output) {

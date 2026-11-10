@@ -4,7 +4,7 @@ export const MAIL_URL = 'http://127.0.0.1:54324';
 
 export function maySnapshotSource(file) {
   const parts = file.split('/');
-  if (!file || file.includes('..') || parts.includes('node_modules')) return false;
+  if (!file || file.startsWith('/') || file.includes('\\') || parts.some(part => !part || part === '.' || part === '..') || parts.includes('node_modules')) return false;
   return parts.every((part, index) => !part.startsWith('.') ||
     (part === '.well-known' && ((index === 2 && parts[0] === 'src' && parts[1] === 'app') || (index === 1 && parts[0] === 'public'))));
 }

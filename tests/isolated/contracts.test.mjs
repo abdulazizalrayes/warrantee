@@ -13,8 +13,8 @@ import { buildLegacyBootstrap } from './legacy-bootstrap.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 test('snapshot preserves public discovery source while excluding private configuration', () => {
-  for (const file of ['src/app/.well-known/openapi.json/route.ts', 'public/.well-known/mcp.json', 'src/app/openapi.json/route.ts', 'package.json']) assert.equal(maySnapshotSource(file), true);
-  for (const file of ['.env.local', '.vercel/project.json', '.git/config', '.warrantee-local/private.json', '.github/workflows/ci.yml', 'src/.private/config.ts', 'src/../private.ts', 'node_modules/package.json']) assert.equal(maySnapshotSource(file), false);
+  for (const file of ['src/app/.well-known/openapi.json/route.ts', 'public/.well-known/mcp.json', 'src/app/openapi.json/route.ts', 'src/app/agent-markdown/[...segments]/route.ts', 'package.json']) assert.equal(maySnapshotSource(file), true);
+  for (const file of ['.env.local', '.vercel/project.json', '.git/config', '.warrantee-local/private.json', '.github/workflows/ci.yml', 'src/.private/config.ts', 'src/../private.ts', '/src/app/page.tsx', 'src//app/page.tsx', 'src\\..\\private.ts', 'node_modules/package.json']) assert.equal(maySnapshotSource(file), false);
   assert.ok(readFileSync(resolve(root, 'src/app/openapi.json/route.ts'), 'utf8').includes('@/app/.well-known/openapi.json/route'));
 });
 test('browser failures expose only registered source coordinates and fixed categories', () => {
@@ -26,6 +26,7 @@ test('browser failures expose only registered source coordinates and fixed categ
   assert.deepEqual(safeBrowserFailure({ message: 'timeout private', location: { file: '/tests/e2e/private-value.spec.ts', line: 12, column: 3 } }), { category: 'timeout' });
   assert.deepEqual(safeBrowserFailure({ message: 'isolated_confirmation_destination:callback_rejected' }), { category: 'unknown', confirmationState: 'callback_rejected' });
   assert.deepEqual(safeBrowserFailure({ message: 'Error: isolated_confirmation_destination:sign_in' }), { category: 'unknown', confirmationState: 'sign_in' });
+  assert.deepEqual(safeBrowserFailure({ message: 'Error: isolated_confirmation_destination:sign_in;callbackSeen=true;callbackCookieSet=false;hasAuthCookie=false;authRedirect=true;private=secret' }), { category: 'unknown', confirmationState: 'sign_in', callbackSeen: true, callbackCookieSet: false, hasAuthCookie: false, authRedirect: true });
   assert.deepEqual(safeBrowserFailure({ message: 'isolated_confirmation_destination:private-token' }), { category: 'unknown' });
   assert.deepEqual(safeTestOutput('ISOLATED_PREFLIGHT {"check":"qa:agent-markdown","status":"failed","private":"secret"}\nISOLATED_PREFLIGHT {"check":"secret","status":"failed"}\nISOLATED_ERROR {"category":"network","private":"secret"}'), [
     'ISOLATED_PREFLIGHT {"check":"qa:agent-markdown","status":"failed"}', 'ISOLATED_ERROR {"category":"network"}',

@@ -128,6 +128,13 @@ export async function signupAndConfirm(page: Page, scenario: Scenario, failFirst
     return false;
   }, { timeout: 20_000, message: 'Local SMTP must contain a real loopback confirmation link' }).toBe(true);
   await assertDisposableBackend();
+  const transit = { callbackSeen: false, callbackCookieSet: false };
+  const watchCallback = (response: import('@playwright/test').Response) => {
+    if (new URL(response.url()).pathname !== '/auth/callback') return;
+    transit.callbackSeen = true;
+    transit.callbackCookieSet = /sb-[^=;\s]*auth-token/.test(response.headers()['set-cookie'] || '');
+  };
+  page.on('response', watchCallback);
   await page.goto(confirmation!);
   try {
   await expect(page).toHaveURL(new RegExp(`/${scenario.locale}/onboarding(?:\\?|$)`));
@@ -135,12 +142,14 @@ export async function signupAndConfirm(page: Page, scenario: Scenario, failFirst
     const destination = new URL(page.url());
     const error = destination.searchParams.get('error');
     const state = error === 'auth_callback_error' ? 'callback_rejected'
+      : error || new URLSearchParams(destination.hash.slice(1)).has('error') ? 'verification_rejected'
       : destination.pathname === `/${scenario.locale}/auth` ? 'sign_in'
         : destination.pathname === `/${scenario.locale}/dashboard` ? 'dashboard'
           : destination.pathname === `/${scenario.locale}/onboarding` ? 'onboarding'
             : 'other';
-    throw new Error(`isolated_confirmation_destination:${state}`);
-  }
+    const cookies = await page.context().cookies();
+    throw new Error(`isolated_confirmation_destination:${state};callbackSeen=${transit.callbackSeen};callbackCookieSet=${transit.callbackCookieSet};hasAuthCookie=${cookies.some(cookie => /^sb-.*auth-token(?:\.\d+)?$/.test(cookie.name))};authRedirect=${destination.searchParams.has('redirect')}`);
+  } finally { page.off('response', watchCallback); }
   const admin = await localAdmin();
   const { data: profile, error } = await admin.from('profiles').select('*').eq('email', email).single();
   expect(error).toBeNull();
