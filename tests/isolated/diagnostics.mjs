@@ -4,6 +4,7 @@ export const DATABASE_CONTRACT_MINIMUMS = {
   'src/lib/__tests__/warranty-creation-db.test.ts': 50,
   'src/lib/__tests__/oauth-signup-setup-db.test.ts': 13,
 };
+export const JOURNEY_STAGES = new Set(['signup', 'confirmation', 'onboarding', 'warranty_form', 'first_save', 'retry_save', 'durable_assertions', 'funnel']);
 
 const browserFiles = new Set([
   'tests/e2e/signup-first-warranty.spec.ts', 'tests/e2e/signup-ui-recovery.spec.ts',
@@ -28,7 +29,9 @@ function failureCoordinates(value) {
   const boundaries = Array.isArray(value.boundaries) ? [...new Set(value.boundaries.filter(value => ['client_http', 'server_http', 'page_error', 'csp', 'console_error'].includes(value)))].slice(0, 5) : [];
   const httpChecks = Array.isArray(value.httpChecks) ? value.httpChecks.filter(item => /^([45][0-9]{2}):(activity_log|warranty_claims|company_members|warranty_documents|warranties|notifications|profiles|subscriptions|companies)$/.test(item)).slice(0, 10) : [];
   const proxyState = /^(?:cookie|no_cookie):(?:no_session|auth_failure|none)$/.test(value.proxyState || '') ? value.proxyState : undefined;
-  return { category: value.category, ...(boundaries.length ? { boundaries } : {}), ...(httpChecks.length ? { httpChecks } : {}), ...(confirmationState ? { confirmationState, ...transit, ...(proxyState ? { proxyState } : {}) } : {}), ...(file && Number.isSafeInteger(value.line) && value.line > 0 && value.line < 100000
+  const httpStatus = value.expectedStatus === 201 && Number.isSafeInteger(value.receivedStatus) && value.receivedStatus >= 100 && value.receivedStatus <= 599
+    ? { expectedStatus: 201, receivedStatus: value.receivedStatus } : {};
+  return { category: value.category, ...httpStatus, ...(boundaries.length ? { boundaries } : {}), ...(httpChecks.length ? { httpChecks } : {}), ...(confirmationState ? { confirmationState, ...transit, ...(proxyState ? { proxyState } : {}) } : {}), ...(file && Number.isSafeInteger(value.line) && value.line > 0 && value.line < 100000
     && Number.isSafeInteger(value.column) && value.column >= 0 && value.column < 100000
     ? { file, line: value.line, column: value.column } : {}) };
 }
@@ -54,7 +57,9 @@ export function safeBrowserFailure(error) {
   const boundaries = text.match(/\bisolated_browser_boundaries:([a-z_,]+)/)?.[1].split(',');
   const httpChecks = text.match(/\bisolated_http_checks:([a-z_,:0-9]+)/)?.[1].split(',');
   const proxyState = text.match(/;proxyState=((?:cookie|no_cookie):(?:no_session|auth_failure|none))\b/)?.[1];
-  return failureCoordinates({ category, file, line, column, confirmationState, ...transit, boundaries, httpChecks, proxyState });
+  const httpStatus = text.match(/\bisolated_http_status:201:([1-5][0-9]{2})\b/);
+  return failureCoordinates({ category, file, line, column, confirmationState, ...transit, boundaries, httpChecks, proxyState,
+    ...(httpStatus ? { expectedStatus: 201, receivedStatus: Number(httpStatus[1]) } : {}) });
 }
 
 export function safeDiagnostics(step, output) {
@@ -107,7 +112,8 @@ export function safeTestOutput(output) {
         if (Number.isSafeInteger(item.line) && item.line > 0 && ['passed', 'failed', 'timedOut', 'skipped', 'interrupted'].includes(item.status)) {
           const file = browserSourceFile(item.file);
           const failure = failureCoordinates(item.failure);
-          lines.push(`ISOLATED_CASE ${JSON.stringify({ line: item.line, status: item.status, ...(file ? { file } : {}), ...(failure ? { failure } : {}) })}`);
+          const stage = JOURNEY_STAGES.has(item.stage) ? item.stage : undefined;
+          lines.push(`ISOLATED_CASE ${JSON.stringify({ line: item.line, status: item.status, ...(file ? { file } : {}), ...(stage ? { stage } : {}), ...(failure ? { failure } : {}) })}`);
         }
       } catch { /* Raw output is never forwarded. */ }
     }

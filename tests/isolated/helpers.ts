@@ -66,6 +66,7 @@ export async function observeLocalOnly(context: BrowserContext) {
 }
 
 export async function signupAndConfirm(page: Page, scenario: Scenario, failFirst = false) {
+  console.log('ISOLATED_STAGE signup');
   await assertDisposableBackend();
   const email = `isolated-${randomUUID()}@warrantee-isolated.test`;
   const name = `Synthetic ${scenario.account} ${scenario.locale}`;
@@ -101,12 +102,13 @@ export async function signupAndConfirm(page: Page, scenario: Scenario, failFirst
     await page.unroute('**/auth/v1/signup?*');
   }
 
-  const signup = page.waitForResponse((response) => response.url().startsWith(`${SUPABASE_URL}/auth/v1/signup`) && response.request().method() === 'POST');
+  const signup = page.waitForResponse((response) => response.url().startsWith(`${SUPABASE_URL}/auth/v1/signup`) && response.request().method() === 'POST', { timeout: 15_000 });
   await submit.click();
   expect((await signup).status()).toBe(200);
 
   // Real GoTrue SMTP is captured by Mailpit. Follow its real PKCE confirmation URL
   // in the same browser; no admin confirmation or fabricated browser session.
+  console.log('ISOLATED_STAGE confirmation');
   let confirmation: string | undefined;
   await expect.poll(async () => {
     const response = await fetch(`${MAIL_URL}/api/v1/messages?limit=100`, { redirect: 'error' });
@@ -211,6 +213,7 @@ export async function signupAndConfirm(page: Page, scenario: Scenario, failFirst
 }
 
 export async function onboard(page: Page, scenario: Scenario, userId: string, failFirst = false) {
+  console.log('ISOLATED_STAGE onboarding');
   const admin = await localAdmin();
   const save = () => page.getByRole('button', { name: scenario.mode === 'skipped'
     ? text(scenario, 'Skip for now', '\u062a\u062e\u0637\u064a \u0627\u0644\u0625\u0639\u062f\u0627\u062f')
@@ -249,6 +252,7 @@ export async function onboard(page: Page, scenario: Scenario, userId: string, fa
 }
 
 export async function fillWarranty(page: Page, scenario: Scenario) {
+  console.log('ISOLATED_STAGE warranty_form');
   const name = `Synthetic local warranty ${randomUUID()}`;
   await page.locator('#warranty-product-name').fill(name);
   await page.getByRole('button', { name: text(scenario, 'Next', '\u0627\u0644\u062a\u0627\u0644\u064a'), exact: true }).click();

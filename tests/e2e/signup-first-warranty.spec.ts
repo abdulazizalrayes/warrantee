@@ -56,7 +56,10 @@ for (const scenario of scenarios) {
         originalBody = route.request().postData();
         originalKey = route.request().headers()['idempotency-key'];
         const response = await route.fetch({ maxRedirects: 0 });
-        expect(response.status()).toBe(201);
+        if (response.status() !== 201) {
+          await route.fulfill({ response });
+          throw new Error(`isolated_http_status:201:${response.status()}`);
+        }
         const result = await response.json();
         committedId = result.data.id;
         lostResponse = true;
@@ -64,6 +67,7 @@ for (const scenario of scenarios) {
       });
       const create = page.getByRole('button', { name: text(scenario, 'Create Warranty', '\u0625\u0646\u0634\u0627\u0621 \u0627\u0644\u0636\u0645\u0627\u0646'), exact: true });
       await assertDisposableBackend();
+      console.log('ISOLATED_STAGE first_save');
       await create.click();
       await expect(page.getByRole('alert')).toBeVisible();
       await expect(create).toBeEnabled();
@@ -71,6 +75,7 @@ for (const scenario of scenarios) {
       expect(originalKey).toMatch(/^[a-f0-9-]{36}$/i);
       const replayResponse = page.waitForResponse((response) => new URL(response.url()).pathname === '/api/warranties' && response.request().method() === 'POST');
       await assertDisposableBackend();
+      console.log('ISOLATED_STAGE retry_save');
       await create.click();
       const replay = await replayResponse;
       expect(replay.status()).toBe(201);
@@ -82,6 +87,7 @@ for (const scenario of scenarios) {
       await page.unroute('**/api/warranties');
       await expect(page.getByRole('heading', { name: text(scenario, 'Warranty Created Successfully!', '\u062a\u0645 \u0625\u0646\u0634\u0627\u0621 \u0627\u0644\u0636\u0645\u0627\u0646 \u0628\u0646\u062c\u0627\u062d!'), exact: true })).toBeVisible();
 
+      console.log('ISOLATED_STAGE durable_assertions');
       const rows = await admin.from('warranties').select('*').eq('created_by', identity.id);
       expect(rows.error).toBeNull();
       expect(rows.data).toHaveLength(1);
@@ -142,6 +148,7 @@ for (const scenario of scenarios) {
         return events.data!.some((row) => row.action === 'onboarding_completed' && row.metadata.completion_mode === scenario.mode);
       }).toBe(true);
       const events = (await audit()).data!;
+      console.log('ISOLATED_STAGE funnel');
       const serverCreated = events.filter((row) => row.action === 'warranty_created' && row.entity_id === committedId);
       expect(serverCreated).toHaveLength(1);
       expect(serverCreated[0].metadata.traffic_class).toBe(trafficClass);
