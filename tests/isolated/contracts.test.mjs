@@ -6,12 +6,17 @@ import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import test from 'node:test';
 import { buildBootstrap, validateBaseAgainstTypes } from './bootstrap.mjs';
-import { APP_URL, SUPABASE_URL, MAIL_URL, assertIsolatedEnvironment, assertLoopback, assertDisposableBackend } from './guard.mjs';
+import { APP_URL, SUPABASE_URL, MAIL_URL, assertIsolatedEnvironment, assertLoopback, assertDisposableBackend, maySnapshotSource } from './guard.mjs';
 import { DATABASE_CONTRACT_MINIMUMS, databaseTestSummary, safeDiagnostics, safeTestOutput, validateJourneySummary } from './diagnostics.mjs';
 import { assertFontSource } from './fonts.mjs';
 import { buildLegacyBootstrap } from './legacy-bootstrap.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
+test('snapshot preserves public discovery source while excluding private configuration', () => {
+  for (const file of ['src/app/.well-known/openapi.json/route.ts', 'public/.well-known/mcp.json', 'src/app/openapi.json/route.ts', 'package.json']) assert.equal(maySnapshotSource(file), true);
+  for (const file of ['.env.local', '.vercel/project.json', '.git/config', '.warrantee-local/private.json', '.github/workflows/ci.yml', 'src/.private/config.ts', 'src/../private.ts', 'node_modules/package.json']) assert.equal(maySnapshotSource(file), false);
+  assert.ok(readFileSync(resolve(root, 'src/app/openapi.json/route.ts'), 'utf8').includes('@/app/.well-known/openapi.json/route'));
+});
 const env = {
   WARRANTEE_ISOLATED_E2E: '1', NEXT_PUBLIC_APP_URL: APP_URL, E2E_BASE_URL: APP_URL,
   NEXT_PUBLIC_SUPABASE_URL: SUPABASE_URL, ISOLATED_MAIL_URL: MAIL_URL,

@@ -2,6 +2,13 @@ export const APP_URL = 'http://127.0.0.1:3100';
 export const SUPABASE_URL = 'http://127.0.0.1:54321';
 export const MAIL_URL = 'http://127.0.0.1:54324';
 
+export function maySnapshotSource(file) {
+  const parts = file.split('/');
+  if (!file || file.includes('..') || parts.includes('node_modules')) return false;
+  return parts.every((part, index) => !part.startsWith('.') ||
+    (part === '.well-known' && ((index === 2 && parts[0] === 'src' && parts[1] === 'app') || (index === 1 && parts[0] === 'public'))));
+}
+
 export function assertLoopback(value, expectedOrigin) {
   let url;
   try { url = new URL(value); } catch { throw new Error('Invalid isolated destination'); }

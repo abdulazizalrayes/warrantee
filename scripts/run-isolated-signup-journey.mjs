@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { buildBootstrap } from '../tests/isolated/bootstrap.mjs';
-import { APP_URL, SUPABASE_URL, MAIL_URL, assertLoopback, assertDisposableBackend } from '../tests/isolated/guard.mjs';
+import { APP_URL, SUPABASE_URL, MAIL_URL, assertLoopback, assertDisposableBackend, maySnapshotSource } from '../tests/isolated/guard.mjs';
 import { DATABASE_CONTRACT_MINIMUMS, databaseTestSummary, safeDiagnostics, safeTestOutput, validateJourneySummary } from '../tests/isolated/diagnostics.mjs';
 import { prepareRealFonts } from '../tests/isolated/fonts.mjs';
 import { createLegacyIdentity } from '../tests/isolated/legacy-identity.mjs';
@@ -167,7 +167,7 @@ try {
   mkdirSync(app);
   const inventory = (await command('git', ['ls-files', '--cached', '--others', '--exclude-standard', '-z'], { step: 'source_inventory' })).split('\0').filter(Boolean);
   for (const file of new Set(inventory)) {
-    if (file.split('/').some((part) => part.startsWith('.') || part === 'node_modules') || file.includes('..')) continue;
+    if (!maySnapshotSource(file)) continue;
     const source = resolve(root, file);
     if (!lstatSync(source).isFile()) continue;
     const destination = resolve(app, file);

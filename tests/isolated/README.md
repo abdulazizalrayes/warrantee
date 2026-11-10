@@ -31,7 +31,9 @@ Runtime contract (ephemeral keys are obtained only from local CLI status):
   service-only bootstrap marker before every helper's mutation phase.
 - Strict parent-owned opt-in CSP must admit the exact local backend. No bypass.
 - Google IDs, OAuth provider credentials, CRM, Resend, Stripe, private OCR,
-  scanner and remote Redis credentials are absent. No background worker runs.
+  scanner and remote Redis credentials are absent. No external integration or
+  scheduled worker is enabled. Callback follow-up attempts can record local
+  retries when provider credentials are absent, but cannot send externally.
 
 To reuse the guarded backend and real Next server with an existing command:
 
