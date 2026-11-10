@@ -151,7 +151,7 @@ jobs:
     timeout-minutes: 20
     env:
       E2E_SUITE: synthetic-ui
-      ISOLATED_MIN_CASES: '14'
+      ISOLATED_MIN_CASES: '18'
       WARRANTEE_SYNTHETIC_UI_E2E: '1'
       WARRANTEE_ISOLATED_E2E: '1'
       E2E_BASE_URL: http://127.0.0.1:3100

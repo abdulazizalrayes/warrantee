@@ -75,6 +75,53 @@ test.describe("synthetic mocked signup UI recovery (NOT auth or persistence proo
     const next = locale === "en" ? "Next" : "التالي";
     const createSuccess = locale === "en" ? "Warranty Created Successfully!" : "\u062a\u0645 \u0625\u0646\u0634\u0627\u0621 \u0627\u0644\u0636\u0645\u0627\u0646 \u0628\u0646\u062c\u0627\u062d!";
 
+    for (const accountType of ["consumer", "business"] as const) {
+      test(`${locale}: ${accountType} onboarding step 0 and step 1 at all seven widths without private writes`, async ({ page }, info) => {
+        const privateWrites: string[] = [];
+        const writesBefore = backendWrites;
+        let profileReads = 0;
+        await page.route("**/*", route => {
+          const request = route.request();
+          const url = new URL(request.url());
+          if (!["GET", "HEAD", "OPTIONS"].includes(request.method())) {
+            if (url.origin === process.env.E2E_BASE_URL && url.pathname === "/api/funnel/events") {
+              return route.fulfill({ status: 200, contentType: "application/json", body: "{}" });
+            }
+            privateWrites.push(`${request.method()} ${url.pathname}`);
+            return route.abort("blockedbyclient");
+          }
+          if (url.origin === backend && url.pathname === "/rest/v1/profiles" && request.method() === "GET") {
+            profileReads++;
+            // Supabase .single() consumes an object, not a collection.
+            return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({
+              ...profile, account_type: accountType, onboarding_completed: false, preferred_language: locale,
+            }) });
+          }
+          return route.fallback();
+        });
+        await page.goto(`/${locale}/onboarding`);
+        const startingPoint = page.getByRole("group", { name: locale === "en" ? "Starting point" : "نقطة البداية", exact: true });
+        await expect(startingPoint).toBeVisible();
+        await expect(startingPoint.getByRole("button")).toHaveCount(accountType === "business" ? 5 : 1);
+        await expect(startingPoint.getByRole("button", { pressed: true })).toHaveCount(1);
+        await expect(page.getByRole("button", { name: locale === "en" ? "Skip for now" : "تخطي الإعداد", exact: true })).toBeVisible();
+        await geometryMatrix(page, info, `onboarding-${accountType}-step-0`);
+        await page.getByRole("button", { name: next, exact: true }).click();
+        await expect(startingPoint).toHaveCount(0);
+        await expect(page.getByRole("heading", { name: locale === "en" ? "Contact details" : "بيانات التواصل", exact: true })).toBeVisible();
+        await expect(page.locator("#onboarding-phone")).toHaveValue("");
+        await expect(page.getByRole("group", { name: locale === "en" ? "Preferred Language" : "اللغة المفضلة", exact: true })
+          .getByRole("button", { pressed: true })).toContainText(locale === "en" ? "English" : "العربية");
+        await expect(page.getByRole("button", { name: locale === "en" ? "Complete Setup" : "إكمال الإعداد", exact: true })).toBeVisible();
+        await geometryMatrix(page, info, `onboarding-${accountType}-step-1`);
+        // Do not submit, skip, or navigate to a private mutation flow.
+        expect(profileReads, "Read-only synthetic profile was consumed").toBeGreaterThan(0);
+        expect(privateWrites, "No browser private mutation attempts").toEqual([]);
+        expect(backendWrites, "No server-side synthetic backend mutations").toBe(writesBefore);
+        await expect(page).toHaveURL(`/${locale}/onboarding`);
+      });
+    }
+
     test(`${locale}: Business setup auth error exposes a safe retry link without executing callback or private writes`, async ({ page }, info) => {
       const callbackRequests: string[] = [];
       const privateWrites: string[] = [];
