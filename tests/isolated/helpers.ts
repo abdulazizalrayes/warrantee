@@ -1,0 +1,208 @@
+import { randomUUID } from 'node:crypto';
+import { createClient } from '@supabase/supabase-js';
+import { createServerClient } from '@supabase/ssr';
+import { load } from 'cheerio';
+import { expect, type BrowserContext, type Page } from '@playwright/test';
+import { APP_URL, SUPABASE_URL, MAIL_URL, assertDisposableBackend, assertLoopback } from './guard.mjs';
+
+export type Scenario = { locale: 'en' | 'ar'; account: 'consumer' | 'business'; mode: 'completed' | 'skipped'; attachment?: boolean };
+export const text = (scenario: Scenario, en: string, ar: string) => scenario.locale === 'ar' ? ar : en;
+
+export async function localAdmin() {
+  await assertDisposableBackend();
+  return createClient(SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+  });
+}
+
+export async function signedInClient(context: BrowserContext) {
+  await assertDisposableBackend();
+  const ssr = createServerClient(SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+    cookies: { getAll: () => context.cookies(), setAll: () => {} },
+  });
+  const { data: { session }, error } = await ssr.auth.getSession();
+  if (error || !session) throw new Error('Missing actual browser GoTrue session');
+  return createClient(SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+    global: { headers: { Authorization: `Bearer ${session.access_token}` } },
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
+
+export async function observeLocalOnly(context: BrowserContext) {
+  const observed = { external: 0, googleBlocked: 0, funnelFailures: 0, cspViolations: 0 };
+  await context.exposeBinding('__isolatedCspViolation', () => { observed.cspViolations++; });
+  await context.addInitScript(() => {
+    document.addEventListener('securitypolicyviolation', (event) => {
+      // Google is disabled and blocked separately. Local auth/storage must obey real CSP.
+      if (event.blockedURI.includes(location.hostname) || event.violatedDirective.startsWith('script-src')) {
+        void (window as unknown as { __isolatedCspViolation: () => Promise<void> }).__isolatedCspViolation();
+      }
+    });
+  });
+  await context.route('**/*', async (route) => {
+    const url = new URL(route.request().url());
+    if ([APP_URL, SUPABASE_URL, MAIL_URL].includes(url.origin)) return route.continue();
+    if (url.protocol === 'data:' || url.protocol === 'blob:') return route.continue();
+    if (/(^|\.)(google-analytics\.com|googletagmanager\.com|google\.com|doubleclick\.net)$/.test(url.hostname)) observed.googleBlocked++;
+    else observed.external++;
+    return route.abort('blockedbyclient');
+  });
+  await context.routeWebSocket('**/*', (socket) => {
+    const url = new URL(socket.url());
+    if (url.hostname === '127.0.0.1' && url.port === '54321') socket.connectToServer();
+    else {
+      observed.external++;
+      socket.close({ code: 1008, reason: 'Isolated network boundary' });
+    }
+  });
+  context.on('response', (response) => {
+    if (new URL(response.url()).pathname === '/api/funnel/events' && response.status() !== 201) observed.funnelFailures++;
+  });
+  return observed;
+}
+
+export async function signupAndConfirm(page: Page, scenario: Scenario, failFirst = false) {
+  await assertDisposableBackend();
+  const email = `isolated-${randomUUID()}@example.test`;
+  const name = `Synthetic ${scenario.account} ${scenario.locale}`;
+  const company = `Synthetic local company ${randomUUID()}`;
+  await page.goto(`/${scenario.locale}/auth?tab=signup&account=${scenario.account}`);
+  await page.locator('#signup-full-name').fill(name);
+  await page.locator('#signup-email').fill(email);
+  await page.locator('#signup-password').fill('short');
+  if (scenario.account === 'business') await page.locator('#signup-company-name').fill(company);
+
+  const consent = page.getByRole('dialog', { name: 'Cookie consent' });
+  if (scenario.mode === 'completed') {
+    await consent.getByRole('button', { name: text(scenario, 'Accept All', '\u0642\u0628\u0648\u0644 \u0627\u0644\u0643\u0644'), exact: true }).click();
+  } else {
+    await consent.getByRole('button', { name: text(scenario, 'Reject All', '\u0631\u0641\u0636 \u0627\u0644\u0643\u0644'), exact: true }).click();
+  }
+  await expect(consent).toBeHidden();
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('warrantee_cookie_consent')!).analytics)).toBe(scenario.mode === 'completed');
+
+  const submit = page.locator('form:has(#signup-email) button[type="submit"]');
+  await submit.click();
+  expect(await page.locator('#signup-password').evaluate((input: HTMLInputElement) => input.validity.tooShort)).toBe(true);
+  await page.locator('#signup-password').fill('Local-only-Password-42!');
+  if (failFirst) {
+    await page.route('**/auth/v1/signup?*', (route) => route.abort('failed'));
+    await submit.click();
+    await expect(page.getByRole('alert')).toBeVisible();
+    await expect(submit).toBeEnabled();
+    const admin = await localAdmin();
+    const unsaved = await admin.from('profiles').select('id').eq('email', email);
+    expect(unsaved.error).toBeNull();
+    expect(unsaved.data).toHaveLength(0);
+    await page.unroute('**/auth/v1/signup?*');
+  }
+
+  const signup = page.waitForResponse((response) => response.url().startsWith(`${SUPABASE_URL}/auth/v1/signup`) && response.request().method() === 'POST');
+  await submit.click();
+  expect((await signup).status()).toBe(200);
+
+  // Real GoTrue SMTP is captured by Mailpit. Follow its real PKCE confirmation URL
+  // in the same browser; no admin confirmation or fabricated browser session.
+  let confirmation: string | undefined;
+  await expect.poll(async () => {
+    const response = await fetch(`${MAIL_URL}/api/v1/messages?limit=100`, { redirect: 'error' });
+    if (!response.ok) return false;
+    const list = await response.json() as { messages: { ID: string; To: { Address: string }[] }[] };
+    const message = list.messages.find((message) => message.To.some((recipient) => recipient.Address === email));
+    if (!message) return false;
+    const detailResponse = await fetch(`${MAIL_URL}/api/v1/message/${encodeURIComponent(message.ID)}`, { redirect: 'error' });
+    if (!detailResponse.ok) return false;
+    const detail = await detailResponse.json() as { HTML: string };
+    for (const element of load(detail.HTML)('a[href]').toArray()) {
+      const href = load(detail.HTML)(element).attr('href');
+      if (!href) continue;
+      const candidate = new URL(href);
+      assertLoopback(candidate.href, SUPABASE_URL);
+      if (candidate.pathname !== '/auth/v1/verify') continue;
+      const redirect = candidate.searchParams.get('redirect_to');
+      if (!redirect) throw new Error('Local confirmation missing redirect contract');
+      assertLoopback(redirect, APP_URL);
+      confirmation = candidate.href;
+      return true;
+    }
+    return false;
+  }, { timeout: 20_000, message: 'Local SMTP must contain a real loopback confirmation link' }).toBe(true);
+  await assertDisposableBackend();
+  await page.goto(confirmation!);
+  await expect(page).toHaveURL(new RegExp(`/${scenario.locale}/onboarding(?:\\?|$)`));
+  const admin = await localAdmin();
+  const { data: profile, error } = await admin.from('profiles').select('*').eq('email', email).single();
+  expect(error).toBeNull();
+  expect(profile?.account_type).toBe(scenario.account);
+  expect(profile?.onboarding_completed).toBe(false);
+  const { data: identity, error: identityError } = await admin.auth.admin.getUserById(profile!.id);
+  expect(identityError).toBeNull();
+  expect(identity.user?.email_confirmed_at).toBeTruthy();
+  const { data: subscription, error: subscriptionError } = await admin.from('subscriptions').select('plan_id,warranty_limit').eq('user_id', profile!.id).single();
+  expect(subscriptionError).toBeNull();
+  expect(subscription).toEqual({ plan_id: 'free', warranty_limit: scenario.account === 'business' ? 100 : 10 });
+  const { data: memberships, error: membershipError } = await admin.from('company_members').select('company_id,role,is_active').eq('user_id', profile!.id);
+  expect(membershipError).toBeNull();
+  expect(memberships).toHaveLength(scenario.account === 'business' ? 1 : 0);
+  if (scenario.account === 'business') {
+    expect(memberships![0]).toMatchObject({ role: 'company_admin', is_active: true });
+    const { data: storedCompany, error: companyError } = await admin.from('companies').select('name,created_by').eq('id', memberships![0].company_id).single();
+    expect(companyError).toBeNull();
+    expect(storedCompany).toEqual({ name: company, created_by: profile!.id });
+  }
+  return { id: profile!.id as string, email, companyId: memberships?.[0]?.company_id as string | undefined };
+}
+
+export async function onboard(page: Page, scenario: Scenario, userId: string, failFirst = false) {
+  const admin = await localAdmin();
+  const save = () => page.getByRole('button', { name: scenario.mode === 'skipped'
+    ? text(scenario, 'Skip for now', '\u062a\u062e\u0637\u064a \u0627\u0644\u0625\u0639\u062f\u0627\u062f')
+    : text(scenario, 'Complete Setup', '\u0625\u0643\u0645\u0627\u0644 \u0627\u0644\u0625\u0639\u062f\u0627\u062f'), exact: true });
+  if (scenario.mode === 'completed') {
+    await page.getByRole('button', { name: text(scenario, 'Next', '\u0627\u0644\u062a\u0627\u0644\u064a'), exact: true }).click();
+  }
+  if (failFirst) {
+    await page.route('**/rest/v1/profiles?*', async (route) => {
+      if (route.request().method() === 'PATCH') await route.abort('failed');
+      else await route.continue();
+    });
+    await save().click();
+    await expect(page.getByRole('alert')).toBeVisible();
+    await expect(save()).toBeEnabled();
+    const { data, error } = await admin.from('profiles').select('onboarding_completed').eq('id', userId).single();
+    expect(error).toBeNull();
+    expect(data?.onboarding_completed).toBe(false);
+    await expect(page).toHaveURL(new RegExp(`/${scenario.locale}/onboarding`));
+    await page.unroute('**/rest/v1/profiles?*');
+  }
+  await assertDisposableBackend();
+  await save().click();
+  await expect.poll(async () => {
+    const { data, error } = await admin.from('profiles').select('onboarding_completed,preferred_locale,preferred_language').eq('id', userId).single();
+    if (error) throw new Error('Onboarding persistence query failed');
+    return data;
+  }).toEqual({ onboarding_completed: true, preferred_locale: scenario.locale, preferred_language: scenario.locale });
+  if (scenario.mode === 'completed') {
+    await page.getByRole('link', { name: text(scenario, 'Add Warranty', '\u0623\u0636\u0641 \u0636\u0645\u0627\u0646'), exact: true }).click();
+  } else {
+    await expect(page).toHaveURL(new RegExp(`/${scenario.locale}/dashboard`));
+    await page.goto(`/${scenario.locale}/warranties/new?activation=1`);
+  }
+  await expect(page.locator('#warranty-product-name')).toBeVisible();
+}
+
+export async function fillWarranty(page: Page, scenario: Scenario) {
+  const name = `Synthetic local warranty ${randomUUID()}`;
+  await page.locator('#warranty-product-name').fill(name);
+  await page.getByRole('button', { name: text(scenario, 'Next', '\u0627\u0644\u062a\u0627\u0644\u064a'), exact: true }).click();
+  await page.locator('#warranty-start-date').fill('2026-11-10');
+  await page.locator('#warranty-end-date').fill('2027-11-10');
+  await page.getByRole('button', { name: text(scenario, 'Next', '\u0627\u0644\u062a\u0627\u0644\u064a'), exact: true }).click();
+  if (scenario.attachment) {
+    await page.locator('input[type="file"][multiple]').setInputFiles({
+      name: 'synthetic-local-proof.png', mimeType: 'image/png',
+      buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aGZkAAAAASUVORK5CYII=', 'base64'),
+    });
+  }
+  return name;
+}

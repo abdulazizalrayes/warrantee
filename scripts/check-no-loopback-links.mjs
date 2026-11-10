@@ -26,6 +26,32 @@ const patterns = [
 ];
 
 const allowlist = [
+  ...[
+    ["scripts/run-isolated-signup-journey.mjs", ["localhost", "127.0.0.1"]],
+    ["src/lib/__tests__/warranty-creation-db.test.ts", ["127.0.0.1"]],
+    ["src/lib/__tests__/oauth-signup-setup-db.test.ts", ["127.0.0.1"]],
+    ["tests/isolated/README.md", ["127.0.0.1"]],
+    ["tests/isolated/contracts.test.mjs", ["localhost", "127.0.0.1"]],
+    ["tests/isolated/egress.mjs", ["localhost", "127.0.0.1", "::1"]],
+    ["tests/isolated/guard.mjs", ["127.0.0.1"]],
+    ["tests/isolated/supabase.toml", ["127.0.0.1"]],
+    ["tests/isolated/helpers.ts", ["127.0.0.1"]],
+    ["tests/e2e/signup-ui-recovery.spec.ts", ["127.0.0.1"]],
+  ].map(([file, permitted]) => ({
+    file,
+    patterns: new Set(permitted),
+    reason: "Disposable signup verification rejects remote services and has no production credentials or deployment bindings.",
+  })),
+  {
+    file: "src/lib/isolated-test-origin.mjs",
+    patterns: new Set(["127.0.0.1"]),
+    reason: "Opt-in disposable test origins are rejected on Vercel and never enter normal production CSP.",
+  },
+  {
+    file: "src/lib/__tests__/isolated-test-origin.test.ts",
+    patterns: new Set(["127.0.0.1"]),
+    reason: "Tests prove remote and ambiguous disposable-stack targets fail closed.",
+  },
   {
     file: ".github/workflows/ci.yml",
     patterns: new Set(["127.0.0.1"]),

@@ -139,6 +139,30 @@ test.describe("authenticated core operating flows", () => {
     await signInWithPassword(page);
   });
 
+  test("creation Save progress is opt-in tab storage, not a database draft", async ({ page }) => {
+    const writes: string[] = [];
+    await page.route("**/api/warranties", route => {
+      if (route.request().method() === "POST") {
+        writes.push(route.request().method());
+        return route.abort("blockedbyclient");
+      }
+      return route.continue();
+    });
+    await page.goto("/en/warranties/new");
+    await page.locator("#warranty-product-name").fill("Synthetic tab draft only");
+    const draft = () => page.evaluate(() => sessionStorage.getItem("warrantee:creation-draft:v1"));
+    expect(await draft()).toBeNull();
+    await expect(page.getByRole("button", { name: "Save as Draft", exact: true })).toHaveCount(0);
+    await page.locator("#warranty-save-progress").click();
+    await expect.poll(draft).not.toBeNull();
+    expect(JSON.parse((await draft())!)).toMatchObject({ productName: "Synthetic tab draft only", savedWarrantyId: null });
+    await page.reload();
+    await expect(page.locator("#warranty-product-name")).toHaveValue("Synthetic tab draft only");
+    await page.locator("#warranty-discard-draft").click();
+    expect(await draft()).toBeNull();
+    expect(writes).toEqual([]);
+  });
+
   for (const route of [
     "/en/dashboard",
     "/en/warranties",
