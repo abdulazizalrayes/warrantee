@@ -45,7 +45,7 @@ export function safeBrowserFailure(error) {
       if (file) { line = Number(frame[2]); column = Number(frame[3]); break; }
     }
   }
-  const confirmationState = text.match(/^isolated_confirmation_destination:(callback_rejected|sign_in|dashboard|onboarding|other)$/)?.[1];
+  const confirmationState = text.match(/\bisolated_confirmation_destination:(callback_rejected|sign_in|dashboard|onboarding|other)\b/)?.[1];
   return failureCoordinates({ category, file, line, column, confirmationState });
 }
 
