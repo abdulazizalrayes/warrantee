@@ -1,8 +1,6 @@
 -- Missing original-schema prerequisites reconstructed from checked-in database
 -- Row/Insert/Relationships types. Canonical migrations supply behavior/policies.
 -- Test-only extension of base.sql; not a production schema clone or restore.
-create type public.claim_status as enum ('open', 'in_progress', 'resolved', 'contested', 'closed', 'draft', 'submitted', 'under_review', 'awaiting_info', 'approved', 'rejected');
-create type public.notification_type as enum ('warranty_created', 'warranty_submitted', 'warranty_approved', 'warranty_rejected', 'expiry_reminder', 'claim_opened', 'claim_resolved', 'extension_offered', 'extension_purchased', 'document_uploaded', 'bulk_import_complete', 'seller_invitation', 'warranty_verified', 'general', 'whatsapp', 'claim_status_changed', 'info_requested', 'system');
 create type public.chain_visibility as enum ('full', 'notification_only', 'none');
 
 alter table public.companies
@@ -16,29 +14,6 @@ alter table public.warranties
   add column chain_visibility public.chain_visibility,
   add column parent_warranty_id uuid references public.warranties(id),
   add column contract_reference text;
-
-alter table public.warranty_claims alter column status drop default;
-alter table public.warranty_claims alter column status type public.claim_status using status::public.claim_status;
-alter table public.warranty_claims alter column status set default 'draft'::public.claim_status;
-alter table public.warranty_claims
-  add column claim_number text not null unique,
-  add column title text not null, add column description text not null,
-  add column claim_amount numeric, add column currency text default 'SAR',
-  add column resolution_notes text, add column filed_at timestamptz not null default now(),
-  add column resolved_at timestamptz, add column responded_at timestamptz,
-  add column deleted_at timestamptz, add column is_archived boolean default false,
-  add column archived_at timestamptz, add column archived_by uuid references public.profiles(id),
-  add column legal_hold boolean default false;
-alter table public.warranty_claims alter column warranty_id set not null;
-alter table public.warranty_claims alter column filed_by set not null;
-alter table public.warranty_claims alter column status set not null;
-
-alter table public.notifications alter column type drop default;
-alter table public.notifications alter column type type public.notification_type using type::public.notification_type;
-alter table public.notifications alter column body set not null;
-alter table public.notifications
-  add column warranty_id uuid references public.warranties(id),
-  add column claim_id uuid references public.warranty_claims(id);
 
 create table public.warranty_extensions (
   id uuid primary key default gen_random_uuid(),

@@ -2,7 +2,7 @@
 
 import { SearchableSelect } from '@/components/SearchableSelect';
 
-import { Fragment, useState, useEffect } from 'react';
+import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
 import Link from 'next/link';
@@ -430,6 +430,7 @@ export default function AdminPage() {
   const [growthLens, setGrowthLens] = useState<GrowthLens>('real');
   const [stats, setStats] = useState<Stats>(emptyStats);
   const [realStats, setRealStats] = useState<Stats>(emptyStats);
+  const dataRequest = useRef<AbortController | null>(null);
 
   // Data states
   const [users, setUsers] = useState<any[]>([]);
@@ -474,24 +475,6 @@ export default function AdminPage() {
 
   const isSuperAdmin = currentUserRole === 'super_admin';
 
-  // ─── AUTH CHECK ───────────────────────────────────────
-  useEffect(() => {
-    const check = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { router.push(`/${locale}/admin/login`); return; }
-      const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-      if (profile?.role === 'admin' || profile?.role === 'super_admin') {
-        setAuthorized(true);
-        setCurrentUserRole(profile.role);
-        setCurrentUserId(user.id);
-        setCurrentUserEmail(user.email || '');
-        await loadAllData();
-      }
-      setLoading(false);
-    };
-    check();
-  }, [locale, router]);
-
   // ─── SIGN OUT ─────────────────────────────────────────
   const handleSignOut = async () => {
     setSigningOut(true);
@@ -501,38 +484,46 @@ export default function AdminPage() {
   };
 
   // ─── DATA LOADING ─────────────────────────────────────
-  const loadActivationReport = async () => {
+  const loadAllData = useCallback(async () => {
+    dataRequest.current?.abort();
+    const controller = new AbortController();
+    dataRequest.current = controller;
+    const { signal } = controller;
+
     setActivationReport(null);
     setActivationError(false);
-    try {
-      const response = await fetch('/api/admin/activation', { cache: 'no-store' });
-      const report = await response.json();
-      if (!response.ok || report.complete !== true) throw new Error('Incomplete activation report');
-      setActivationReport(report as ActivationReport);
-    } catch {
-      setActivationError(true);
-    }
-  };
+    const loadActivationReport = async () => {
+      try {
+        const response = await fetch('/api/admin/activation', { cache: 'no-store', signal });
+        const report = await response.json();
+        if (!response.ok || report.complete !== true) throw new Error('Incomplete activation report');
+        if (!signal.aborted) setActivationReport(report as ActivationReport);
+      } catch {
+        if (!signal.aborted) setActivationError(true);
+      }
+    };
 
-  const loadAllData = async () => {
     const now = new Date().toISOString();
-    const [usersR, warranR, compR, claimR, actR, tickR, fraudR, ingR, revR, subsR] = await Promise.all([
-      supabase.from('profiles').select('*').order('created_at', { ascending: false }).limit(200),
-      supabase.from('warranties').select('*').is('deleted_at', null).order('created_at', { ascending: false }).limit(200),
-      supabase.from('companies').select('*').order('created_at', { ascending: false }).limit(200),
-      supabase.from('warranty_claims').select('*').is('deleted_at', null).order('created_at', { ascending: false }).limit(200),
-      supabase.from('activity_log').select('*').neq('entity_type', 'funnel_event').order('created_at', { ascending: false }).limit(30),
-      supabase.from('support_tickets').select('*').order('created_at', { ascending: false }).limit(200),
-      supabase.from('fraud_signals').select('*').order('created_at', { ascending: false }).limit(100),
+    const results = await Promise.all([
+      supabase.from('profiles').select('*').order('created_at', { ascending: false }).limit(200).abortSignal(signal),
+      supabase.from('warranties').select('*').is('deleted_at', null).order('created_at', { ascending: false }).limit(200).abortSignal(signal),
+      supabase.from('companies').select('*').order('created_at', { ascending: false }).limit(200).abortSignal(signal),
+      supabase.from('warranty_claims').select('*').is('deleted_at', null).order('created_at', { ascending: false }).limit(200).abortSignal(signal),
+      supabase.from('activity_log').select('*').neq('entity_type', 'funnel_event').order('created_at', { ascending: false }).limit(30).abortSignal(signal),
+      supabase.from('support_tickets').select('*').order('created_at', { ascending: false }).limit(200).abortSignal(signal),
+      supabase.from('fraud_signals').select('*').order('created_at', { ascending: false }).limit(100).abortSignal(signal),
       supabase
         .from('ingestion_jobs')
         .select('id, from_email, subject, status, trust_score, trust_level, attachment_count, created_at, processed_at')
         .order('created_at', { ascending: false })
-        .limit(200),
-      supabase.from('revenue_events').select('*').order('created_at', { ascending: false }).limit(200),
-      supabase.from('subscriptions').select('*').order('created_at', { ascending: false }).limit(100),
+        .limit(200)
+        .abortSignal(signal),
+      supabase.from('revenue_events').select('*').order('created_at', { ascending: false }).limit(200).abortSignal(signal),
+      supabase.from('subscriptions').select('*').order('created_at', { ascending: false }).limit(100).abortSignal(signal),
       loadActivationReport(),
-    ]);
+    ]).catch(() => null);
+    if (signal.aborted || !results) return false;
+    const [usersR, warranR, compR, claimR, actR, tickR, fraudR, ingR, revR, subsR] = results;
 
     const u = usersR.data || []; const w = warranR.data || []; const co = compR.data || [];
     const cl = claimR.data || []; const tk = tickR.data || []; const fr = fraudR.data || [];
@@ -577,7 +568,39 @@ export default function AdminPage() {
       recentActivity: actR.data || [],
       now,
     }));
-  };
+    return true;
+  }, []);
+
+  // ─── AUTH CHECK ───────────────────────────────────────
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setAuthorized(false);
+
+    const check = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (cancelled) return;
+        if (!user) { router.push(`/${locale}/admin/login`); return; }
+        const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+        if (cancelled) return;
+        if ((profile?.role === 'admin' || profile?.role === 'super_admin') && await loadAllData() && !cancelled) {
+          setAuthorized(true);
+          setCurrentUserRole(profile.role);
+          setCurrentUserId(user.id);
+          setCurrentUserEmail(user.email || '');
+        }
+      } catch {
+        // Leave the admin console unauthorized if the access check fails.
+      }
+      if (!cancelled) setLoading(false);
+    };
+    void check();
+    return () => {
+      cancelled = true;
+      dataRequest.current?.abort();
+    };
+  }, [locale, router, loadAllData]);
 
   // ─── TEAM MANAGEMENT ──────────────────────────────────
   const loadTeam = async () => {

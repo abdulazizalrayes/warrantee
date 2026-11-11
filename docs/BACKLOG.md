@@ -1,5 +1,11 @@
 # Warrantee Approved Backlog
 
+## Current Handover
+
+[Current verified release evidence](OPERATIONAL_STATUS.md#current-verified-release) supersedes older handover checkpoints below. PR #48's signup-to-first-warranty fixes are deployed; do not reopen the twelve completed items or repeat a real Google collector event.
+
+The owner-approved November 11 follow-up covers the admin loading effect, bounded isolated runner startup, fresh-user lifecycle verification, passive ZAP reconciliation, and handover pointers. No billing, provider activation, production QA records, or change to `ai-train=no` is included. All existing postponements remain unchanged.
+
 ## Current Handover - 2026-11-08
 
 Use [the dated release baseline](OPERATIONAL_STATUS.md#current-release-evidence---2026-11-08) as the single evidence pointer for the PR #45 snapshot: its four approved follow-ups are complete, and the prior deployed GA4 receipt is complete. Do not repeat an actual collector event or treat intercepted privacy checks as customer demand. All postponements below remain in force, including backup/restore, OCR, billing, ClamAV, paid pentest, npm publication, Vercel Pro, manual SEO/growth, shared CRM/mailbox restrictions, Paperclip, and other-company work.

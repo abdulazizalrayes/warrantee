@@ -1,3 +1,9 @@
+## Current Verified Release
+
+- [PR #48 release closeout](https://github.com/abdulazizalrayes/warrantee/pull/48#issuecomment-6777327913) records all twelve signup-to-first-warranty fixes, deployed main `ed9d990a7531816aeb3acc351444faab6c4e5f60`, Vercel deployment `dpl_B55SndBhyKbTHLHteBGBoAWjHgu1`, and applied Supabase migration `20261110190333`.
+- The release passed ten isolated fresh journeys, 63 actual database cases, 246 regression cases, 18 synthetic browser recovery cases, CI and CodeQL. Live checks were read-only; they did not prove external OAuth handshakes or real inbox delivery. See the [implementation report](SIGNUP_FIRST_WARRANTY_RELIABILITY_2026-11-10.md) for coverage and limits.
+- The 2026-11-11 follow-up is limited to the admin loading warning, sanitized startup diagnostics, isolated lifecycle coverage, passive security-report reconciliation, and current release documentation. The [backlog](BACKLOG.md#current-handover) distinguishes this scope from historical work. All owner postponements remain in force.
+
 ## Current Release Evidence - 2026-11-08
 
 This is the single handover evidence pointer for the PR #45 baseline snapshot recorded on 2026-11-08, not a claim about the latest live deployment. Consult the associated regression/handover follow-up release PR closeout for subsequent verification and release outcomes; do not infer unfinished later work from this snapshot. Earlier entries below retain dated history, not new instructions to repeat completed verification.

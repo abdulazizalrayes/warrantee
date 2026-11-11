@@ -93,8 +93,13 @@ same ID/key/body, mismatch conflicts, RLS tenant isolation and profile privilege
 denial, forged activation denial, authoritative RPC audit/milestone rows and
 local stored attachment bytes in `pending_scan` state.
 
+The completed English business case continues through real approval, private
+PDF and QR certificate generation, anonymous public verification and holder
+claim submission. It checks stored approval, notice, passport view and claim
+timeline records, masks the serial publicly, and verifies outsider denial.
+
 Before the build, the runner also executes the parent-owned
-`src/lib/__tests__/warranty-creation-db.test.ts` (minimum 49, including five
+`src/lib/__tests__/warranty-creation-db.test.ts` (minimum 50, including five
 real attachment-finalization cases) and
 `src/lib/__tests__/oauth-signup-setup-db.test.ts` (minimum 13) against the real DB.
 Every registered file must meet its own minimum with no skipped/todo tests; empty/malformed success
@@ -122,7 +127,12 @@ postponed work remain excluded. Enqueued welcome/CRM jobs are not processed.
 
 Retries, skips, empty runs and flaky outcomes fail the dedicated gate. Logs show
 only bounded numeric case counters, source lines, registered diagnostic step,
-SQLSTATE, and compile source coordinates/codes. No raw SQL, confirmation links,
+SQLSTATE, compile source coordinates/codes and fixed startup-failure categories.
+Docker preflight, CLI install/version, init, stack start/status, database identity
+and cleanup have separate deadlines. A deadline terminates the owned subprocess,
+escalates to a forced stop if necessary, and fails the job without retrying the
+test. Registry, networking, port, disk and service-health categories are hints,
+not confirmed root causes. No raw SQL, confirmation links,
 session tokens, emails, HTTP logs, browser traces or artifacts are persisted.
 Cleanup stops only this random local project with `--no-backup` and removes its
 temporary source/configuration on success, failure or handled interruption.
@@ -139,9 +149,9 @@ critical function replacements are checked to prevent stale definitions.
 Canonical sections supply profile/auth triggers, subscriptions, account plans,
 onboarding, tenant helpers and policies, owner-prefixed storage, profile grants,
 state transitions, document security, service-only idempotency/job tables, and
-the new RLS-bound warranty transaction/activation triggers. Historical billing
-and provider implementations are not replayed. Empty claims/notifications exist
-only to support the initial authenticated shell; no claims workflow is implied.
+the RLS-bound warranty transaction/activation triggers, and the bounded
+claim filing, notification and passport-event paths. Historical billing and
+provider implementations are not replayed.
 
 **Full existing CI is NOT supported by the focused fixture alone.** Existing business
 and operational suites also require canonical claims/events/attachments,

@@ -1014,9 +1014,11 @@
       "layer": "delivery",
       "kind": "quality_gate",
       "status": "active",
-      "responsibility": "Dependency install, source/security/build/browser gates, disposable local Auth/Postgres/Storage/Realtime/SMTP journey verification, fail-on-flaky E2E and bounded sanitized counters. CI cannot seed production QA identities; raw authenticated traces and private payloads are not uploaded. Required legacy suites use canonical local contracts and a fresh local-only identity; every active case must pass with no skips. The isolated app origin is preserved across framework loopback-host normalization without changing production or preview origins.",
+      "responsibility": "Dependency install, source/security/build/browser gates, disposable local Auth/Postgres/Storage/Realtime/SMTP journey verification, fail-on-flaky E2E and bounded sanitized counters. The dedicated signup lane has startup deadlines and covers a representative fresh business journey through approval, certificate, public QR verification and claim filing. CI cannot seed production QA identities; raw authenticated traces and private payloads are not uploaded. Required legacy suites use canonical local contracts and a fresh local-only identity; every active case must pass with no skips. The isolated app origin is preserved across framework loopback-host normalization without changing production or preview origins.",
       "code_refs": [
         ".github/workflows/ci.yml",
+        ".github/workflows/signup-journey.yml",
+        "tests/e2e/signup-first-warranty.spec.ts",
         "playwright.config.ts",
         "tests/e2e/safe-evidence-reporter.ts",
         "tests/e2e/safe-evidence.ts"

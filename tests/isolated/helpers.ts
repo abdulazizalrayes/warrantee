@@ -254,13 +254,13 @@ export async function onboard(page: Page, scenario: Scenario, userId: string, fa
   await expect(page.locator('#warranty-product-name')).toBeVisible();
 }
 
-export async function fillWarranty(page: Page, scenario: Scenario) {
+export async function fillWarranty(page: Page, scenario: Scenario, endDate = '2027-11-10') {
   console.log('ISOLATED_STAGE warranty_form');
   const name = `Synthetic local warranty ${randomUUID()}`;
   await page.locator('#warranty-product-name').fill(name);
   await page.getByRole('button', { name: text(scenario, 'Next', '\u0627\u0644\u062a\u0627\u0644\u064a'), exact: true }).click();
   await page.locator('#warranty-start-date').fill('2026-11-10');
-  await page.locator('#warranty-end-date').fill('2027-11-10');
+  await page.locator('#warranty-end-date').fill(endDate);
   await page.getByRole('button', { name: text(scenario, 'Next', '\u0627\u0644\u062a\u0627\u0644\u064a'), exact: true }).click();
   if (scenario.attachment) {
     await page.locator('input[type="file"][multiple]').setInputFiles({

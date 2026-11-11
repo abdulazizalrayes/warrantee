@@ -4,6 +4,8 @@ create type public.account_type as enum ('consumer', 'business');
 create type public.company_role as enum ('vendor', 'client', 'both');
 create type public.user_role as enum ('viewer', 'creator', 'approver', 'company_admin', 'platform_admin');
 create type public.warranty_status as enum ('draft', 'pending_approval', 'active', 'claimed', 'expired', 'cancelled', 'renewed');
+create type public.claim_status as enum ('open', 'in_progress', 'resolved', 'contested', 'closed', 'draft', 'submitted', 'under_review', 'awaiting_info', 'approved', 'rejected');
+create type public.notification_type as enum ('warranty_created', 'warranty_submitted', 'warranty_approved', 'warranty_rejected', 'expiry_reminder', 'claim_opened', 'claim_resolved', 'extension_offered', 'extension_purchased', 'document_uploaded', 'bulk_import_complete', 'seller_invitation', 'warranty_verified', 'general', 'whatsapp', 'claim_status_changed', 'info_requested', 'system');
 
 create table public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
@@ -65,17 +67,21 @@ create table public.activity_log (
   metadata jsonb, details jsonb, previous_state jsonb, new_state jsonb,
   performed_by uuid, ip_address inet, created_at timestamptz not null default now()
 );
--- Empty shell-support table only. Claim workflows are NOT covered by this fixture.
 create table public.warranty_claims (
-  id uuid primary key default gen_random_uuid(), warranty_id uuid references public.warranties(id),
-  filed_by uuid references public.profiles(id), assigned_to uuid references public.profiles(id),
-  status text not null default 'open', created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  id uuid primary key default gen_random_uuid(), warranty_id uuid not null references public.warranties(id),
+  filed_by uuid not null references public.profiles(id), assigned_to uuid references public.profiles(id),
+  claim_number text not null unique, title text not null, description text not null,
+  status public.claim_status not null default 'draft', claim_amount numeric, currency text default 'SAR',
+  resolution_notes text, filed_at timestamptz not null default now(), resolved_at timestamptz, responded_at timestamptz,
+  deleted_at timestamptz, is_archived boolean default false, archived_at timestamptz,
+  archived_by uuid references public.profiles(id), legal_hold boolean default false,
+  created_at timestamptz not null default now(), updated_at timestamptz not null default now()
 );
 create table public.notifications (
   id uuid primary key default gen_random_uuid(), user_id uuid not null references auth.users(id),
-  title text not null, body text, title_ar text, body_ar text,
-  type text not null default 'general', action_url text, is_read boolean not null default false,
+  warranty_id uuid references public.warranties(id), claim_id uuid references public.warranty_claims(id),
+  title text not null, body text not null, title_ar text, body_ar text,
+  type public.notification_type not null, action_url text, is_read boolean not null default false,
   is_email_sent boolean not null default false, created_at timestamptz not null default now()
 );
 

@@ -10,9 +10,11 @@ const nextConfig: NextConfig = {
     ? { adapterPath: resolve("scripts/csp-platform-adapter.mjs") }
     : {}),
   reactStrictMode: true,
-  serverExternalPackages: ["@napi-rs/canvas", "pdfjs-dist", "tesseract.js"],
+  serverExternalPackages: ["@napi-rs/canvas", "pdfjs-dist", "pdfkit", "tesseract.js"],
   outputFileTracingIncludes: {
     middleware: ["./.warrantee-csp/static-routes.json"],
+    // PDFKit reads its built-in font metrics relative to its installed module.
+    "/api/warranties/*/certificate": ["./node_modules/pdfkit/js/data/Helvetica{,-Bold}.afm"],
     "/api/ocr": [
       "./node_modules/@tesseract.js-data/eng/4.0.0_best_int/eng.traineddata.gz",
       "./node_modules/@tesseract.js-data/ara/4.0.0_best_int/ara.traineddata.gz",
