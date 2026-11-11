@@ -14,6 +14,9 @@ const files = {
   plans: '20260830143000_account_aware_plans_and_warranty_quotas.sql',
   onboardingRpc: '20260830151500_harden_business_onboarding_rpc.sql',
   state: '20260406080746_enforce_warranty_state_machine.sql',
+  claims: '20260327190110_claims_workflow_tables_and_policies.sql',
+  claimFks: '20260327225428_fix_claim_events_fk_to_profiles.sql',
+  growth: '20260823131754_growth_lifecycle_foundations.sql',
   documentSecurity: '20260610194500_document_security_status.sql',
   activity: '20260405000159_security_rls_fixes.sql',
   activityRead: '20260329172132_optimize_rls_auth_uid_initplan_batch1.sql',
@@ -76,7 +79,9 @@ export function buildBootstrap(root, runId) {
   const tenant = load('tenant');
   const optimize = load('optimize');
   const plans = load('plans');
+  const growth = load('growth');
   const chunks = [
+    'set search_path = public, extensions;',
     base,
     section(load('auth'), '-- 1. Auto-create profile on signup', '-- 3. Function'),
     load('subscriptions'),
@@ -92,7 +97,20 @@ export function buildBootstrap(root, runId) {
     section(tenant, 'drop policy if exists warranty_documents_authenticated_read', 'drop policy if exists warranty_extensions_authenticated_access'),
     section(tenant, 'create policy warranty_documents_storage_authenticated_read', 'create policy claim_attachments_storage_authenticated_read'),
     section(tenant, 'update storage.buckets\nset\n  public = false,\n  file_size_limit = 20971520', 'update storage.buckets\nset\n  public = false,\n  file_size_limit = 10485760'),
-    statement(tenant, 'create policy warranty_claims_authenticated_read'),
+    section(load('claims'), '-- Add severity', '-- Create claim_attachments table'),
+    section(load('claimFks'), '-- Fix claim_events:', '-- Also fix warranty_claims FKs'),
+    section(tenant, 'alter table public.warranty_claims enable row level security', 'alter table public.claim_attachments enable row level security'),
+    statement(tenant, 'revoke all on table public.claim_events from anon'),
+    statement(tenant, 'grant select, insert, delete on table public.warranty_claims to authenticated'),
+    statement(tenant, 'grant select, insert on table public.claim_events to authenticated'),
+    'grant all on table public.claim_events to service_role;',
+    section(tenant, 'drop policy if exists warranty_claims_authenticated_access', 'drop policy if exists "Users can view claim attachments"'),
+    section(growth, 'create table if not exists public.warranty_passport_events', 'create table if not exists public.customer_feedback_events'),
+    section(growth, 'alter table public.warranty_passport_events enable row level security', 'alter table public.customer_feedback_events enable row level security'),
+    'revoke all on table public.warranty_passport_events from public, anon, authenticated;',
+    statement(growth, 'grant select on public.warranty_passport_events to authenticated'),
+    statement(growth, 'create policy warranty_passport_events_read'),
+    'grant all on table public.warranty_passport_events to service_role;',
     statement(load('profileRls'), 'create policy profiles_authenticated_owner_read'),
     statement(load('profileRls'), 'create policy profiles_authenticated_owner_update'),
     statement(load('profileRls'), 'create policy notifications_authenticated_owner_access'),
@@ -145,6 +163,9 @@ export function buildBootstrap(root, runId) {
     warranties_authenticated_update: 'tenant', warranties_authenticated_delete: 'tenant',
     warranty_documents_authenticated_read: 'tenant', warranty_documents_authenticated_insert: 'tenant',
     warranty_documents_storage_authenticated_read: 'tenant', warranty_documents_storage_authenticated_insert: 'tenant',
+    warranty_claims_authenticated_read: 'tenant', warranty_claims_authenticated_insert: 'tenant', warranty_claims_authenticated_delete: 'tenant',
+    claim_events_authenticated_read: 'tenant', claim_events_authenticated_insert: 'tenant',
+    warranty_passport_events_read: 'growth',
     reserve_backend_funnel_events: 'manual',
   })) {
     if (latestPolicy.get(name) !== files[key]) throw new Error(`Refresh isolated source policy contract for ${name}`);

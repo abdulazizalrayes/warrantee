@@ -4,7 +4,10 @@ export const DATABASE_CONTRACT_MINIMUMS = {
   'src/lib/__tests__/warranty-creation-db.test.ts': 50,
   'src/lib/__tests__/oauth-signup-setup-db.test.ts': 13,
 };
-export const JOURNEY_STAGES = new Set(['signup', 'confirmation', 'onboarding', 'warranty_form', 'first_save', 'retry_save', 'durable_assertions', 'funnel']);
+export const JOURNEY_STAGES = new Set([
+  'signup', 'confirmation', 'onboarding', 'warranty_form', 'first_save', 'retry_save', 'durable_assertions', 'funnel',
+  'lifecycle_approval', 'lifecycle_certificate', 'lifecycle_verification', 'lifecycle_claim',
+]);
 
 const browserFiles = new Set([
   'tests/e2e/signup-first-warranty.spec.ts', 'tests/e2e/signup-ui-recovery.spec.ts',

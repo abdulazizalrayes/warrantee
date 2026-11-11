@@ -82,6 +82,8 @@ export function buildLegacyBootstrap(root) {
     statement(load('manual'), 'alter policy warranties_authenticated_read on public.warranties'),
     load('transition'),
     section(load('constraints'), 'alter table public.warranties\n  drop constraint', 'create index if not exists idx_webhook_events_status_updated_at'),
+    // Focused bootstrap already loads the same canonical passport policy.
+    'drop policy warranty_passport_events_read on public.warranty_passport_events;',
     load('growth'),
     section(scale, 'alter table public.api_integration_tokens', 'create table if not exists public.api_idempotency_records'),
     section(scale, 'create table if not exists public.platform_audit_events', 'create table if not exists public.async_jobs'),
