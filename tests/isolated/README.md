@@ -122,7 +122,12 @@ postponed work remain excluded. Enqueued welcome/CRM jobs are not processed.
 
 Retries, skips, empty runs and flaky outcomes fail the dedicated gate. Logs show
 only bounded numeric case counters, source lines, registered diagnostic step,
-SQLSTATE, and compile source coordinates/codes. No raw SQL, confirmation links,
+SQLSTATE, compile source coordinates/codes and fixed startup-failure categories.
+Docker preflight, CLI install/version, init, stack start/status, database identity
+and cleanup have separate deadlines. A deadline terminates the owned subprocess,
+escalates to a forced stop if necessary, and fails the job without retrying the
+test. Registry, networking, port, disk and service-health categories are hints,
+not confirmed root causes. No raw SQL, confirmation links,
 session tokens, emails, HTTP logs, browser traces or artifacts are persisted.
 Cleanup stops only this random local project with `--no-backup` and removes its
 temporary source/configuration on success, failure or handled interruption.

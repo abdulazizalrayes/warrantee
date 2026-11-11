@@ -141,6 +141,43 @@ test('sanitized diagnostics disclose only bounded source coordinates and SQLSTAT
   assert.equal(safeTestOutput('{"passed":244,"failed":0,"skipped":100,"flaky":0,"globalErrors":0,"runStatus":"passed","secret":"private"}')[0], 'ISOLATED_LEGACY_SUMMARY {"passed":244,"failed":0,"skipped":100,"flaky":0,"globalErrors":0,"status":"passed","syntheticOnly":true}');
 });
 
+test('startup diagnostics return fixed categories without raw runner or registry output', () => {
+  for (const [output, category] of [
+    ['bind: address already in use', 'port_conflict'],
+    ['write: no space left on device', 'disk_capacity'],
+    ['toomanyrequests: pull rate limit exceeded', 'registry_rate_limit'],
+    ['manifest unknown', 'image_unavailable'],
+    ['Cannot connect to the Docker daemon', 'docker_unavailable'],
+    ['lookup: no such host', 'network_failure'],
+    ['dependency failed to start', 'service_unhealthy'],
+    ['unrecognized failure', 'unclassified'],
+  ]) {
+    assert.deepEqual(safeDiagnostics('stack_start', `${output} private://raw-credential`), [{ step: 'stack_start', category }]);
+  }
+  assert.deepEqual(safeDiagnostics('stack_start', 'address already in use', true), [{ step: 'stack_start', category: 'deadline_exceeded' }]);
+});
+
+test('a stalled Docker preflight fails closed without publishing subprocess output', () => {
+  const fixture = mkdtempSync(resolve(tmpdir(), 'warrantee-startup-deadline-'));
+  try {
+    writeFileSync(resolve(fixture, 'docker'), '#!/bin/sh\nprintf "private-stalled-runner-output\\n" >&2\nexec sleep 60\n', { mode: 0o700 });
+    const preload = `data:text/javascript,${encodeURIComponent(`
+      const original = globalThis.setTimeout;
+      globalThis.setTimeout = (fn, ms, ...args) => original(fn, ms === 30000 ? 150 : ms, ...args);
+    `)}`;
+    assert.throws(() => execFileSync(process.execPath, ['--import', preload, 'scripts/run-isolated-signup-journey.mjs', '--run'], {
+      cwd: root,
+      env: { PATH: `${fixture}:${process.env.PATH}`, WARRANTEE_ISOLATED_E2E: '1' },
+      stdio: 'pipe', encoding: 'utf8', timeout: 5000,
+    }), (error) => {
+      assert.equal(error.status, 1);
+      assert.match(error.stderr, /ISOLATED_DIAGNOSTIC \{"step":"docker_preflight","category":"deadline_exceeded"\}/);
+      assert.doesNotMatch(`${error.stdout}\n${error.stderr}`, /private-stalled-runner-output|Starting disposable/);
+      return true;
+    });
+  } finally { rmSync(fixture, { recursive: true, force: true }); }
+});
+
 test('legacy canonical expansion validates added columns and rejects missing source anchors', () => {
   const sql = buildLegacyBootstrap(root);
   assert.ok(sql.includes(readFileSync(resolve(root, 'supabase/migrations/20260724214205_harden_tenant_and_storage_access.sql'), 'utf8')));

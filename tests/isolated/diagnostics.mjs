@@ -62,8 +62,23 @@ export function safeBrowserFailure(error) {
     ...(httpStatus ? { expectedStatus: 201, receivedStatus: Number(httpStatus[1]) } : {}) });
 }
 
-export function safeDiagnostics(step, output) {
+const startupFailureCategories = [
+  [/address already in use|port is already allocated/i, 'port_conflict'],
+  [/no space left on device|disk quota exceeded/i, 'disk_capacity'],
+  [/toomanyrequests|pull rate limit|429 Too Many Requests/i, 'registry_rate_limit'],
+  [/manifest unknown|pull access denied/i, 'image_unavailable'],
+  [/cannot connect to the Docker daemon|permission denied while trying to connect to the Docker daemon/i, 'docker_unavailable'],
+  [/no such host|TLS handshake timeout|i\/o timeout|connection reset by peer/i, 'network_failure'],
+  [/container is not healthy|failed health check|health check failed|dependency failed to start/i, 'service_unhealthy'],
+];
+
+export function safeDiagnostics(step, output, timedOut = false) {
   if (!steps.has(step)) throw new Error('Unregistered isolated diagnostic step');
+  if (timedOut) return [{ step, category: 'deadline_exceeded' }];
+  if (['docker_preflight', 'cli_version', 'stack_init', 'stack_start', 'stack_status', 'database_identity', 'cleanup'].includes(step)) {
+    const category = startupFailureCategories.find(([pattern]) => pattern.test(output))?.[1] ?? 'unclassified';
+    return [{ step, category }];
+  }
   const diagnostics = [];
   if (step === 'bootstrap') {
     for (const match of output.matchAll(/psql:<stdin>:(\d+):\s*(?:ERROR|FATAL):\s*([A-Z0-9]{5})\b/g)) {

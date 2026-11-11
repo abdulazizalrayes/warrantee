@@ -39,6 +39,15 @@ for (const key of ['PATH', 'HOME', 'TMPDIR', 'TEMP', 'TMP', 'SystemRoot', 'CI', 
 cleanEnv.NEXT_TELEMETRY_DISABLED = '1';
 const children = new Set();
 const childCompletion = new Map();
+const startupDeadlines = {
+  docker_preflight: 30_000,
+  cli_version: 120_000,
+  stack_init: 60_000,
+  stack_start: 300_000,
+  stack_status: 30_000,
+  database_identity: 30_000,
+  cleanup: 90_000,
+};
 let currentStep = 'docker_preflight';
 function stopChild(child, signal) {
   if (!child.pid) return;
@@ -56,14 +65,28 @@ function command(executable, argv, options = {}) {
     childCompletion.set(child, new Promise((done) => child.once('close', done)));
     let output = '';
     let errors = '';
+    let timedOut = false;
+    let hardStop;
+    const deadline = startupDeadlines[step] && setTimeout(() => {
+      timedOut = true;
+      stopChild(child, 'SIGTERM');
+      hardStop = setTimeout(() => stopChild(child, 'SIGKILL'), 5000);
+    }, startupDeadlines[step]);
     child.stdout.on('data', (chunk) => { if (output.length < 4_000_000) output += chunk; });
     // Never echo CLI status, build output, request logs, tokens, or raw test errors.
     child.stderr.on('data', (chunk) => { if (errors.length < 1_000_000) errors += chunk; });
     child.on('error', (error) => { reject(error); });
     child.stdin.on('error', () => {});
     child.on('close', (code) => {
+      clearTimeout(deadline);
+      clearTimeout(hardStop);
       children.delete(child);
       childCompletion.delete(child);
+      if (timedOut) {
+        for (const diagnostic of safeDiagnostics(step, '', true)) console.error(`ISOLATED_DIAGNOSTIC ${JSON.stringify(diagnostic)}`);
+        reject(new Error('Isolated process deadline exceeded'));
+        return;
+      }
       if (step === 'journey') {
         for (const line of safeTestOutput(output)) console.log(line);
         if (!validateJourneySummary(output, minimumCases, legacySummary)) {
