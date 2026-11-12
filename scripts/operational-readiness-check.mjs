@@ -1,6 +1,5 @@
 import { readFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
-import { randomBytes } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 
 const envFiles = [".env.production.local", ".env.local"];
@@ -431,167 +430,27 @@ async function checkRemoteOCRProvider() {
   };
 }
 
-function missingColumn(message) {
-  return message.match(/'([^']+)' column/)?.[1] || message.match(/column "?([a-zA-Z0-9_]+)"?/)?.[1] || null;
-}
-
-async function adaptiveUpsert(table, payload, onConflict) {
-  const supabase = createSupabaseAdminClient();
-  const draft = { ...payload };
-
-  for (let attempt = 0; attempt < 24; attempt += 1) {
-    const { data, error } = await supabase
-      .from(table)
-      .upsert(draft, onConflict ? { onConflict } : undefined)
-      .select()
-      .single();
-    if (!error) return data;
-
-    const column = missingColumn(error.message || "");
-    if (!column || !(column in draft)) throw error;
-    delete draft[column];
-  }
-
-  throw new Error(`Could not seed ${table}; schema adaptation did not converge.`);
-}
-
-async function adaptiveInsert(table, payload) {
-  const supabase = createSupabaseAdminClient();
-  const draft = { ...payload };
-
-  for (let attempt = 0; attempt < 24; attempt += 1) {
-    const { data, error } = await supabase
-      .from(table)
-      .insert(draft)
-      .select()
-      .single();
-    if (!error) return data;
-
-    const column = missingColumn(error.message || "");
-    if (!column || !(column in draft)) throw error;
-    delete draft[column];
-  }
-
-  throw new Error(`Could not seed ${table}; schema adaptation did not converge.`);
-}
-
-async function seedStripeCheckoutData() {
-  const supabase = createSupabaseAdminClient();
-  const user = await findQaUser(supabase);
-  const runId = `QA-READINESS-${Date.now().toString(36).toUpperCase()}-${randomBytes(3).toString("hex").toUpperCase()}`;
-
-  const warranty = await adaptiveUpsert(
-    "warranties",
-    {
-      reference_number: `${runId}-STRIPE`,
-      product_name: `${runId} Stripe Warranty`,
-      product_name_ar: "ضمان اختبار Stripe",
-      sku: `${runId}-SKU`,
-      quantity: 1,
-      start_date: "2026-01-01",
-      end_date: "2028-01-01",
-      purchase_date: "2026-01-01",
-      warranty_start_date: "2026-01-01",
-      warranty_end_date: "2028-01-01",
-      description: "Seeded only for the operational readiness Stripe checkout probe.",
-      serial_number: `${runId}-SN`,
-      category: "qa",
-      product_category: "qa",
-      seller_name: "QA Seller",
-      seller_email: "qa-seller@warrantee.io",
-      currency: "SAR",
-      terms_and_conditions: "QA operational readiness terms.",
-      source: "qa_operational_readiness",
-      coverage_type: "standard",
-      status: "active",
-      user_id: user.id,
-      created_by: user.id,
-      issuer_user_id: user.id,
-      recipient_user_id: user.id,
-      buyer_id: user.id,
-      seller_id: user.id,
-      updated_at: new Date().toISOString(),
-    },
-    "reference_number",
-  );
-
-  const extension = await adaptiveInsert("warranty_extensions", {
-    warranty_id: warranty.id,
-    new_end_date: "2029-01-01",
-    price: 150,
-    currency: "SAR",
-    commission_rate: 8,
-    commission_amount: 12,
-    terms: "Operational readiness Stripe checkout verification.",
-    offered_by: user.id,
-    is_purchased: false,
+async function checkRemoteStripeCheckout() {
+  const result = await withAuthenticatedPage(async (page) => {
+    const response = await page.request.post(`${baseUrl}/api/payments/create`, {
+      headers: { Origin: baseUrl },
+      // Probe the disabled policy without a payable offer or provider.
+      data: {},
+      timeout: timeoutMs + 15000,
+    });
+    const payload = await response.json().catch(() => ({}));
+    return { status: response.status(), payload };
   });
 
-  return { warrantyId: warranty.id, extensionId: extension.id };
-}
-
-async function cleanupStripeCheckoutData(seed) {
-  if (!seed) return;
-  const supabase = createSupabaseAdminClient();
-  if (seed.extensionId) {
-    const { error } = await supabase.from("warranty_extensions").delete().eq("id", seed.extensionId);
-    if (error) throw error;
+  if (
+    result.status !== 503 ||
+    result.payload?.error !==
+      "Warranty extension checkout is not available yet. Your interest can still be recorded."
+  ) {
+    throw new Error(`Production Stripe checkout policy probe returned ${result.status}; expected disabled policy`);
   }
-  if (seed.warrantyId) {
-    const cleanupQueries = [
-      supabase.from("notifications").delete().eq("warranty_id", seed.warrantyId),
-      supabase.from("activity_log").delete().eq("entity_type", "warranty").eq("entity_id", seed.warrantyId),
-    ];
-    const results = await Promise.all(cleanupQueries);
-    const cleanupError = results.find((result) => result.error)?.error;
-    if (cleanupError) throw cleanupError;
 
-    const { error } = await supabase.from("warranties").delete().eq("id", seed.warrantyId);
-    if (error) throw error;
-  }
-}
-
-async function checkRemoteStripeCheckout() {
-  let seed;
-  try {
-    seed = await seedStripeCheckoutData();
-    const result = await withAuthenticatedPage(async (page) => {
-      const response = await page.request.post(`${baseUrl}/api/payments/create`, {
-        headers: { Origin: baseUrl },
-        data: {
-          warrantyId: seed.warrantyId,
-          extensionId: seed.extensionId,
-          extensionMonths: 12,
-          provider: "stripe",
-          locale: "en",
-          returnUrl: baseUrl,
-        },
-        timeout: timeoutMs + 15000,
-      });
-      const payload = await response.json().catch(() => ({}));
-      return { status: response.status(), payload };
-    });
-
-    if (
-      result.status === 503 &&
-      result.payload?.error ===
-        "Warranty extension checkout is not available yet. Your interest can still be recorded."
-    ) {
-      return { name: "stripe", status: "ok", mode: "disabled-by-policy" };
-    }
-
-    if (result.status !== 200) {
-      const details = result.payload?.error ? `: ${result.payload.error}` : "";
-      throw new Error(`Production Stripe checkout endpoint returned ${result.status}${details}`);
-    }
-    if (result.payload?.provider !== "stripe" || !result.payload?.sessionId || !/^https:\/\/checkout\.stripe\.com\//.test(result.payload?.url || "")) {
-      throw new Error("Production Stripe checkout endpoint did not return a Stripe Checkout session");
-    }
-
-    return { name: "stripe", status: "ok", mode: "production-api" };
-  } finally {
-    await cleanupStripeCheckoutData(seed);
-  }
+  return { name: "stripe", status: "ok", mode: "disabled-by-policy" };
 }
 
 async function checkOCRProvider() {
