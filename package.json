@@ -20,7 +20,7 @@
     "type-check": "tsc --noEmit",
     "test:e2e": "playwright test",
     "test:e2e:business": "playwright test tests/e2e/business-workflows.spec.ts",
-    "test:e2e:operational": "OPERATIONAL_E2E=1 playwright test tests/e2e/operational-workflows.spec.ts --project=chromium",
+    "test:e2e:operational": "playwright test --config=playwright.operational.config.ts",
     "test:e2e:ui": "playwright test --ui",
     "qa:signup-isolation": "node scripts/run-isolated-signup-journey.mjs --check && node --test tests/isolated/contracts.test.mjs",
     "qa:signup-journey": "node scripts/run-isolated-signup-journey.mjs --run",

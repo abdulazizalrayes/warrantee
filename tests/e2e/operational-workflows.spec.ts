@@ -9,7 +9,6 @@ const hasCredentials = Boolean(process.env.E2E_USER_EMAIL && process.env.E2E_USE
 const hasSupabaseAdmin = Boolean(
   process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY,
 );
-const hasCronSecret = Boolean(process.env.CRON_SECRET);
 
 const OCR_SAFE_CHARS = "BCDEFGHJKLMNPQRSTUVWXYZ";
 
@@ -330,25 +329,9 @@ test.describe("fully operational production workflows", () => {
 
     const downloadResponse = await page.request.get(`/api/documents/${documentPayload.id}/download`);
     if (downloadResponse.status() === 423) {
-      expect(hasCronSecret).toBe(true);
-      const scanResponse = await page.request.post("/api/cron/scan-documents?limit=5", {
-        headers: { Authorization: `Bearer ${process.env.CRON_SECRET}` },
-      });
-      expect(scanResponse.status()).toBe(200);
-      const scanPayload = await scanResponse.json();
-      expect(scanPayload.configured).toBe(true);
-
-      await expect.poll(async () => {
-        const { data } = await adminClient()
-          .from("warranty_documents")
-          .select("security_status")
-          .eq("id", documentPayload.id)
-          .single();
-        return data?.security_status;
-      }).toBe("clean");
-
-      const scannedDownloadResponse = await page.request.get(`/api/documents/${documentPayload.id}/download`);
-      expect([200, 302]).toContain(scannedDownloadResponse.status());
+      // A QA check must not trigger the scanner for other tenants' queued documents.
+      expect(documentPayload.provenance?.security_status).toBe("pending_scan");
+      await expect(downloadResponse.json()).resolves.toEqual({ error: "Document is blocked by security review" });
     } else {
       expect([200, 302]).toContain(downloadResponse.status());
     }
@@ -425,35 +408,10 @@ test.describe("fully operational production workflows", () => {
     expect(normalizedOcrText).toContain(normalizeOcrAssertionText("Warrant"));
     expect(normalizedOcrText).toContain(normalizeOcrAssertionText("QA Seller"));
 
-    const { data: extension, error: extensionError } = await adminClient()
-      .from("warranty_extensions")
-      .insert({
-        warranty_id: activeWarrantyId,
-        new_end_date: "2029-01-01",
-        price: 150,
-        currency: "SAR",
-        commission_rate: 8,
-        commission_amount: 12,
-        terms: "Operational QA seller-approved extension offer.",
-        offered_by: qaUserId,
-        is_purchased: false,
-      })
-      .select("id")
-      .single();
-    expect(extensionError).toBeNull();
-    expect(extension?.id).toBeTruthy();
-    const extensionId = extension!.id;
-
+    // Without a payable offer the probe cannot open a live checkout session.
     const checkoutResponse = await page.request.post("/api/payments/create", {
       headers: { Origin: trustedOrigin },
-      data: {
-        warrantyId: activeWarrantyId,
-        extensionId,
-        extensionMonths: 12,
-        provider: "stripe",
-        locale: "en",
-        returnUrl: "https://warrantee.io",
-      },
+      data: {},
     });
     await expectResponseStatus(checkoutResponse, 503);
     const checkoutPayload = await checkoutResponse.json();

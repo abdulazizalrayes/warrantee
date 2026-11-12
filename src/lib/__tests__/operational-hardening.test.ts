@@ -629,14 +629,22 @@ describe("operational hardening", () => {
   it("keeps readiness aligned with the fail-closed extension marketplace", () => {
     const readiness = readProjectFile("scripts/operational-readiness-check.mjs");
     const operationalE2E = readProjectFile("tests/e2e/operational-workflows.spec.ts");
+    const readinessCheckout = readiness.slice(
+      readiness.indexOf("async function checkRemoteStripeCheckout("),
+      readiness.indexOf("async function checkOCRProvider("),
+    );
 
-    expect(readiness).toContain("headers: { Origin: baseUrl }");
-    expect(readiness).toContain("result.status === 503");
-    expect(readiness).toContain(
+    expect(readinessCheckout).toContain("headers: { Origin: baseUrl }");
+    expect(readinessCheckout).toContain("result.status !== 503");
+    expect(readinessCheckout).toContain(
       "Warranty extension checkout is not available yet. Your interest can still be recorded."
     );
-    expect(readiness).toContain('mode: "disabled-by-policy"');
+    expect(readinessCheckout).toContain('mode: "disabled-by-policy"');
+    expect(readinessCheckout).toContain("data: {},");
+    expect(readiness).not.toContain("seedStripeCheckoutData");
     expect(operationalE2E).toContain("headers: { Origin: trustedOrigin }");
+    expect(operationalE2E).toMatch(/page\.request\.post\("\/api\/payments\/create", \{\s*headers: \{ Origin: trustedOrigin \},\s*data: \{\},/);
+    expect(operationalE2E).not.toContain("/api/cron/scan-documents");
     expect(operationalE2E).toContain('mode: "commit"');
     expect(operationalE2E).toContain('Origin: "https://attacker.invalid"');
     expect(operationalE2E).toContain("rolledBack: 1");
