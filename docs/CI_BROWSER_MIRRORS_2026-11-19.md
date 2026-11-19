@@ -10,6 +10,7 @@ An unmerged prebuilt-image candidate successfully launched Chromium but could no
 
 - Retain the existing GitHub-hosted Ubuntu 24.04 jobs and browser versions.
 - Parse only the runner's Ubuntu Deb822 source file. Change recognized Ubuntu mirror URIs to official HTTPS Ubuntu endpoints.
+- Support the exact `mirror+file:/etc/apt/apt-mirrors.txt` reference used by the current [GitHub runner source setup](https://github.com/actions/runner-images/blob/main/images/ubuntu/scripts/build/configure-apt-sources.sh). Never read or follow arbitrary local mirror files; replace this recognized URI directly. Other file references remain rejected.
 - Preserve source types, suites, components, signing key, and every other repository field. Do not touch Microsoft or other third-party source files.
 - Bound apt HTTP/HTTPS timeouts and retry count without disabling TLS or signature verification.
 - Bound Playwright installation steps to five minutes instead of allowing indefinite package installation. Keep all existing tests, assertions, browsers and zero-flake policies.

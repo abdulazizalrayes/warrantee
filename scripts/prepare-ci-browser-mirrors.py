@@ -50,13 +50,16 @@ def normalize(text):
         if not uris:
             raise ValueError()
         for uri in uris:
+            # Current GitHub runner images use this exact built-in failover list.
+            if uri == "mirror+file:/etc/apt/apt-mirrors.txt":
+                continue
             parsed = urlsplit(uri)
             host = parsed.hostname or ""
             prefix = host.removesuffix(".ec2.archive.ubuntu.com")
             ec2 = host.endswith(".ec2.archive.ubuntu.com") and all(
                 label and label[0].isalnum() and label[-1].isalnum()
                 and all(c.isalnum() or c == "-" for c in label) for label in prefix.split("."))
-            if (host not in {"archive.ubuntu.com", "security.ubuntu.com"} and not ec2
+            if (host not in {"archive.ubuntu.com", "security.ubuntu.com", "azure.archive.ubuntu.com"} and not ec2
                     or parsed.scheme not in {"http", "https"} or parsed.netloc != host
                     or parsed.path not in {"/ubuntu", "/ubuntu/"} or "?" in uri or "#" in uri):
                 raise ValueError()

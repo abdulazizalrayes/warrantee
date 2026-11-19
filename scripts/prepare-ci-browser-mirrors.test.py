@@ -83,6 +83,11 @@ class MirrorsTests(unittest.TestCase):
         self.assertEqual(count, 2)
         self.assertEqual(Parser().parsestr(fixed)["Suites"], "noble\n noble-updates noble-backports")
 
+    def test_current_github_runner_failover_reference(self):
+        for uri in ("mirror+file:/etc/apt/apt-mirrors.txt", "http://azure.archive.ubuntu.com/ubuntu/"):
+            source = NOBLE.replace("http://us-east-1.ec2.archive.ubuntu.com/ubuntu/", uri)
+            self.assertEqual(mirrors.normalize(source), mirrors.normalize(NOBLE))
+
     def test_refuses_malformed_or_unsupported_sources(self):
         uri = "http://us-east-1.ec2.archive.ubuntu.com/ubuntu/"
         bad_uris = ["http://evil.invalid/ubuntu", "http://archive.ubuntu.com.evil/ubuntu",
@@ -90,7 +95,9 @@ class MirrorsTests(unittest.TestCase):
                     "http://archive.ubuntu.com:/ubuntu", "https://archive.ubuntu.com/ubuntu?",
                     "https://archive.ubuntu.com/ubuntu#", "https://archive.ubuntu.com/other",
                     "ftp://archive.ubuntu.com/ubuntu", "http://.ec2.archive.ubuntu.com/ubuntu",
-                    "http://-bad.ec2.archive.ubuntu.com/ubuntu", "http://archive.ubuntu.com/ubuntu\\evil"]
+                    "http://-bad.ec2.archive.ubuntu.com/ubuntu", "http://archive.ubuntu.com/ubuntu\\evil",
+                    "mirror+file:/etc/apt/other.txt", "mirror+file:/etc/apt/apt-mirrors.txt?",
+                    "file:/etc/apt/apt-mirrors.txt", "mirror+file:/etc/apt/../apt/apt-mirrors.txt"]
         sources = [NOBLE.replace(uri, bad) for bad in bad_uris]
         sources += ["", "# only comments\n", NOBLE + "body HOSTILE-SECRET\n",
                     NOBLE.replace("URIs:", "URIs: http://archive.ubuntu.com/ubuntu\nuris:", 1),
