@@ -20,6 +20,7 @@ jobs:
   build:
     name: Type-check, lint, test, and build
     runs-on: ubuntu-24.04
+    timeout-minutes: 25
 
     env:
       # Build-time placeholders only; browser/backend proof runs in the real
@@ -70,8 +71,15 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Prepare bounded official Ubuntu browser mirrors
+        timeout-minutes: 2
+        run: |
+          python3 scripts/prepare-ci-browser-mirrors.test.py
+          sudo --preserve-env=CI,GITHUB_ACTIONS,GITHUB_REPOSITORY,RUNNER_OS /usr/bin/python3 scripts/prepare-ci-browser-mirrors.py
+
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium firefox webkit
+        timeout-minutes: 5
+        run: npx --no-install playwright install --with-deps chromium firefox webkit
 
       - name: Test
         run: npm test -- --passWithNoTests
@@ -112,7 +120,13 @@ jobs:
           node-version: '24'
       - name: Install locked dependencies
         run: npm ci
+      - name: Prepare bounded official Ubuntu browser mirrors
+        timeout-minutes: 2
+        run: |
+          python3 scripts/prepare-ci-browser-mirrors.test.py
+          sudo --preserve-env=CI,GITHUB_ACTIONS,GITHUB_REPOSITORY,RUNNER_OS /usr/bin/python3 scripts/prepare-ci-browser-mirrors.py
       - name: Install Chromium
+        timeout-minutes: 5
         run: npx --no-install playwright install --with-deps chromium
       - name: Verify isolated source guards
         run: |
@@ -170,7 +184,13 @@ jobs:
           node-version: '24'
       - name: Install locked dependencies
         run: npm ci
+      - name: Prepare bounded official Ubuntu browser mirrors
+        timeout-minutes: 2
+        run: |
+          python3 scripts/prepare-ci-browser-mirrors.test.py
+          sudo --preserve-env=CI,GITHUB_ACTIONS,GITHUB_REPOSITORY,RUNNER_OS /usr/bin/python3 scripts/prepare-ci-browser-mirrors.py
       - name: Install Chromium
+        timeout-minutes: 5
         run: npx --no-install playwright install --with-deps chromium
       - name: Run explicitly synthetic browser recovery and geometry
         run: npx --no-install playwright test --config=playwright.config.ts
