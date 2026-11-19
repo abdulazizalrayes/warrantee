@@ -28,13 +28,18 @@ export async function checkBrowserRuntime({
   loadEngines = () => import('@playwright/test'),
   resolvePath = realpath,
   checkExecutable = (path) => access(path, constants.X_OK),
+  onStage = () => {},
 } = {}) {
+  onStage('environment');
   assertCiEnvironment(env, platform);
+  onStage('package');
   assert.equal(await readVersion(), VERSION, 'Playwright version mismatch');
+  onStage('container_metadata');
   const info = await readDockerInfo();
   assert.equal(info?.driverVersion, VERSION, 'Container driver version mismatch');
   assert.equal(info?.dockerImageName, IMAGE, 'Container image name mismatch');
   const engines = await loadEngines();
+  onStage('binaries');
   for (const name of NAMES) {
     const path = engines[name].executablePath();
     assert.ok(path.startsWith(`${ROOT}/`) && posix.normalize(path) === path, 'Executable outside container browser path');
@@ -42,12 +47,14 @@ export async function checkBrowserRuntime({
     await checkExecutable(path);
   }
   for (const name of NAMES) {
+    onStage(`launch_${name}`);
     const browser = await engines[name].launch({ headless: true, timeout: 30_000 });
     let context;
     try {
       context = await browser.newContext({ offline: true, serviceWorkers: 'block' });
       await context.route('**/*', (route) => route.abort());
       const page = await context.newPage();
+      onStage(`fixture_${name}`);
       await page.setContent(HTML, { waitUntil: 'load', timeout: 10_000 });
       assert.equal(await page.title(), 'Runtime check', 'Local fixture mismatch');
       assert.equal(await page.locator('p').textContent(), 'runtime-ok', 'Local fixture mismatch');
@@ -58,9 +65,10 @@ export async function checkBrowserRuntime({
   return { version: VERSION, image: IMAGE, browsers: NAMES.map((name) => ({ name, status: 'PASS' })) };
 }
 
-export async function main({ check = checkBrowserRuntime, log = console.log, error = console.error } = {}) {
+export async function main({ check, log = console.log, error = console.error } = {}) {
   try {
-    log(JSON.stringify(await check()));
+    const result = await (check ? check() : checkBrowserRuntime({ onStage: (stage) => log(JSON.stringify({ runtime_stage: stage })) }));
+    log(JSON.stringify(result));
     return 0;
   } catch {
     // Browser errors can contain environment values, paths, and process arguments.

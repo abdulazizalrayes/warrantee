@@ -116,6 +116,14 @@ test('runs all three engines sequentially using only local fixed HTML and closes
     ['launch', 'context', 'page', 'content', 'text', 'context-close', 'browser-close'].map((step) => `${name}:${step}`)));
 });
 
+test('diagnostic stages contain fixed categories only', async () => {
+  const { deps } = fixture();
+  const stages = [];
+  await checkBrowserRuntime({ ...deps, onStage: (stage) => stages.push(stage) });
+  assert.deepEqual(stages, ['environment', 'package', 'container_metadata', 'binaries',
+    ...names.flatMap((name) => [`launch_${name}`, `fixture_${name}`])]);
+});
+
 test('closes resources on failures and never starts the next engine', async () => {
   for (const stage of ['launch', 'context', 'page', 'content', 'text', 'context-close', 'browser-close']) {
     const { deps, events } = fixture(`chromium:${stage}`);
