@@ -26,7 +26,7 @@
 
 ## Privacy-Safe Checks
 
-Read activity_log only for the authorized company context. Group funnel events by action and bounded metadata.stage, metadata.step, metadata.field, metadata.reason, metadata.account_type, and metadata.traffic_class. Keep synthetic/QA activity separate from prospective-customer activity. A form_opened event does not prove typing or a Next attempt; absent telemetry never proves user intent.
+Read activity_log only for the authorized company context. Group funnel events by action and bounded metadata.stage, metadata.status, metadata.step, metadata.field, metadata.reason, metadata.account_type, and metadata.traffic_class. Warranty journey events use stage; warranty_scan outcomes use status. Keep synthetic/QA activity separate from prospective-customer activity. A form_opened event does not prove typing or a Next attempt; absent telemetry never proves user intent.
 
 ## Release Evidence
 
