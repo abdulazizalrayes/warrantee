@@ -46,6 +46,16 @@ describe("creation field validation", () => {
   it.each([false, true])("rejects whitespace names and invalid quantities (%s)", (ar) => {
     expect(validateCreationFields({ ...fields, productName: "   ", quantity: 1.5, category: "invalid" }, 1, ar)).toMatchObject({ productName: expect.any(String), quantity: expect.any(String), category: expect.any(String) });
   });
+  describe.each([false, true])("quantity range (Arabic: %s)", (ar) => {
+    it.each([1, 2, 999999, 1000000])("accepts whole quantity %s", (quantity) => {
+      expect(validateCreationFields({ ...fields, quantity }, 1, ar)).toEqual({});
+    });
+    it.each([-1, 0, 0.5, 1.5, 999999.5, 1000000.5, 1000001, Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER + 1, NaN, Infinity, -Infinity])("rejects invalid quantity %s with a localized range error", (quantity) => {
+      expect(validateCreationFields({ ...fields, quantity }, 1, ar)).toEqual({
+        quantity: ar ? "أدخل كمية صحيحة من 1 إلى 1000000." : "Enter a whole quantity from 1 to 1000000.",
+      });
+    });
+  });
   it.each(["", "2026-02-29", "2026-02-30", "2026-11-10T00:00:00Z", "2026-1-01"])("rejects invalid strict dates: %s", (date) => {
     expect(strictCreationDate(date)).toBe(false);
   });

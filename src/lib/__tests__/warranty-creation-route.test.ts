@@ -65,6 +65,14 @@ beforeEach(() => {
 });
 
 describe("manual warranty creation boundary", () => {
+  it.each([0, -1, 1.5, 1000001, Number.MAX_SAFE_INTEGER, "2", null])("rejects invalid quantity %j before the transaction", async (quantity) => {
+    expect((await POST(request({ ...valid, quantity }))).status).toBe(400);
+    expect(state.rpc).not.toHaveBeenCalled();
+  });
+  it.each([1, 1000000])("accepts quantity boundary %s", async (quantity) => {
+    expect((await POST(request({ ...valid, quantity }))).status).toBe(201);
+    expect(state.rpc.mock.calls[0][1].p_warranty.quantity).toBe(quantity);
+  });
   it("leaves personal ownership to the session-bound transaction, ignoring body ownership and source claims", async () => {
     const response = await POST(request({ ...valid, user_id: "victim", created_by: "victim", issuer_user_id: "victim",
       account_type: "business", role: "platform_admin", source: "manual_with_documents", traffic_class: "human", approved_by: "victim" }));
