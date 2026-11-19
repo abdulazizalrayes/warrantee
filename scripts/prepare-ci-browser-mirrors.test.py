@@ -157,7 +157,7 @@ class MirrorsTests(unittest.TestCase):
             io.write(str(target), "safe", create=True)
             self.assertTrue(io.check(str(target)))
             self.assertEqual(io.read(str(target)), "safe")
-            self.assertEqual(stat.S_IMODE(target.stat().st_mode), 0o644)
+            self.assertEqual(stat.S_IMODE(target.stat().st_mode), 0o600)
             link = root / "link"
             link.symlink_to(target)
             for path in (link, root):

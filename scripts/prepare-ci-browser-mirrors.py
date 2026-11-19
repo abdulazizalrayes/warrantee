@@ -93,7 +93,7 @@ class HostIO:
 
     def write(self, name, text, create=False):
         flags = os.O_WRONLY | os.O_NOFOLLOW | (os.O_CREAT | os.O_EXCL if create else 0)
-        with os.fdopen(os.open(name, flags, 0o644), "w", encoding="ascii") as target:
+        with os.fdopen(os.open(name, flags, 0o600), "w", encoding="ascii") as target:
             info = os.fstat(target.fileno())
             if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
                 raise ValueError()
