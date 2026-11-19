@@ -9,6 +9,8 @@ const draftKey = "warrantee:creation-draft:v1";
 const userId = "11111111-1111-4111-8111-111111111111";
 const savedId = "22222222-2222-4222-8222-222222222222";
 const widths = [320, 390, 768, 1024, 1280, 1440, 1920];
+const productOptionalIds = ["product-name-ar", "sku", "serial-number", "quantity", "category"];
+const purchaseOptionalIds = ["seller-name", "seller-email", "po-reference", "invoice-reference", "terms", "custom-clauses"];
 const user = { id: userId, aud: "authenticated", role: "authenticated", email: "synthetic@example.invalid", app_metadata: {}, user_metadata: { full_name: "Synthetic UI User" }, created_at: "2026-01-01T00:00:00Z" };
 const profile = { ...user, full_name: "Synthetic UI User", account_type: "consumer", role: "user", onboarding_completed: true, preferred_language: "en" };
 let server: Server;
@@ -74,6 +76,144 @@ test.describe("synthetic mocked signup UI recovery (NOT auth or persistence proo
   for (const locale of ["en", "ar"] as const) {
     const next = locale === "en" ? "Next" : "التالي";
     const createSuccess = locale === "en" ? "Warranty Created Successfully!" : "\u062a\u0645 \u0625\u0646\u0634\u0627\u0621 \u0627\u0644\u0636\u0645\u0627\u0646 \u0628\u0646\u062c\u0627\u062d!";
+
+    test(`${locale}: Personal starts minimal and reports empty Next and hidden purchase validation without writes`, async ({ page }) => {
+      const observed = await observeReadOnlyCreation(page);
+      await openCreation(page, locale);
+      const productDetails = page.locator("details#warranty-product-details");
+      await expect(productDetails).toHaveJSProperty("open", false);
+      await expect(productDetails.locator("#warranty-product-name")).toHaveCount(0);
+      for (const id of productOptionalIds) {
+        await expect(productDetails.locator(`#warranty-${id}`)).toHaveCount(1);
+        await expect(productDetails.locator(`#warranty-${id}`)).toBeHidden();
+      }
+      await page.getByRole("button", { name: next, exact: true }).click();
+      await expect(page.locator("#warranty-product-name")).toHaveAttribute("aria-invalid", "true");
+      await expect(page.locator("#warranty-productName-error")).toBeVisible();
+      await expect(productDetails).toHaveJSProperty("open", false);
+      await expect.poll(() => observed.events).toEqual(expect.arrayContaining([expect.objectContaining({
+        event: "warranty_journey", path: `/${locale}/warranties/new`,
+        metadata: expect.objectContaining({ stage: "validation_failed", field: "productName", step: 1, reason: "validation", outcome: "failure", account_type: "consumer", locale, traffic_class: "qa" }),
+      })]));
+      await expect(page.locator("#warranty-start-date")).toHaveCount(0);
+      await page.locator("#warranty-product-name").fill("Synthetic minimal personal warranty");
+      await page.getByRole("button", { name: next, exact: true }).click();
+      const purchaseDetails = page.locator("details#warranty-purchase-details");
+      await expect(purchaseDetails).toHaveJSProperty("open", false);
+      for (const id of ["start-date", "end-date"]) {
+        await expect(page.locator(`#warranty-${id}`)).toBeVisible();
+        await expect(purchaseDetails.locator(`#warranty-${id}`)).toHaveCount(0);
+        expect(await page.locator(`#warranty-${id}`).evaluate(input => Boolean(input.compareDocumentPosition(document.getElementById("warranty-purchase-details")!) & Node.DOCUMENT_POSITION_FOLLOWING))).toBe(true);
+      }
+      for (const id of purchaseOptionalIds) {
+        await expect(purchaseDetails.locator(`#warranty-${id}`)).toHaveCount(1);
+        await expect(purchaseDetails.locator(`#warranty-${id}`)).toBeHidden();
+      }
+      await page.locator("#warranty-start-date").fill("2026-11-10");
+      await page.locator("#warranty-end-date").fill("2028-11-10");
+      await setOptionalDetails(page, "purchase", true);
+      await page.locator("#warranty-seller-email").fill("invalid-synthetic-email");
+      for (const attempt of [1, 2]) {
+        await setOptionalDetails(page, "purchase", false);
+        await expect(page.locator("#warranty-sellerEmail-error")).toBeHidden();
+        await page.getByRole("button", { name: next, exact: true }).click();
+        await expect(purchaseDetails).toHaveJSProperty("open", true);
+        await expect(page.locator("#warranty-sellerEmail-error")).toBeVisible();
+        await expect(page.locator("#warranty-seller-email")).toHaveAttribute("aria-invalid", "true");
+        await expect(page.locator("#warranty-create")).toHaveCount(0);
+        await expect.poll(() => observed.events.filter(event => event.event === "warranty_journey"
+          && event.metadata.stage === "validation_failed" && event.metadata.field === "sellerEmail" && event.metadata.step === 2)).toHaveLength(attempt);
+      }
+      await expect.poll(() => observed.events).toEqual(expect.arrayContaining([expect.objectContaining({
+        event: "warranty_journey",
+        metadata: expect.objectContaining({ stage: "validation_failed", field: "sellerEmail", step: 2, reason: "validation", locale, traffic_class: "qa" }),
+      })]));
+      observed.expectNoWrites();
+    });
+
+    test(`${locale}: quantity above 1000000 is blocked, reopens details and reports scoped validation`, async ({ page }) => {
+      const observed = await observeReadOnlyCreation(page);
+      await openCreation(page, locale);
+      await page.locator("#warranty-product-name").fill("Synthetic quantity boundary warranty");
+      await setOptionalDetails(page, "product", true);
+      await page.locator("#warranty-quantity").fill("1000001");
+      for (const attempt of [1, 2]) {
+        await setOptionalDetails(page, "product", false);
+        await expect(page.locator("#warranty-quantity-error")).toBeHidden();
+        await page.getByRole("button", { name: next, exact: true }).click();
+        await expect(page.locator("#warranty-product-details")).toHaveJSProperty("open", true);
+        await expect(page.locator("#warranty-quantity")).toHaveAttribute("aria-invalid", "true");
+        await expect(page.locator("#warranty-quantity-error")).toBeVisible();
+        await expect(page.locator("#warranty-start-date")).toHaveCount(0);
+        await expect.poll(() => observed.events.filter(event => event.event === "warranty_journey"
+          && event.metadata.stage === "validation_failed" && event.metadata.field === "quantity" && event.metadata.step === 1)).toHaveLength(attempt);
+      }
+      await expect.poll(() => observed.events).toEqual(expect.arrayContaining([expect.objectContaining({
+        event: "warranty_journey", path: `/${locale}/warranties/new`,
+        metadata: expect.objectContaining({ stage: "validation_failed", field: "quantity", step: 1, reason: "validation", outcome: "failure", account_type: "consumer", locale, traffic_class: "qa" }),
+      })]));
+      // The inclusive upper boundary remains usable; only the over-limit value fails.
+      await page.locator("#warranty-quantity").fill("1000000");
+      await page.getByRole("button", { name: next, exact: true }).click();
+      await expect(page.locator("#warranty-start-date")).toBeVisible();
+      observed.expectNoWrites();
+    });
+
+    test(`${locale}: rejected Smart Scan reports validation without uploading or saving`, async ({ page }) => {
+      const observed = await observeReadOnlyCreation(page);
+      await openCreation(page, locale);
+      await page.locator("#warranty-smart-scan").setInputFiles({ name: "synthetic-rejected.txt", mimeType: "text/plain", buffer: Buffer.from("synthetic unsupported scan") });
+      await expect(page.getByRole("alert").filter({ hasText: locale === "en" ? "Choose PDF, JPEG, or PNG for scanning." : "للمسح اختر PDF أو JPEG أو PNG." })).toBeVisible();
+      await expect(page.locator("#warranty-product-name")).toHaveValue("");
+      await expect.poll(() => observed.events).toEqual(expect.arrayContaining([expect.objectContaining({
+        event: "warranty_scan", path: `/${locale}/warranties/new`,
+        metadata: expect.objectContaining({ status: "rejected", reason: "validation", account_type: "consumer", locale, traffic_class: "qa" }),
+      })]));
+      expect(observed.events.filter(event => event.event === "warranty_scan")).toHaveLength(1);
+      observed.expectNoWrites();
+    });
+
+    for (const accountType of ["consumer", "business"] as const) {
+      test(`${locale}: profile loading leaves optional fields expanded until ${accountType} is known`, async ({ page }) => {
+        const observed = await observeReadOnlyCreation(page);
+        let releaseProfile!: () => void;
+        const pendingProfile = new Promise<void>(resolve => { releaseProfile = resolve; });
+        await page.route("**/rest/v1/profiles?*", async route => {
+          await pendingProfile;
+          return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ...profile, full_name: `Resolved synthetic ${accountType} profile`, account_type: accountType, preferred_language: locale }) });
+        });
+        try {
+          await page.goto(`/${locale}/warranties/new`);
+          await expect(page.locator("#warranty-product-name")).toBeVisible();
+          for (const id of productOptionalIds) await expect(page.locator(`#warranty-${id}`)).toBeVisible();
+          await page.locator("#warranty-product-name").fill("Synthetic pending profile warranty");
+          await page.getByRole("button", { name: next, exact: true }).click();
+          for (const id of [...purchaseOptionalIds, "start-date", "end-date"]) await expect(page.locator(`#warranty-${id}`)).toBeVisible();
+          releaseProfile();
+          if (accountType === "consumer") {
+            await expect(page.locator("details#warranty-purchase-details")).toHaveJSProperty("open", false);
+            for (const id of purchaseOptionalIds) await expect(page.locator(`#warranty-${id}`)).toBeHidden();
+          } else {
+            // The avatar changes from S to R only after the pending profile is consumed.
+            await expect(page.locator("header").getByRole("button", { name: "R", exact: true })).toBeVisible();
+            await expect(page.locator("#warranty-purchase-details")).toHaveCount(0);
+            for (const id of purchaseOptionalIds) await expect(page.locator(`#warranty-${id}`)).toBeVisible();
+          }
+          await page.getByRole("button", { name: locale === "en" ? "Back" : "\u0639\u0648\u062f\u0629", exact: true }).click();
+          if (accountType === "consumer") {
+            await expect(page.locator("details#warranty-product-details")).toHaveJSProperty("open", false);
+            for (const id of productOptionalIds) await expect(page.locator(`#warranty-${id}`)).toBeHidden();
+          } else {
+            await expect(page.locator("#warranty-product-details")).toHaveCount(0);
+            for (const id of productOptionalIds) await expect(page.locator(`#warranty-${id}`)).toBeVisible();
+          }
+          await expect(page.locator("#warranty-product-name")).toBeVisible();
+          observed.expectNoWrites();
+        } finally {
+          releaseProfile();
+        }
+      });
+    }
 
     for (const accountType of ["consumer", "business"] as const) {
       test(`${locale}: ${accountType} onboarding step 0 and step 1 at all seven widths without private writes`, async ({ page }, info) => {
@@ -216,6 +356,7 @@ test.describe("synthetic mocked signup UI recovery (NOT auth or persistence proo
       await page.route("**/api/warranties", route => { creates++; return route.abort("blockedbyclient"); });
       await openCreation(page, locale);
       await page.locator("#warranty-product-name").fill("Synthetic retained product");
+      await setOptionalDetails(page, "product", true);
       await page.locator("#warranty-serial-number").fill("PRIVATE-SYNTHETIC-SERIAL");
       await page.locator("#warranty-sku").fill("PRIVATE-SYNTHETIC-SKU");
       const draft = () => page.evaluate(key => sessionStorage.getItem(key), draftKey);
@@ -223,6 +364,7 @@ test.describe("synthetic mocked signup UI recovery (NOT auth or persistence proo
       await expect(page.getByRole("button", { name: "Save as Draft", exact: true })).toHaveCount(0);
       await page.locator("#warranty-save-progress").click();
       await page.getByRole("button", { name: next, exact: true }).click();
+      await setOptionalDetails(page, "purchase", true);
       for (const id of ["seller-name", "seller-email", "po-reference", "invoice-reference", "terms", "custom-clauses"]) {
         await page.locator(`#warranty-${id}`).fill(id === "seller-email" ? "private-synthetic@example.invalid" : `PRIVATE-SYNTHETIC-${id}`);
       }
@@ -301,11 +443,17 @@ test.describe("synthetic mocked signup UI recovery (NOT auth or persistence proo
       await page.route("**/api/warranties", route => route.fulfill({ status: 201, contentType: "application/json", body: JSON.stringify({ data: { id: savedId } }) }));
       await openCreation(page, locale);
       await page.locator("#warranty-product-name").fill("Synthetic extended commercial equipment warranty and preventative maintenance protection package");
+      await expect(page.locator("#warranty-product-details")).toHaveJSProperty("open", false);
+      await geometryMatrix(page, info, "product-optional-closed");
+      await setOptionalDetails(page, "product", true);
       await page.locator("#warranty-product-name-ar").fill("\u0636\u0645\u0627\u0646 \u062a\u062c\u0631\u064a\u0628\u064a \u0645\u0648\u0633\u0639 \u0644\u0644\u0645\u0639\u062f\u0627\u062a \u0627\u0644\u062a\u062c\u0627\u0631\u064a\u0629");
-      await geometryMatrix(page, info, "product");
+      await geometryMatrix(page, info, "product-optional-open");
       await page.getByRole("button", { name: next, exact: true }).click();
       await page.locator("#warranty-end-date").fill("2028-11-10");
-      await geometryMatrix(page, info, "terms");
+      await expect(page.locator("#warranty-purchase-details")).toHaveJSProperty("open", false);
+      await geometryMatrix(page, info, "terms-optional-closed");
+      await setOptionalDetails(page, "purchase", true);
+      await geometryMatrix(page, info, "terms-optional-open");
       await page.getByRole("button", { name: next, exact: true }).click();
       await page.locator("#warranty-documents").setInputFiles({ name: "Synthetic extended commercial equipment warranty supporting maintenance documentation.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.4 synthetic") });
       await geometryMatrix(page, info, "documents-populated");
@@ -320,7 +468,41 @@ test.describe("synthetic mocked signup UI recovery (NOT auth or persistence proo
 
 async function openCreation(page: Page, locale: string) {
   await page.goto(`/${locale}/warranties/new`);
+  // The default synthetic profile is Personal; wait for its async classification.
+  await expect(page.locator("details#warranty-product-details")).toBeVisible();
   await expect(page.locator("#warranty-product-name")).toBeVisible();
+}
+
+async function setOptionalDetails(page: Page, kind: "product" | "purchase", open: boolean) {
+  const details = page.locator(`details#warranty-${kind}-details`);
+  if (!await details.count()) return;
+  if (await details.evaluate((element: HTMLDetailsElement) => element.open) !== open) {
+    await details.locator("summary").click();
+  }
+  await expect(details).toHaveJSProperty("open", open);
+}
+
+async function observeReadOnlyCreation(page: Page) {
+  const events: { event: string; metadata: Record<string, unknown> }[] = [];
+  const privateWrites: string[] = [];
+  const writesBefore = backendWrites;
+  await page.route("**/*", route => {
+    const request = route.request();
+    const url = new URL(request.url());
+    if (url.origin === process.env.E2E_BASE_URL && url.pathname === "/api/funnel/events" && request.method() === "POST") {
+      events.push(request.postDataJSON());
+      return route.fulfill({ status: 201, contentType: "application/json", body: "{}" });
+    }
+    if (!["GET", "HEAD", "OPTIONS"].includes(request.method())) {
+      privateWrites.push(`${request.method()} ${url.pathname}`);
+      return route.abort("blockedbyclient");
+    }
+    return route.fallback();
+  });
+  return { events, expectNoWrites() {
+    expect(privateWrites, "No OCR uploads, warranty saves or other private mutation attempts").toEqual([]);
+    expect(backendWrites, "No server-side synthetic backend mutations").toBe(writesBefore);
+  } };
 }
 
 async function completeFields(page: Page, next: string) {
@@ -349,8 +531,10 @@ async function geometryMatrix(page: Page, info: TestInfo, stage: string) {
     });
     const audit = await page.locator("main").evaluate(main => {
       const failures: string[] = [];
-      const controls = [...main.querySelectorAll<HTMLElement>("button, a[href], [role=button], input, textarea, select")].filter(element => {
+      const controls = [...main.querySelectorAll<HTMLElement>("button, a[href], [role=button], summary, input, textarea, select")].filter(element => {
         if (element.closest("[hidden], [inert], [aria-hidden='true']")) return false;
+        const closedDetails = element.closest("details:not([open])");
+        if (closedDetails && !closedDetails.querySelector("summary")?.contains(element)) return false;
         const rect = element.getBoundingClientRect();
         return rect.width > 0 && rect.height > 0 && getComputedStyle(element).visibility !== "hidden";
       });
@@ -361,7 +545,7 @@ async function geometryMatrix(page: Page, info: TestInfo, stage: string) {
         if (element.scrollWidth > element.clientWidth + 1 && !element.matches("input, textarea, select")) failures.push(`${label}: content overflow`);
         const parent = element.parentElement!.getBoundingClientRect();
         if (rect.left < parent.left - 1 || rect.right > parent.right + 1) failures.push(`${label}: outside parent`);
-        if (element.matches("button, a[href], [role=button]")) {
+        if (element.matches("button, a[href], [role=button], summary")) {
           const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
           while (walker.nextNode()) {
             if (!walker.currentNode.textContent?.trim()) continue;

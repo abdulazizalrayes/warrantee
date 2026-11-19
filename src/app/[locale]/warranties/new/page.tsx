@@ -2,7 +2,7 @@
 
 import { SearchableSelect } from '@/components/SearchableSelect';
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, ArrowRight, Upload, X, FileText, CheckCircle, ScanLine, Sparkles, Camera } from "lucide-react";
@@ -76,6 +76,8 @@ export default function NewWarrantyPage() {
   const [createdWarrantyId, setCreatedWarrantyId] = useState<string | null>(null);
   const [completionNotice, setCompletionNotice] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<CreationErrors>({});
+  const [productDetailsOpen, setProductDetailsOpen] = useState(false);
+  const [purchaseDetailsOpen, setPurchaseDetailsOpen] = useState(false);
   const [draftEnabled, setDraftEnabled] = useState(false);
   const [draftNotice, setDraftNotice] = useState("");
   const [recoveryBlocked, setRecoveryBlocked] = useState(false);
@@ -203,8 +205,11 @@ export default function NewWarrantyPage() {
   const handleSmartScan = async (file: File) => {
     if (scanningRef.current || busyRef.current || savedIdRef.current || attemptRef.current?.uncertain || recoveryBlocked) return;
     const invalid = creationFileError(file, isRTL, true);
-    if (invalid) { setError(invalid); return; }
-    if (files.length >= CREATION_FILE_LIMIT) { setError(isRTL ? "الحد الأقصى 10 مرفقات." : "Use at most 10 attachments."); return; }
+    if (invalid || files.length >= CREATION_FILE_LIMIT) {
+      setError(invalid || (isRTL ? "الحد الأقصى 10 مرفقات." : "Use at most 10 attachments."));
+      trackWarrantyScan("rejected", { locale, reason: "validation", account_type: accountType });
+      return;
+    }
     scanningRef.current = true;
     const accountId = user.id;
     setScanning(true);
@@ -321,11 +326,21 @@ export default function NewWarrantyPage() {
   };
 
   const fields = { productName, productNameAr, category, quantity, startDate, endDate, sellerEmail };
+  const revealInvalidDetails = (errors: CreationErrors) => {
+    if (errors.productNameAr || errors.quantity || errors.category) setProductDetailsOpen(true);
+    if (errors.sellerEmail) setPurchaseDetailsOpen(true);
+  };
   const advance = (current: 1 | 2) => {
     const errors = validateCreationFields(fields, current, isRTL);
     setFieldErrors(errors);
     setError("");
-    if (Object.keys(errors).length) return;
+    if (Object.keys(errors).length) {
+      revealInvalidDetails(errors);
+      for (const field of Object.keys(errors) as Array<keyof CreationErrors>) {
+        trackWarrantyJourney("validation_failed", { locale, step: current, field, outcome: "failure", reason: "validation", account_type: accountType });
+      }
+      return;
+    }
     if (current === 1) setProductName(productName.trim());
     trackWarrantyJourney("step_completed", { locale, step: current, outcome: "success", account_type: accountType });
     setStep(current === 1 ? 2 : 3);
@@ -345,6 +360,7 @@ export default function NewWarrantyPage() {
       const errors = { ...validateCreationFields(fields, 1, isRTL), ...validateCreationFields(fields, 2, isRTL) };
       setFieldErrors(errors);
       if (Object.keys(errors).length) {
+        revealInvalidDetails(errors);
         setStep(Object.keys(validateCreationFields(fields, 1, isRTL)).length ? 1 : 2);
         trackWarrantyJourney("save_failed", { locale, outcome: "failure", reason: "validation", account_type: accountType });
         return;
@@ -468,10 +484,26 @@ export default function NewWarrantyPage() {
 
   const fieldError = (name: keyof CreationErrors) => fieldErrors[name] ? <p id={`warranty-${name}-error`} className="mt-1 text-sm text-red-700" role="alert">{fieldErrors[name]}</p> : null;
 
+  const optionalDetails = (kind: "product" | "purchase", children: ReactNode) => {
+    if (accountType !== "consumer") return children;
+    const product = kind === "product";
+    return (
+      <details id={`warranty-${kind}-details`} open={product ? productDetailsOpen : purchaseDetailsOpen}
+        onToggle={(event) => (product ? setProductDetailsOpen : setPurchaseDetailsOpen)(event.currentTarget.open)}
+        className="border-t border-gray-200 pt-4">
+        <summary className="cursor-pointer text-sm font-medium text-navy">
+          {product ? (isRTL ? "تفاصيل المنتج الإضافية (اختياري)" : "Additional product details (optional)")
+            : (isRTL ? "تفاصيل الشراء والشروط (اختياري)" : "Purchase details and terms (optional)")}
+        </summary>
+        <div className="mt-4 space-y-5">{children}</div>
+      </details>
+    );
+  };
+
   const renderStep1 = () => (
     <div className="space-y-5">
       <h2 className="text-lg font-bold text-navy">{isRTL ? "\u0645\u0639\u0644\u0648\u0645\u0627\u062a \u0627\u0644\u0645\u0646\u062a\u062c" : "Product Information"}</h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div>
         <div>
           <label htmlFor="warranty-product-name" className="block text-sm font-medium text-navy mb-1">{dict.warranty.fields.product_name} *</label>
           <input id="warranty-product-name" name="productName" type="text" value={productName} onChange={(e) => setProductName(e.target.value)}
@@ -479,6 +511,8 @@ export default function NewWarrantyPage() {
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0071e3]/30 focus:border-[#0071e3]" required />
           {fieldError("productName")}
         </div>
+      </div>
+      {optionalDetails("product", <>
         <div>
           <label htmlFor="warranty-product-name-ar" className="block text-sm font-medium text-navy mb-1">{dict.warranty.fields.product_name} ({isRTL ? "\u0639\u0631\u0628\u064a" : "Arabic"})</label>
           <input id="warranty-product-name-ar" name="productNameAr" type="text" value={productNameAr} onChange={(e) => setProductNameAr(e.target.value)}
@@ -486,7 +520,6 @@ export default function NewWarrantyPage() {
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0071e3]/30 focus:border-[#0071e3]" dir="rtl" />
           {fieldError("productNameAr")}
         </div>
-      </div>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div>
           <label htmlFor="warranty-sku" className="block text-sm font-medium text-navy mb-1">SKU</label>
@@ -500,7 +533,7 @@ export default function NewWarrantyPage() {
         </div>
         <div>
           <label htmlFor="warranty-quantity" className="block text-sm font-medium text-navy mb-1">{isRTL ? "\u0627\u0644\u0643\u0645\u064a\u0629" : "Quantity"}</label>
-          <input id="warranty-quantity" name="quantity" type="number" value={Number.isFinite(quantity) ? quantity : ""} onChange={(e) => setQuantity(e.target.valueAsNumber)} min={1} step={1}
+          <input id="warranty-quantity" name="quantity" type="number" value={Number.isFinite(quantity) ? quantity : ""} onChange={(e) => setQuantity(e.target.valueAsNumber)} min={1} max={1000000} step={1}
             aria-invalid={Boolean(fieldErrors.quantity)} aria-describedby={fieldErrors.quantity ? "warranty-quantity-error" : undefined}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0071e3]/30 focus:border-[#0071e3]" />
           {fieldError("quantity")}
@@ -514,6 +547,7 @@ export default function NewWarrantyPage() {
         </SearchableSelect>
         {fieldError("category")}
       </div>
+      </>)}
       <div className="flex justify-end">
         <button onClick={() => advance(1)}
           className="bg-[#0071e3] hover:bg-[#0077ED] text-white font-semibold py-3 px-6 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
@@ -543,6 +577,7 @@ export default function NewWarrantyPage() {
           {fieldError("endDate")}
         </div>
       </div>
+      {optionalDetails("purchase", <>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label htmlFor="warranty-seller-name" className="block text-sm font-medium text-navy mb-1">{isRTL ? "\u0627\u0633\u0645 \u0627\u0644\u0628\u0627\u0626\u0639" : "Seller Name"}</label>
@@ -579,6 +614,7 @@ export default function NewWarrantyPage() {
         <textarea id="warranty-custom-clauses" name="customClauses" value={customClauses} onChange={(e) => setCustomClauses(e.target.value)} rows={2}
           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0071e3]/30 focus:border-[#0071e3] resize-none" />
       </div>
+      </>)}
       <div className="flex gap-3">
         <button onClick={() => setStep(1)} className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-medium text-navy">{dict.common.back}</button>
         <button onClick={() => advance(2)}

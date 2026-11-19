@@ -2106,8 +2106,8 @@
         {
           "order": 1,
           "component": "app_workspace",
-          "action": "Authenticated consumer enters warranty details or scans a document.",
-          "control": "Protected route and client validation."
+          "action": "Authenticated consumer enters a product name and warranty dates; optional product/purchase details are disclosed separately, or a document can be scanned.",
+          "control": "Protected route; privacy-safe validation field codes and scan outcomes use acknowledged, idempotent first-party telemetry. Quantity is limited to 1 through 1000000."
         },
         {
           "order": 2,
