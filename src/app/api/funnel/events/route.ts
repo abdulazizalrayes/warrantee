@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
 
   const supabase = await createServerSupabaseClient();
   const { data: auth } = await supabase.auth.getUser();
-  if ((event === "onboarding_journey" || event === "warranty_journey") && !auth.user) {
+  if ((event === "onboarding_journey" || event === "warranty_journey" || event === "warranty_scan") && !auth.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const supabaseAdmin = createSupabaseAdminClient();

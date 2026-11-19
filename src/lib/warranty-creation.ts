@@ -33,7 +33,7 @@ export function validateCreationFields(fields: CreationFields, step: 1 | 2, ar: 
     }
     if (fields.productNameAr.trim().length > 200) errors.productNameAr = ar ? "الحد الأقصى 200 حرف." : "Use up to 200 characters.";
     if (!CREATION_CATEGORIES.includes(fields.category)) errors.category = ar ? "اختر فئة صحيحة." : "Choose a valid category.";
-    if (!Number.isSafeInteger(fields.quantity) || fields.quantity < 1) errors.quantity = ar ? "أدخل كمية صحيحة أكبر من صفر." : "Enter a whole quantity greater than zero.";
+    if (!Number.isSafeInteger(fields.quantity) || fields.quantity < 1 || fields.quantity > 1000000) errors.quantity = ar ? "أدخل كمية صحيحة من 1 إلى 1000000." : "Enter a whole quantity from 1 to 1000000.";
   } else {
     if (!strictCreationDate(fields.startDate)) errors.startDate = ar ? "أدخل تاريخ بداية صحيحاً." : "Enter a valid start date.";
     if (!strictCreationDate(fields.endDate)) errors.endDate = ar ? "أدخل تاريخ انتهاء صحيحاً." : "Enter a valid end date.";

@@ -189,6 +189,25 @@ for (const scenario of scenarios) {
       const identity = await signupAndConfirm(page, scenario, scenario.locale === 'en' && scenario.account === 'consumer' && scenario.mode === 'completed' && !scenario.attachment);
       const admin = await localAdmin();
       await onboard(page, scenario, identity.id, true);
+      if (scenario.account === 'consumer') {
+        await expect(page.locator('#warranty-product-details')).not.toHaveAttribute('open');
+        await expect(page.locator('#warranty-quantity')).toBeHidden();
+        await page.getByRole('button', { name: text(scenario, 'Next', 'التالي'), exact: true }).click();
+        await expect(page.locator('#warranty-productName-error')).toBeVisible();
+        await expect.poll(async () => {
+          const result = await admin.from('activity_log').select('metadata').eq('actor_id', identity.id)
+            .eq('action', 'warranty_journey').contains('metadata', { stage: 'validation_failed', step: 1, field: 'productName' });
+          if (result.error) throw new Error('Validation event persistence query failed');
+          return result.data.length;
+        }).toBe(1);
+        await page.locator('#warranty-smart-scan').setInputFiles({ name: 'synthetic.txt', mimeType: 'text/plain', buffer: Buffer.from('synthetic rejected scan') });
+        await expect.poll(async () => {
+          const result = await admin.from('activity_log').select('metadata').eq('actor_id', identity.id)
+            .eq('action', 'warranty_scan').contains('metadata', { status: 'rejected', reason: 'validation' });
+          if (result.error) throw new Error('Scan event persistence query failed');
+          return result.data.length;
+        }).toBe(1);
+      }
       if (checkLifecycle) await page.locator('#warranty-serial-number').fill(localSerial);
       const lifecycleEndDate = new Date(Math.max(Date.now(), Date.UTC(2026, 10, 10)) + 365 * 86_400_000).toISOString().slice(0, 10);
       const product = await fillWarranty(page, scenario, checkLifecycle ? lifecycleEndDate : undefined);
@@ -208,6 +227,10 @@ for (const scenario of scenarios) {
         data: { product_name: '', start_date: '2027-11-10', end_date: '2026-11-10' }, maxRedirects: 0,
       });
       expect(invalid.status()).toBe(400);
+      const invalidQuantity = await page.request.post('/api/warranties', {
+        data: { product_name: product, start_date: '2026-11-10', end_date: '2027-11-10', quantity: 1000001 }, maxRedirects: 0,
+      });
+      expect(invalidQuantity.status()).toBe(400);
       const before = await admin.from('warranties').select('id').eq('created_by', identity.id);
       expect(before.error).toBeNull();
       expect(before.data).toHaveLength(0);

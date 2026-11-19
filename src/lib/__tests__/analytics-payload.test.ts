@@ -59,6 +59,61 @@ describe("event-specific analytics payloads", () => {
     expect(sanitizeAnalyticsPayload("activation_milestone", { milestone: "first_warranty_created" }, "human"))
       .not.toHaveProperty("milestone");
   });
+  it.each(["productName", "productNameAr", "category", "quantity", "startDate", "endDate", "sellerEmail"])(
+    "keeps only a registered validation field (%s), not its value or message", field => {
+      const output = sanitizeAnalyticsPayload("warranty_journey", {
+        ...privateFields, stage: "validation_failed", step: 2, field,
+        outcome: "failure", reason: "validation", account_type: "consumer", locale: "en",
+        value: "private field input", errors: { [field]: "private localized message" },
+      }, "qa");
+      expect(output).toEqual({
+        event_category: "activation", stage: "validation_failed", step: 2, field,
+        outcome: "failure", reason: "validation", account_type: "consumer", locale: "en", traffic_class: "qa",
+      });
+      expect(sanitizeAnalyticsPayload("warranty_journey", output, "qa")).toEqual(output);
+    },
+  );
+  it.each([1, 2, 3, 4])("accepts only registered warranty steps (%s)", step => {
+    expect(sanitizeAnalyticsPayload("warranty_journey", { stage: "validation_failed", step }, "human"))
+      .toHaveProperty("step", step);
+  });
+  it.each([0, 5, -1, 1.5, "1", null, { step: 1 }])("drops invalid warranty steps (%j)", step => {
+    expect(sanitizeAnalyticsPayload("warranty_journey", { stage: "validation_failed", step }, "human"))
+      .not.toHaveProperty("step");
+  });
+  it("does not accept arbitrary validation fields or field metadata on other stages", () => {
+    for (const field of ["private@example.test", "product_name", "__proto__", ["productName"], { field: "productName" }]) {
+      expect(sanitizeAnalyticsPayload("warranty_journey", { stage: "validation_failed", field }, "human"))
+        .not.toHaveProperty("field");
+    }
+    expect(sanitizeAnalyticsPayload("warranty_journey", { stage: "step_completed", field: "productName" }, "human"))
+      .not.toHaveProperty("field");
+  });
+  it.each(["started", "rejected", "failed", "completed"])("registers privacy-safe first-party scan outcomes (%s)", status => {
+    expect(serverFunnelEvents.has("warranty_scan")).toBe(true);
+    const output = sanitizeAnalyticsPayload("warranty_scan", {
+      ...privateFields, status, reason: "validation", file_type: "image/png", fields_found: 0,
+      account_type: "business", locale: "ar", filename: "private.png", file: { name: "private.png" },
+      error: new Error("private OCR failure"), extracted_text: "private text",
+    }, "qa");
+    expect(output).toEqual({
+      event_category: "warranty", status, reason: "validation", file_type: "image/png", fields_found: 0,
+      account_type: "business", locale: "ar", traffic_class: "qa",
+    });
+    expect(sanitizeAnalyticsPayload("warranty_scan", output, "qa")).toEqual(output);
+  });
+  it.each(["network", "timeout", "unauthorized", "validation", "unavailable", "upload", "unknown"])(
+    "allows only bounded scan failure reasons (%s)", reason => {
+      expect(sanitizeAnalyticsPayload("warranty_scan", { status: "failed", reason }, "human"))
+        .toHaveProperty("reason", reason);
+    },
+  );
+  it.each(["private OCR error", new Error("private failure"), { code: "network" }, ["network"], null])(
+    "rejects raw or malformed scan reasons (%j)", reason => {
+      expect(sanitizeAnalyticsPayload("warranty_scan", { status: "failed", reason }, "human"))
+        .not.toHaveProperty("reason");
+    },
+  );
   it("rejects free-text subjects, domains, OCR errors, query templates and malformed enum values", () => {
     for (const [event, input] of [
       ["contact_form_submit", { subject: "email me at private@example.test" }],

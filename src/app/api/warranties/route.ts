@@ -153,6 +153,10 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+    if (body.quantity !== undefined && (typeof body.quantity !== "number"
+      || !Number.isSafeInteger(body.quantity) || body.quantity < 1 || body.quantity > 1000000)) {
+      return NextResponse.json({ error: "Quantity must be a whole number between 1 and 1,000,000" }, { status: 400 });
+    }
 
     // Validate dates
     const startDate = body.start_date || body.warranty_start_date || body.purchase_date;
