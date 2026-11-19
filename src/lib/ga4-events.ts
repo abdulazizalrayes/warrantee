@@ -87,11 +87,7 @@ function sendServerFunnelEvent(event: string, payload: Record<string, unknown>) 
   });
 
   try {
-    if (navigator.sendBeacon) {
-      const sent = navigator.sendBeacon("/api/funnel/events", new Blob([body], { type: "application/json" }));
-      if (sent) return;
-    }
-
+    // A queued beacon is not an acknowledgement; reuse this body/ID for a bounded retry.
     const send = async (retry: boolean): Promise<void> => {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), 5000);
@@ -238,6 +234,11 @@ type JourneyMetadata = {
   account_type?: "consumer" | "business";
 };
 
+type WarrantyJourneyMetadata = JourneyMetadata & {
+  step?: 1 | 2 | 3 | 4;
+  field?: "productName" | "productNameAr" | "category" | "quantity" | "startDate" | "endDate" | "sellerEmail";
+};
+
 export function trackAuthJourney(
   stage: "started" | "confirmed" | "failed",
   metadata: JourneyMetadata & { method?: "email" | "password" | "google" | "apple" } = {},
@@ -253,8 +254,8 @@ export function trackOnboardingJourney(
 }
 
 export function trackWarrantyJourney(
-  stage: "form_opened" | "step_completed" | "save_started" | "save_failed" | "attachment_failed" | "draft_resumed",
-  metadata: JourneyMetadata = {},
+  stage: "form_opened" | "step_completed" | "validation_failed" | "save_started" | "save_failed" | "attachment_failed" | "draft_resumed",
+  metadata: WarrantyJourneyMetadata = {},
 ) {
   emitEvent("warranty_journey", { ...metadata, stage });
 }
@@ -315,7 +316,7 @@ export function trackWarrantyCreated(source: string = "manual") {
   });
 }
 
-export function trackWarrantyScan(status: "started" | "completed" | "failed", metadata: Record<string, unknown> = {}) {
+export function trackWarrantyScan(status: "started" | "rejected" | "completed" | "failed", metadata: Record<string, unknown> = {}) {
   emitEvent("warranty_scan", {
     status,
     event_category: "warranty",

@@ -38,6 +38,7 @@ describe("campaign attribution helpers", () => {
 
 describe("browser analytics dispatch", () => {
   afterEach(() => {
+    vi.useRealTimers();
     vi.unstubAllGlobals();
     vi.resetModules();
     delete process.env.NEXT_PUBLIC_GTM_ID;
@@ -48,6 +49,8 @@ describe("browser analytics dispatch", () => {
     const dataLayer: unknown[] = [];
     const gtag = vi.fn();
     const sendBeacon = vi.fn(() => true);
+    const fetcher = vi.fn().mockResolvedValue({ status: 201 });
+    vi.stubGlobal("fetch", fetcher);
 
     vi.stubGlobal("window", {
       location: {
@@ -67,12 +70,12 @@ describe("browser analytics dispatch", () => {
       sendBeacon,
     });
 
-    return { dataLayer, gtag, sendBeacon };
+    return { dataLayer, gtag, sendBeacon, fetcher };
   }
 
   it.each(["reject", "unavailable"])("retries bounded first-party %s once with the same identifier", async failure => {
-    const { sendBeacon } = stubAnalyticsGlobals();
-    sendBeacon.mockReturnValue(false);
+    process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID = "G-TEST";
+    const { sendBeacon, gtag } = stubAnalyticsGlobals();
     const fetcher = vi.fn();
     if (failure === "reject") fetcher.mockRejectedValueOnce(new Error("Synthetic network failure"));
     else fetcher.mockResolvedValueOnce({ status: 503 });
@@ -86,16 +89,44 @@ describe("browser analytics dispatch", () => {
     expect(second.body).toBe(first.body);
     expect(JSON.parse(first.body).event_id).toMatch(/^[a-f0-9-]{36}$/);
     expect(first.signal).toBeInstanceOf(AbortSignal);
+    expect(first.keepalive).toBe(true);
+    expect(sendBeacon).not.toHaveBeenCalled();
+    expect(gtag).toHaveBeenCalledOnce();
   });
 
-  it("does not retry a rejected first-party validation request", async () => {
-    const { sendBeacon } = stubAnalyticsGlobals();
-    sendBeacon.mockReturnValue(false);
-    const fetcher = vi.fn().mockResolvedValue({ status: 400 });
-    vi.stubGlobal("fetch", fetcher);
+  it.each([200, 201, 400, 401, 403, 409, 429])("does not retry an acknowledged or non-retryable response (%s)", async status => {
+    const { fetcher, sendBeacon } = stubAnalyticsGlobals();
+    fetcher.mockResolvedValue({ status });
     const { trackWarrantyJourney } = await import("../ga4-events");
     trackWarrantyJourney("save_failed", { reason: "validation" });
-    await vi.waitFor(() => expect(fetcher).toHaveBeenCalledOnce());
+    await new Promise(resolve => setTimeout(resolve, 0));
+    expect(fetcher).toHaveBeenCalledOnce();
+    expect(sendBeacon).not.toHaveBeenCalled();
+  });
+
+  it.each(["network", "server"])("stops after two attempts when %s failures persist", async failure => {
+    const { fetcher } = stubAnalyticsGlobals();
+    if (failure === "network") fetcher.mockRejectedValue(new Error("Synthetic failure"));
+    else fetcher.mockResolvedValue({ status: 503 });
+    const { trackWarrantyJourney } = await import("../ga4-events");
+    trackWarrantyJourney("save_started");
+    await new Promise(resolve => setTimeout(resolve, 0));
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(fetcher.mock.calls[1][1].body).toBe(fetcher.mock.calls[0][1].body);
+  });
+
+  it("bounds timed-out delivery to two attempts with the same event ID", async () => {
+    vi.useFakeTimers();
+    const { fetcher } = stubAnalyticsGlobals();
+    fetcher.mockImplementation((_url, options) => new Promise((_resolve, reject) => {
+      options.signal.addEventListener("abort", () => reject(new Error("Synthetic abort")), { once: true });
+    }));
+    const { trackWarrantyJourney } = await import("../ga4-events");
+    trackWarrantyJourney("save_started");
+    await vi.advanceTimersByTimeAsync(10000);
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(fetcher.mock.calls[1][1].body).toBe(fetcher.mock.calls[0][1].body);
+    expect(vi.getTimerCount()).toBe(0);
   });
 
   it("latches failed grant persistence and requires explicit successful recovery", async () => {
@@ -185,7 +216,7 @@ describe("browser analytics dispatch", () => {
   it("routes one QA pricing CTA to the configured property without adding private data", async () => {
     process.env.NEXT_PUBLIC_GTM_ID = "GTM-WFLBH83M";
     process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID = "G-ZQJ4LRG4GN";
-    const { dataLayer, gtag, sendBeacon } = stubAnalyticsGlobals();
+    const { dataLayer, gtag, sendBeacon, fetcher } = stubAnalyticsGlobals();
     vi.stubGlobal("navigator", { webdriver: true, sendBeacon });
     const { trackFunnelCtaClick } = await import("../ga4-events");
 
@@ -204,8 +235,9 @@ describe("browser analytics dispatch", () => {
     });
     expect(dataLayer).toHaveLength(1);
     expect(dataLayer[0]).not.toHaveProperty("send_to");
-    expect(sendBeacon).toHaveBeenCalledOnce();
-    const body = JSON.parse(await (sendBeacon.mock.calls[0] as unknown as [string, Blob])[1].text());
+    expect(sendBeacon).not.toHaveBeenCalled();
+    expect(fetcher).toHaveBeenCalledOnce();
+    const body = JSON.parse(fetcher.mock.calls[0][1].body);
     expect(body.metadata.traffic_class).toBe("qa");
     expect(body.metadata).not.toHaveProperty("send_to");
     expect(body.metadata).not.toHaveProperty("page_location");
@@ -260,16 +292,16 @@ describe("browser analytics dispatch", () => {
   it("does not duplicate bootstrap pageviews in direct GA mode", async () => {
     delete process.env.NEXT_PUBLIC_GTM_ID;
     process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID = "G-TEST";
-    const { gtag, sendBeacon } = stubAnalyticsGlobals();
+    const { gtag, fetcher } = stubAnalyticsGlobals();
     const { trackPageView } = await import("../ga4-events");
     trackPageView("home", { locale: "en" });
     expect(gtag).not.toHaveBeenCalled();
-    expect(sendBeacon).toHaveBeenCalledOnce();
+    expect(fetcher).toHaveBeenCalledOnce();
   });
 
   it("emits a dedicated privacy-safe WhatsApp click event", async () => {
     process.env.NEXT_PUBLIC_GTM_ID = "GTM-TEST";
-    const { dataLayer, gtag, sendBeacon } = stubAnalyticsGlobals();
+    const { dataLayer, gtag, fetcher } = stubAnalyticsGlobals();
     const { trackWhatsappClick } = await import("../ga4-events");
 
     trackWhatsappClick("footer", { locale: "en" });
@@ -285,13 +317,13 @@ describe("browser analytics dispatch", () => {
         traffic_class: "human",
       })
     );
-    expect(sendBeacon).toHaveBeenCalledOnce();
+    expect(fetcher).toHaveBeenCalledOnce();
   });
 
   it.each([true, false])("uses authoritative private-path and referrer normalization for direct events (GTM=%s)", async (withGtm) => {
     if (withGtm) process.env.NEXT_PUBLIC_GTM_ID = "GTM-TEST";
     process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID = "G-TEST";
-    const { dataLayer, gtag, sendBeacon } = stubAnalyticsGlobals();
+    const { dataLayer, gtag, sendBeacon, fetcher } = stubAnalyticsGlobals();
     window.location.pathname = "/en/approval/private-warranty-id";
     window.location.search = "?email=private@example.test&token=private-token";
     vi.stubGlobal("document", { referrer: "https://referrer.test/private-person?token=private-token#private" });
@@ -313,7 +345,7 @@ describe("browser analytics dispatch", () => {
       expect(dataLayer[0]).not.toHaveProperty("page_referrer");
       expect(JSON.stringify(dataLayer)).not.toContain("private");
     }
-    const body = JSON.parse(await (sendBeacon.mock.calls[0] as unknown as [string, Blob])[1].text());
+    const body = JSON.parse(fetcher.mock.calls[0][1].body);
     expect(body).toMatchObject({ path: "/en/approval/[id]", referrer: "https://referrer.test" });
     expect(body.metadata).not.toHaveProperty("page_location");
     expect(body.metadata).not.toHaveProperty("page_referrer");
@@ -327,7 +359,7 @@ describe("browser analytics dispatch", () => {
   it("drops positional IDs, domains and OCR errors from every custom browser sink", async () => {
     process.env.NEXT_PUBLIC_GTM_ID = "GTM-TEST";
     process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID = "G-TEST";
-    const { dataLayer, gtag, sendBeacon } = stubAnalyticsGlobals();
+    const { dataLayer, gtag, fetcher } = stubAnalyticsGlobals();
     const { trackClaim, trackDocumentView, trackTeamInvite, trackWarrantyScan, trackContactForm } = await import("../ga4-events");
     trackClaim("private-warranty-id");
     trackDocumentView({ document_id: "private-doc", warranty_id: "private-warranty", file_type: "application/pdf" });
@@ -338,14 +370,41 @@ describe("browser analytics dispatch", () => {
     expect(dataLayer).toHaveLength(5);
     expect(JSON.stringify(dataLayer)).not.toContain("private");
     expect(JSON.stringify(gtag.mock.calls)).not.toContain("private");
-    expect(sendBeacon).toHaveBeenCalledOnce();
-    expect(await (sendBeacon.mock.calls[0] as unknown as [string, Blob])[1].text()).not.toContain("private");
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(JSON.stringify(fetcher.mock.calls)).not.toContain("private");
   });
 
-  it("keeps the sanitized envelope when sendBeacon falls back to fetch", async () => {
+  it.each([true, false])("delivers every sanitized scan outcome first-party with analytics consent=%s", async consent => {
+    process.env.NEXT_PUBLIC_GTM_ID = "GTM-TEST";
+    process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID = "G-TEST";
+    const { dataLayer, gtag, fetcher, sendBeacon } = stubAnalyticsGlobals();
+    window.localStorage.getItem = () => JSON.stringify({ analytics: consent });
+    const { trackWarrantyScan, trackWarrantyJourney } = await import("../ga4-events");
+    for (const status of ["started", "rejected", "failed", "completed"] as const) {
+      trackWarrantyScan(status, {
+        locale: "en", reason: "validation", account_type: "consumer", file_type: "image/png",
+        file: { name: "private.png" }, error: "private error", extracted_text: "private OCR text",
+      });
+    }
+    trackWarrantyJourney("validation_failed", {
+      locale: "en", step: 1, outcome: "failure", reason: "validation", field: "productName", account_type: "consumer",
+    });
+    expect(sendBeacon).not.toHaveBeenCalled();
+    expect(fetcher).toHaveBeenCalledTimes(5);
+    const events = fetcher.mock.calls.map(([, request]) => JSON.parse(request.body));
+    expect(events.slice(0, 4).map(event => event.metadata.status)).toEqual(["started", "rejected", "failed", "completed"]);
+    expect(events[4]).toMatchObject({ event: "warranty_journey", metadata: { stage: "validation_failed", field: "productName", step: 1 } });
+    expect(new Set(events.map(event => event.event_id)).size).toBe(5);
+    expect(JSON.stringify(events)).not.toContain("private");
+    expect(JSON.stringify(dataLayer)).not.toContain("private");
+    expect(JSON.stringify(gtag.mock.calls)).not.toContain("private");
+    expect(dataLayer).toHaveLength(consent ? 5 : 0);
+    expect(gtag).toHaveBeenCalledTimes(consent ? 5 : 0);
+  });
+
+  it("keeps the sanitized envelope in acknowledged fetch delivery", async () => {
     process.env.NEXT_PUBLIC_GTM_ID = "GTM-TEST";
     const { sendBeacon } = stubAnalyticsGlobals();
-    sendBeacon.mockReturnValue(false);
     const fetchMock = vi.fn().mockResolvedValue({ ok: true });
     vi.stubGlobal("fetch", fetchMock);
     window.location.pathname = "/en/warranties/private-id/claim";
@@ -353,6 +412,7 @@ describe("browser analytics dispatch", () => {
     const { trackAuthIntent } = await import("../ga4-events");
     trackAuthIntent("magic_link_start", "email", { email: "private@example.test", account_type: "consumer" });
     expect(fetchMock).toHaveBeenCalledOnce();
+    expect(sendBeacon).not.toHaveBeenCalled();
     expect(fetchMock.mock.calls[0][0]).toBe("/api/funnel/events");
     const body = JSON.parse(fetchMock.mock.calls[0][1].body);
     expect(body).toMatchObject({ path: "/en/warranties/[id]/claim", referrer: "https://referrer.test", metadata: { action: "magic_link_start", method: "email", account_type: "consumer" } });
@@ -365,13 +425,13 @@ describe("browser analytics dispatch", () => {
     "does not queue Google events without explicit analytics consent (%s)", async (consent) => {
       process.env.NEXT_PUBLIC_GTM_ID = "GTM-TEST";
       process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID = "G-TEST";
-      const { dataLayer, gtag, sendBeacon } = stubAnalyticsGlobals();
+      const { dataLayer, gtag, fetcher } = stubAnalyticsGlobals();
       window.localStorage.getItem = () => consent as string;
       const { trackFunnelCtaClick } = await import("../ga4-events");
       trackFunnelCtaClick("pricing_plan_cta", "/en/auth");
       expect(gtag).not.toHaveBeenCalled();
       expect(dataLayer).toEqual([]);
-      expect(sendBeacon).toHaveBeenCalledOnce();
+      expect(fetcher).toHaveBeenCalledOnce();
     },
   );
 });

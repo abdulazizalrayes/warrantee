@@ -54,7 +54,7 @@ export const serverFunnelEvents = new Set([
   "page_view", "auth_intent", "funnel_cta_click", "whatsapp_click", "signup_submit", "sign_up",
   "contact_form_submit", "seller_application_submit", "onboarding_completed", "activation_started",
   "activation_milestone", "onboarding_template_selected",
-  "auth_journey", "onboarding_journey", "warranty_journey",
+  "auth_journey", "onboarding_journey", "warranty_journey", "warranty_scan",
 ]);
 
 export const authoritativeActivationMilestones = new Set(["first_warranty_created", "first_warranty_issued"]);
@@ -151,8 +151,9 @@ export function sanitizeAnalyticsPayload(event: string, value: unknown, trafficC
       integerField("step", 0, 3); enumField("outcome", ["success", "failure", "pending"]);
       enumField("reason", journeyReasons); enumField("account_type", ["consumer", "business"]); break;
     case "warranty_journey":
-      fixed("activation"); enumField("stage", ["form_opened", "step_completed", "save_started", "save_failed", "attachment_failed", "draft_resumed"]);
+      fixed("activation"); enumField("stage", ["form_opened", "step_completed", "validation_failed", "save_started", "save_failed", "attachment_failed", "draft_resumed"]);
       integerField("step", 1, 4); enumField("outcome", ["success", "failure", "pending"]);
+      if (output.stage === "validation_failed") enumField("field", ["productName", "productNameAr", "category", "quantity", "startDate", "endDate", "sellerEmail"]);
       enumField("reason", journeyReasons); enumField("account_type", ["consumer", "business"]); break;
     case "purchase": {
       fixed("conversion", "plan_upgrade"); output.currency = "SAR";
@@ -170,7 +171,10 @@ export function sanitizeAnalyticsPayload(event: string, value: unknown, trafficC
     }
     case "claim_submitted": fixed("conversion", "warranty_claim"); break;
     case "warranty_created": fixed("engagement", "warranty_created"); enumField("source", ["manual", "manual_draft", "manual_with_documents"]); break;
-    case "warranty_scan": fixed("warranty"); enumField("status", ["started", "completed", "failed"]); enumField("file_type", mimeTypes); integerField("fields_found", 0, 7); break;
+    case "warranty_scan":
+      fixed("warranty"); enumField("status", ["started", "rejected", "completed", "failed"]);
+      enumField("file_type", mimeTypes); integerField("fields_found", 0, 7);
+      enumField("reason", journeyReasons); enumField("account_type", ["consumer", "business"]); break;
     case "extension_request":
     case "extension_wishlist":
       fixed(event === "extension_request" ? "conversion" : "demand_signal", event === "extension_request" ? "warranty_extension_request" : "extension_interest");

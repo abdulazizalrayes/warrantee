@@ -104,9 +104,24 @@ describe("server funnel independent privacy validation", () => {
   it("requires a real session for private journey events and bounds request sizes", async () => {
     state.auth.mockResolvedValue({ data: { user: null } });
     expect((await POST(request({ event: "warranty_journey", metadata: { stage: "form_opened" } }))).status).toBe(401);
+    expect((await POST(request({ event: "warranty_scan", metadata: { status: "rejected", reason: "validation" } }))).status).toBe(401);
     expect((await POST(request({ event: "page_view", metadata: { ignored: "x".repeat(17000) } }))).status).toBe(413);
     expect((await POST(request({ event: "page_view", event_id: "invalid" }))).status).toBe(400);
     expect(state.insert).not.toHaveBeenCalled();
+  });
+  it("persists only bounded validation and rejected-scan metadata for the authenticated actor", async () => {
+    expect((await POST(request({ event: "warranty_journey", metadata: {
+      stage: "validation_failed", field: "productName", step: 1, reason: "validation", outcome: "failure",
+      account_type: "consumer", value: "PRIVATE-PRODUCT", error: "PRIVATE-ERROR", file_name: "PRIVATE-FILE",
+    } }))).status).toBe(201);
+    expect(state.insert.mock.calls[0][0]).toMatchObject({ actor_id: "unit-test-authenticated-actor", metadata: {
+      stage: "validation_failed", field: "productName", step: 1, reason: "validation", outcome: "failure", account_type: "consumer",
+    } });
+    expect((await POST(request({ event: "warranty_scan", metadata: {
+      status: "rejected", reason: "validation", file_name: "PRIVATE-FILE", image: "PRIVATE-DATA",
+    } }))).status).toBe(201);
+    expect(state.insert.mock.calls[1][0].metadata).toMatchObject({ status: "rejected", reason: "validation" });
+    expect(JSON.stringify(state.insert.mock.calls)).not.toContain("PRIVATE");
   });
   it("deduplicates transport retries only for the same actor and event", async () => {
     state.insert.mockResolvedValue({ error: { code: "23505" } });
