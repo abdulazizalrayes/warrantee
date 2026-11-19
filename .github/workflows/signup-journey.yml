@@ -35,7 +35,13 @@ jobs:
         run: |
           node scripts/run-isolated-signup-journey.mjs --check
           node --test tests/isolated/contracts.test.mjs
+      - name: Prepare bounded official Ubuntu browser mirrors
+        timeout-minutes: 2
+        run: |
+          python3 scripts/prepare-ci-browser-mirrors.test.py
+          sudo --preserve-env=CI,GITHUB_ACTIONS,GITHUB_REPOSITORY,RUNNER_OS /usr/bin/python3 scripts/prepare-ci-browser-mirrors.py
       - name: Install Chromium
+        timeout-minutes: 5
         run: npx --no-install playwright install --with-deps chromium
       - name: Run actual disposable Supabase and Next journey
         run: node scripts/run-isolated-signup-journey.mjs --run
