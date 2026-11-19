@@ -2,9 +2,14 @@
 
 ## Current Handover
 
-[Current verified release evidence](OPERATIONAL_STATUS.md#current-verified-release) supersedes older handover checkpoints below. PR #48's signup-to-first-warranty fixes are deployed; do not reopen the twelve completed items or repeat a real Google collector event.
+[Current verified release evidence](OPERATIONAL_STATUS.md#current-verified-release) supersedes older handover checkpoints below. PR #51's four personal-warranty fixes and PR #52's CI mirror follow-up are deployed on the November 19 application baseline `6c99592`; post-merge CI, isolated signup and CodeQL passed. PR #48's twelve earlier signup-to-first-warranty fixes remain complete. Do not reopen completed items or repeat a real Google collector event.
 
-The owner-approved November 11 follow-up covers the admin loading effect, bounded isolated runner startup, fresh-user lifecycle verification, passive ZAP reconciliation, and handover pointers. No billing, provider activation, production QA records, or change to `ai-train=no` is included. All existing postponements remain unchanged.
+The November 19 reconciliation is limited to superseded dependency PRs, review of old PR #27, current release documentation, and read-only observation of the next scheduled security run. Scheduled production coverage is distinct from the passed isolated journey tests; do not manually dispatch or rerun it. All existing postponements remain unchanged.
+
+- Dependency PRs [#31](https://github.com/abdulazizalrayes/warrantee/pull/31) and [#33](https://github.com/abdulazizalrayes/warrantee/pull/33) were closed as superseded: current lock entries already match their proposed versions, resolved archives and integrity hashes. No dependency merge was needed.
+- Conflicting PR [#27](https://github.com/abdulazizalrayes/warrantee/pull/27) was reviewed and closed as replaced by [isolated follow-up #53](https://github.com/abdulazizalrayes/warrantee/issues/53), not as fully merged. Its runtime recovery work is already incorporated via PR #26; seven synthetic Arabic fixture/test paths from `f4eb688` remain unmerged. The source branch and commit were retained. No OCR execution, private corpus, provider activation or deferred Vision review occurred. The missing fixture assertions must not be reported as complete.
+
+The historical owner-approved November 11 follow-up covered the admin loading effect, bounded isolated runner startup, fresh-user lifecycle verification, passive ZAP reconciliation, and handover pointers. No billing, provider activation, production QA records, or change to `ai-train=no` is included.
 
 ## Current Handover - 2026-11-08
 

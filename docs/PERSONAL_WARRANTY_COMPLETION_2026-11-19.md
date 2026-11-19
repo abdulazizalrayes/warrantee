@@ -26,11 +26,16 @@
 
 ## Privacy-Safe Checks
 
-Read activity_log only for the authorized company context. Group funnel events by action and bounded metadata.stage, metadata.step, metadata.field, metadata.reason, metadata.account_type, and metadata.traffic_class. Keep synthetic/QA activity separate from prospective-customer activity. A form_opened event does not prove typing or a Next attempt; absent telemetry never proves user intent.
+Read activity_log only for the authorized company context. Group funnel events by action and bounded metadata.stage, metadata.status, metadata.step, metadata.field, metadata.reason, metadata.account_type, and metadata.traffic_class. Warranty journey events use stage; warranty_scan outcomes use status. Keep synthetic/QA activity separate from prospective-customer activity. A form_opened event does not prove typing or a Next attempt; absent telemetry never proves user intent.
 
 ## Release Evidence
 
-Pending: candidate commit, CI/isolated run URLs, screenshot review, production deployment, and live no-write checks will be recorded after completion. Production deployment is blocked until required candidate checks pass.
+- Complete: [PR #51](https://github.com/abdulazizalrayes/warrantee/pull/51) merged as `d9e8337a9e6db3c82002993ceb266c9c75b726d6`; the merge tree matched tested candidate `7df0e5df49c11ab918f5dc89e3cf81bd6ac0ca64`. Pre-release [CI](https://github.com/abdulazizalrayes/warrantee/actions/runs/44479645424) and [real isolated signup](https://github.com/abdulazizalrayes/warrantee/actions/runs/44479645320) passed. The initial CI package-download timeout and its unchanged-job retry remain documented in the PR; a retry-pass does not erase the first infrastructure failure.
+- Reviewed 252 synthetic screenshots across all seven required widths in English and Arabic, including optional fields open/closed and validation recovery. Synthetic views do not prove backend persistence; the real disposable Auth/Postgres suite supplies that separate proof.
+- [PR #52](https://github.com/abdulazizalrayes/warrantee/pull/52) changed CI installation only, not this application behavior. Its merged main `6c99592c1584639ae328eb2850f9d996facd3c0c` is Ready in deployment `dpl_FXb8ypmHnQ3eXh1gNHb6339DrrBY`, serving `warrantee.io`. All required exact-candidate checks passed before either release.
+- Post-merge [CI](https://github.com/abdulazizalrayes/warrantee/actions/runs/44507643848), [signup](https://github.com/abdulazizalrayes/warrantee/actions/runs/44507643762) and [CodeQL](https://github.com/abdulazizalrayes/warrantee/actions/runs/44507643485) completed successfully: 10 real isolated journeys, 63 actual database contracts, 246 legacy browser cases and 28 synthetic UI cases, with zero browser failures/skips/flakes. Disposable stack cleanup completed.
+- Final live verification passed 16 no-write checks and deterministic Markdown checks for all 50 canonical sitemap pages. No real prospective-user account or record was modified, and no communication was sent. External OAuth handshakes and private OCR accuracy remain outside this proof.
+- The next scheduled Production Security Gates result is separate, not implied by isolated CI. Follow [the current operational status](OPERATIONAL_STATUS.md#current-verified-release) and verify the actual E2E and QA cleanup steps without manual workflow dispatch or rerun.
 
 ## Rollback
 
