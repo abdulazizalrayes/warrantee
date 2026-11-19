@@ -23,3 +23,9 @@ An unmerged prebuilt-image candidate successfully launched Chromium but could no
 `python3 scripts/prepare-ci-browser-mirrors.test.py` exercises parsing, preservation, hostile-source rejection, environment guards and fixed-category reporting without touching system configuration. Existing full CI and real isolated signup/database gates must pass before merge.
 
 This changes ephemeral CI runner setup only. No new account, paid provider, service, subscription, secrets, production data, application code, visual content or postponed feature is introduced. Revert this CI-only change through a reviewed PR if needed; do not waive tests. Runtime and release evidence is retained in PR #52.
+
+## Completed Release Evidence
+
+[PR #52](https://github.com/abdulazizalrayes/warrantee/pull/52) merged as `6c99592c1584639ae328eb2850f9d996facd3c0c`, with a tree identical to tested candidate `c7c3f479b2ba1a44051e105766fdcf31dfa6ed85`. Candidate [CI 44505848048](https://github.com/abdulazizalrayes/warrantee/actions/runs/44505848048), [signup 44505848002](https://github.com/abdulazizalrayes/warrantee/actions/runs/44505848002), all CodeQL analyses and exact-SHA preview passed before merge. The eight offline mirror tests and sixteen isolated guard contracts passed.
+
+The automatic post-merge [CI 44507643848](https://github.com/abdulazizalrayes/warrantee/actions/runs/44507643848), [signup 44507643762](https://github.com/abdulazizalrayes/warrantee/actions/runs/44507643762) and [CodeQL 44507643485](https://github.com/abdulazizalrayes/warrantee/actions/runs/44507643485) also completed successfully. Ready deployment `dpl_FXb8ypmHnQ3eXh1gNHb6339DrrBY` serves `warrantee.io`; 16 final read-only live checks and all 50 deterministic sitemap Markdown checks passed. No manual Production Security Gates run was triggered, and those scheduled results are not claimed by this CI record.
