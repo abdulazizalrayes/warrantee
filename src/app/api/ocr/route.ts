@@ -8,6 +8,7 @@ import { extractWarrantyFields } from "@/lib/ocr/warranty-field-parser";
 import {
   hasMistralOCRConfig,
   MistralOCRRateLimitError,
+  MistralOCRSubscriptionError,
   MistralOCRUnsupportedFileError,
   recognizeDataUriWithMistral,
 } from "@/lib/ocr/mistral";
@@ -259,6 +260,13 @@ async function extractTextFromDocument(dataUri: string): Promise<OCRDocumentExtr
       if (tryMistral) return await extractTextWithMistral(dataUri, mimeType);
     } catch (error) {
       providerFallback = true;
+      if (error instanceof MistralOCRSubscriptionError) {
+        const fallback = await withTimeout(
+          extractTextFromPdfBuffer(Buffer.from(base64, "base64"), 5, { enableImageOcr: true }),
+          LOCAL_OCR_TIMEOUT_MS,
+        );
+        return { text: fallback.text, telemetry: pdfTelemetry(fallback, mimeType, true) };
+      }
       if (provider === "mistral" && !tryPaddle && !shouldTryGoogleVision() && !(error instanceof MistralOCRRateLimitError)) {
         throw new OCRServiceConfigurationError(error instanceof Error ? error.message : "Mistral OCR is unavailable.");
       }
@@ -290,6 +298,10 @@ async function extractTextFromDocument(dataUri: string): Promise<OCRDocumentExtr
       return await extractTextWithMistral(dataUri, mimeType);
     } catch (error) {
       providerFallback = true;
+      if (error instanceof MistralOCRSubscriptionError) {
+        const fallback = await withTimeout(recognizeImageDataUriWithLocalOCR(dataUri), LOCAL_OCR_TIMEOUT_MS);
+        return { text: fallback.text, telemetry: tesseractTelemetry(fallback, mimeType, true) };
+      }
       if (provider === "mistral" && !tryPaddle && !shouldTryGoogleVision() && !(error instanceof MistralOCRRateLimitError)) {
         throw new OCRServiceConfigurationError(error instanceof Error ? error.message : "Mistral OCR is unavailable.");
       }

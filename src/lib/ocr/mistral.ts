@@ -44,6 +44,13 @@ export class MistralOCRRateLimitError extends Error {
   }
 }
 
+export class MistralOCRSubscriptionError extends Error {
+  constructor() {
+    super("Mistral OCR subscription is unavailable.");
+    this.name = "MistralOCRSubscriptionError";
+  }
+}
+
 export class MistralOCRUnsupportedFileError extends Error {
   constructor(message: string) {
     super(message);
@@ -165,6 +172,7 @@ export async function recognizeBase64WithMistral(
 
     if (!response.ok) {
       if (response.status === 429) throw new MistralOCRRateLimitError();
+      if (response.status === 402) throw new MistralOCRSubscriptionError();
       const detail = payload.error?.message || payload.message || payloadText || response.statusText;
       if ([400, 401, 403].includes(response.status)) {
         throw new MistralOCRConfigurationError(`Mistral OCR configuration/auth error: ${detail}`);
