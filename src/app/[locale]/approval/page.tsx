@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
@@ -9,8 +9,9 @@ import { trackApprovalAction } from '@/lib/ga4-events';
 import { CheckCircle2, Clock, ExternalLink, FileWarning, Send } from 'lucide-react';
 import { DashboardPageShell } from '@/components/dashboard/DashboardPageShell';
 import { PageViewTracker } from '@/components/PageViewTracker';
+import { isPlatformAdminRole } from '@/lib/server/company-team';
 
-const APPROVER_ROLES = new Set(['approver', 'company_admin', 'platform_admin', 'admin', 'super_admin']);
+const COMPANY_APPROVER_ROLES = ['approver', 'company_admin', 'platform_admin'];
 
 const pageText = {
   en: {
@@ -21,6 +22,7 @@ const pageText = {
     loginRequired: 'Please log in to access approvals.',
     empty: 'No approval items found.',
     loadFailed: 'Approval data is unavailable right now. Please retry or check the environment configuration.',
+    actionFailed: 'Could not complete the action. Please retry.',
     retry: 'Retry',
     statuses: {
       all: 'All',
@@ -60,6 +62,7 @@ const pageText = {
     empty: '\u0644\u0627 \u062a\u0648\u062c\u062f \u0639\u0646\u0627\u0635\u0631 \u0644\u0644\u0645\u0648\u0627\u0641\u0642\u0629.',
     loadFailed: '\u0628\u064a\u0627\u0646\u0627\u062a \u0627\u0644\u0645\u0648\u0627\u0641\u0642\u0627\u062a \u063a\u064a\u0631 \u0645\u062a\u0627\u062d\u0629 \u062d\u0627\u0644\u064a\u064b\u0627. \u062d\u0627\u0648\u0644 \u0645\u0631\u0629 \u0623\u062e\u0631\u0649 \u0623\u0648 \u062a\u062d\u0642\u0642 \u0645\u0646 \u0625\u0639\u062f\u0627\u062f\u0627\u062a \u0627\u0644\u0628\u064a\u0626\u0629.',
     retry: '\u0625\u0639\u0627\u062f\u0629 \u0627\u0644\u0645\u062d\u0627\u0648\u0644\u0629',
+    actionFailed: '\u062a\u0639\u0630\u0631 \u0625\u0643\u0645\u0627\u0644 \u0627\u0644\u0625\u062c\u0631\u0627\u0621. \u064a\u0631\u062c\u0649 \u0625\u0639\u0627\u062f\u0629 \u0627\u0644\u0645\u062d\u0627\u0648\u0644\u0629.',
     statuses: {
       all: '\u0627\u0644\u0643\u0644',
       pending: '\u0628\u0627\u0646\u062a\u0638\u0627\u0631 \u0627\u0644\u0645\u0648\u0627\u0641\u0642\u0629',
@@ -120,8 +123,18 @@ function ApprovalPageInner() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'draft' | 'approved' | 'rejected'>('pending');
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [approvalAccess, setApprovalAccess] = useState<{ userId: string; companyIds: string[] } | null>(null);
+  const loadRequest = useRef(0);
+  const invalidateLoad = useCallback(() => { loadRequest.current++; }, []);
 
-  const canApprove = APPROVER_ROLES.has(profile?.role || '');
+  const isPlatformAdmin = isPlatformAdminRole(profile?.role);
+  const canApproveForCompany = (companyId: string | null | undefined) => Boolean(user && profile && (
+    isPlatformAdmin || (companyId && approvalAccess?.userId === user.id && approvalAccess.companyIds.includes(companyId))
+  ));
+  const canApprove = Boolean(user && profile && (isPlatformAdmin || (
+    approvalAccess?.userId === user.id && approvalAccess.companyIds.length > 0
+  )));
 
   const withView = (basePath: string) => `${basePath}${basePath.includes('?') ? '&' : '?'}view=${viewMode}`;
 
@@ -135,22 +148,40 @@ function ApprovalPageInner() {
 
   const fetchItems = useCallback(async () => {
     if (!user) return;
+    const request = ++loadRequest.current;
     setLoading(true);
     setLoadError(null);
+    setApprovalAccess(null);
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 8000);
 
     try {
+      let companyIds: string[] = [];
+      if (profile && !isPlatformAdmin) {
+        const { data: memberships, error: membershipError } = await supabase
+          .from('company_members')
+          .select('company_id')
+          .eq('user_id', user.id)
+          .eq('is_active', true)
+          .in('role', COMPANY_APPROVER_ROLES)
+          .abortSignal(controller.signal);
+        if (membershipError) throw membershipError;
+        companyIds = [...new Set<string>((memberships || []).map((membership: { company_id: string }) => membership.company_id))];
+      }
+
       let query = supabase
         .from('warranties')
-        .select('id, reference_number, product_name, product_name_ar, status, created_at, seller_name, issuer_user_id, created_by')
+        .select('id, reference_number, product_name, product_name_ar, status, created_at, seller_name, issuer_user_id, created_by, issuer_company_id')
         .order('created_at', { ascending: false })
         .limit(100)
         .abortSignal(controller.signal);
 
-      if (!canApprove) {
-        query = query.or(`issuer_user_id.eq.${user.id},created_by.eq.${user.id}`);
+      if (!isPlatformAdmin) {
+        query = query.or([
+          `issuer_user_id.eq.${user.id}`, `created_by.eq.${user.id}`,
+          ...(companyIds.length ? [`issuer_company_id.in.(${companyIds.join(',')})`] : []),
+        ].join(','));
       }
 
       const { data, error } = await query;
@@ -159,16 +190,19 @@ function ApprovalPageInner() {
         throw error;
       }
 
+      if (request !== loadRequest.current) return;
+      setApprovalAccess({ userId: user.id, companyIds });
       setAllItems(data || []);
-    } catch (error) {
-      console.error('Failed to load approval items', error);
+    } catch {
+      if (request !== loadRequest.current) return;
+      setApprovalAccess(null);
       setAllItems([]);
       setLoadError(t.loadFailed);
     } finally {
       clearTimeout(timeout);
-      setLoading(false);
+      if (request === loadRequest.current) setLoading(false);
     }
-  }, [canApprove, supabase, t.loadFailed, user]);
+  }, [isPlatformAdmin, profile, supabase, t.loadFailed, user]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -176,25 +210,30 @@ function ApprovalPageInner() {
       setLoading(false);
       setAllItems([]);
       setLoadError(null);
+      setApprovalAccess(null);
       return;
     }
     fetchItems();
-  }, [authLoading, user, profile?.role, statusFilter, fetchItems]);
+    return invalidateLoad;
+  }, [authLoading, user, fetchItems, invalidateLoad]);
 
-  const approveItem = async (id: string) => {
-    setProcessingId(id);
-    await fetch(`/api/warranties/${id}/approve`, { method: 'POST' });
-    trackApprovalAction('approve', { warranty_id: id, view_mode: viewMode });
-    setProcessingId(null);
-    fetchItems();
-  };
-
-  const submitItem = async (id: string) => {
-    setProcessingId(id);
-    await fetch(`/api/warranties/${id}/submit`, { method: 'POST' });
-    trackApprovalAction('submit', { warranty_id: id, view_mode: viewMode });
-    setProcessingId(null);
-    fetchItems();
+  const performAction = async (item: any, action: 'approve' | 'submit') => {
+    if (processingId !== null || !user) return;
+    if (action === 'approve' && (!canApproveForCompany(item.issuer_company_id) || item.status !== 'pending_approval')) return;
+    if (action === 'submit' && (item.status !== 'draft' || (item.created_by !== user.id && item.issuer_user_id !== user.id))) return;
+    setProcessingId(item.id);
+    setActionError(null);
+    try {
+      const response = await fetch(`/api/warranties/${item.id}/${action}`, { method: 'POST' });
+      if (!response.ok) throw new Error('Approval action failed');
+      trackApprovalAction(action, { warranty_id: item.id, view_mode: viewMode });
+      await fetchItems();
+    } catch {
+      setActionError(t.actionFailed);
+      await fetchItems();
+    } finally {
+      setProcessingId(null);
+    }
   };
 
   const visibleItems = useMemo(() => {
@@ -290,9 +329,9 @@ function ApprovalPageInner() {
       >
       <div className="space-y-6">
 
-      {loadError ? (
-        <div className="rounded-2xl border border-[#fed7aa] bg-[#fff7ed] px-5 py-4 text-sm text-[#9a3412]">
-          {loadError}
+      {loadError || actionError ? (
+        <div role="alert" className="rounded-2xl border border-[#fed7aa] bg-[#fff7ed] px-5 py-4 text-sm text-[#9a3412]">
+          {loadError || actionError}
         </div>
       ) : null}
 
@@ -362,10 +401,10 @@ function ApprovalPageInner() {
                     {t.actions.open}
                   </Link>
 
-                  {canApprove && item.status === 'pending_approval' && (
+                  {canApproveForCompany(item.issuer_company_id) && item.status === 'pending_approval' && (
                     <button
-                      onClick={() => approveItem(item.id)}
-                      disabled={processingId === item.id}
+                      onClick={() => performAction(item, 'approve')}
+                      disabled={processingId !== null}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#e8faf0] text-[#1a7d42] text-xs font-medium hover:bg-[#d8f5e5] transition disabled:opacity-60"
                     >
                       <CheckCircle2 className="w-3.5 h-3.5" />
@@ -373,10 +412,10 @@ function ApprovalPageInner() {
                     </button>
                   )}
 
-                  {!canApprove && item.status === 'draft' && (
+                  {item.status === 'draft' && (item.created_by === user.id || item.issuer_user_id === user.id) && (
                     <button
-                      onClick={() => submitItem(item.id)}
-                      disabled={processingId === item.id}
+                      onClick={() => performAction(item, 'submit')}
+                      disabled={processingId !== null}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#fff8e6] text-[#a06800] text-xs font-medium hover:bg-[#fff2d1] transition disabled:opacity-60"
                     >
                       {processingId === item.id ? <Clock className="w-3.5 h-3.5" /> : <Send className="w-3.5 h-3.5" />}
