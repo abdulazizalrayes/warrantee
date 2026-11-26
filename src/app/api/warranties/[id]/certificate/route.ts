@@ -5,6 +5,7 @@ import { escapeHtml } from "@/lib/html-escape";
 import QRCode from "qrcode";
 import { createCertificateStyleCsp, withCertificateCsp } from "@/lib/certificate-style-csp";
 import { contentSecurityPolicy } from "@/lib/csp-policy.mjs";
+import { PUBLIC_WARRANTY_STATUSES } from "@/lib/public-warranty";
 
 export const GET = withCertificateCsp(handleGet);
 
@@ -53,6 +54,13 @@ async function handleGet(
 
   if (!resolvedWarranty) {
     return NextResponse.json({ error: "Warranty not found" }, { status: 404 });
+  }
+
+  if (!PUBLIC_WARRANTY_STATUSES.some((status) => status === resolvedWarranty.status)) {
+    return NextResponse.json({ error: "Certificate unavailable" }, {
+      status: 409,
+      headers: { "Cache-Control": "private, no-store" },
+    });
   }
 
   const warranty_data = resolvedWarranty;

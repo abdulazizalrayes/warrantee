@@ -7,6 +7,7 @@ import { escapeHtml } from "@/lib/html-escape";
 import { certificateRateLimit, getClientIp, getRateLimitHeaders } from "@/lib/rate-limit";
 import { isValidUUID } from "@/lib/validation";
 import { createCertificateStyleCsp, withCertificateCsp } from "@/lib/certificate-style-csp";
+import { PUBLIC_WARRANTY_STATUSES } from "@/lib/public-warranty";
 
 export const POST = withCertificateCsp(handlePost);
 
@@ -171,6 +172,13 @@ async function handlePost(request: Request) {
 
     if (wError || !warranty) {
       return NextResponse.json({ error: "Warranty not found" }, { status: 404 });
+    }
+
+    if (!PUBLIC_WARRANTY_STATUSES.some((status) => status === warranty.status)) {
+      return NextResponse.json({ error: "Certificate unavailable" }, {
+        status: 409,
+        headers: { "Cache-Control": "private, no-store" },
+      });
     }
 
     const certNumber = warranty.certificate_number || generateCertificateNumber();
