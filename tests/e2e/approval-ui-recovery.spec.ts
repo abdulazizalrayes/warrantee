@@ -2,6 +2,8 @@ import { createServer, type Server } from 'node:http';
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
 
 // Synthetic rendered UI only: no real authentication, approval or persistence.
+// approval_action is not a server-funnel event. Analytics call ordering is
+// covered by approval-path.test.ts; this no-consent fixture must send none.
 const enabled = process.env.WARRANTEE_SYNTHETIC_UI_E2E === '1';
 const backend = 'http://127.0.0.1:54321';
 const userId = '11111111-1111-4111-8111-111111111111';
@@ -152,11 +154,12 @@ test.describe('synthetic approval UI recovery (NOT auth or persistence proof)', 
         await expect(approve).toBeEnabled();
         expect(successEvents(page)).toEqual([]);
         await mockAction(page, 'approve', 200);
+        const acknowledgement = actionResponse(page, 'approve');
         await approve.click();
-        await expect.poll(() => successEvents(page).length).toBe(1);
-        expect(successEvents(page)[0].metadata.action).toBe('approve');
+        expect(await (await acknowledgement).json()).toEqual({ success: true, status: 'active' });
         await expect(approve).toHaveCount(0);
         await expect(actionAlert(page)).toHaveCount(0);
+        expect(successEvents(page)).toEqual([]);
         expect(attempts.get(page)).toHaveLength(2);
       });
     }
@@ -166,9 +169,11 @@ test.describe('synthetic approval UI recovery (NOT auth or persistence proof)', 
       await mockAction(page, 'submit', 200);
       await page.goto(`/en/approval${view === 'detail' ? `/${warrantyId}` : ''}?view=seller`);
       if (view === 'queue') await page.getByRole('button', { name: 'Draft', exact: true }).click();
+      const acknowledgement = actionResponse(page, 'submit');
       await page.getByRole('button', { name: 'Submit for approval', exact: true }).click();
-      await expect.poll(() => successEvents(page).length).toBe(1);
-      expect(successEvents(page)[0].metadata.action).toBe('submit');
+      expect(await (await acknowledgement).json()).toEqual({ success: true, status: 'pending_approval' });
+      await expect(page.getByRole('button', { name: 'Submit for approval', exact: true })).toHaveCount(0);
+      expect(successEvents(page)).toEqual([]);
       expect(attempts.get(page)).toEqual(['submit']);
     });
 
@@ -227,6 +232,10 @@ function errorLabel(locale: 'en' | 'ar') {
 }
 function successEvents(page: Page) { return events.get(page)!.filter(event => event.event === 'approval_action'); }
 function actionAlert(page: Page) { return page.locator('main [role="alert"]:not(#__next-route-announcer__)'); }
+function actionResponse(page: Page, action: string) {
+  return page.waitForResponse(response => new URL(response.url()).pathname === `/api/warranties/${warrantyId}/${action}`
+    && response.request().method() === 'POST' && response.status() === 200);
+}
 async function mockAction(page: Page, action: string, outcome: number | 'network', change?: () => void) {
   const pattern = `**/api/warranties/${warrantyId}/${action}`;
   await page.unroute(pattern);
@@ -237,7 +246,7 @@ async function mockAction(page: Page, action: string, outcome: number | 'network
     if (outcome === 'network') return route.abort('failed');
     if (outcome === 200) status = action === 'submit' ? 'pending_approval' : 'active'; // Ephemeral fixture state only.
     return route.fulfill({ status: outcome, contentType: 'application/json',
-      body: JSON.stringify(outcome === 200 ? { success: true, status: 'active' } : { error: 'Synthetic private failure: never display' }) });
+      body: JSON.stringify(outcome === 200 ? { success: true, status } : { error: 'Synthetic private failure: never display' }) });
   });
 }
 

@@ -54,6 +54,12 @@ mobile navigation was included in page-content geometry and Next's route
 announcer matched the action-alert locator. Retain that failed attempt; correct
 the fixture selectors without removing visible-control or width assertions,
 then require a new complete run before release.
+The initial hosted synthetic lane also failed because the new test expected
+`approval_action` in the first-party funnel despite disabled Google consent;
+that event is not a server-funnel event. The corrected browser fixture checks
+the acknowledged mock response, refreshed controls and zero analytics sends;
+focused component tests independently verify success-only analytics call order.
+No production analytics behavior or consent policy was changed.
 
 Record exact final candidate, CI, deployment and live evidence in the release
 PR closeout. Do not manually dispatch or rerun Production Security Gates; its
