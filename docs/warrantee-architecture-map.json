@@ -648,6 +648,7 @@
       "code_refs": [
         "src/app/api/certificates/generate/route.ts",
         "src/app/api/warranties/[id]/certificate/route.ts",
+        "src/lib/certificate-eligibility.ts",
         "src/lib/qr-code.ts"
       ]
     },

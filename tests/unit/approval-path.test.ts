@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { isValidElement, type ReactNode } from 'react';
 
 type Row = Record<string, unknown>;
-type Query = { table: string; filters: [string, ...unknown[]][]; single: boolean };
+type Query = { table: string; select?: string; filters: [string, ...unknown[]][]; single: boolean };
 const fixture = vi.hoisted(() => ({
   hooks: [] as unknown[], cursor: 0,
   effects: [] as { run: () => void | (() => void); deps: unknown[] }[],
@@ -51,7 +51,7 @@ const client = { from(table: string) {
   const query: Query = { table, filters: [], single: false };
   fixture.reads.push(query);
   const builder = {
-    select() { return builder; }, order() { return builder; }, limit() { return builder; },
+    select(value: string) { query.select = value; return builder; }, order() { return builder; }, limit() { return builder; },
     eq(...args: unknown[]) { query.filters.push(['eq', ...args]); return builder; },
     in(...args: unknown[]) { query.filters.push(['in', ...args]); return builder; },
     or(...args: unknown[]) { query.filters.push(['or', ...args]); return builder; },
@@ -69,7 +69,7 @@ import Queue from '../../src/app/[locale]/approval/page';
 import Detail from '../../src/app/[locale]/approval/[id]/page';
 
 type Kind = 'queue' | 'detail';
-type Props = { children?: ReactNode; actions?: ReactNode; onClick?: () => Promise<void> | void; onChange?: (event: unknown) => void; disabled?: boolean; role?: string };
+type Props = { children?: ReactNode; actions?: ReactNode; onClick?: () => Promise<void> | void; onChange?: (event: unknown) => void; disabled?: boolean; role?: string; href?: string };
 let mounted: { deps: unknown[]; cleanup: void | (() => void) }[] = [];
 function render(kind: Kind) {
   fixture.cursor = 0;
@@ -294,3 +294,24 @@ it.each(['queue', 'detail'] as const)('%s renders localized Arabic failure copy'
   expect(text(render(kind))).toContain('\u062a\u0639\u0630\u0631 \u0625\u0643\u0645\u0627\u0644 \u0627\u0644\u0625\u062c\u0631\u0627\u0621.');
   expect(fixture.analytics).not.toHaveBeenCalled();
 });
+
+for (const locale of ['en', 'ar']) {
+  it.each([
+    ['pending_approval', null, false], ['draft', null, false], ['rejected', null, false],
+    ['cancelled', null, false], ['cancelled', 'not-a-date', false],
+    ['active', null, true], ['claimed', null, true], ['expired', null, true], ['renewed', null, true],
+    ['cancelled', '2026-11-26T00:00:00Z', true],
+  ] as const)(`${locale}: certificate field eligibility for %s with approval %s is %s`, async (status, approved_at, eligible) => {
+    fixture.locale = locale;
+    fixture.rows = [row({ status, approved_at })];
+    const view = await load('detail');
+    const links = elements(view).filter(element => element.type === 'a'
+      && element.props.href === '/api/warranties/synthetic-warranty/certificate');
+    expect(links).toHaveLength(eligible ? 1 : 0);
+    const fieldLabel = locale === 'en' ? 'Certificate Preview' : '\u0645\u0639\u0627\u064a\u0646\u0629 \u0627\u0644\u0634\u0647\u0627\u062f\u0629';
+    expect(text(view).includes(fieldLabel)).toBe(eligible);
+    expect(fixture.reads.find(query => query.table === 'warranties')?.select?.split(', ')).toContain('approved_at');
+    expect(fixture.action).not.toHaveBeenCalled();
+    expect(fixture.analytics).not.toHaveBeenCalled();
+  });
+}

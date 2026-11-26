@@ -39,6 +39,8 @@ schema migration, redesign or postponed initiative is included.
   uses cancelled, so cancelled records require a valid approval timestamp;
   old certificate metadata alone is not proof of issuance. Existing eligible
   issued/expired states retain certificate access under existing authorization.
+  The approval detail's certificate link uses the same shared eligibility rule,
+  preventing a pending/draft preview link from pointing at an intentional 409.
 
 ## Verification And Release Contract
 

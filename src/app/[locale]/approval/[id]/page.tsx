@@ -11,6 +11,7 @@ import { DashboardPageShell } from '@/components/dashboard/DashboardPageShell';
 import { PageViewTracker } from '@/components/PageViewTracker';
 import { buildDocumentDownloadHref } from '@/lib/documents';
 import { isPlatformAdminRole } from '@/lib/server/company-team';
+import { canRenderIssuedCertificate } from '@/lib/certificate-eligibility';
 
 const COMPANY_APPROVER_ROLES = ['approver', 'company_admin', 'platform_admin'];
 
@@ -145,7 +146,7 @@ function ApprovalDetailPageInner() {
     try {
       const { data: warrantyData, error: warrantyError } = await supabase
         .from('warranties')
-        .select('id, reference_number, product_name, product_name_ar, status, created_at, seller_name, created_by, issuer_user_id, issuer_company_id')
+        .select('id, reference_number, product_name, product_name_ar, status, approved_at, created_at, seller_name, created_by, issuer_user_id, issuer_company_id')
         .eq('id', itemId)
         .single();
       if (warrantyError) throw warrantyError;
@@ -330,7 +331,7 @@ function ApprovalDetailPageInner() {
                 <p className="text-[#86868b]">{t.labels.submittedBy}</p>
                 <p className="text-[#1d1d1f] font-medium mt-1">{warranty.seller_name || '—'}</p>
               </div>
-              <div>
+              {canRenderIssuedCertificate(warranty) && <div>
                 <p className="text-[#86868b]">{t.labels.certificate}</p>
                 <a
                   href={`/api/warranties/${itemId}/certificate`}
@@ -341,7 +342,7 @@ function ApprovalDetailPageInner() {
                   <ExternalLink className="w-3.5 h-3.5" />
                   {t.actions.openCertificate}
                 </a>
-              </div>
+              </div>}
             </div>
           </div>
 

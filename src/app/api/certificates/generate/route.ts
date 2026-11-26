@@ -7,7 +7,7 @@ import { escapeHtml } from "@/lib/html-escape";
 import { certificateRateLimit, getClientIp, getRateLimitHeaders } from "@/lib/rate-limit";
 import { isValidUUID } from "@/lib/validation";
 import { createCertificateStyleCsp, withCertificateCsp } from "@/lib/certificate-style-csp";
-import { PUBLIC_WARRANTY_STATUSES } from "@/lib/public-warranty";
+import { canRenderIssuedCertificate } from "@/lib/certificate-eligibility";
 
 export const POST = withCertificateCsp(handlePost);
 
@@ -174,10 +174,7 @@ async function handlePost(request: Request) {
       return NextResponse.json({ error: "Warranty not found" }, { status: 404 });
     }
 
-    // Rejection also uses cancelled, so that state alone does not prove issuance.
-    const unissuedCancellation = warranty.status === "cancelled"
-      && (typeof warranty.approved_at !== "string" || !Number.isFinite(Date.parse(warranty.approved_at)));
-    if (unissuedCancellation || !PUBLIC_WARRANTY_STATUSES.some((status) => status === warranty.status)) {
+    if (!canRenderIssuedCertificate(warranty)) {
       return NextResponse.json({ error: "Certificate unavailable" }, {
         status: 409,
         headers: { "Cache-Control": "private, no-store" },
