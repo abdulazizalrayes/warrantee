@@ -76,7 +76,7 @@
       "migration_files": 70,
       "scheduled_jobs": 3,
       "github_workflows": 5,
-      "e2e_spec_files": 13
+      "e2e_spec_files": 14
     }
   },
   "layers": [
@@ -346,7 +346,7 @@
       "layer": "experience",
       "kind": "web_surface",
       "status": "active",
-      "responsibility": "Approver queue and warranty review screens.",
+      "responsibility": "Approver queue and warranty review screens. Existing actions are bound to active approver membership for the warranty issuer company or platform administration; failed requests restore controls without emitting success analytics.",
       "code_refs": [
         "src/app/[locale]/approval/page.tsx",
         "src/app/[locale]/approval/[id]/page.tsx"
@@ -629,7 +629,7 @@
       "layer": "domain",
       "kind": "document_intelligence",
       "status": "active_with_external_validation_gap",
-      "responsibility": "Extract embedded PDF text or run Mistral-first OCR with opt-in self-hosted PaddleOCR plus local fallbacks, classify OCR output as untrusted before action, then parse warranty fields.",
+      "responsibility": "Extract embedded PDF text or run Mistral-first OCR with opt-in self-hosted PaddleOCR plus local fallbacks. Mistral subscription failures recover directly through bundled local engines without contacting another hosted provider. Classify OCR output as untrusted before action, then parse warranty fields.",
       "code_refs": [
         "src/app/api/ocr/route.ts",
         "src/lib/ingestion/ocr-pipeline.ts",
@@ -644,10 +644,11 @@
       "layer": "domain",
       "kind": "domain_service",
       "status": "active",
-      "responsibility": "Generate bilingual certificates, hashes, QR references, and public proof artifacts.",
+      "responsibility": "Generate bilingual certificates, hashes, QR references, and public proof artifacts only for eligible issued warranty states. Pending/draft records and cancelled records without approval evidence are denied before rendering or metadata/storage writes; authorization and legacy issued/expired access remain enforced.",
       "code_refs": [
         "src/app/api/certificates/generate/route.ts",
         "src/app/api/warranties/[id]/certificate/route.ts",
+        "src/lib/certificate-eligibility.ts",
         "src/lib/qr-code.ts"
       ]
     },

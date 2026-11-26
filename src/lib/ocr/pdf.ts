@@ -13,6 +13,25 @@ type PdfExtractionOptions = {
   enableImageOcr?: boolean;
 };
 
+// PDF.js temporary canvases must share the target canvas's native implementation.
+// Passing opaque canvases between different Skia bindings can crash the process.
+class LocalCanvasFactory {
+  create(width: number, height: number) {
+    const canvas = createCanvas(width, height);
+    return { canvas, context: canvas.getContext("2d") };
+  }
+
+  reset(target: ReturnType<LocalCanvasFactory["create"]>, width: number, height: number) {
+    target.canvas.width = width;
+    target.canvas.height = height;
+  }
+
+  destroy(target: ReturnType<LocalCanvasFactory["create"]>) {
+    target.canvas.width = 0;
+    target.canvas.height = 0;
+  }
+}
+
 async function loadPdfJs() {
   return import("pdfjs-dist/legacy/build/pdf.mjs");
 }
@@ -33,6 +52,7 @@ export async function extractTextFromPdfBuffer(
     disableWorker: true,
     useWorkerFetch: false,
     isEvalSupported: false,
+    CanvasFactory: LocalCanvasFactory,
     standardFontDataUrl: resolvePdfStandardFontDataUrl(),
   } as any);
 

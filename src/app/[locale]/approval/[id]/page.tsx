@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
@@ -10,8 +10,10 @@ import { CheckCircle2, ExternalLink, FileText, Send, XCircle } from 'lucide-reac
 import { DashboardPageShell } from '@/components/dashboard/DashboardPageShell';
 import { PageViewTracker } from '@/components/PageViewTracker';
 import { buildDocumentDownloadHref } from '@/lib/documents';
+import { isPlatformAdminRole } from '@/lib/server/company-team';
+import { canRenderIssuedCertificate } from '@/lib/certificate-eligibility';
 
-const APPROVER_ROLES = new Set(['approver', 'company_admin', 'platform_admin', 'admin', 'super_admin']);
+const COMPANY_APPROVER_ROLES = ['approver', 'company_admin', 'platform_admin'];
 
 const detailText = {
   en: {
@@ -19,6 +21,8 @@ const detailText = {
     loading: 'Loading warranty details...',
     loginRequired: 'Please log in to view this approval item.',
     notFound: 'Warranty not found.',
+    actionFailed: 'Could not complete the action. Please retry.',
+    loadFailed: 'Approval data is unavailable right now. Please retry or check the environment configuration.',
     labels: {
       product: 'Product',
       reference: 'Reference',
@@ -55,6 +59,8 @@ const detailText = {
     loading: '\u062c\u0627\u0631\u064a \u062a\u062d\u0645\u064a\u0644 \u0627\u0644\u062a\u0641\u0627\u0635\u064a\u0644...',
     loginRequired: '\u064a\u0631\u062c\u0649 \u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062f\u062e\u0648\u0644 \u0644\u0639\u0631\u0636 \u0647\u0630\u0627 \u0627\u0644\u0639\u0646\u0635\u0631.',
     notFound: '\u0627\u0644\u0636\u0645\u0627\u0646 \u063a\u064a\u0631 \u0645\u0648\u062c\u0648\u062f.',
+    actionFailed: '\u062a\u0639\u0630\u0631 \u0625\u0643\u0645\u0627\u0644 \u0627\u0644\u0625\u062c\u0631\u0627\u0621. \u064a\u0631\u062c\u0649 \u0625\u0639\u0627\u062f\u0629 \u0627\u0644\u0645\u062d\u0627\u0648\u0644\u0629.',
+    loadFailed: '\u0628\u064a\u0627\u0646\u0627\u062a \u0627\u0644\u0645\u0648\u0627\u0641\u0642\u0627\u062a \u063a\u064a\u0631 \u0645\u062a\u0627\u062d\u0629 \u062d\u0627\u0644\u064a\u064b\u0627. \u062d\u0627\u0648\u0644 \u0645\u0631\u0629 \u0623\u062e\u0631\u0649 \u0623\u0648 \u062a\u062d\u0642\u0642 \u0645\u0646 \u0625\u0639\u062f\u0627\u062f\u0627\u062a \u0627\u0644\u0628\u064a\u0626\u0629.',
     labels: {
       product: '\u0627\u0644\u0645\u0646\u062a\u062c',
       reference: '\u0627\u0644\u0645\u0631\u062c\u0639',
@@ -118,65 +124,111 @@ function ApprovalDetailPageInner() {
   const [documents, setDocuments] = useState<any[]>([]);
   const [rejectReason, setRejectReason] = useState('');
   const [actionState, setActionState] = useState<'approve' | 'reject' | 'submit' | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [approvalAccess, setApprovalAccess] = useState<{ userId: string; itemId: string; allowed: boolean } | null>(null);
+  const loadRequest = useRef(0);
+  const invalidateLoad = useCallback(() => { loadRequest.current++; }, []);
 
-  const canApprove = APPROVER_ROLES.has(profile?.role || '');
+  const canApprove = Boolean(user && profile && approvalAccess?.userId === user.id && approvalAccess.itemId === itemId && approvalAccess.allowed);
+  const isPlatformAdmin = isPlatformAdminRole(profile?.role);
+  const canSubmit = Boolean(user && warranty && (warranty.created_by === user.id || warranty.issuer_user_id === user.id));
 
   const withView = (basePath: string) => `${basePath}${basePath.includes('?') ? '&' : '?'}view=${viewMode}`;
 
   const loadData = useCallback(async () => {
     if (!user || !itemId) return;
+    const request = ++loadRequest.current;
     setLoading(true);
+    setLoadError(null);
+    setApprovalAccess(null);
 
-    const { data: warrantyData } = await supabase
-      .from('warranties')
-      .select('id, reference_number, product_name, product_name_ar, status, created_at, seller_name, created_by')
-      .eq('id', itemId)
-      .single();
+    try {
+      const { data: warrantyData, error: warrantyError } = await supabase
+        .from('warranties')
+        .select('id, reference_number, product_name, product_name_ar, status, approved_at, created_at, seller_name, created_by, issuer_user_id, issuer_company_id')
+        .eq('id', itemId)
+        .single();
+      if (warrantyError) throw warrantyError;
 
-    setWarranty(warrantyData || null);
+      let allowed = Boolean(profile && isPlatformAdmin);
+      if (profile && !isPlatformAdmin && warrantyData?.issuer_company_id) {
+        const { data: membership, error: membershipError } = await supabase
+          .from('company_members')
+          .select('id')
+          .eq('company_id', warrantyData.issuer_company_id)
+          .eq('user_id', user.id)
+          .eq('is_active', true)
+          .in('role', COMPANY_APPROVER_ROLES)
+          .limit(1)
+          .maybeSingle();
+        if (membershipError) throw membershipError;
+        allowed = Boolean(membership);
+      }
 
-    const { data: docs } = await supabase
-      .from('warranty_documents')
-      .select('id, file_name, file_type, file_size, file_url, created_at')
-      .eq('warranty_id', itemId)
-      .order('created_at', { ascending: false });
-    setDocuments(docs || []);
-
-    setLoading(false);
-  }, [itemId, supabase, user]);
+      const { data: docs, error: documentError } = await supabase
+        .from('warranty_documents')
+        .select('id, file_name, file_type, file_size, file_url, created_at')
+        .eq('warranty_id', itemId)
+        .order('created_at', { ascending: false });
+      if (documentError) throw documentError;
+      if (request !== loadRequest.current) return;
+      setApprovalAccess({ userId: user.id, itemId, allowed });
+      setWarranty(warrantyData || null);
+      setDocuments(docs || []);
+    } catch {
+      if (request !== loadRequest.current) return;
+      setApprovalAccess(null);
+      setWarranty(null);
+      setDocuments([]);
+      setLoadError(t.loadFailed);
+    } finally {
+      if (request === loadRequest.current) setLoading(false);
+    }
+  }, [isPlatformAdmin, itemId, profile, supabase, t.loadFailed, user]);
 
   useEffect(() => {
     if (authLoading) return;
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      setApprovalAccess(null);
+      setWarranty(null);
+      return;
+    }
     loadData();
-  }, [authLoading, user, loadData]);
+    return invalidateLoad;
+  }, [authLoading, user, loadData, invalidateLoad]);
 
   const performAction = async (action: 'approve' | 'reject' | 'submit') => {
-    if (!itemId) return;
+    if (!itemId || actionState !== null) return;
+    if (action !== 'submit' && (!canApprove || warranty?.status !== 'pending_approval')) return;
+    if (action === 'submit' && (!canSubmit || warranty?.status !== 'draft')) return;
     if (action === 'reject' && !rejectReason.trim()) return;
 
     setActionState(action);
+    setActionError(null);
 
-    if (action === 'approve') {
-      await fetch(`/api/warranties/${itemId}/approve`, { method: 'POST' });
-    } else if (action === 'reject') {
-      await fetch(`/api/warranties/${itemId}/reject`, {
+    try {
+      const response = await fetch(`/api/warranties/${itemId}/${action}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reason: rejectReason.trim() }),
+        ...(action === 'reject' ? {
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reason: rejectReason.trim() }),
+        } : {}),
       });
-    } else {
-      await fetch(`/api/warranties/${itemId}/submit`, { method: 'POST' });
+      if (!response.ok) throw new Error('Approval action failed');
+      trackApprovalAction(action, {
+        warranty_id: itemId,
+        status_before: warranty?.status,
+        view_mode: viewMode,
+      });
+      await loadData();
+    } catch {
+      setActionError(t.actionFailed);
+      await loadData();
+    } finally {
+      setActionState(null);
     }
-
-    trackApprovalAction(action, {
-      warranty_id: itemId,
-      status_before: warranty?.status,
-      view_mode: viewMode,
-    });
-
-    setActionState(null);
-    loadData();
   };
 
   if (authLoading || loading) {
@@ -201,7 +253,7 @@ function ApprovalDetailPageInner() {
   if (!warranty) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center text-[#86868b]" dir={isRTL ? 'rtl' : 'ltr'}>
-        {t.notFound}
+        <p role={loadError || actionError ? 'alert' : undefined}>{loadError || actionError || t.notFound}</p>
       </div>
     );
   }
@@ -249,6 +301,12 @@ function ApprovalDetailPageInner() {
       >
       <div className="space-y-6">
 
+      {loadError || actionError ? (
+        <div role="alert" className="rounded-2xl border border-[#fed7aa] bg-[#fff7ed] px-5 py-4 text-sm text-[#9a3412]">
+          {loadError || actionError}
+        </div>
+      ) : null}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           <div className="bg-white rounded-2xl ring-1 ring-[#d2d2d7]/40 shadow-sm p-6">
@@ -273,7 +331,7 @@ function ApprovalDetailPageInner() {
                 <p className="text-[#86868b]">{t.labels.submittedBy}</p>
                 <p className="text-[#1d1d1f] font-medium mt-1">{warranty.seller_name || '—'}</p>
               </div>
-              <div>
+              {canRenderIssuedCertificate(warranty) && <div>
                 <p className="text-[#86868b]">{t.labels.certificate}</p>
                 <a
                   href={`/api/warranties/${itemId}/certificate`}
@@ -284,7 +342,7 @@ function ApprovalDetailPageInner() {
                   <ExternalLink className="w-3.5 h-3.5" />
                   {t.actions.openCertificate}
                 </a>
-              </div>
+              </div>}
             </div>
           </div>
 
@@ -345,7 +403,7 @@ function ApprovalDetailPageInner() {
             </div>
           )}
 
-          {!canApprove && warranty.status === 'draft' && (
+          {canSubmit && warranty.status === 'draft' && (
             <div className="bg-white rounded-2xl ring-1 ring-[#d2d2d7]/40 shadow-sm p-5">
               <button
                 onClick={() => performAction('submit')}

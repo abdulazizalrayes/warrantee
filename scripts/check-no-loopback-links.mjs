@@ -37,6 +37,7 @@ const allowlist = [
     ["tests/isolated/supabase.toml", ["127.0.0.1"]],
     ["tests/isolated/helpers.ts", ["127.0.0.1"]],
     ["tests/e2e/signup-ui-recovery.spec.ts", ["127.0.0.1"]],
+    ["tests/e2e/approval-ui-recovery.spec.ts", ["127.0.0.1"]],
   ].map(([file, permitted]) => ({
     file,
     patterns: new Set(permitted),

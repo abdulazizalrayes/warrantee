@@ -75,7 +75,7 @@ export default defineConfig({
       name: "chromium",
       ...(isolatedRegression ? {
         testMatch: [...regressionSpecs, "release-regression.spec.ts"],
-      } : syntheticUI ? { testMatch: "signup-ui-recovery.spec.ts" } : {}),
+      } : syntheticUI ? { testMatch: ["signup-ui-recovery.spec.ts", "approval-ui-recovery.spec.ts"] } : {}),
       use: {
         ...devices["Desktop Chrome"],
         userAgent: `${qaUserAgentPrefix} ${devices["Desktop Chrome"].userAgent}`,

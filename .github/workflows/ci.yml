@@ -78,7 +78,8 @@ jobs:
           sudo --preserve-env=CI,GITHUB_ACTIONS,GITHUB_REPOSITORY,RUNNER_OS /usr/bin/python3 scripts/prepare-ci-browser-mirrors.py
 
       - name: Install Playwright browsers
-        timeout-minutes: 5
+        # All three engines need more APT packages than the Chromium-only lanes.
+        timeout-minutes: 10
         run: npx --no-install playwright install --with-deps chromium firefox webkit
 
       - name: Test
