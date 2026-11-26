@@ -8,6 +8,8 @@ const mocks = vi.hoisted(() => ({
   row: {} as Record<string, unknown> | null,
   failure: false,
   limited: false,
+  lookupMisses: 0,
+  matchLookup: false,
   calls: [] as Array<[string, ...unknown[]]>,
   create: vi.fn(),
   qr: vi.fn(),
@@ -28,6 +30,7 @@ vi.mock("@/lib/rate-limit", () => ({
 import { POST } from "../../src/app/api/certificates/generate/route";
 import { GET as privateGet } from "../../src/app/api/warranties/[id]/certificate/route";
 import { GET as publicGet } from "../../src/app/api/v1/warranties/verify/[id]/certificate/route";
+import { GET as publicLookup } from "../../src/app/api/v1/warranties/verify/route";
 
 const id = "00000000-0000-4000-8000-000000000001";
 const pixel = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=";
@@ -52,7 +55,7 @@ function fixture(locale: Locale) {
     id, language: locale, status: "active", certificate_number: "SYNTHETIC-CERT-001",
     product_name: "Synthetic industrial pump", product_name_ar: "مضخة صناعية تجريبية",
     reference_number: "SYNTHETIC-REF-001", serial_number: "SYNTHETIC-SECRET-1234",
-    start_date: "2026-01-01", end_date: "2099-12-31", category: "Synthetic equipment",
+    start_date: "2026-01-01", end_date: "2099-12-31", created_at: "2026-01-02T03:04:05Z", category: "Synthetic equipment",
     seller_name: "Synthetic Supplier", companies: { name: "Synthetic Company" },
     customer_name: "SYNTHETIC-PRIVATE-NAME", customer_email: "synthetic-private@example.invalid",
     user_id: "SYNTHETIC-PRIVATE-OWNER", coverage_details: "Synthetic parts and labour coverage",
@@ -78,21 +81,114 @@ beforeEach(() => {
   mocks.row = fixture("en");
   mocks.failure = false;
   mocks.limited = false;
+  mocks.lookupMisses = 0;
+  mocks.matchLookup = false;
   mocks.calls = [];
   mocks.qr.mockReset().mockResolvedValue(pixel);
   mocks.create.mockReset().mockImplementation(() => {
     if (mocks.failure) throw new Error("SYNTHETIC-SECRET-FAILURE");
     const query: Record<string, unknown> = {};
+    let rowMatches = true;
     for (const method of ["select", "eq", "or", "in", "limit", "ilike"]) {
-      query[method] = vi.fn((...args: unknown[]) => { mocks.calls.push([method, ...args]); return query; });
+      query[method] = vi.fn((...args: unknown[]) => {
+        mocks.calls.push([method, ...args]);
+        if (mocks.matchLookup && (method === "eq" || method === "ilike")) {
+          rowMatches = String(mocks.row?.[String(args[0])]).toLowerCase() === String(args[1]).toLowerCase();
+        }
+        return query;
+      });
     }
-    query.single = query.maybeSingle = async () => ({ data: mocks.row, error: null });
+    query.single = query.maybeSingle = async () => ({
+      data: mocks.lookupMisses-- > 0 || !rowMatches ? null : mocks.row, error: null,
+    });
     query.update = () => { throw new Error("Record writes forbidden in certificate tests"); };
     return { auth: { getUser: async () => ({ data: { user: mocks.user }, error: null }) },
       from: (table: string) => { mocks.calls.push(["from", table]); return query; } };
   });
 });
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
+
+it.each(["certificate", "lookup"])("public %s denies unissued cancelled warranties", async (kind) => {
+  mocks.row = { ...fixture("en"), status: "cancelled", approved_at: null };
+  const response = kind === "certificate" ? await render("public", "en")
+    : await publicLookup(new NextRequest(`https://fixture.invalid/api/v1/warranties/verify?q=${id}`));
+  expect(response.status).toBe(404);
+  expect(mocks.qr).not.toHaveBeenCalled();
+});
+
+describe.each(["certificate", "lookup"] as const)("public %s issuance eligibility", (kind) => {
+  async function lookup(key: string, locale: Locale = "en") {
+    return kind === "certificate"
+      ? publicGet(new NextRequest(`https://fixture.invalid/api/certificate?locale=${locale}`), { params: Promise.resolve({ id: key }) })
+      : publicLookup(new NextRequest(`https://fixture.invalid/api/v1/warranties/verify?q=${encodeURIComponent(key)}`));
+  }
+
+  for (const branch of ["uuid", "reference", "serial"] as const) {
+    it.each(["pending_approval", "draft", "rejected", "unissued", "cancelled", null])(
+      `${branch}: denies %s without QR rendering or record writes`, async (status) => {
+        mocks.row = { ...fixture("en"), status, approved_at: null };
+        mocks.lookupMisses = branch === "serial" ? 1 : 0;
+        const response = await lookup(branch === "uuid" ? id : "SYNTHETIC-REF-001");
+        expect(response.status).toBe(404);
+        expect(mocks.qr).not.toHaveBeenCalled();
+        expect(mocks.calls).toContainEqual(branch === "uuid" ? ["eq", "id", id]
+          : ["ilike", branch === "serial" ? "serial_number" : "reference_number", "SYNTHETIC-REF-001"]);
+        const filters = mocks.calls.filter(([method]) => method === "or");
+        expect(filters).toEqual(Array.from({ length: branch === "serial" ? 2 : 1 },
+          () => ["or", "status.neq.cancelled,approved_at.not.is.null"]));
+        expect(mocks.calls.filter(([method]) => method === "select").every(([, fields]) =>
+          String(fields).split(", ").includes("approved_at"))).toBe(true);
+      },
+    );
+  }
+
+  it("finds an eligible standard UUID by id without reference fallback", async () => {
+    mocks.matchLookup = true;
+    expect((await lookup(id)).status).toBe(200);
+    expect(mocks.calls).toContainEqual(["eq", "id", id]);
+    expect(mocks.calls.some(([method]) => method === "ilike")).toBe(false);
+  });
+
+  for (const locale of ["en", "ar"] as const) {
+    it.each(["active", "claimed", "expired", "renewed", "cancelled"])(
+      `${locale}: preserves eligible %s without exposing approval or account fields`, async (status) => {
+        mocks.row = { ...fixture(locale), status,
+          approved_at: status === "cancelled" ? "2026-01-01T00:00:00Z" : null };
+        const response = await lookup(id, locale);
+        expect(response.status).toBe(200);
+        const body = await response.text();
+        for (const marker of ["SYNTHETIC-PRIVATE", "SYNTHETIC-SECRET-1234", "approved_at", "2026-01-01T00:00:00Z"]) {
+          expect(body).not.toContain(marker);
+        }
+        if (kind === "lookup") {
+          const payload = JSON.parse(body);
+          expect(Object.keys(payload.data).sort()).toEqual([
+            "id", "reference_number", "product_name", "product_name_ar", "serial_number", "status",
+            "start_date", "end_date", "category", "seller_name", "created_at",
+          ].sort());
+          expect(payload.data.status).toBe(status);
+          expect(mocks.qr).not.toHaveBeenCalled();
+        } else {
+          expect(load(body)("html").attr("lang")).toBe(locale);
+          expect(mocks.qr).toHaveBeenCalledOnce();
+        }
+      },
+    );
+  }
+
+  it("rejects malformed cancellation proof even if a backend returns it", async () => {
+    mocks.row = { ...fixture("en"), status: "cancelled", approved_at: "not-a-date" };
+    expect((await lookup(id)).status).toBe(404);
+    expect(mocks.qr).not.toHaveBeenCalled();
+  });
+
+  it("keeps the rate limit before any backend or QR work", async () => {
+    mocks.limited = true;
+    expect((await lookup(id)).status).toBe(429);
+    expect(mocks.create).not.toHaveBeenCalled();
+    expect(mocks.qr).not.toHaveBeenCalled();
+  });
+});
 
 describe("real certificate handlers with synthetic data only", () => {
   for (const kind of ["generate", "private", "public"] as const) {
