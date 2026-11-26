@@ -174,7 +174,10 @@ async function handlePost(request: Request) {
       return NextResponse.json({ error: "Warranty not found" }, { status: 404 });
     }
 
-    if (!PUBLIC_WARRANTY_STATUSES.some((status) => status === warranty.status)) {
+    // Rejection also uses cancelled, so that state alone does not prove issuance.
+    const unissuedCancellation = warranty.status === "cancelled"
+      && (typeof warranty.approved_at !== "string" || !Number.isFinite(Date.parse(warranty.approved_at)));
+    if (unissuedCancellation || !PUBLIC_WARRANTY_STATUSES.some((status) => status === warranty.status)) {
       return NextResponse.json({ error: "Certificate unavailable" }, {
         status: 409,
         headers: { "Cache-Control": "private, no-store" },

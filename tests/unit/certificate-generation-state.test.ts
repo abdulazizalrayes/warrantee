@@ -179,7 +179,10 @@ describe.each<Kind>(["generate", "html", "pdf"])("%s certificate issuance-state 
   });
 
   it.each(PUBLIC_WARRANTY_STATUSES)("continues serving public-eligible %s records", async (status) => {
-    mocks.row = { ...mocks.row, status, end_date: status === "active" ? "2099-12-31" : "2021-01-01" };
+    mocks.row = {
+      ...mocks.row, status, end_date: status === "active" ? "2099-12-31" : "2021-01-01",
+      approved_at: status === "cancelled" ? "2020-01-01T00:00:00Z" : null,
+    };
     const response = await request(kind);
     expect(response.status).toBe(200);
     expect(mocks.calls).toContainEqual(["session", "warranties", "or", accessClause]);
@@ -200,6 +203,20 @@ describe.each<Kind>(["generate", "html", "pdf"])("%s certificate issuance-state 
       expect(mocks.storage).not.toHaveBeenCalled();
     }
   });
+
+  it.each([null, undefined, "", "not-a-date", 0])(
+    "rejects cancelled records without valid approval evidence (%s), despite certificate metadata",
+    async (approvedAt) => {
+      mocks.row = {
+        ...mocks.row, status: "cancelled", approved_at: approvedAt,
+        certificate_hash: "synthetic-hash", certificate_url: certificateUrl,
+      };
+      const response = await request(kind);
+      expect(response.status).toBe(409);
+      expect(response.headers.get("cache-control")).toContain("no-store");
+      expectNoSideEffects();
+    },
+  );
 
   if (kind !== "generate") {
     it.each(["pending_approval", "draft"])("also gates %s resolved through party membership", async (status) => {
