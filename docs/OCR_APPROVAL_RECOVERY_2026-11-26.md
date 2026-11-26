@@ -63,6 +63,14 @@ the acknowledged mock response, refreshed controls and zero analytics sends;
 focused component tests independently verify success-only analytics call order.
 No production analytics behavior or consent policy was changed.
 
+Candidate CI 45789033603 then passed synthetic browser recovery but its build
+job timed out at five minutes while still downloading signed Ubuntu packages
+for all three browser engines. Only that install step's budget is raised to
+ten minutes; the 25-minute job cap, mirrors, APT verification/retry bounds,
+all Chromium/Firefox/WebKit coverage and assertions are retained. The real
+isolated signup run 45789033444 passed all 63 DB contracts and ten journeys.
+Require new candidate CI; do not mark the timed-out build as passed.
+
 Record exact final candidate, CI, deployment and live evidence in the release
 PR closeout. Do not manually dispatch or rerun Production Security Gates; its
 next natural result is separate evidence and must distinguish actual execution
