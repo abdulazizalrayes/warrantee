@@ -3,9 +3,10 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { getClientIp, getRateLimitHeaders, publicLookupRateLimit } from "@/lib/rate-limit";
 import { apiJson } from "@/lib/api-response";
 import { maskPublicSerialNumber, PUBLIC_WARRANTY_STATUSES } from "@/lib/public-warranty";
+import { canRenderIssuedCertificate, ISSUED_CERTIFICATE_QUERY_FILTER } from "@/lib/certificate-eligibility";
 
 const VERIFICATION_SELECT =
-  "id, reference_number, product_name, product_name_ar, serial_number, status, start_date, end_date, category, seller_name, created_at";
+  "id, reference_number, product_name, product_name_ar, serial_number, status, approved_at, start_date, end_date, category, seller_name, created_at";
 
 const VERIFICATION_QUERY_PATTERN = /^[A-Za-z0-9][A-Za-z0-9 .:/#-]{0,79}$/;
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -22,6 +23,7 @@ async function findPublicWarranty(supabase: SupabaseClient, safeQuery: string) {
       .select(VERIFICATION_SELECT)
       .eq("id", safeQuery)
       .in("status", PUBLIC_WARRANTY_STATUSES)
+      .or(ISSUED_CERTIFICATE_QUERY_FILTER)
       .limit(1)
       .maybeSingle();
 
@@ -33,6 +35,7 @@ async function findPublicWarranty(supabase: SupabaseClient, safeQuery: string) {
     .select(VERIFICATION_SELECT)
     .ilike("reference_number", safeQuery)
     .in("status", PUBLIC_WARRANTY_STATUSES)
+    .or(ISSUED_CERTIFICATE_QUERY_FILTER)
     .limit(1)
     .maybeSingle();
 
@@ -43,6 +46,7 @@ async function findPublicWarranty(supabase: SupabaseClient, safeQuery: string) {
     .select(VERIFICATION_SELECT)
     .ilike("serial_number", safeQuery)
     .in("status", PUBLIC_WARRANTY_STATUSES)
+    .or(ISSUED_CERTIFICATE_QUERY_FILTER)
     .limit(1)
     .maybeSingle();
 }
@@ -82,15 +86,24 @@ export async function GET(request: NextRequest) {
     // Public verification intentionally returns only proof-safe fields.
     const { data, error } = await findPublicWarranty(supabase, safeQuery);
 
-    if (error || !data) {
+    if (error || !data || !canRenderIssuedCertificate(data)) {
       return apiJson({ success: false, error: "Warranty not found" }, { status: 404 });
     }
 
     return apiJson({
       success: true,
       data: {
-        ...data,
+        id: data.id,
+        reference_number: data.reference_number,
+        product_name: data.product_name,
+        product_name_ar: data.product_name_ar,
         serial_number: maskPublicSerialNumber(data.serial_number),
+        status: data.status,
+        start_date: data.start_date,
+        end_date: data.end_date,
+        category: data.category,
+        seller_name: data.seller_name,
+        created_at: data.created_at,
       },
     });
   } catch {

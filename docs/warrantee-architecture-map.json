@@ -370,10 +370,13 @@
       "layer": "experience",
       "kind": "public_proof_surface",
       "status": "active",
-      "responsibility": "Public verification of issued warranties with deliberately minimized data and certificate access.",
+      "responsibility": "Public verification of issued warranties with deliberately minimized data and certificate access. Both public lookup and certificate endpoints exclude never-issued cancellations before lookup limits and recheck issuance eligibility before disclosure or rendering; approval timestamps remain internal.",
       "code_refs": [
         "src/app/[locale]/verify/page.tsx",
         "src/app/[locale]/verify/[id]/page.tsx",
+        "src/app/api/v1/warranties/verify/route.ts",
+        "src/app/api/v1/warranties/verify/[id]/certificate/route.ts",
+        "src/lib/certificate-eligibility.ts",
         "src/lib/public-warranty.ts"
       ]
     },
